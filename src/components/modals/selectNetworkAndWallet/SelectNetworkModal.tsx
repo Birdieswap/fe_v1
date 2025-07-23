@@ -1,0 +1,111 @@
+"use client";
+
+import "./SelectNetworkMenu.css";
+
+import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
+import { Fragment, useContext, useMemo, useRef, useEffect } from "react";
+
+import ModalBase from "@/components/atoms/ModalBase";
+import { WalletContext } from "@/app/WalletContextProvider";
+
+import { NetworkIcon, SelectNetworkListBox } from "./SelectNetworkMenu";
+
+export default function SelectNetworkModal() {
+  const {
+    selectedNetwork,
+    networks,
+    isNetworkModalOpen,
+    setIsNetworkModalOpen,
+  } = useContext(WalletContext);
+
+  const modalRef = useRef<HTMLButtonElement>(null);
+
+  // ⭐ 핵심 추가: 화면 크기 변화 감지
+  useEffect(() => {
+    const handleResize = () => {
+      // 데스크탑으로 전환 시 (640px 이상) Modal 닫기
+      if (window.innerWidth >= 640 && isNetworkModalOpen) {
+        setIsNetworkModalOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isNetworkModalOpen, setIsNetworkModalOpen]);
+
+  const isOpen = useMemo(() => {
+    return isNetworkModalOpen && (modalRef.current?.checkVisibility() ?? false);
+  }, [isNetworkModalOpen, modalRef]);
+
+  return (
+    <Fragment>
+      <Button
+        ref={modalRef}
+        isIconOnly
+        className="sm:hidden"
+        radius="full"
+        size="sm"
+        variant="light"
+        onPress={() => setIsNetworkModalOpen(true)}
+      >
+        {selectedNetwork ? (
+          <NetworkIcon network={selectedNetwork} />
+        ) : (
+          <span>Select Network</span>
+        )}
+      </Button>
+      <ModalBase
+        hideCloseButton
+        className="sm:hidden"
+        // ⭐ 모바일 최적화 설정
+        classNames={{
+          wrapper: "items-end justify-center",
+          base: "m-0 max-h-[80vh]",
+          body: "p-0",
+        }}
+        isOpen={isOpen}
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: {
+                duration: 0.3,
+                ease: "easeOut",
+              },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: {
+                duration: 0.3,
+                ease: "easeIn",
+              },
+            },
+          },
+        }}
+        placement="bottom"
+        scrollBehavior="inside"
+        size="lg"
+        onClose={() => {
+          if (isOpen) setIsNetworkModalOpen(false);
+        }}
+      >
+        <ModalContent>
+          <ModalHeader className="px-6 py-[18px]">
+            <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
+              Select a network
+            </p>
+          </ModalHeader>
+          <ModalBody className="max-h-[70vh] overflow-y-auto p-0 pb-6">
+            <SelectNetworkListBox
+              networks={networks}
+              onClose={() => setIsNetworkModalOpen(false)}
+            />
+          </ModalBody>
+        </ModalContent>
+      </ModalBase>
+    </Fragment>
+  );
+}

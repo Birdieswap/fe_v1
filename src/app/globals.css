@@ -1,0 +1,64 @@
+/* stylelint-disable at-rule-no-unknown */
+/* stylelint-disable function-no-unknown */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .btn-size-auto {
+    @apply min-w-0 max-w-max min-h-min max-h-max;
+  }
+  .btn-mint-colors {
+    @apply bg-light_primary data-[hover=true]:bg-light_primary_hover data-[hover=true]:opacity-100;
+    @apply text-primary-foreground dark:bg-dark_green_key dark:data-[hover=true]:bg-dark_primary_hover;
+    @apply hover:bg-light_primary_hover hover:opacity-100;
+    @apply dark:hover:bg-dark_primary_hover;
+  }
+  .themed-fill-primary {
+    fill-rule: evenodd;
+    @apply fill-light_primary dark:fill-dark_primary;
+  }
+  .textfield {
+    appearance: textfield;
+    @apply [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none;
+  }
+  .btn-light-colors {
+    @apply bg-background dark:bg-dark_popup_bg;
+  }
+  [data-hover='true'].btn-light-colors {
+    @apply bg-default-200 dark:bg-default-200;
+    @apply opacity-100;
+  }
+  .btn-light-colors:hover {
+    @apply bg-default-200 dark:bg-default-100;
+    @apply opacity-100;
+  }
+}
+
+@layer components {
+  button.btn-mint {
+    @apply btn-mint-colors;
+  }
+}

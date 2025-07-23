@@ -1,0 +1,16 @@
+@import "/src/app/globals.css";
+
+@tailwind base;
+@tailwind utilities;
+@tailwind components;
+
+@layer components {
+  button.max-slippage-selector {
+    @apply py-1 text-[14px] leading-[20px] font-medium;
+    @apply btn-size-auto;
+    @apply rounded-xl;
+    @apply data-[selected=false]:bg-background data-[selected=false]:text-default-500 data-[selected=false]:dark:bg-dark_popup_bg;
+    @apply data-[selected=true]:btn-mint-colors;
+    @apply transition-colors;
+  }
+}

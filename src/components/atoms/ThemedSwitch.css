@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  span.switch-base {
+    @apply flex;
+  }
+  span.switch-wrapper {
+    @apply flex w-12 h-6 px-0 py-0;
+    @apply max-md:w-10;
+    @apply bg-default-400;
+    @apply dark:bg-default-500;
+    @apply group-data-[selected=true]:bg-primary;
+    @apply group-data-[selected=true]:dark:bg-dark_green_key;
+  }
+  .switch-thumb-selected {
+    @apply ms-0 left-[25px];
+    @apply max-md:left-[17px];
+  }
+  .switch-thumb-selected-pressed {
+    @apply ml-0 left-[21px];
+    @apply max-md:left-[13px];
+  }
+  span.switch-thumb {
+    @apply absolute left-[1px] top-[1px] w-[22px] h-[22px];
+    @apply shadow-[0_1px_2px_0_rgba(0,0,0,0.1)];
+    @apply group-data-[selected=true]:switch-thumb-selected;
+    @apply group-data-[pressed=true]:w-[26px];
+    @apply group-data-[selected]:group-data-[pressed]:switch-thumb-selected-pressed;
+  }
+}
