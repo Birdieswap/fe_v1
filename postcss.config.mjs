@@ -17,8 +17,7 @@ const config = {
         return id;
       },
     },
-    "@tailwindcss/postcss": {},
-    //"tailwindcss/nesting": {},
+    "tailwindcss/nesting": {},
     tailwindcss: {},
   },
 };
