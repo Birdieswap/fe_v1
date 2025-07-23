@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+
+@layer components {
+  .wallet-tx-details-container {
+    @apply flex flex-col gap-1.5 rounded-[4px] bg-default-100 p-3 dark:bg-dark_popup_bg group-hover:dark:bg-dark_popup_bg;
+  }
+  .wallet-tx-farm-swap-container {
+    @apply flex flex-col gap-3 my-1.5 rounded-[4px] border-1 fill-background py-3 pl-[22px] pr-0;
+    @apply border-default-400 dark:border-default-200;
+    @apply dark:bg-dark_popup_bg;
+  }
+  .wallet-tx-farm-swap-item {
+    @apply flex flex-col gap-2;
+  }
+  .wallet-tx-farm-swap-title {
+    @apply flex flex-row gap-1;
+    @apply font-semibold text-[12px] leading-[15px];
+    @apply text-default-800 dark:text-foreground;
+  }
+  div.wallet-tx-farm-swap-bar {
+    @apply h-full w-px bg-default-800 dark:bg-default-300;
+  }
+}

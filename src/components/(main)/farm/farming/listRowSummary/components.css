@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .loading {
+    @apply opacity-70 animate-pulse;
+  }
+}

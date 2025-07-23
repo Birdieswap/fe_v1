@@ -1,0 +1,66 @@
+@import "/src/app/globals.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .drawer-base-dark {
+    @apply bg-dark_popup_bg border-default-100;
+  }
+  .drawer-base-light {
+    @apply bg-background border-default-200;
+  }
+  .drawer-base-sm {
+    @apply h-full max-h-full rounded-xl m-0;
+    @apply shadow-[0_4px_10px_0_rgba(0,0,0,0.1)];
+  }
+  .drawer-base-max-sm {
+    @apply border-none m-0 w-full max-w-full shadow-none;
+    @apply min-h-[70vh] max-h-[70vh];
+    @apply rounded-b-none rounded-t-xl;
+  }
+  section.drawer-base {
+    @apply text-foreground border-1;
+    @apply sm:drawer-base-sm;
+    @apply max-sm:drawer-base-max-sm;
+    @apply drawer-base-light dark:drawer-base-dark;
+  }
+  .theme-selector-unselected {
+    @apply text-foreground fill-foreground;
+    @apply bg-background hover:bg-default-200;
+    @apply dark:bg-dark_popup_bg dark:hover:bg-default-100;
+  }
+  .theme-selector-selected {
+    @apply text-foreground fill-foreground;
+    @apply bg-light_light_mint hover:bg-light_primary_hover;
+    @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
+  }
+  button.theme-selector {
+    @apply min-w-0 rounded-full px-[10px] py-[5px] text-[15px] leading-[18px] font-semibold data-[hover=true]:opacity-100;
+    @apply data-[selected=false]:theme-selector-unselected;
+    @apply data-[selected=true]:theme-selector-selected;
+  }
+  div.drawer-item {
+    @apply flex w-full flex-row items-center justify-between;
+    @apply max-md:h-[72px];
+  }
+  label.drawer-item-label {
+    @apply text-[15px] leading-[18px] font-medium;
+  }
+  button.wallet-btn {
+    @apply rounded-2xl;
+    @apply bg-background dark:bg-dark_popup_bg;
+    @apply border-default-500 dark:border-default-200;
+    @apply border-1 box-border;
+    @apply min-w-min max-w-max min-h-min max-h-max;
+    @apply flex flex-row items-center gap-1.5 px-3 py-1;
+    @apply max-sm:p-1 max-sm:border-0 max-sm:bg-transparent max-sm:rounded-full;
+    @apply btn-light-colors;
+  }
+  button.wallet-btn > span {
+    @apply max-sm:hidden;
+    @apply font-medium text-[16px] leading-[32px] text-foreground;
+  }
+}
+  

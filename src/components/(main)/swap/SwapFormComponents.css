@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes loading {
+  0% {
+    opacity: .6;
+  }
+  50% {
+    opacity: .3;
+  }
+  100% {
+    opacity: .6;
+  }
+}
+
+@layer utilities {
+  .animate-loading {
+    animation: loading 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}

@@ -1,0 +1,149 @@
+"use client";
+
+import { Button, Image, useDisclosure } from "@heroui/react";
+import { Dispatch, Fragment, SetStateAction, useMemo, useRef } from "react";
+import clsx from "clsx";
+
+import { BigDecimal } from "@/types/BigDecimal";
+import Icons from "@/assets/icons/icons";
+import { SwapTokens } from "@/const/tokenInfo";
+import { onAmountValueChange } from "@/utils/onAmountValueChange";
+import { ICurrency } from "@/const/contracts/types/tokenTypes";
+import suffixNumbers from "@/utils/suffixNumbers";
+
+import {
+  SwapFormContainer,
+  SwapFormHeader,
+  SwapFormNumberInput,
+} from "./SwapFormComponents";
+import SwapFormSelectTokenModal from "./SwapFormSelectTokenModal";
+import BalanceDisplay from "./swapFormAmount/BalanceDisplay";
+
+export default function SwapFormAmount({
+  type,
+  isPending,
+  amount,
+  balance,
+  price,
+  setAmount,
+  token,
+  setToken,
+  isDisabled,
+}: {
+  type: "buy" | "sell";
+  isPending?: boolean;
+  amount: string;
+  balance: BigDecimal;
+  price?: BigDecimal;
+  setAmount: Dispatch<SetStateAction<string>>;
+  token?: ICurrency;
+  setToken: (token: ICurrency) => void;
+  isDisabled?: boolean;
+}) {
+  const disclosure = useDisclosure();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const step = token?.decimals ? `0.${"0".repeat(token.decimals - 1)}1` : "1";
+  const dollarAmount = useMemo(() => {
+    if (!price) return "";
+    const amountValue = new BigDecimal(amount || "0", token?.decimals ?? 18);
+
+    if (amountValue.isZero()) return "0.00";
+
+    return suffixNumbers(amountValue.mul(price), 100_000, 2, true, true);
+  }, [amount, price, token?.decimals]);
+
+  return (
+    <Fragment>
+      <SwapFormContainer
+        className={clsx(
+          "transition-colors duration-200",
+          !token ? "cursor-pointer hover:bg-gray-50" : "cursor-text", // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
+        )}
+        onClick={() => {
+          if (!token) {
+            disclosure.onOpen();
+          } else {
+            inputRef.current?.focus();
+          }
+        }}
+      >
+        <SwapFormHeader>{type === "buy" ? "Buy" : "Sell"}</SwapFormHeader>
+        <div className="mb-2 flex w-full flex-row items-center justify-between">
+          <SwapFormNumberInput
+            ref={inputRef}
+            disabled={isPending || isDisabled || !token}
+            isDisabled={isPending || isDisabled || !token}
+            min={0}
+            placeholder="0"
+            step={step}
+            type="number"
+            value={amount}
+            onBlur={() => {
+              if (amount.includes(".") && amount.endsWith("0")) {
+                setAmount(amount.replace(/0+$/, "").replace(/\.$/, ""));
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "-") {
+                e.preventDefault();
+              }
+            }}
+            onValueChange={(v) => {
+              if (token) {
+                onAmountValueChange(v, token, setAmount);
+              }
+            }}
+          />
+          <Button
+            className={clsx(
+              "flex h-10 w-fit max-w-fit shrink-0 flex-row gap-1 px-1 py-0.5 text-xl",
+              "bg-background font-semibold text-foreground shadow-[0px_2px_rgba(0,0,0,0.25)]",
+              "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-900",
+            )}
+            isDisabled={isPending}
+            radius="full"
+            size="lg"
+            onPress={() => disclosure.onOpen()}
+          >
+            {token?.iconSrc && (
+              <Image
+                alt={token?.symbol || ""}
+                className="!size-9 max-w-9"
+                height={36}
+                radius="full"
+                src={token?.iconSrc}
+                width={36}
+              />
+            )}
+            {token?.symbol ? (
+              token.symbol
+            ) : (
+              <span className="pl-1.5">Select Token</span>
+            )}
+            <Icons.SwapTokenArrow />
+          </Button>
+        </div>
+        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm text-default-800">
+          <span className="grow">{token ? `$${dollarAmount}` : ""}</span>
+          <BalanceDisplay balance={balance} token={token} />
+          {type === "sell" && (
+            <Button
+              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_popup_bg dark:bg-dark_mid_mint_2"
+              size="sm"
+              onPress={() => setAmount(balance.toPrecisionString(true, false))}
+            >
+              Max
+            </Button>
+          )}
+        </div>
+      </SwapFormContainer>
+      <SwapFormSelectTokenModal
+        isOpen={disclosure.isOpen}
+        selectedToken={token}
+        setToken={setToken}
+        tokens={SwapTokens}
+        onClose={disclosure.onClose}
+      />
+    </Fragment>
+  );
+}
