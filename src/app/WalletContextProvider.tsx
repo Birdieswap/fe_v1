@@ -101,13 +101,13 @@ export default function WalletContextProvider({
   const selectedProvider = useMemo(() => {
     if (!account?.connector?.id) return undefined;
 
-    // 디버깅을 위한 로그 (개발 중에만 사용)
+    /* 디버깅을 위한 로그 (개발 중에만 사용)
     if (process.env.NODE_ENV === "development") {
       console.log("=== Wallet Detection Debug ===");
       console.log("Connector ID:", account.connector.id);
       console.log("Connector Name:", account.connector.name);
       console.log("Connector Type:", account.connector.type);
-    }
+    }*/
 
     // ⭐ 정확한 매핑 테이블 - 간단하고 명확하게
     const connectorMapping: Record<string, string> = {
@@ -133,14 +133,16 @@ export default function WalletContextProvider({
     if (mappedKey) {
       const provider = walletProviders.find((p) => p.key === mappedKey);
 
+      /*
       if (provider) {
         if (process.env.NODE_ENV === "development") {
           console.log("✅ Wallet detected:", provider.name);
         }
-
-        return provider;
-      }
+      */
+      return provider;
     }
+
+    /*
 
     // ⭐ 2차 매핑 시도 - connector name 기반
     const connectorName = account.connector.name?.toLowerCase() || "";
@@ -169,18 +171,15 @@ export default function WalletContextProvider({
         return provider;
       }
     }
+      
 
     // ⭐ 매핑 실패 시 로그
     if (process.env.NODE_ENV === "development") {
       console.warn("❌ Unknown connector, no wallet mapped");
-    }
+    }  */
 
-    return undefined;
-  }, [
-    account?.connector?.id,
-    account?.connector?.name,
-    account?.connector?.type,
-  ]);
+    return walletProviders.find((p) => p.key === "metaMask"); //undefined;
+  }, [account?.connector?.id]);
 
   const chainId = useChainId();
 
