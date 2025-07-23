@@ -51,11 +51,11 @@ export async function GET(request: NextRequest) {
     tickSpacing: immutables.tickSpacing,
     sqrtPriceX96: state.sqrtPriceX96.toString(10),
     tick: state.tick,
-    observationIndex: state.observationIndex,
-    observationCardinality: state.observationCardinality,
-    observationCardinalityNext: state.observationCardinalityNext,
-    feeProtocol: state.feeProtocol,
-    unlocked: state.unlocked,
+    observationIndex: (state as any).observationIndex,
+    observationCardinality: (state as any).observationCardinality,
+    observationCardinalityNext: (state as any).observationCardinalityNext,
+    feeProtocol: (state as any).feeProtocol,
+    unlocked: (state as any).unlocked,
     liquidity: state.liquidity.toString(10),
   };
 
