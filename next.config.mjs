@@ -127,9 +127,9 @@ const nextConfig = {
   },
 
   // ⭐ Coinbase Wallet SDK 외부 패키지 처리
-  experimental: {
+  /*experimental: {
     serverExternalPackages: ["@coinbase/wallet-sdk"],
-  },
+  },*/
 };
 
 export default nextConfig;
