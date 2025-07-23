@@ -35,10 +35,11 @@ import SettingsProvider from "./SettingsProvider";
 import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 
+/*
 const isLocal =
   typeof window !== "undefined" &&
   (window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1");
+    window.location.hostname === "127.0.0.1"); */
 
 /*
 // ⭐ 사용 가능한 지갑 목록 내보내기
@@ -155,6 +156,7 @@ export const wagmiConfig = getDefaultConfig({
   ],
 });
 
+/*
 // ⭐ 함수 중복 제거 - 한 번만 선언
 export const getAvailableWalletKeys = () => {
   // ⭐ 로컬 환경 감지
@@ -173,7 +175,7 @@ export const getAvailableWalletKeys = () => {
     "braveWallet",
   ];
 };
-
+*/
 const theme = lightTheme();
 
 theme.colors.accentColor = "#00c9cc";
