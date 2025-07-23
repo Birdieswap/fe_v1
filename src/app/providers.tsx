@@ -147,7 +147,9 @@ export const wagmiConfig = getDefaultConfig({
         walletConnectWallet, // "walletConnect"
         uniswapWallet, // "uniswap"
         // 기타 지갑들은 프로덕션에서만
-        ...(isLocal ? [] : [trustWallet, braveWallet, phantomWallet]),
+        trustWallet,
+        braveWallet,
+        phantomWallet,
       ],
     },
   ],
@@ -188,7 +190,7 @@ const queryClient = new QueryClient({
 export default function Providers({ children }: PropsWithChildren) {
   // ⭐ 로컬 환경에서 로컬스토리지 정리
   useEffect(() => {
-    if (isLocal && typeof window !== "undefined") {
+    if (typeof window !== "undefined") {
       // 기존 wagmi 연결 정보 완전 정리
       const keysToRemove = Object.keys(localStorage).filter(
         (key) =>
