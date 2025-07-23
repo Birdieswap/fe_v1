@@ -190,6 +190,7 @@ const queryClient = new QueryClient({
 });
 
 export default function Providers({ children }: PropsWithChildren) {
+  /*
   // ⭐ 로컬 환경에서 로컬스토리지 정리
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -217,7 +218,7 @@ export default function Providers({ children }: PropsWithChildren) {
 
       sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key));
     }
-  }, []);
+  }, []);   */
 
   return (
     <WagmiProvider config={wagmiConfig}>

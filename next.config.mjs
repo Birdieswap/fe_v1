@@ -8,7 +8,7 @@ const nextConfig = {
       test: /\.svg$/i,
       use: ["@svgr/webpack"],
     });
-
+    /*
     // ✅ Coinbase Wallet SDK의 HeartbeatWorker를 무시하기 위한 설정
     config.module.rules.push({
       test: /HeartbeatWorker(\.worker)?\.js$/,
@@ -17,6 +17,7 @@ const nextConfig = {
 
     // ✅ Web Worker compatibility 설정
     config.output.globalObject = "self";
+    */
 
     // ⭐ IndexedDB 오류 해결을 위한 브라우저 폴백 설정 추가
     if (!isServer) {
@@ -25,7 +26,7 @@ const nextConfig = {
         fs: false,
         net: false,
         tls: false,
-        crypto: false,
+        //crypto: false,
         stream: false,
         url: false,
         zlib: false,
@@ -35,21 +36,22 @@ const nextConfig = {
         os: false,
         path: false,
         // IndexedDB 관련 polyfill 추가
-        "idb-keyval": false,
+        //"idb-keyval": false,
       };
     }
 
     // 서버 사이드에서 브라우저 API 제외
+    /*
     if (isServer) {
       config.externals = config.externals || [];
       config.externals.push({
         indexeddb: "commonjs indexeddb",
       });
-    }
+    }.   */
 
     return config;
   },
-
+  /*
   // ⭐ Next.js 15 호환성: experimental.turbo를 turbopack으로 이동
   turbopack: {
     rules: {
@@ -60,7 +62,7 @@ const nextConfig = {
     },
   },
 
-  /*
+
   experimental: {
     turbo: {
       rules: {
@@ -70,7 +72,7 @@ const nextConfig = {
         }
       },
     }
-  },  */
+  }, 
 
   // ⭐ 추가된 성능 최적화 설정
   experimental: {
@@ -79,6 +81,7 @@ const nextConfig = {
 
   // 빌드 타임아웃 증가 (맥북 환경 최적화)
   staticPageGenerationTimeout: 1000,
+*/
 
   // 이미지 최적화 (맥북 Retina 디스플레이 고려)
   images: {
@@ -86,6 +89,7 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
+  /*
   typescript: {
     // ignoreBuildErrors: true,
   },
