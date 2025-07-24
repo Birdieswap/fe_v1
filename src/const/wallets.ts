@@ -21,7 +21,7 @@ export const coinbase: WalletProviderInfo = {
   iconSrc: "/wallets/coinbase.svg",
 };
 export const phantom: WalletProviderInfo = {
-  key: "phantomWallet",
+  key: "phantom",
   name: "Phantom",
   iconSrc: "/wallets/phantom.svg",
 };
@@ -31,12 +31,12 @@ export const keplr: WalletProviderInfo = {
   iconSrc: "/wallets/keplr.svg",
 };
 export const trust: WalletProviderInfo = {
-  key: "trustWallet",
+  key: "trust",
   name: "Trust Wallet",
   iconSrc: "/wallets/trust.svg",
 };
 export const brave: WalletProviderInfo = {
-  key: "braveWallet",
+  key: "brave",
   name: "Brave Wallet",
   iconSrc: "/wallets/brave.svg",
 };

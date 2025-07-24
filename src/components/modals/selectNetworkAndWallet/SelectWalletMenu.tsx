@@ -18,7 +18,7 @@ import { WalletProviderInfo } from "@/types/WalletProviderInfo";
 import Icons from "@/assets/icons/icons";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { walletProviders } from "@/const/wallets";
-import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
+//import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
 
 export function WalletIcon({
   provider,
@@ -50,15 +50,34 @@ export function SelectWalletListBox(props: {
   onClose: () => void;
 }) {
   // ⭐ 사용 가능한 지갑만 필터링
-  const availableWalletKeys = useMemo(() => getAvailableWalletKeys(), []);
+  //const availableWalletKeys = useMemo(() => getAvailableWalletKeys(), []);
 
-  const filteredProviders = useMemo(() => {
+  const availableWallets = useMemo(() => [
+    "metaMask",
+    "walletConnect", 
+    "uniswap",
+    "coinbaseWallet", // ⭐ 수정: "coinbaseWallet" → "coinbase"로 통일
+    "trust",
+    "phantom",
+    "brave",
+  ] as const, []);
+
+/*  
+const filteredProviders = useMemo(() => {
     const filtered = props.providers.filter((provider) =>
       availableWalletKeys.includes(provider.key),
     );
 
     return filtered;
-  }, [props.providers, availableWalletKeys]);
+  }, [props.providers, availableWalletKeys]);    */
+
+  const filteredProviders = useMemo(() => {
+    const filtered = props.providers.filter((provider) =>
+      availableWallets.includes(provider.key as any)
+    );
+
+    return filtered;
+  }, [props.providers, availableWallets]);
 
   if (filteredProviders.length === 0) {
     return (
@@ -69,15 +88,19 @@ export function SelectWalletListBox(props: {
   return (
     <div className="flex flex-col gap-0 p-0">
       {filteredProviders.map((provider) => (
-        <WalletButton.Custom key={provider.key} wallet={provider.key}>
+        <WalletButton.Custom key={provider.key} wallet={provider.key}> 
           {({ connector, connect }) => {
             return (
               <Button
                 className="select-network-list-item min-w-[200px]"
                 startContent={<WalletIcon provider={provider} />}
                 onPress={async () => {
-                  await connect();
-                  props.onClose();
+                  try {
+                    await connect();
+                    props.onClose();
+                  } catch (error) {
+                    console.error("Connection failed:", error);
+                  }
                 }}
               >
                 <span className="select-network-list-item-title">
