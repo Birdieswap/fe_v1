@@ -139,7 +139,7 @@ export const wagmiConfig = getDefaultConfig({
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
   chains: [arbitrum, base, optimism, bsc, polygon, scroll, sepolia, baseFork],
   ssr: true,
-  multiInjectedProviderDiscovery: false,
+  //multiInjectedProviderDiscovery: false,
   
   // ⭐ 조건부 지갑 설정 - 타입 안전하게
   wallets: [
@@ -158,6 +158,16 @@ export const wagmiConfig = getDefaultConfig({
     },
   ], 
 });
+
+// 🔥 디버깅 코드 추가
+if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
+  console.log("=== Wagmi Config 생성됨 ===");
+  console.log("등록된 Connectors:", wagmiConfig.connectors.map(c => ({
+    id: c.id,
+    name: c.name,
+    type: c.type
+  })));
+}
 
 /*
 // ⭐ 함수 중복 제거 - 한 번만 선언
