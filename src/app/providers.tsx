@@ -13,6 +13,7 @@ import {
   metaMaskWallet,
   trustWallet,
   walletConnectWallet,
+  coinbaseWallet,
   uniswapWallet,
   braveWallet,
   phantomWallet,
@@ -139,6 +140,7 @@ export const wagmiConfig = getDefaultConfig({
   chains: [arbitrum, base, optimism, bsc, polygon, scroll, sepolia, baseFork],
   ssr: true,
   multiInjectedProviderDiscovery: false,
+  
   // ⭐ 조건부 지갑 설정 - 타입 안전하게
   wallets: [
     {
@@ -147,24 +149,25 @@ export const wagmiConfig = getDefaultConfig({
         metaMaskWallet, // "metaMask"
         walletConnectWallet, // "walletConnect"
         uniswapWallet, // "uniswap"
+        coinbaseWallet,
         // 기타 지갑들은 프로덕션에서만
         trustWallet,
         braveWallet,
         phantomWallet,
       ],
     },
-  ],
+  ], 
 });
 
-
+/*
 // ⭐ 함수 중복 제거 - 한 번만 선언
 export const getAvailableWalletKeys = () => {
   // ⭐ 로컬 환경 감지
 
-/*  if (isLocal) {
+  if (isLocal) {
     return ["metaMask", "walletConnect", "uniswap"];
   }
-*/
+
   return [
     "metaMask",
     "walletConnect",
@@ -175,6 +178,7 @@ export const getAvailableWalletKeys = () => {
     "braveWallet",
   ];
 };
+*/
 
 const theme = lightTheme();
 

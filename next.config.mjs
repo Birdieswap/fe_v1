@@ -89,7 +89,6 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
 
-  /*
   typescript: {
     // ignoreBuildErrors: true,
   },
@@ -98,6 +97,7 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  /*
   // ⭐ Cross-Origin 정책 설정 추가
   async headers() {
     return [
