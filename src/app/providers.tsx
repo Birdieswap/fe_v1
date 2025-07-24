@@ -156,15 +156,15 @@ export const wagmiConfig = getDefaultConfig({
   ],
 });
 
-/*
+
 // ⭐ 함수 중복 제거 - 한 번만 선언
 export const getAvailableWalletKeys = () => {
   // ⭐ 로컬 환경 감지
 
-  if (isLocal) {
+/*  if (isLocal) {
     return ["metaMask", "walletConnect", "uniswap"];
   }
-
+*/
   return [
     "metaMask",
     "walletConnect",
@@ -175,7 +175,7 @@ export const getAvailableWalletKeys = () => {
     "braveWallet",
   ];
 };
-*/
+
 const theme = lightTheme();
 
 theme.colors.accentColor = "#00c9cc";
