@@ -19,6 +19,7 @@ import Icons from "@/assets/icons/icons";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { walletProviders } from "@/const/wallets";
 //import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
+import { useConfig } from "wagmi"; // 🔥 이 import 추가
 
 export function WalletIcon({
   provider,
@@ -52,32 +53,71 @@ export function SelectWalletListBox(props: {
   // ⭐ 사용 가능한 지갑만 필터링
   //const availableWalletKeys = useMemo(() => getAvailableWalletKeys(), []);
 
+// 🔥 실제 등록된 Connector 동적 감지
+  const config = useConfig();
+
   const availableWallets = useMemo(() => [
     "metaMask",
     "walletConnect", 
     "uniswap",
-    "coinbaseWallet", // ⭐ 수정: "coinbaseWallet" → "coinbase"로 통일
+    "coinbase", // ⭐ 수정: "coinbaseWallet" → "coinbase"로 통일
     "trust",
     "phantom",
     "brave",
-  ] as const, []);
-
-/*  
-const filteredProviders = useMemo(() => {
-    const filtered = props.providers.filter((provider) =>
-      availableWalletKeys.includes(provider.key),
-    );
-
-    return filtered;
-  }, [props.providers, availableWalletKeys]);    */
+  ] as const, []); 
 
   const filteredProviders = useMemo(() => {
     const filtered = props.providers.filter((provider) =>
       availableWallets.includes(provider.key as any)
     );
 
+        // 🔥 디버깅 로그 추가
+    console.log("=== 필터링 디버그 ===");
+    console.log("Available Keys:", availableWallets);
+    console.log("Provider Keys:", props.providers.map(p => p.key));
+    console.log("Filtered Count:", filtered.length);
+    console.log("Filtered Keys:", filtered.map(p => p.key));
+
     return filtered;
-  }, [props.providers, availableWallets]);
+  }, [props.providers, availableWallets]); 
+  
+  /* // 🔥 키 매핑 테이블: wallets.ts key → 실제 RainbowKit Connector ID
+  const keyMapping: Record<string, string> = {
+    "metaMask": "metaMask",           // ⭐ 핵심 매핑
+    //"coinbaseWallet": "coinbaseWalletSDK", // ⭐ 핵심 매핑
+    "walletConnect": "walletConnect",
+    //"uniswap": "uniswap",
+    //"phantom": "phantom",
+    //"trust": "trust",
+    //"brave": "brave",
+  };
+
+  // 실제 등록된 connector IDs
+  const availableConnectorIds = useMemo(() => {
+    const ids = config.connectors.map(c => c.id);
+    return [...new Set(ids)]; // 중복 제거
+  }, [config.connectors]);
+
+  // 🔥 매핑을 통한 필터링
+  const filteredProviders = useMemo(() => {
+    const filtered = props.providers.filter((provider) => {
+      const mappedConnectorId = keyMapping[provider.key] || provider.key;
+      const isAvailable = availableConnectorIds.includes(mappedConnectorId);
+      
+      console.log(`${provider.name}: ${provider.key} → ${mappedConnectorId} (${isAvailable ? 'OK' : 'x'})`);
+      
+      return isAvailable;
+    });
+    
+    console.log("=== 매핑 필터링 결과 ===");
+    console.log("Available Connector IDs:", availableConnectorIds);
+    console.log("Provider Keys:", props.providers.map(p => p.key));
+    console.log("Mapped IDs:", props.providers.map(p => keyMapping[p.key] || p.key));
+    console.log("Filtered Count:", filtered.length);
+    console.log("Filtered Providers:", filtered.map(p => p.name));
+    
+    return filtered;
+  }, [props.providers, availableConnectorIds]); */
 
   if (filteredProviders.length === 0) {
     return (
@@ -86,7 +126,9 @@ const filteredProviders = useMemo(() => {
   }
 
   return (
+     
     <div className="flex flex-col gap-0 p-0">
+     
       {filteredProviders.map((provider) => (
         <WalletButton.Custom key={provider.key} wallet={provider.key}> 
           {({ connector, connect }) => {
@@ -105,13 +147,14 @@ const filteredProviders = useMemo(() => {
               >
                 <span className="select-network-list-item-title">
                   {connector.name}
-                </span>
+                </span> 
               </Button>
             );
           }}
         </WalletButton.Custom>
       ))}
-    </div>
+    </div> 
+    
   );
 }
 
