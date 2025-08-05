@@ -124,7 +124,7 @@ export default function SwapFormSelectTokenModal(props: {
       onClose={props.onClose}
     >
       <ModalContent>
-        <ModalHeader className="p-4">Select a Token</ModalHeader>
+        <ModalHeader className="p-4 text-foreground">Select a Token</ModalHeader>
         <ModalBody className="px-0 pb-4 pt-0">
           <Container>
             <Header>Your Tokens</Header>

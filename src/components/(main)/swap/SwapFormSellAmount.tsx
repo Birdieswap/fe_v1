@@ -29,6 +29,7 @@ export default function SwapFormAmount({
   token,
   setToken,
   isDisabled,
+  isApproved
 }: {
   type: "buy" | "sell";
   isPending?: boolean;
@@ -39,6 +40,7 @@ export default function SwapFormAmount({
   token?: ICurrency;
   setToken: (token: ICurrency) => void;
   isDisabled?: boolean;
+  isApproved?: boolean;
 }) {
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -52,12 +54,21 @@ export default function SwapFormAmount({
     return suffixNumbers(amountValue.mul(price), 100_000, 2, true, true);
   }, [amount, price, token?.decimals]);
 
+ //입력 자리수 검사 진행
+  function isValidAmount(value: string) {
+  if (value === "") return true; // 빈 값 허용
+  const [integerPart, decimalPart] = value.split(".");
+  if (integerPart.length > 18) return false;
+  if (decimalPart && decimalPart.length > 18) return false;
+  return true;
+}
+
   return (
     <Fragment>
       <SwapFormContainer
         className={clsx(
           "transition-colors duration-200",
-          !token ? "cursor-pointer hover:bg-gray-50" : "cursor-text", // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
+          !token ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-dark_popup_bg" : "cursor-text", // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
         )}
         onClick={() => {
           if (!token) {
@@ -94,11 +105,19 @@ export default function SwapFormAmount({
               }
             }}
           />
+          {type ==="sell" && token && !isApproved ? (
+             <Icons.Lock
+               className="fill-default-800 dark:fill-default-700 w-12"
+               fillRule="evenodd"
+             />
+           ) : (
+             <div className="size-6" />
+          )}
           <Button
             className={clsx(
               "flex h-10 w-fit max-w-fit shrink-0 flex-row gap-1 px-1 py-0.5 text-xl",
               "bg-background font-semibold text-foreground shadow-[0px_2px_rgba(0,0,0,0.25)]",
-              "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-900",
+              "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-100",
             )}
             isDisabled={isPending}
             radius="full"
@@ -128,7 +147,7 @@ export default function SwapFormAmount({
           <BalanceDisplay balance={balance} token={token} />
           {type === "sell" && (
             <Button
-              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_popup_bg dark:bg-dark_mid_mint_2"
+              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_mid_mint dark:bg-dark_mid_mint"
               size="sm"
               onPress={() => setAmount(balance.toPrecisionString(true, false))}
             >

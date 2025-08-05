@@ -33,6 +33,7 @@ function SearchBoxComponent(
         input: clsx(
           "pl-3 text-base font-medium placeholder:text-default-800 dark:placeholder:text-default-500",
           "md:text-[13px] md:font-normal",
+          "focus:outline-none dark:caret-white"
         ),
       }}
       endContent={

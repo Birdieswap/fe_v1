@@ -23,7 +23,7 @@ function ThemedButtonComponent(
         "dark:disabled:bg-dark_popup_bg dark:disabled:text-default-800",
         props.variant === "MINT" && "btn-mint",
         props.variant === "LIGHT" && [
-          "text-light_primary dark:text-dark_primary",
+          "text-light_primary dark:text-dark_green_key",
           "bg-transparent",
           "data-[hover=true]:bg-transparent data-[hover=true]:text-light_primary_hover dark:data-[hover=true]:text-dark_primary_hover",
         ],

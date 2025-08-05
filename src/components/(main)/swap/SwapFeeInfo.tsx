@@ -66,7 +66,7 @@ export default function SwapFeeInfo() {
               </span>
               <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
                 <Icons.Gas />
-                <Icons.ArrowRL />
+                {/*<Icons.ArrowRL />*/}
                 0.5%
               </div>
               <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />

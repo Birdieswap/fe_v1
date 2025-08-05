@@ -172,7 +172,7 @@ export default function MaxSlippagePopover(props: {
                 size="md"
                 step="0.0001"
                 type="number"
-                value={props.maxSlippage === "auto" ? "5.5" : customSlippage} // Auto일 때 표시 값
+                value={props.maxSlippage === "auto" ? "5.5" : customSlippage} // Auto일 때 표시 값 추후 계산 값으로 업데이트 필요
                 onFocus={() => {
                   // Input을 클릭하면 자동으로 Custom 모드로 전환
                   if (props.maxSlippage === "auto") {

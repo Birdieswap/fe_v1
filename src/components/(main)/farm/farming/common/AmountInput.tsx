@@ -26,7 +26,7 @@ function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
           "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
         ),
         input:
-          "text-[30px] font-bold leading-[36px] placeholder:text-default-500 bg-transparent textfield",
+          "text-[30px] font-bold leading-[36px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
       }}
       min={0}
       step="0.000000000000000001"
