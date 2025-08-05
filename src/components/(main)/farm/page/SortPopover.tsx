@@ -36,7 +36,7 @@ export default function SortPopover({
             "h-9 max-h-9 min-h-9 ",
             "data-[hover=true]:opacity-100 dark:border-default-800 dark:text-default-600",
             "border-default-400 bg-transparent text-default-800 data-[hover=true]:bg-default-400/20",
-            "data-[selected=true]:border-default-600 data-[selected=true]:bg-primary-200 data-[selected=true]:dark:bg-dark_mid_mint_4",
+            "data-[selected=true]:border-default-600 data-[selected=true]:bg-primary-200 data-[selected=true]:dark:bg-dark_mid_mint",
             "hover:border-default-600 hover:bg-default-100",
             "aria-expanded:opacity-100",
           )}
@@ -44,13 +44,15 @@ export default function SortPopover({
           radius="full"
         >
           <Icons.Sort
-            className="size-6 fill-foreground stroke-foreground"
+            className="size-6 fill-foreground stroke-foreground data-[selected=true]:dark:fill-background data-[selected=true]:dark:stroke-background"
             fillRule="evenodd"
             strokeWidth={0.3}
+            data-selected={sortColumn !== null}
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="gap-4 border-default-300 bg-background p-4 dark:border-1 dark:border-default-900 dark:bg-dark_popup_bg">
+      <PopoverContent className="w-[141px] h-[265px]  gap-4 p-3.5
+       border-default-300 bg-background text-foreground dark:text-p-4 dark:border-1 dark:border-default-100 dark:bg-dark_popup_bg">
         <p className="w-full">Sort by</p>
         <SortOptions
           setSortColumns={setSortColumns}
@@ -58,9 +60,9 @@ export default function SortPopover({
         />
         <Button
           className={clsx(
-            "data-[selected=true]:btn-mint w-full bg-default-300 text-sm font-medium text-default-800 dark:text-background",
+            "data-[selected=true]:bg-light_primary bg-default-300 text-sm font-medium text-default-800 dark:bg-dark_swap_bg dark:text-default-200 data-[selected=true]:dark:bg-dark_green_key  data-[selected=true]:text-background w-[109px] h-[33px] text-[14px]",
             "data-[disabled=true]:bg-default-300 data-[disabled=true]:text-default-800 data-[disabled=true]:opacity-100",
-            "data-[disabled=true]:dark:bg-dark_swap_bg data-[disabled=true]:dark:text-default-800",
+            "data-[disabled=true]:dark:bg-dark_swap_bg data-[disabled=true]:dark:text-default-200",
           )}
           data-selected={sortColumn !== null}
           isDisabled={sortColumn === null}

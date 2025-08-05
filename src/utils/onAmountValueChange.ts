@@ -24,14 +24,20 @@ export function onAmountValueChange(
     if (newValue.startsWith(".")) {
       newValue = "0" + newValue;
     }
-    setAmountStr(newValue);
+
+
+    
     try {
       const parsedValue = new BigDecimal(newValue);
 
+      if (parsedValue.gt(1e18)) return;
+      
       setAmountBD?.(parsedValue);
     } catch (e: unknown) {
       console.error("Error parsing value:", e);
       setAmountBD?.(BigDecimal.ZERO());
     }
+
+    setAmountStr(newValue);
   }
 }

@@ -4,8 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
 
-//import Providers from "./providers";
-import DynamicProvider from "./DynamicProvider";
+import Providers from "./providers";
 import TransactionContextProvider from "./TransactionContextProvider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -22,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <head>
+    <html lang="en" className="light" style={{ colorScheme: "light" }}>
+ {/*     <head>
         <link
           href="/apple-icon-57x57.png"
           rel="apple-touch-icon"
@@ -97,13 +96,13 @@ export default function RootLayout({
         <meta content="#ffffff" name="msapplication-TileColor" />
         <meta content="/ms-icon-144x144.png" name="msapplication-TileImage" />
         <meta content="#ffffff" name="theme-color" />
-      </head>
+      </head> */}
       <body className={clsx(inter.className)}>
-        <DynamicProvider>
+        <Providers>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
-        </DynamicProvider>
+        </Providers>
       </body>
     </html>
   );

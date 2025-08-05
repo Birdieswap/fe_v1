@@ -28,6 +28,7 @@ export default function SwapIndex() {
     isPending,
     isLoadingFrom,
     isLoadingTo,
+    isApproved
   } = useSwapContext();
 
   return (
@@ -42,6 +43,7 @@ export default function SwapIndex() {
           setAmount={setFromTokenAmountWithGuard}
           setToken={setFromTokenWithGuard}
           token={fromToken}
+          isApproved ={isApproved}
           type="sell"
         />
         <div className="flex items-center justify-center">

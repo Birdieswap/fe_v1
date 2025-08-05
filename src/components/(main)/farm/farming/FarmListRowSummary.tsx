@@ -49,7 +49,7 @@ export default function FarmListRowSummary({
         "[&:nth-child(2)]:dark:border-default-400",
         "md:col-span-6 md:px-6",
         "max-md:col-span-3 max-md:row-span-2 max-md:px-4",
-        "transition-colors hover:bg-default-200 dark:hover:bg-default-900",
+        "transition-colors hover:bg-default-200 dark:hover:bg-default-100",
       )}
       onClick={onClick}
     >

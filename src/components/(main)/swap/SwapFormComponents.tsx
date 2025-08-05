@@ -2,7 +2,7 @@ import "./SwapFormComponents.css";
 
 import { cn, Input } from "@heroui/react";
 import clsx from "clsx";
-import React, { ForwardedRef, forwardRef } from "react";
+import React, { ForwardedRef, forwardRef, useState } from "react";
 
 export const SwapFormContainer: React.FC<
   React.HTMLAttributes<HTMLDivElement>
@@ -12,7 +12,7 @@ export const SwapFormContainer: React.FC<
       className={clsx(
         "group flex w-full flex-col gap-1.5 rounded-2xl bg-default-100 py-4 pl-3 pr-4 transition-colors dark:bg-dark_swap_bg",
         "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
-        "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5",
+        "dark:focus-within:bg-dark_swap_bg dark:hover:bg-popup_bg dark:group-hover:bg-popup_bg dark:group-focus:bg-dark_swap_bg dark:group-focus-visible:bg-dark_swap_bg",
         className,
       )}
       {...props}
@@ -38,6 +38,7 @@ const SwapFormNumberInputComponent = (
   { className, ...props }: Omit<Parameters<typeof Input>[0], "ref">,
   ref: ForwardedRef<HTMLInputElement>,
 ) => {
+
   return (
     <Input
       className={cn("bg-transparent animate-p", className)}
@@ -49,9 +50,9 @@ const SwapFormNumberInputComponent = (
         input: cn(
           "text-[30px] font-bold leading-[36px] placeholder:text-default-500 bg-transparent textfield",
           "data-[disabled=true]:animate-loading",
-          "disabled:animate-loading",
+          "disabled:animate-loading focus:outline-none dark:caret-white",
         ),
-      }}
+      }}    
       onWheel={(e) => {
         e.stopPropagation(); // Prevent scrolling from affecting the input
       }}

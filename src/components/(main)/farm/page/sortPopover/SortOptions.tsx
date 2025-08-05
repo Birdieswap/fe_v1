@@ -18,14 +18,14 @@ export default function SortOptions({
       color="default"
       itemClasses={{
         base: clsx(
-          "box-border rounded-none border-1 border-b-0 first:rounded-t-xl last:rounded-b-xl last:border-b-1",
-          "border-default-300 bg-background dark:border-default-900 dark:bg-dark_swap_bg",
+          "box-border rounded-none border-1 border-b-0 first:rounded-t-xl last:rounded-b-xl last:border-b-1 w-[109px] h-[38px] text-[15px]",
+          "border-default-300 bg-background dark:border-default-100 dark:bg-dark_swap_bg",
           "data-[selected=true]:border-default-300 data-[selected=true]:bg-default-100",
           "data-[hover=true]:border-default-300 data-[hover=true]:bg-default-200",
           "data-[selectable=true]:focus:border-default-300 data-[selectable=true]:focus:bg-default-100",
-          "dark:data-[selected=true]:border-default-900 dark:data-[selected=true]:bg-default-900",
-          "dark:data-[hover=true]:border-default-900 dark:data-[hover=true]:bg-default-800",
-          "dark:data-[selectable=true]:focus:border-default-900 dark:data-[selectable=true]:focus:bg-dark_swap_bg",
+          "dark:data-[selected=true]:border-default-100 dark:data-[selected=true]:bg-default-100",
+          "dark:data-[hover=true]:border-default-200 dark:data-[hover=true]:bg-default-200",
+          "dark:data-[selectable=true]:focus:border-default-200 dark:data-[selectable=true]:focus:bg-dark_default-100",
         ),
       }}
       selectedKeys={sortColumns}

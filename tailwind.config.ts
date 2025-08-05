@@ -26,7 +26,7 @@ const config: Config = {
         light_mid_mint: "#CCF9F7",
         light_mid_mint_2: "#B2EFF0",
         dark_pink: "#FF5AA9",
-        dark_swap_bg: "#212234",
+        dark_swap_bg: "#1F2234",
         dark_popup_bg: "#262B3B",
         dark_pink_hover: "#F072AF",
         dark_empty_state: "#226A75",

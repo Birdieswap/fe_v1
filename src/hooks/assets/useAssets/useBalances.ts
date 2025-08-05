@@ -66,6 +66,7 @@ export default function useBalances(
       return newMap;
     });
   }, [query.data, availableTokens, chainId]);
+  
   const nativeToken = useMemo(
     () =>
       tokens.find(
