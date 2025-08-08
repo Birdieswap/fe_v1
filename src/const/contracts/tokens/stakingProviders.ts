@@ -1,4 +1,5 @@
 import { aave_pool_abi } from "../abis/aave_pool_abi";
+import { birdieswap_router_abi } from "../abis/birdieswap_router_abi";
 import { uniswap_factory_v3_abi } from "../abis/uniswap_factory_v3_abi";
 import networks from "../networks";
 import { EProvider } from "../types/tokenTypes";
@@ -47,10 +48,11 @@ const BIRDIE = StakingProviderGuard({
   name: "Birdie",
   provider: EProvider.BIRDIE,
   addresses: {
-    [networks.sepolia.id]: "0xeDDEE2657a0E6cEe2DA4De7FBCEa4Fc878b76072",
+    [networks.sepolia.id]: "0x4aCa88932cAf7316Ba89CA31D58Cb323E996Df70",
     [networks.base.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
     [networks.baseFork.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
   },
+  abi: birdieswap_router_abi,
 } as const);
 
 const stakingProviders = {

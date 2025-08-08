@@ -18,6 +18,9 @@ import { FarmTokenStatus } from "./FarmTokenStatus";
 import useFarmPanelCommon from "./useFarmPanelCommon";
 import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
+import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
+
 
 export default function useFarmStopPanelCommon(item: Farm) {
   const {
@@ -32,6 +35,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
     assetsContext,
     stakeToken,
     stakeTokenAddress,
+    routerAddress,
   } = useFarmPanelCommon(item);
 
   const balance = useBalance(stakeToken);
@@ -39,7 +43,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
   const { allowance, query: allowanceQuery } = useAllowance({
     token: stakeToken,
-    spender: stakeToken,
+    spender: stakeToken.provider,
   });
   const isApproved = useMemo(() => {
     return allowance.gt(amount ?? 0);
@@ -68,6 +72,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
+    routerAddress: routerAddress as `0x${string}`,
     transactionContext,
     refetch: allowanceQuery.refetch,
     writeContract,
@@ -102,13 +107,12 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
     writeContract(
       {
-        address: stakeTokenAddress as `0x${string}`,
-        abi: birdieLpVaults_abi,
-        functionName: "withdraw",
+        address: routerAddress as `0x${string}`,
+        abi: birdieswap_router_abi,
+        functionName: "singleRedeem",
         args: [
+          stakeTokenAddress as `0x${string}`,
           parseUnits(amount?.toString() || "0", stakeToken.decimals || 18),
-          address,
-          address,
         ],
       },
       {

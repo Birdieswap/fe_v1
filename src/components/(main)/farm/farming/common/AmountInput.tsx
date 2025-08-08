@@ -157,7 +157,7 @@ export default function AmountInput({
           </div>
           <div className="flex w-full flex-row items-center gap-2 px-1 text-sm">
             <div className="grow text-default-800">
-              <p>${dollarAmount ?? "..."}</p>
+              <p>${dollarAmount ?? "0"}</p>
             </div>
             <div className="flex flex-row items-center gap-2">
               <div className="flex flex-col items-end">
@@ -170,7 +170,7 @@ export default function AmountInput({
                   </span>
                 </div>
                 <p className="self-end text-default-800 dark:text-default-700">
-                  ${dollarBalance ?? "..."}
+                  ${dollarBalance ?? "0"}
                 </p>
               </div>
               <Button

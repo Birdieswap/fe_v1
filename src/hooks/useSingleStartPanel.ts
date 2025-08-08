@@ -18,6 +18,8 @@ import useApprove from "./useApprove";
 import { FarmStartTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
+import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
 
 export function useSingleStartPanel(item: FarmSingle) {
   const {
@@ -32,9 +34,15 @@ export function useSingleStartPanel(item: FarmSingle) {
     chainId,
     stakeToken,
     stakeTokenAddress,
+    routerAddress,
   } = useFarmPanelCommon(item);
-
+  
   const inputToken = stakeToken.input;
+  const inputTokenAddress = getTokenAddress({
+          token: inputToken,
+          chainId,
+        });
+
   const insolvency = useMemo(() => {
     return getInsolvencyAmount({
       contract: stakeToken,
@@ -42,12 +50,13 @@ export function useSingleStartPanel(item: FarmSingle) {
       chainId,
     });
   }, [stakeToken, inputToken, chainId]);
+
   const balance = useBalance(inputToken);
   const [amount, setAmount] = useState<BigDecimal | null>(null);
 
   const { allowance, query: allowanceQuery } = useAllowance({
     token: inputToken,
-    spender: stakeToken,
+    spender: stakeToken.provider,
   });
   const isApproved = useMemo(() => {
     return allowance.gt(amount ?? 0);
@@ -67,6 +76,7 @@ export function useSingleStartPanel(item: FarmSingle) {
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
+    routerAddress: routerAddress as `0x${string}`,
     transactionContext,
     refetch: allowanceQuery.refetch,
     writeContract,
@@ -99,6 +109,7 @@ export function useSingleStartPanel(item: FarmSingle) {
 
   const startFarming = useCallback(() => {
     if (!address) return;
+    console.log("startFaming Address", address);
     const transactionProps: TransactionStatusProps &
       StartFarmingTransactionProps = {
       chainId,
@@ -129,12 +140,12 @@ export function useSingleStartPanel(item: FarmSingle) {
 
     writeContract(
       {
-        address: stakeTokenAddress as `0x${string}`,
-        abi: birdieSingleVaults_abi,
-        functionName: "deposit",
+        address: routerAddress as `0x${string}`,
+        abi: birdieswap_router_abi,
+        functionName: "singleDeposit",
         args: [
+          inputTokenAddress as `0x${string}`,
           parseUnits(amount?.toString() || "0", inputToken.decimals),
-          address,
         ],
       },
       {

@@ -65,6 +65,7 @@ const networks: NetworkInfo[] = [
   {
     id: 11155111,
     name: "Sepolia",
+    iconSrc: "/networks/sepolia.svg",
     blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
   },
   {

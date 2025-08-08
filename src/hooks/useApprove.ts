@@ -16,11 +16,13 @@ import getTokenAddress from "@/utils/assets/getTokenAddress";
 export default function useApprove(props: {
   pool: IContractBase;
   poolAddress: `0x${string}`;
+  routerAddress: `0x${string}`;
   client?: Client;
   transactionContext: TransactionContextType;
   writeContract: WriteContractMutate<Config, unknown>;
   refetch?: () => Promise<unknown>;
 }) {
+
   const chainId = useChainId();
   const approve = useCallback(
     (token: IToken) => {
@@ -31,6 +33,7 @@ export default function useApprove(props: {
         token: token,
         chainId,
       });
+      console.log("tokenAddress",tokenAddress);
       const transactionProps: TransactionStatusProps & ApproveTransactionProps =
         {
           transactionType: TransactionType.APPROVE,
@@ -47,10 +50,10 @@ export default function useApprove(props: {
       props.writeContract(
         {
           address: tokenAddress as `0x${string}`,
-          abi: props.pool.abi,
+          abi: token.abi,
           functionName: "approve",
           args: [
-            props.poolAddress as `0x${string}`,
+            props.routerAddress as `0x${string}`,
             BigInt(
               "115792089237316195423570985008687907853269984665640564039457584007913129639935",
             ),

@@ -6,6 +6,7 @@ import {
   birdieLpVaults_abi,
   birdieSingleVaults_abi,
 } from "./abis";
+import { birdieswap_router_abi } from "./contracts/abis/birdieswap_router_abi";
 import networks from "./contracts/networks";
 import lpVaults from "./contracts/tokens/lpVaults";
 import singleVaults from "./contracts/tokens/singleVaults";
@@ -48,27 +49,12 @@ export const contracts = {
     WETH_CBBTC_AAVE: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieLpVaults_abi,
-    },
+    },   /*
     WETH: {
       address: singleVaults.bAaveWETH.addresses[networks.baseFork.id],
       abi: birdieSingleVaults_abi,
     },
-    WETH_harvest_autopilot: {
-      address:
-        singleVaults.bHarvestAutopilotWETH.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
-    CBBTC_harvest_autopilot: {
-      address:
-        singleVaults.bHarvestAutopilotCBBTC.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
-    USDC_harvest_autopilot: {
-      address:
-        singleVaults.bHarvestAutopilotUSDC.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
-    USDT: {
+     USDT: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieSingleVaults_abi,
     },
@@ -86,10 +72,27 @@ export const contracts = {
     },
     CBBTC: {
       address: singleVaults.bAaveCBBTC.addresses[networks.baseFork.id],
-      abi: birdieSingleVaults_abi,
+      abi: birdieSingleVaults_abi, 
+    },      */
+    WETH_harvest_autopilot: {
+      address:
+        singleVaults.bHarvestAutopilotWETH.addresses[networks.baseFork.id],
+      abi: birdieLpVaults_abi,
     },
+    CBBTC_harvest_autopilot: {
+      address:
+        singleVaults.bHarvestAutopilotCBBTC.addresses[networks.baseFork.id],
+      abi: birdieLpVaults_abi,
+    },
+    USDC_harvest_autopilot: {
+      address:
+        singleVaults.bHarvestAutopilotUSDC.addresses[networks.baseFork.id],
+      abi: birdieLpVaults_abi,
+    },
+   
   },
   uniswapPool: {
+    /*
     bWETH_bUSDT: { address: "0x0000000000000000000000000000000000000000" },
     bWETH_bUSDC: {
       address: swapPools.bUniswapAaveWETHUSDC.addresses[networks.baseFork.id],
@@ -106,7 +109,7 @@ export const contracts = {
     blpCBBTC_USDC: {
       address:
         swapPools.blpUniswapAaveCBBTCUSDC.addresses[networks.baseFork.id],
-    },
+    },  */
     blpWETH_USDC_harvest: {
       address:
         swapPools.blpUniswapHarvestWETHUSDC.addresses[networks.baseFork.id],
