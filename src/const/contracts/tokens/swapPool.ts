@@ -11,6 +11,7 @@ import networks from "../networks";
 import stakingProviders from "./stakingProviders";
 import singleVaults from "./singleVaults";
 
+/*
 const bUniswapAaveWETHUSDT = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "bUniswapAaveWETHUSDT",
@@ -113,7 +114,7 @@ const blpUniswapAaveCBBTCUSDC = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [singleVaults.bAaveCBBTC, singleVaults.bAaveUSDC],
-} as const satisfies ISwapPool<IBirdieSingleFarm>);
+} as const satisfies ISwapPool<IBirdieSingleFarm>);   */
 
 const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
@@ -151,6 +152,24 @@ const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
+const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "blpUniswapHarvestAutopilotCBBTCWETH",
+  fullName: "blpUniswapHarvestAutopilotCBBTCWETH",
+  addresses: {
+    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
+  },
+  decimals: 18,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotWETH,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
 const blpUniswapHarvestWETHUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "blpUniswapHarvestWETHUSDC",
@@ -185,18 +204,38 @@ const blpUniswapHarvestCBBTCUSDC = SwapPoolGuard({
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
+const blpUniswapHarvestCBBTCWETH = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "blpUniswapHarvestCBBTCWETH",
+  fullName: "blpUniswapHarvestCBBTCWETh",
+  addresses: {
+    [networks.baseFork.id]: "0xa673272e0c6d9F4330c9a5D03aa5ff43EB87B8F2",
+  },
+  decimals: 18,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  input: [
+    singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotWETH,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
+
 const swapPools = {
-  bUniswapAaveWETHUSDT,
-  bUniswapAaveWETHUSDC,
-  bUniswapAaveWETHCBBTC,
-  bUniswapAaveCBBTCUSDC,
-  blpUniswapAaveWETHCBBTC,
-  blpUniswapAaveWETHUSDC,
-  blpUniswapAaveCBBTCUSDC,
+  // bUniswapAaveWETHUSDT,
+  // bUniswapAaveWETHUSDC,
+  // bUniswapAaveWETHCBBTC,
+  // bUniswapAaveCBBTCUSDC,
+  // blpUniswapAaveWETHCBBTC,
+  // blpUniswapAaveWETHUSDC,
+  // blpUniswapAaveCBBTCUSDC,
   blpUniswapHarvestWETHUSDC,
   blpUniswapHarvestCBBTCUSDC,
+  blpUniswapHarvestCBBTCWETH,
   blpUniswapHarvestAutopilotWETHUSDC,
   blpUniswapHarvestAutopilotCBBTCUSDC,
+  blpUniswapHarvestAutopilotCBBTCWETH,
 };
 
 export default swapPools;

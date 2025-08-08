@@ -4,7 +4,10 @@ import { baseFork, bsc } from "@/const/networks";
 
 import { IBaseNetwork, ViemChainToBaseNetwork } from "./types/tokenTypes";
 
-const Sepolia: IBaseNetwork = ViemChainToBaseNetwork(chains.sepolia);
+const Sepolia: IBaseNetwork = ViemChainToBaseNetwork(
+  chains.sepolia,
+  "/networks/sepolia.svg",
+);
 const Arbitrum: IBaseNetwork = ViemChainToBaseNetwork(
   chains.arbitrum,
   "/networks/arbitrum.svg",

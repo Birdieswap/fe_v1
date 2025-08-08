@@ -8,6 +8,7 @@ import {
 } from "@/const/abis";
 
 import { chainlink_aggregator_v3_abi } from "../abis/chainlink_aggregator_v3_abi";
+import { birdieswap_router_abi } from "../abis/birdieswap_router_abi";
 
 export enum EContractType {
   CURRENCY = "CURRENCY",
@@ -111,7 +112,7 @@ export type IBirdieSingleFarm<T extends IStakingProvider = IStakingProvider> =
     type: EContractType.BIRDIE_SINGLE;
     provider: T; // i.e. AAVE, etc.
     input: ICurrency;
-    abi: typeof birdieSingleVaults_abi;
+    abi: typeof erc20_abi;
   };
 
 export function isBirdieSingleFarm(token: IToken): token is IBirdieSingleFarm {

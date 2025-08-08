@@ -89,8 +89,10 @@ export default function SwapFormSelectTokenModal(props: {
   // const {tokens} = props;
   const { balances } = useContext(AssetsContext);
   const chainId = useChainId();
+  console.log("SFSTM", props);
   const balanceData = useMemo(
     () =>
+      
       props.tokens.map((v) => {
         const address = getTokenAddress({
           token: v,

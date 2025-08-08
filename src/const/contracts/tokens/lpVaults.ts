@@ -84,12 +84,28 @@ const blpHarvestAutopilotCBBTCUSDC = BirdieLPFarmGuard({
   displayDecimals: 4,
 } as const);
 
+const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "blp0005",
+  fullName: "blpCBBTC_WETH_harvest_autopilot_v1",
+  addresses: {
+    [networks.baseFork.id]: "0x3B9a19d0688CEFe422CF58e8231E64Aeb6C29A57", //"0xd5e09e37f49af3563E3556e157E4d986D6708536",
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.UNISWAP,
+  swap: swapPools.blpUniswapHarvestCBBTCWETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotCBBTCWETH,
+  decimals: 7,
+  displayDecimals: 4,
+} as const);
+
 const lpVaults = {
   blpAaveWETHCBBTC,
   blpAaveWETHUSDC,
   blpAaveCBBTCUSDC,
   blpHarvestAutopilotWETHUSDC,
   blpHarvestAutopilotCBBTCUSDC,
+  blpHarvestAutopilotCBBTCWETH,
 };
 
 export default lpVaults;

@@ -20,8 +20,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+ 
   return (
-    <html lang="en" className="light" style={{ colorScheme: "light" }}>
+    <html lang="en" suppressHydrationWarning>
  {/*     <head>
         <link
           href="/apple-icon-57x57.png"

@@ -1,4 +1,4 @@
-import { PublicClient, ReadContractParameters } from "viem";
+import { PublicClient, ReadContractParameters, Abi } from "viem";
 import { readContract } from "viem/actions";
 
 import { BigDecimal } from "@/types/BigDecimal";
@@ -8,6 +8,8 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 
 import getTokenAddress from "../assets/getTokenAddress";
+import getProviderAddress from "../assets/getProviderAddress";
+
 
 export default async function previewRedeem(
   client: PublicClient,
@@ -22,19 +24,29 @@ export default async function previewRedeem(
     chainId,
   });
 
+  const providerAddress = getProviderAddress({
+    provider : farm.provider,
+    chainId,
+  });
+  
   if (!farmAddress) return null;
+  console.log("amount",amount, "args_amount", amount.roundToDecimals(farm.decimals).value)
+
   const args: ReadContractParameters<
-    (typeof farm)["abi"],
-    "previewRedeem",
-    [bigint]
+    Abi,//(typeof farm)["abi"],
+    "previewFullRedeem",
+    [`0x${string}`,bigint]
   > = {
-    address: farmAddress,
-    abi: farm.abi,
-    functionName: "previewRedeem",
-    args: [amount.roundToDecimals(farm.decimals).value],
+    address: providerAddress as `0x${string}`,
+    abi: farm.provider.abi as Abi,
+    functionName: "previewFullRedeem",
+    args: [
+      farmAddress,
+      amount.roundToDecimals(farm.decimals).value
+    ],
   };
 
   const data = await readContract(client, args);
-
-  return new BigDecimal(data, farm.decimals);
+  console.log("previewRedeem",farm, data)
+  return new BigDecimal(data as bigint, farm.decimals);
 }

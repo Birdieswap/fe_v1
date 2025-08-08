@@ -114,11 +114,12 @@ async function getSingleLiquidity(
   client: PublicClient,
   farm: IBirdieSingleFarm,
 ) {
+  console.log("getLiquidity_Farm",farm);
   const currency = farm.input;
   const chainId = client.chain?.id;
 
   if (!chainId) return null;
-
+  
   const farmAddress = getTokenAddress({
     token: farm,
     chainId,
@@ -171,7 +172,7 @@ async function getLPLiquidity(
     chainId,
     assetValues,
   });
-
+  console.log("pool balance",poolBalance0,poolBalance1)
   const balance0 = poolBalance0
     ? previewRedeem(client, farm.swap.input[0], poolBalance0)
     : null;
