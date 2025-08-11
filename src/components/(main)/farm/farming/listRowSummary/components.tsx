@@ -33,7 +33,7 @@ function Tvl(props: { tvl: BigDecimal | null; isLoading?: boolean }) {
       className="data-[loading=true]:loading text-sm font-semibold max-md:font-medium"
       data-loading={props.isLoading}
     >
-      {props.tvl ? suffixNumbers(props.tvl, 0, 2, false, false) : "..."}
+      {props.tvl ? `$ ${suffixNumbers(props.tvl, 0, 2, false, false)}` : "..."}
     </span>
   );
 }

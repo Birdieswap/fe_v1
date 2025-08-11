@@ -21,7 +21,6 @@ async function getPreviewRedeemAmountSingle(
   bTokenAmount: BigDecimal | null;
   tokenAmount: BigDecimal | null;
 } | null> {
-  console.log("gPRA",farm, amount)
   const tokenAmount = await previewRedeem(client, farm, amount);
 
   return {

@@ -19,6 +19,8 @@ import useFarmPanelCommon from "./useFarmPanelCommon";
 import useFarmLPBalances from "./useFarmLPBalances";
 import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
+import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -38,11 +40,21 @@ export function usePairStartPanel(item: FarmPair) {
     assetsContext,
     stakeToken,
     stakeTokenAddress,
+    routerAddress,
   } = useFarmPanelCommon(item);
 
   const [bToken0, bToken1] = item.wip_stakeToken.swap.input;
   const inputToken0 = bToken0.input;
   const inputToken1 = bToken1.input;
+  const inputToken0Address = getTokenAddress({
+           token: inputToken0,
+           chainId,
+         });
+  const inputToken1Address = getTokenAddress({
+           token: inputToken1,
+           chainId,
+         });
+
   const insolvency0 = useMemo(() => {
     return getInsolvencyAmount({
       contract: stakeToken,
@@ -62,11 +74,11 @@ export function usePairStartPanel(item: FarmPair) {
   const balance1 = useBalance(inputToken1);
   const { allowance: allowance0, query: allowanceQuery0 } = useAllowance({
     token: inputToken0,
-    spender: stakeToken,
+    spender: stakeToken.provider,
   });
   const { allowance: allowance1, query: allowanceQuery1 } = useAllowance({
     token: inputToken1,
-    spender: stakeToken,
+    spender: stakeToken.provider,
   });
 
   const [amounts, setAmounts] = useState<
@@ -202,6 +214,7 @@ export function usePairStartPanel(item: FarmPair) {
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
+    routerAddress: routerAddress as `0x${string}`,
     transactionContext,
     refetch: () =>
       Promise.all([allowanceQuery0.refetch(), allowanceQuery1.refetch()]),
@@ -242,6 +255,7 @@ export function usePairStartPanel(item: FarmPair) {
 
   const startFarming = useCallback(() => {
     if (!address) return;
+    console.log("routerAddress",routerAddress)
     const transactionProps: TransactionStatusProps &
       StartFarmingTransactionProps = {
       chainId,
@@ -272,19 +286,20 @@ export function usePairStartPanel(item: FarmPair) {
 
     writeContract(
       {
-        address: stakeTokenAddress as `0x${string}`,
-        abi: stakeToken.abi,
-        functionName: "deposit",
+        address: routerAddress as `0x${string}`,
+        abi: birdieswap_router_abi,
+        functionName: "dualDeposit",
         args: [
+          inputToken0Address as `0x${string}`,
           parseUnits(
             tokenStatuses[0].amount?.toString() || "0",
             tokenStatuses[0].input.decimals,
           ),
+          inputToken1Address as `0x${string}`,
           parseUnits(
             tokenStatuses[1].amount?.toString() || "0",
             tokenStatuses[1].input.decimals,
           ),
-          address,
         ],
       },
       {

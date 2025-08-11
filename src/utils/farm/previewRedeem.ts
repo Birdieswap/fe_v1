@@ -30,8 +30,7 @@ export default async function previewRedeem(
   });
   
   if (!farmAddress) return null;
-  console.log("amount",amount, "args_amount", amount.roundToDecimals(farm.decimals).value)
-
+  
   const args: ReadContractParameters<
     Abi,//(typeof farm)["abi"],
     "previewFullRedeem",
@@ -47,6 +46,5 @@ export default async function previewRedeem(
   };
 
   const data = await readContract(client, args);
-  console.log("previewRedeem",farm, data)
   return new BigDecimal(data as bigint, farm.decimals);
 }
