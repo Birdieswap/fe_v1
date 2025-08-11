@@ -1,7 +1,7 @@
 import { Abi } from "viem";
 
 export const birdieswap_router_abi = [
-    {
+  {
     "type": "constructor",
     "inputs": [],
     "stateMutability": "nonpayable"
@@ -56,22 +56,22 @@ export const birdieswap_router_abi = [
     "name": "dualDeposit",
     "inputs": [
       {
-        "name": "_token0Address",
+        "name": "_underlyingToken0Address",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_token0Amount",
+        "name": "_underlyingToken0Amount",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "_token1Address",
+        "name": "_underlyingToken1Address",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_token1Amount",
+        "name": "_underlyingToken1Amount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -119,12 +119,12 @@ export const birdieswap_router_abi = [
     "name": "getDualVaultAddress",
     "inputs": [
       {
-        "name": "_token0Address",
+        "name": "_bToken0Address",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_token1Address",
+        "name": "_bToken1Address",
         "type": "address",
         "internalType": "address"
       }
@@ -186,7 +186,7 @@ export const birdieswap_router_abi = [
     "name": "getSingleVaultMapping",
     "inputs": [
       {
-        "name": "_tokenAddress",
+        "name": "_underlyingTokenAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -205,7 +205,7 @@ export const birdieswap_router_abi = [
     "name": "getSingleVaultToken",
     "inputs": [
       {
-        "name": "_vaultAddress",
+        "name": "_singleVaultAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -277,6 +277,11 @@ export const birdieswap_router_abi = [
       },
       {
         "name": "upgrader",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "swapRouterAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -488,17 +493,17 @@ export const birdieswap_router_abi = [
     "name": "setDualVaultMapping",
     "inputs": [
       {
-        "name": "_token0Address",
+        "name": "_bToken0Address",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_token1Address",
+        "name": "_bToken1Address",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_vaultAddress",
+        "name": "_dualVaultAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -511,12 +516,12 @@ export const birdieswap_router_abi = [
     "name": "setSingleVaultMapping",
     "inputs": [
       {
-        "name": "_tokenAddress",
+        "name": "_underlyingTokenAddress",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_vaultAddress",
+        "name": "_singleVaultAddress",
         "type": "address",
         "internalType": "address"
       }
@@ -529,12 +534,12 @@ export const birdieswap_router_abi = [
     "name": "singleDeposit",
     "inputs": [
       {
-        "name": "_tokenAddress",
+        "name": "_underlyingTokenAddress",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_tokenAmount",
+        "name": "_underlyingTokenAmount",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -596,41 +601,31 @@ export const birdieswap_router_abi = [
     "name": "swap",
     "inputs": [
       {
-        "name": "_poolAddress",
+        "name": "_underlyingTokenInAddress",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_recipient",
+        "name": "_fee",
+        "type": "uint24",
+        "internalType": "uint24"
+      },
+      {
+        "name": "_underlyingTokenOutAddress",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "_zeroForOne",
-        "type": "bool",
-        "internalType": "bool"
-      },
-      {
-        "name": "_amountSpecified",
+        "name": "_underlyingTokenInAmount",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "_sqrtPriceLimitX96",
-        "type": "uint160",
-        "internalType": "uint160"
       }
     ],
     "outputs": [
       {
         "name": "",
-        "type": "int256",
-        "internalType": "int256"
-      },
-      {
-        "name": "",
-        "type": "int256",
-        "internalType": "int256"
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "nonpayable"
@@ -691,29 +686,6 @@ export const birdieswap_router_abi = [
       }
     ],
     "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "uniswapV3SwapCallback",
-    "inputs": [
-      {
-        "name": "amount0Delta",
-        "type": "int256",
-        "internalType": "int256"
-      },
-      {
-        "name": "amount1Delta",
-        "type": "int256",
-        "internalType": "int256"
-      },
-      {
-        "name": "data",
-        "type": "bytes",
-        "internalType": "bytes"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -868,68 +840,6 @@ export const birdieswap_router_abi = [
         "type": "address",
         "indexed": true,
         "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SingleDeposit",
-    "inputs": [
-      {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "underlyingTokenAddress",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "underlyingTokenAmount",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "bTokenAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SingleRedeem",
-    "inputs": [
-      {
-        "name": "receiver",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "bTokenAddress",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "bTokenAmount",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "underlyingTokenAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1092,11 +1002,6 @@ export const birdieswap_router_abi = [
   {
     "type": "error",
     "name": "NotInitializing",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ReentrancyGuardReentrantCall",
     "inputs": []
   },
   {

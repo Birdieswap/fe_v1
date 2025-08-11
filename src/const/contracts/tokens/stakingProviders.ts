@@ -45,10 +45,10 @@ const HARVEST = StakingProviderGuard({
 } as const);
 
 const BIRDIE = StakingProviderGuard({
-  name: "Birdie",
+  name: "AutoPilot", //"Birdie",
   provider: EProvider.BIRDIE,
   addresses: {
-    [networks.sepolia.id]: "0x4aCa88932cAf7316Ba89CA31D58Cb323E996Df70",
+    [networks.sepolia.id]: "0x9b3C836203666B1578b60aeCBDCe553341cb87f5",
     [networks.base.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
     [networks.baseFork.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
   },

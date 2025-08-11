@@ -33,7 +33,7 @@ export const contracts = {
     WETH_DAI_HARVEST: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieLpVaults_abi,
-    },
+    }, /*
     WETH_USDT_AAVE: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieLpVaults_abi,
@@ -45,11 +45,11 @@ export const contracts = {
     CBBTC_USDC_AAVE: {
       address: lpVaults.blpAaveCBBTCUSDC.addresses[networks.baseFork.id],
       abi: birdieLpVaults_abi,
-    },
+    }, 
     WETH_CBBTC_AAVE: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieLpVaults_abi,
-    },   /*
+    },   
     WETH: {
       address: singleVaults.bAaveWETH.addresses[networks.baseFork.id],
       abi: birdieSingleVaults_abi,
@@ -222,7 +222,7 @@ export const contracts_sepolia = {
       address: "0xBB14D5762BD7329820A029afEF171386B057F088",
       abi: erc20_abi,
     },
-  },
+  },/*
   uniswapPool: {
     bWETH_bUSDT: { address: "0xB2D57566F1A094f7a92A02ceB923af66c159d8AE" },
     bWETH_bUSDC: { address: "0xEbb6910c2d4858EF1F954E9331C7899B8AAb8f94" },
@@ -253,5 +253,5 @@ export const contracts_sepolia = {
   CBBTC: {
     address: "0x29f2D40B0605204364af54EC677bD022dA425d03",
     abi: erc20_abi,
-  },
-};
+  },*/
+}; 

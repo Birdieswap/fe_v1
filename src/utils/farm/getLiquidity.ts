@@ -8,7 +8,6 @@ import {
   isBirdieSingleFarm,
   IToken,
 } from "@/const/contracts/types/tokenTypes";
-import { aave_pool_abi } from "@/const/contracts/abis/aave_pool_abi";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { BigDecimal } from "@/types/BigDecimal";
 import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
@@ -17,6 +16,8 @@ import getTokenAddress from "../assets/getTokenAddress";
 import getLPPoolBalances from "../assets/getLPPoolBalances";
 
 import previewRedeem from "./previewRedeem";
+import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
+import { aave_pool_abi } from "@/const/contracts/abis/aave_pool_abi";
 
 async function getAaveLiquidity(
   client: PublicClient,
@@ -28,7 +29,7 @@ async function getAaveLiquidity(
   const aaveAddress = stakingProviders.AAVE.addresses[chainId];
 
   if (!aaveAddress) return null;
-
+  
   const args: ReadContractParameters<
     typeof aave_pool_abi,
     "getReserveAToken",
@@ -38,7 +39,7 @@ async function getAaveLiquidity(
     abi: aave_pool_abi,
     functionName: "getReserveAToken",
     args: [tokenAddress as `0x${string}`],
-  };
+  };  
 
   const aTokenAddress = await readContract<
     Chain | undefined,
@@ -110,6 +111,107 @@ async function getAaveLiquidity(
   );
 }
 
+async function getBirdieLiquidity(
+  client: PublicClient,
+  currency: IToken,
+  chainId: number,
+  farm:IBirdieSingleFarm,
+  farmAddress: `0x${string}`,
+  tokenAddress: `0x${string}`,
+): Promise<BigDecimal | null> {
+  const routerAddress = stakingProviders.BIRDIE.addresses[chainId];
+
+  if (!routerAddress) return null;
+
+  const args: ReadContractParameters<
+    typeof birdieswap_router_abi,
+    "totalAssets",
+    [`0x${string}`]
+  > = {
+    address: routerAddress,
+    abi: stakingProviders.BIRDIE.abi,
+    functionName: "totalAssets",
+    args: [farmAddress as `0x${string}`],
+  };
+
+  const bTokenAmount = await readContract<
+    Chain | undefined,
+    typeof birdieswap_router_abi,
+    "totalAssets",
+    [`0x${string}`]
+  >(client, args);
+
+  console.log("btokenAmount",bTokenAmount);
+  console.log("Currency",currency, farm);
+
+  if (!bTokenAmount) return null;
+
+  const nTokenAmount = await previewRedeem(client, farm, new BigDecimal(bTokenAmount, farm.decimals));
+  console.log("ntokenAmount",nTokenAmount);
+
+
+  /*  // Fetch the balance of the aToken in the farm address
+  const aTokenBalanceArgs: ReadContractParameters<
+    typeof erc20Abi,
+    "balanceOf",
+    [`0x${string}`]
+  > = {
+    address: aTokenAddress,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [farmAddress],
+  };
+
+  const tokenBalanceArgs: ReadContractParameters<
+    typeof erc20Abi,
+    "balanceOf",
+    [`0x${string}`]
+  > = {
+    address: tokenAddress,
+    abi: erc20Abi,
+    functionName: "balanceOf",
+    args: [farmAddress],
+  };
+
+  const [aTokenBalance, tokenBalance] = await Promise.all([
+    readContract<
+      Chain | undefined,
+      typeof erc20Abi,
+      "balanceOf",
+      [`0x${string}`]
+    >(client, aTokenBalanceArgs),
+    readContract<
+      Chain | undefined,
+      typeof erc20Abi,
+      "balanceOf",
+      [`0x${string}`]
+    >(client, tokenBalanceArgs),
+  ]);
+
+  if (!aTokenBalance || !tokenBalance) return null;
+
+  console.log(
+    "getLiquidity AAVE aToken",
+    farmAddress,
+    currency.symbol,
+    aTokenAddress,
+    aTokenBalance,
+  );
+  console.log(
+    "getLiquidity AAVE token",
+    farmAddress,
+    currency.symbol,
+    tokenAddress,
+    tokenBalance,
+  );
+
+  // aToken is pegged to the underlying asset
+  return new BigDecimal(aTokenBalance, currency.decimals).add(
+    new BigDecimal(tokenBalance, currency.decimals),
+  ); */
+  return nTokenAmount;
+}
+
 async function getSingleLiquidity(
   client: PublicClient,
   farm: IBirdieSingleFarm,
@@ -142,9 +244,15 @@ async function getSingleLiquidity(
       farmAddress,
       tokenAddress,
     );
-  } else if (farm.provider.provider === EProvider.AUTOPILOT) {
-    // Autopilot is not supported yet
-    return null;
+  } else if (farm.provider.provider === EProvider.BIRDIE) {
+   return await getBirdieLiquidity(
+      client,
+      currency,
+      chainId,
+      farm,
+      farmAddress,
+      tokenAddress,
+    );
   }
 
   return null;

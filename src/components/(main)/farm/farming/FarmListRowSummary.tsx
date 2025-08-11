@@ -14,6 +14,7 @@ import { isBirdieLPFarm } from "@/const/contracts/types/tokenTypes";
 import { CryptoTokenIcons } from "../FarmListTable";
 
 import Components from "./listRowSummary/components";
+import suffixNumbers from "@/utils/suffixNumbers";
 
 export default function FarmListRowSummary({
   balance,
@@ -32,6 +33,7 @@ export default function FarmListRowSummary({
   tvl: BigDecimal | null;
   price: BigDecimal | null;
 }) {
+  console.log("price",price)
   const stakeToken = item.wip_stakeToken;
   const account = useAccount();
   const isBalanceAvailable = !!balance;
@@ -88,7 +90,7 @@ export default function FarmListRowSummary({
                     : stakeToken.provider.name}
                 </p>
                 <span>
-                  {isBirdieLPFarm(stakeToken) ? stakeToken.provider.name : ""}
+                  {isBirdieLPFarm(stakeToken) ? "Uniswap" : "" } {/*stakeToken.provider.name : ""*/}
                 </span>
               </div>
               <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
@@ -144,7 +146,8 @@ export default function FarmListRowSummary({
                         item.wip_stakeToken?.decimals ??
                         3,
                     )
-                    .toPrecisionString(true, false)}
+                    .toPrecisionString(true, true)}
+
               </p>
             </span>
           </motion.div>
@@ -154,7 +157,8 @@ export default function FarmListRowSummary({
             {account.isConnected &&
               isBalanceAvailable &&
               price &&
-              "$" + balance.mul(price).roundToDecimals(2).toString()}
+              "$" +  suffixNumbers(balance.mul(price).roundToDecimals(2),0, 2, false, false)//balance.mul(price).roundToDecimals(2).toString()
+              }
           </p>
         </motion.div>
       </motion.div>

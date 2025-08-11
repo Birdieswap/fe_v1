@@ -40,6 +40,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
   const balance = useBalance(stakeToken);
   const [amount, setAmount] = useState<BigDecimal | null>(null);
+      console.log("stopFarming", stakeToken);
 
   const { allowance, query: allowanceQuery } = useAllowance({
     token: stakeToken,
@@ -80,7 +81,8 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
   const stopFarming = useCallback(() => {
     if (!address) return;
-    const transactionProps: TransactionStatusProps &
+
+      const transactionProps: TransactionStatusProps &
       StopFarmingTransactionProps = {
       transactionType: TransactionType.STOP_FARMING,
       chainId,
@@ -105,6 +107,8 @@ export default function useFarmStopPanelCommon(item: Farm) {
       },
     });
 
+    if (stakeToken.type === "BirdieSingle") {
+
     writeContract(
       {
         address: routerAddress as `0x${string}`,
@@ -122,7 +126,26 @@ export default function useFarmStopPanelCommon(item: Farm) {
           setAmount(BigDecimal.ZERO());
         },
       },
+    );} else if (stakeToken.type === "BirdieLP"){
+      writeContract(
+      {
+        address: routerAddress as `0x${string}`,
+        abi: birdieswap_router_abi,
+        functionName: "dualRedeem",
+        args: [
+          stakeTokenAddress as `0x${string}`,
+          parseUnits(amount?.toString() || "0", stakeToken.decimals || 18),
+        ],
+      },
+      {
+        onError: handlers.onError,
+        onSuccess: async (v) => {
+          handlers.onSuccess(v);
+          setAmount(BigDecimal.ZERO());
+        },
+      },
     );
+    }
   }, [
     client,
     transactionContext,
@@ -134,6 +157,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
     chainId,
     assetsContext,
   ]);
+
 
   const isInvalid = useMemo(
     () => isImpermanentInsolvency || isInsufficientBalance,
