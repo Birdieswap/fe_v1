@@ -254,7 +254,7 @@ const WETH_USDC_AAVE_harvest_autopilot: Farm = {
   apy: 23.8,
   tvl: "$999.99M",
   birdRate: 1234.56,
-  feeTier: 0.05,
+  feeTier: 0.3,
   point: 0,
 };
 
@@ -279,7 +279,7 @@ const CBBTC_USDC_AAVE_harvest_autopilot: Farm = {
   apy: 23.8,
   tvl: "$999.99M",
   birdRate: 1234.56,
-  feeTier: 0.05,
+  feeTier: 0.3,
   point: 0,
 };
 

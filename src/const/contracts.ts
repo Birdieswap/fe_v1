@@ -16,8 +16,8 @@ import tokens from "./contracts/tokens/tokens";
 
 export const contracts = {
   birdieRouter: {
-    address: stakingProviders.BIRDIE.addresses[networks.baseFork.id],
-    abi: birdieRouter_abi,
+    address: stakingProviders.BIRDIE.addresses[networks.sepolia.id],
+    abi: birdieswap_router_abi,
   },
   birdieVaults: {
     WETH_USDC_HARVEST: {
@@ -109,7 +109,7 @@ export const contracts = {
     blpCBBTC_USDC: {
       address:
         swapPools.blpUniswapAaveCBBTCUSDC.addresses[networks.baseFork.id],
-    },  */
+    },  
     blpWETH_USDC_harvest: {
       address:
         swapPools.blpUniswapHarvestWETHUSDC.addresses[networks.baseFork.id],
@@ -117,7 +117,7 @@ export const contracts = {
     blpCBBTC_USDC_harvest: {
       address:
         swapPools.blpUniswapHarvestCBBTCUSDC.addresses[networks.baseFork.id],
-    },
+    }, */
     blpWETH_USDC_harvest_autopilot: {
       address:
         swapPools.blpUniswapHarvestAutopilotWETHUSDC.addresses[
@@ -166,8 +166,8 @@ export const contracts = {
  */
 export const contracts_sepolia = {
   birdieRouter: {
-    address: "0xeDDEE2657a0E6cEe2DA4De7FBCEa4Fc878b76072",
-    abi: birdieRouter_abi,
+    address: "0x9b3C836203666B1578b60aeCBDCe553341cb87f5",
+    abi: birdieswap_router_abi,
   },
   birdieVaults: {
     WETH_USDT_HARVEST: {

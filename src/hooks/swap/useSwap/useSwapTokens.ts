@@ -2,13 +2,14 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
 import { Config, usePublicClient, useReadContract } from "wagmi";
 import { type UseReadContractReturnType } from "wagmi";
-import { Client, erc20Abi, parseUnits } from "viem";
+import { Client, erc20Abi, parseUnits, PublicClient } from "viem";
 import { WriteContractMutate } from "wagmi/query";
 import { Fraction } from "@uniswap/sdk-core";
 
@@ -23,10 +24,10 @@ import { TransactionType } from "@/types/TransactionTypes";
 import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
 import { BigDecimal } from "@/types/BigDecimal";
 import isAmountInputValid from "@/utils/isAmountInputValid";
-import { ICurrency } from "@/const/contracts/types/tokenTypes";
+import { IBirdieSingleFarm, ICurrency } from "@/const/contracts/types/tokenTypes";
 import getSwapResult from "@/utils/assets/getSwapResult";
 import getSwapPool from "@/utils/assets/getSwapPool";
-import { getSwapQuoteForProviders } from "@/utils/assets/getSwapQuote";
+//import { getSwapQuoteForProviders } from "@/utils/assets/getSwapQuote";
 import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 import { useAccountBalancesReturnType } from "@/hooks/assets/useAssets/useAccountBalances";
 import tokens from "@/const/contracts/tokens/tokens";
@@ -34,6 +35,12 @@ import { weth_abi } from "@/const/contracts/abis/weth_abi";
 import mathUtils from "@/utils/mathUtils";
 
 import useTokenAddress from "../../useTokenAddress";
+import previewFullDeposit from "@/utils/farm/previewFullDeposit";
+//import { get } from "http";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
+//import { fetchPreviewBTokenAmount } from "@/utils/farm/fetchPreviewBTokenAmount";
+import { quoteExactInputSingle, quoteExactOutputSingle } from "@/utils/uniswap/getSwapAmount";
+import previewRedeem from "@/utils/farm/previewRedeem";
 
 export default function useSwapTokens({
   chainId,
@@ -72,6 +79,7 @@ export default function useSwapTokens({
   setPriceImpact?: Dispatch<SetStateAction<BigDecimal | undefined>>;
   maxSlippage?: number;
 }) {
+
   const fromTokenAddress = useTokenAddress(fromToken);
   const {
     data: allowanceFromToken,
@@ -80,7 +88,7 @@ export default function useSwapTokens({
     refetch: refetchAllowanceFromToken,
   }: UseReadContractReturnType<typeof erc20Abi, "allowance"> = useReadContract({
     address: fromTokenAddress || undefined,
-    abi: erc20Abi,
+    abi: fromToken?.abi,
     functionName: "allowance",
     args: [
       address as `0x${string}`,
@@ -98,6 +106,7 @@ export default function useSwapTokens({
 
     return pool;
   }, [fromToken, toToken, chainId]);
+  console.log("useSwapTokens - swapPool: ", swapPool);
 
   const [poolAddress, zeroForOne] = useMemo(() => {
     const poolAddress = swapPool?.addresses[chainId] ?? null;
@@ -122,9 +131,57 @@ export default function useSwapTokens({
 
   const [isLoadingFrom, setIsLoadingFrom] = useState<boolean>(false);
   const [isLoadingTo, setIsLoadingTo] = useState<boolean>(false);
+  // const amountBD = new BigDecimal(fromAmount, fromToken?.decimals);
+  // const [amountBTokenBD, setAmountBTokenBD] = useState<BigDecimal | null>(null);
+
+  // const checkBToken = useMemo(() => {
+  //   if (!swapPool) return null;
+  //   if (fromAmount) return swapPool.input[0] as IBirdieSingleFarm;
+  //   if (toAmount) return swapPool.input[1] as IBirdieSingleFarm;
+  //   return null;
+  // }, [swapPool, fromAmount, toAmount]);
+
+  // useEffect(() => { 
+  //   if (!client || !chainId || !assetValues || !checkBToken) {
+  //     setAmountBTokenBD(null);
+  //     return;
+  //   }
+  //   const latestAmountStr =
+  //     checkBToken?.input.symbol === fromToken?.symbol ? fromAmount : toAmount;
+  //   const latestTokenDecimals =
+  //     checkBToken?.input.symbol === fromToken?.symbol
+  //       ? fromToken?.decimals
+  //       : toToken?.decimals;
+  //   const latestAmountBD = new BigDecimal(latestAmountStr || "0", latestTokenDecimals);
+
+  //   if (latestAmountBD.isZero()) {
+  //     setAmountBTokenBD(null);
+  //     return;
+  //   }
+
+  //   async function runPreview() {
+  //     const resultBD = await fetchPreviewBTokenAmount(
+  //       client as PublicClient,
+  //       checkBToken as IBirdieSingleFarm,
+  //       latestAmountBD
+  //     );
+  //     setAmountBTokenBD(resultBD);
+  //   }
+  //   runPreview();
+  // }, [
+  //   client,
+  //   chainId,
+  //   assetValues,
+  //   checkBToken,
+  //   fromAmount,
+  //   toAmount,
+  //   fromToken?.decimals,
+  //   toToken?.decimals,
+  // ]);
+
 
   const getOtherAmount = useCallback(
-    (thisAmount: string, thisSide: "in" | "out") => {
+    async (thisAmount: string, thisSide: "in" | "out") => {
       if (!thisAmount || !chainId || !assetValues || !fromToken || !toToken)
         return "";
       // Convert native token to ERC20
@@ -134,31 +191,100 @@ export default function useSwapTokens({
       const toTokenERC20 = toToken.symbol === "ETH" ? tokens.WETH : toToken;
       const input = thisSide === "in" ? fromTokenERC20 : toTokenERC20;
       const output = thisSide === "in" ? toTokenERC20 : fromTokenERC20;
-      const amountBD = new BigDecimal(thisAmount, input.decimals);
 
-      try {
-        const other = getSwapResult({
-          swapFrom: input,
-          swapTo: output,
-          amount: amountBD,
-          chainId,
-          assetValues,
-        });
+      const inputBToken = (input.symbol === swapPool?.input[0].input.symbol)? swapPool.input[0]:swapPool?.input[1];
+      const outputBToken = (output.symbol === swapPool?.input[0].input.symbol)? swapPool.input[0]:swapPool?.input[1];
+      
+      const latestBD = new BigDecimal(thisAmount, input.decimals);
 
-        return other?.toPrecisionString(true, false) ?? "";
-      } catch (e) {
-        console.error(e);
+      // previewFullDeposit: 입력 토큰을 bToken 수량으로 변환
+      const resultBD = await previewFullDeposit(
+        client as PublicClient,
+        inputBToken as IBirdieSingleFarm,
+        latestBD
+      );
 
-        return "";
+      if (!resultBD) return "";
+      console.log("previewFullDeposit resultBD", resultBD);
+
+      //  Uniswap Quoter V2: bToken → bToken 예상 스왑
+
+      if (!inputBToken?.addresses[chainId] || !outputBToken?.addresses[chainId]) {
+        throw new Error("Invalid token addresses");
       }
+      const inputAddress = inputBToken.addresses[chainId] as `0x${string}`;
+      const outputAddress = outputBToken.addresses[chainId] as `0x${string}`;
+      const feeTier = swapPool?.fee_tier ;
+      let bTokenQuoteAmount: BigDecimal | null = null;
+
+      // 6) Quoter 호출: bToken → bToken 예상 스왑
+      if (thisSide === "in") {
+        const quote = await quoteExactInputSingle(
+          client as PublicClient,
+          inputAddress,
+          outputAddress,
+          resultBD.value,
+          feeTier as number,
+          BigInt(0)
+        );
+        if (!quote) return "";
+        bTokenQuoteAmount = new BigDecimal(quote.amountOut, outputBToken.decimals);
+      } 
+      else { // thisSide === "out"
+        const quote = await quoteExactOutputSingle(
+          client as PublicClient,
+          inputAddress,
+          outputAddress,
+          resultBD.value,
+          feeTier as number,
+          BigInt(0)
+        );
+        if (!quote) return "";
+        bTokenQuoteAmount = new BigDecimal(quote.amountOut, inputBToken.decimals);
+      }
+
+      if (!bTokenQuoteAmount) return "";
+
+      console.log("Uniswap Quoter V2 quote", bTokenQuoteAmount);
+
+
+      // previewRedeem: outputBtoken → underlying 토큰으로 환산
+      const finalTokenAmount = await previewRedeem(
+        client as PublicClient,
+        outputBToken as IBirdieSingleFarm,
+        bTokenQuoteAmount
+      );
+
+      if (!finalTokenAmount) return "";
+      console.log("previewRedeem finalTokenAmount", finalTokenAmount);
+      //  최종 결과 문자열 반환
+      return finalTokenAmount.toPrecisionString(true, false);
     },
-    [chainId, assetValues, fromToken, toToken],
+    [client, chainId, fromToken, toToken, swapPool]
+    //   console.log("getOtherAmount_BD", latestBD);
+    //   try {
+    //     const other = getSwapResult({
+    //       swapFrom: inputBtoken,
+    //       swapTo: outputBtoken,
+    //       amount: latestBD as BigDecimal,
+    //       chainId,
+    //       assetValues,
+    //     });
+
+    //     return other?.toPrecisionString(true, false) ?? "";
+    //   } catch (e) {
+    //     console.error(e);
+
+    //     return "";
+    //   }
+    // },
+    // [chainId, assetValues, fromToken, toToken, swapPool],
   );
 
-  const updateAmountTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const updateAmountTimestampRef = useRef<number>(0);
+  // const updateAmountTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+  //   null,
+  // );
+  // const updateAmountTimestampRef = useRef<number>(0);
 
   // const [sqrtX96PriceLimit, setSqrtX96PriceLimit] = useState<bigint>(BigInt(0));
   const [sqrtPriceX96, setSqrtPriceX96] = useState<Fraction | null>(null);
@@ -204,7 +330,7 @@ export default function useSwapTokens({
   }, [maxSlippage, sqrtPriceX96, zeroForOne]);
 
   const updateAmountCommon = useCallback(
-    (newAmount: string, side: "in" | "out", withToToken?: ICurrency) => {
+    async (newAmount: string, side: "in" | "out", withToToken?: ICurrency) => {
       const newToToken = withToToken ?? toToken;
 
       if (!fromToken || !newToToken || !publicClient) return;
@@ -218,14 +344,14 @@ export default function useSwapTokens({
       const toTokenERC20 =
         newToToken.symbol === "ETH" ? tokens.WETH : newToToken;
 
-      const fetchRequestTimestamp = Date.now();
+      // const fetchRequestTimestamp = Date.now();
 
-      updateAmountTimestampRef.current = fetchRequestTimestamp;
+      // updateAmountTimestampRef.current = fetchRequestTimestamp;
 
-      if (updateAmountTimeoutRef.current) {
-        clearTimeout(updateAmountTimeoutRef.current);
-        updateAmountTimeoutRef.current = null;
-      }
+      // if (updateAmountTimeoutRef.current) {
+      //   clearTimeout(updateAmountTimeoutRef.current);
+      //   updateAmountTimeoutRef.current = null;
+      // }
 
       if (
         newAmountBD.isZero() ||
@@ -240,71 +366,80 @@ export default function useSwapTokens({
       }
 
       setIsLoading(true);
-      setAmount(getOtherAmount(newAmount, side));
+      // getOtherAmount의 비동기 결과를 받고 나서 state 업데이트
+      try {
+        const val = await getOtherAmount(newAmount, side); // ✅ 즉시 await 호출
+        setAmount(val);
+      } catch (err) {
+        console.error("getOtherAmount error", err);
+        setAmount("");
+      } finally {
+        setIsLoading(false);
+      }
       console.log("fetching...", fromTokenERC20.symbol, toTokenERC20.symbol);
 
-      updateAmountTimeoutRef.current = setTimeout(() => {
-        getSwapQuoteForProviders(
-          publicClient,
-          fromTokenERC20,
-          toTokenERC20,
-          side,
-          newAmountBD,
-        )
-          .then((result) => {
-            if (updateAmountTimestampRef.current > fetchRequestTimestamp) {
-              console.log("cancelling as there is a newer fetch req");
+      // updateAmountTimeoutRef.current = setTimeout(() => {
+      //   getSwapQuoteForProviders(
+      //     publicClient,
+      //     fromTokenERC20,
+      //     toTokenERC20,
+      //     side,
+      //     newAmountBD,
+      //   )
+      //     .then((result) => {
+      //       if (updateAmountTimestampRef.current > fetchRequestTimestamp) {
+      //         console.log("cancelling as there is a newer fetch req");
 
-              // If the timestamp has changed, it means another request was made
-              return;
-            }
-            if (result) {
-              const results = [result.aave].filter((v) => !!v);
+      //         // If the timestamp has changed, it means another request was made
+      //         return;
+      //       }
+      //       if (result) {
+      //         const results = [result.aave].filter((v) => !!v);
 
-              if (results.length === 0) {
-                console.log("no results found, resetting amount");
-                setPriceImpact?.(new BigDecimal(0, 18));
-                setAmount("");
+      //         if (results.length === 0) {
+      //           console.log("no results found, resetting amount");
+      //           setPriceImpact?.(new BigDecimal(0, 18));
+      //           setAmount("");
 
-                return;
-              }
-              const bestResult = results.reduce((prev, current) => {
-                if (side === "in") {
-                  return prev.amountOut.gt(current.amountOut) ? prev : current;
-                } else {
-                  return prev.amountIn.lt(current.amountIn) ? prev : current;
-                }
-              });
-              const bestAmount =
-                side === "in"
-                  ? bestResult.amountOut.toFixed(toTokenERC20.decimals)
-                  : bestResult.amountIn.toFixed(fromTokenERC20.decimals);
+      //           return;
+      //         }
+      //         const bestResult = results.reduce((prev, current) => {
+      //           if (side === "in") {
+      //             return prev.amountOut.gt(current.amountOut) ? prev : current;
+      //           } else {
+      //             return prev.amountIn.lt(current.amountIn) ? prev : current;
+      //           }
+      //         });
+      //         const bestAmount =
+      //           side === "in"
+      //             ? bestResult.amountOut.toFixed(toTokenERC20.decimals)
+      //             : bestResult.amountIn.toFixed(fromTokenERC20.decimals);
 
-              setSqrtPriceX96(bestResult.sqrtPriceX96);
+      //         setSqrtPriceX96(bestResult.sqrtPriceX96);
 
-              setAmount(bestAmount);
-              setPriceImpact?.(new BigDecimal(bestResult.priceImpact, 18));
-            }
-          })
-          .catch((e) => {
-            console.error("Error fetching swap quote:", e);
-            setPriceImpact?.(new BigDecimal(0, 18));
-            setAmount("");
-          })
-          .finally(() => {
-            if (updateAmountTimestampRef.current === fetchRequestTimestamp) {
-              setIsLoading(false);
-            }
-          });
-      }, 200);
+      //         setAmount(bestAmount);
+      //         setPriceImpact?.(new BigDecimal(bestResult.priceImpact, 18));
+      //       }
+      //     })
+      //     .catch((e) => {
+      //       console.error("Error fetching swap quote:", e);
+      //       setPriceImpact?.(new BigDecimal(0, 18));
+      //       setAmount("");
+      //     })
+      //     .finally(() => {
+      //       if (updateAmountTimestampRef.current === fetchRequestTimestamp) {
+      //         setIsLoading(false);
+      //       }
+      //     });
+      // }, 200);
     },
     [
       fromToken,
       getOtherAmount,
       publicClient,
-      setFromAmount,
-      setPriceImpact,
-      setToAmount,
+      // setFromAmount,
+      // setPriceImpact,
+      // setToAmount,
       toToken,
     ],
   );
@@ -316,8 +451,8 @@ export default function useSwapTokens({
       fromToken?.decimals || 18,
     );
 
-    if (toAmountBD.isZero() || fromAmountBD.isZero())
-      return getOtherAmount("1", "in");
+    if (toAmountBD.isZero() || fromAmountBD.isZero()) return "";
+      // return getOtherAmount("1", "in");
 
     return toAmountBD.div(fromAmountBD).toFixed(toToken?.displayDecimals ?? 8);
   }, [
@@ -326,7 +461,7 @@ export default function useSwapTokens({
     toToken?.displayDecimals,
     fromAmount,
     fromToken?.decimals,
-    getOtherAmount,
+    //getOtherAmount,
   ]);
 
   const setToTokenAmountWithGuard = useCallback(
@@ -505,28 +640,29 @@ export default function useSwapTokens({
       },
     });
 
-    console.log("swapping... zeroForOne: ", zeroForOne);
-    console.log("swapping... sqrtX96PriceLimit: ", sqrtPriceLimitX96);
+    const inputTokenAddress = getTokenAddress({
+      token: fromToken,
+      chainId,
+    });
+    const outputTokenAddress = getTokenAddress({
+      token: toToken,
+      chainId,
+    });
+    const amountBD = new BigDecimal(fromAmount, fromToken.decimals);
+    const feeTier = swapPool?.fee_tier;
     writeContract(
       {
         address: contracts.birdieRouter.address as `0x${string}`,
         abi: contracts.birdieRouter.abi,
         functionName: "swap",
         args: [
-          poolAddress as `0x${string}`,
-          address as `0x${string}`,
-          zeroForOne,
-          isFromNativeToken
-            ? BigInt(0)
-            : parseUnits(fromAmount, fromToken?.decimals || 18),
-          sqrtPriceLimitX96 || BigInt(0),
-          // zeroForOne
-          //   ? BigInt("4295128740")
-          //   : BigInt("1461446703485210103287273052203988822378723970341"),
-        ],
-        // value: isFromNativeToken
-        //   ? parseUnits(fromAmount, fromToken.decimals || 18)
-        //   : BigInt(0),
+          inputTokenAddress as `0x${string}`,
+          feeTier as number,
+          outputTokenAddress as `0x${string}`,
+          amountBD.value,
+          BigInt(1),
+          BigInt(0),
+        ]
       },
       {
         onError: handlers.onError,

@@ -101,6 +101,7 @@ export type WIP_ChainLinkPriceFeed = IContractBase & {
 // Liquidity Pool
 export type ISwapPool<T extends ITokenBase = ITokenBase> = IContractBase & {
   type: EContractType.SWAP;
+  fee_tier?: number; // Fee tier for the pool, e.g., 3000 for 0.3%
   provider: string | IStakingProvider; // i.e. Uniswap, etc.
   protocol: string; // i.e. Uniswap V2, etc.
   isInternal?: boolean; // Whether this is an internal pool (e.g. Birdie LP)

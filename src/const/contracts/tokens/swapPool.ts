@@ -114,61 +114,8 @@ const blpUniswapAaveCBBTCUSDC = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [singleVaults.bAaveCBBTC, singleVaults.bAaveUSDC],
-} as const satisfies ISwapPool<IBirdieSingleFarm>);   */
+} as const satisfies ISwapPool<IBirdieSingleFarm>);  
 
-const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
-  type: EContractType.SWAP,
-  symbol: "blpUniswapHarvestAutopilotWETHUSDC",
-  fullName: "blpUniswapHarvestAutopilotWETHUSDC",
-  addresses: {
-    [networks.baseFork.id]: "0xd5e09e37f49af3563E3556e157E4d986D6708536",
-  },
-  decimals: 18,
-  abi: erc20Abi,
-  provider: stakingProviders.UNISWAP,
-  protocol: "Uniswap V3",
-  isInternal: true,
-  input: [
-    singleVaults.bHarvestAutopilotWETH,
-    singleVaults.bHarvestAutopilotUSDC,
-  ],
-} as const satisfies ISwapPool<IBirdieSingleFarm>);
-
-const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
-  type: EContractType.SWAP,
-  symbol: "blpUniswapHarvestAutopilotCBBTCUSDC",
-  fullName: "blpUniswapHarvestAutopilotCBBTCUSDC",
-  addresses: {
-    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
-  },
-  decimals: 18,
-  abi: erc20Abi,
-  provider: stakingProviders.UNISWAP,
-  protocol: "Uniswap V3",
-  isInternal: true,
-  input: [
-    singleVaults.bHarvestAutopilotCBBTC,
-    singleVaults.bHarvestAutopilotUSDC,
-  ],
-} as const satisfies ISwapPool<IBirdieSingleFarm>);
-
-const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
-  type: EContractType.SWAP,
-  symbol: "blpUniswapHarvestAutopilotCBBTCWETH",
-  fullName: "blpUniswapHarvestAutopilotCBBTCWETH",
-  addresses: {
-    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
-  },
-  decimals: 18,
-  abi: erc20Abi,
-  provider: stakingProviders.UNISWAP,
-  protocol: "Uniswap V3",
-  isInternal: true,
-  input: [
-    singleVaults.bHarvestAutopilotCBBTC,
-    singleVaults.bHarvestAutopilotWETH,
-  ],
-} as const satisfies ISwapPool<IBirdieSingleFarm>);
 
 const blpUniswapHarvestWETHUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
@@ -220,6 +167,68 @@ const blpUniswapHarvestCBBTCWETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWETH,
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
+*/
+
+const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "bUSDCWETH",
+  fullName: "Birdieswap USDC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: "0x0766250cb2d3ebC3EE8312F6773DeEFb6631ebde",
+    [networks.baseFork.id]: "0xd5e09e37f49af3563E3556e157E4d986D6708536",
+  },
+  decimals: 8,
+  fee_tier : 3000,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotWETH,
+    singleVaults.bHarvestAutopilotUSDC,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
+const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "bcbBTCUSDC",
+  fullName: "Birdieswap cbBTC 3000 USDC",
+  addresses: {
+    [networks.sepolia.id]: "0x38BeECa1fF3F00f4164366EdD6a3C7d461cDb186",
+    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
+  },
+  decimals: 8,
+  fee_tier : 3000,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotUSDC,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
+const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "bcbBTCWETH",
+  fullName: "Birdieswap cbBTC 500 WETH",
+  addresses: {
+    [networks.sepolia.id]: "0x8C6c1B59149D8f3B38A2B13015cE9beeB1dB44C8",
+    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
+  },
+  decimals: 8,
+  fee_tier : 500,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotWETH,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
 
 
 const swapPools = {
@@ -230,9 +239,9 @@ const swapPools = {
   // blpUniswapAaveWETHCBBTC,
   // blpUniswapAaveWETHUSDC,
   // blpUniswapAaveCBBTCUSDC,
-  blpUniswapHarvestWETHUSDC,
-  blpUniswapHarvestCBBTCUSDC,
-  blpUniswapHarvestCBBTCWETH,
+  // blpUniswapHarvestWETHUSDC,
+  // blpUniswapHarvestCBBTCUSDC,
+  // blpUniswapHarvestCBBTCWETH,
   blpUniswapHarvestAutopilotWETHUSDC,
   blpUniswapHarvestAutopilotCBBTCUSDC,
   blpUniswapHarvestAutopilotCBBTCWETH,

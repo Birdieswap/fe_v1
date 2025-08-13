@@ -32,7 +32,7 @@ export default function FarmListTableRow({
     if (isActive) setSelectedRow(null);
     else setSelectedRow(item.wip_stakeToken.fullName);
   }, [item.wip_stakeToken.fullName, setSelectedRow, isActive]);
-  const { apy, tvl, price } = useFarmStatus(item.wip_stakeToken);
+  const { apy, tvl} = useFarmStatus(item.wip_stakeToken);
 
   return (
     <Fragment key={item.wip_stakeToken.fullName}>
@@ -41,11 +41,10 @@ export default function FarmListTableRow({
         balance={balance}
         isActive={isActive}
         item={item}
-        price={price}
         tvl={tvl}
         onClick={onClick}
       />
-      <FarmDetail item={item} selectedRow={selectedRow} tokenPrice={price} />
+      <FarmDetail item={item} selectedRow={selectedRow} />
     </Fragment>
   );
 }
