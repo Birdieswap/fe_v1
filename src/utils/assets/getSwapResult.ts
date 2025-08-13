@@ -17,7 +17,6 @@ export default function getSwapResult<
   assetValues: ReturnType<typeof useAssetValues>;
 }) {
   const { swapFrom, swapTo, amount, chainId, assetValues } = props;
-  console.log("getSwapResult", swapFrom, swapTo, amount, chainId);
   if (!swapFrom || !swapTo) return null;
 
   const [fromPoolBalance, toPoolBalance] = getLPPoolBalances({
