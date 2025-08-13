@@ -91,7 +91,7 @@ async function getSwapQuote(
   console.log("sqrtPriceX96Before: ", sqrtPriceX96Before.toFixed(18));
   console.log("sqrtPriceX96After: ", sqrtPriceX96After.toFixed(18));
 
-  const amountIn = new BigDecimal(res.amountIn, tokenFrom.decimals);
+  const amountIn = new BigDecimal(res.amountOut, tokenFrom.decimals);
   const amountOut = new BigDecimal(res.amountOut, tokenTo.decimals);
   // p[x96] = y * (10 ** y.decimals) / x * (10 ** x.decimals)
   // we want to calculate the actual price

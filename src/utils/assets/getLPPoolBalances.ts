@@ -48,10 +48,12 @@ export default function getLPPoolBalances<
     chainId,
   });
 
+  console.log("getLPPoolBalances", pool)
+
   if (!pool) return [null, null];
   const poolData = assetValues.uniswapPriceMap.get(pool.symbol);
 
-  // console.log("getLPPoolBalances 4", poolData);
+  console.log("getLPPoolBalances 4", poolData);
 
   if (!poolData) return [null, null];
   const baseAddress = poolData.base.addresses[chainId];
@@ -63,6 +65,8 @@ export default function getLPPoolBalances<
     baseAddress === toBTokenAddress
       ? poolData.baseBalance
       : poolData.quoteBalance;
+
+  console.log("getLPPoolBalances 5", fromBalance, toBalance);
 
   return [fromBalance, toBalance];
 }

@@ -18,6 +18,7 @@ import getLPPoolBalances from "../assets/getLPPoolBalances";
 import previewRedeem from "./previewRedeem";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import { aave_pool_abi } from "@/const/contracts/abis/aave_pool_abi";
+import totalDualUnderlyingTokens from "./totalDualUnderlyingTokens";
 
 async function getAaveLiquidity(
   client: PublicClient,
@@ -274,19 +275,33 @@ async function getLPLiquidity(
 
   if (!farmAddress) return null;
 
-  const [poolBalance0, poolBalance1] = getLPPoolBalances({
-    fromToken: farm.swap.input[0],
-    toToken: farm.swap.input[1],
-    chainId,
-    assetValues,
-  });
-  console.log("pool balance",poolBalance0,poolBalance1)
-  const balance0 = poolBalance0
-    ? previewRedeem(client, farm.swap.input[0], poolBalance0)
-    : null;
-  const balance1 = poolBalance1
-    ? previewRedeem(client, farm.swap.input[1], poolBalance1)
-    : null;
+  const result = await totalDualUnderlyingTokens(
+    client,
+    farm,
+  ) as [BigDecimal, BigDecimal] | null;
+
+  let balance0: BigDecimal | null = null;
+  let balance1: BigDecimal | null = null;
+
+  if (result) {
+    [balance0, balance1] = result;
+  } 
+  
+  // const [poolBalance0, poolBalance1] = getLPPoolBalances({
+  //   fromToken: farm.swap.input[0],
+  //   toToken: farm.swap.input[1],
+  //   chainId,
+  //   assetValues,
+  // });
+  
+  // const balance0 = poolBalance0
+  //   ? previewRedeem(client, farm.swap.input[0], poolBalance0)
+  //   : null;
+  // const balance1 = poolBalance1
+  //   ? previewRedeem(client, farm.swap.input[1], poolBalance1)
+  //   : null;
+
+  // console.log("pool balance",poolBalance0,balance0,poolBalance1,balance1)
 
   return Promise.all([balance0, balance1]);
 }
@@ -307,7 +322,7 @@ export default async function getLiquidity(
   assetValues?: useAssetValuesReturnType,
 ): Promise<[BigDecimal | null, BigDecimal | null] | BigDecimal | null> {
   if (!client || !farm) return null;
-
+  
   if (isBirdieSingleFarm(farm)) {
     const liq = await getSingleLiquidity(client, farm);
 
@@ -315,13 +330,13 @@ export default async function getLiquidity(
       "getLiquidity",
       farm.fullName,
       "single farm liquidity",
-      liq?.toString(),
+      liq?.toString(), liq,
     );
 
     return liq;
   } else {
     if (!assetValues) return null;
-
+    
     return await getLPLiquidity(client, farm, assetValues);
   }
 }

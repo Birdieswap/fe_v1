@@ -7,7 +7,7 @@ import {
 import { BigDecimal } from "@/types/BigDecimal";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
-import useFarmPrice from "./useFarmPrice";
+
 import useFarmTVL from "./useFarmTVL";
 
 export type FarmStatus = {
@@ -18,7 +18,6 @@ export type FarmStatus = {
 
 export default function useFarmStatus(farm: IBirdieSingleFarm | IBirdieLPFarm) {
   const { assetValues } = useContext(AssetsContext);
-  const { price } = useFarmPrice(farm, assetValues);
   const apy = BigDecimal.ZERO();
   const tvl = useFarmTVL(farm, assetValues);
   // const liquidity = BigDecimal.ZERO();
@@ -26,6 +25,5 @@ export default function useFarmStatus(farm: IBirdieSingleFarm | IBirdieLPFarm) {
   return {
     apy,
     tvl,
-    price,
   };
 }

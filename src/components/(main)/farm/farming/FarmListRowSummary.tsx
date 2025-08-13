@@ -23,7 +23,6 @@ export default function FarmListRowSummary({
   onClick,
   apy,
   tvl,
-  price,
 }: {
   balance?: BigDecimal;
   isActive: boolean;
@@ -31,9 +30,7 @@ export default function FarmListRowSummary({
   item: Farm;
   apy: BigDecimal | null;
   tvl: BigDecimal | null;
-  price: BigDecimal | null;
 }) {
-  console.log("price",price)
   const stakeToken = item.wip_stakeToken;
   const account = useAccount();
   const isBalanceAvailable = !!balance;
@@ -93,13 +90,13 @@ export default function FarmListRowSummary({
                   {isBirdieLPFarm(stakeToken) ? "Uniswap" : "" } {/*stakeToken.provider.name : ""*/}
                 </span>
               </div>
-              <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
+              {/* <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
                 <Icons.BirdRate
                   className="size-4 fill-default-800 dark:fill-default-500"
                   fillRule="evenodd"
                 />
                 <Components.Price isLoading={!price} value={price} />
-              </div>
+              </div> */}
             </div>
           </div>
         </motion.div>
@@ -151,7 +148,7 @@ export default function FarmListRowSummary({
               </p>
             </span>
           </motion.div>
-          <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
+          {/* <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
             {!account.isConnected && "Connect Wallet"}
             {account.isConnected && !isBalanceAvailable && "Loading..."}
             {account.isConnected &&
@@ -159,7 +156,7 @@ export default function FarmListRowSummary({
               price &&
               "$" +  suffixNumbers(balance.mul(price).roundToDecimals(2),0, 2, false, false)//balance.mul(price).roundToDecimals(2).toString()
               }
-          </p>
+          </p> */}
         </motion.div>
       </motion.div>
       <motion.div

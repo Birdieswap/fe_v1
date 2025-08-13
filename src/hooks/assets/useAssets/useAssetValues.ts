@@ -76,6 +76,9 @@ export function useAssetValues() {
     [chainId],
   );
 
+  console.log("availablePriceFeeds", availablePriceFeeds);
+  console.log("availableLpPools", availableLpPools);
+
   const priceFeedArgs: ContractFunctionParameters<
     typeof priceFeedAbi,
     "view",
@@ -154,7 +157,10 @@ export function useAssetValues() {
       staleTime: 10000, // 10 seconds
     },
   });
-
+  console.log("chainLinkData", chainLinkData);
+  console.log("uniswapBaseTokenData", uniswapBaseTokenData);
+  console.log("uniswapQuoteTokenData", uniswapQuoteTokenData);
+    
   useEffect(() => {
     if (chainLinkData.data) {
       setPriceMap((priceMap) => {
@@ -222,11 +228,15 @@ export function useAssetValues() {
           });
         });
 
+        console.log("newPriceMap", newPriceMap);    
         return newPriceMap;
       });
     }
   }, [uniswapBaseTokenData.data, uniswapQuoteTokenData.data, availableLpPools]);
 
+  console.log("chainLinkPriceMap", chainLinkPriceMap);
+  console.log("uniswapPriceMap", uniswapPriceMap);  
+  
   const isFetching = useMemo(
     () =>
       chainLinkData.isFetching ||

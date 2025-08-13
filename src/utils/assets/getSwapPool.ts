@@ -33,10 +33,13 @@ export default function getSwapPool<
   const fromBTokenAddress = fromBToken?.addresses[chainId];
   const toBTokenAddress = toBToken?.addresses[chainId];
 
+
   if (!fromBTokenAddress || !toBTokenAddress) return null;
-  const pool = swapPool.find((pool) => {
+  const pool = Object.values(swapPools).find((pool) => {
+
     const poolAddress0 = pool.input[0].addresses[chainId];
     const poolAddress1 = pool.input[1].addresses[chainId];
+
 
     return (
       (poolAddress0 === fromBTokenAddress &&
@@ -44,6 +47,10 @@ export default function getSwapPool<
       (poolAddress0 === toBTokenAddress && poolAddress1 === fromBTokenAddress)
     );
   });
+
+
+
+  console.log("getSwapPool", fromBToken, toBToken, pool);
 
   return pool ? pool : null;
 }

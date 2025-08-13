@@ -2,6 +2,7 @@ import { ContractFunctionParameters, PublicClient } from "viem";
 
 import { uniswapQuoterV2Abi } from "@/const/contracts/abis/uniswap_quoter_v2_abi";
 import miscContracts from "@/const/contracts/tokens/others";
+import { simulateContract } from "viem/actions";
 
 export async function getMinimumAmountOut() {}
 
@@ -48,7 +49,7 @@ export async function quoteExactInputSingle(
     ],
   };
 
-  const data = await publicClient.simulateContract(args);
+  const data = await simulateContract(publicClient, args);
 
   const [amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
     data.result;
@@ -104,12 +105,13 @@ export async function quoteExactOutputSingle(
     ],
   };
 
-  const data = await publicClient.simulateContract(args);
-  const [amountIn, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
+  const data = await simulateContract(publicClient, args);
+
+  const [amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
     data.result;
 
   return {
-    amountIn,
+    amountOut,
     sqrtPriceX96After,
     initializedTicksCrossed,
     gasEstimate,

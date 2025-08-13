@@ -48,7 +48,7 @@ const BIRDIE = StakingProviderGuard({
   name: "AutoPilot", //"Birdie",
   provider: EProvider.BIRDIE,
   addresses: {
-    [networks.sepolia.id]: "0x9b3C836203666B1578b60aeCBDCe553341cb87f5",
+    [networks.sepolia.id]: "0x6F3C65b69A0B7FeffBF7474928832C68eF56F7FC",
     [networks.base.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
     [networks.baseFork.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
   },
