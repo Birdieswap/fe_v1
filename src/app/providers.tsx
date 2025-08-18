@@ -18,23 +18,25 @@ import {
   braveWallet,
   phantomWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { WagmiProvider } from "wagmi";
-import {
-  arbitrum,
-  base,
-  optimism,
-  polygon,
-  scroll,
-  sepolia,
-} from "wagmi/chains";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import React, { useEffect } from "react";
 
-import { baseFork, bsc } from "@/const/networks";
+import {  WagmiProvider} from "wagmi";
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { 
+  arbitrum, 
+  polygon, 
+  scroll, 
+  baseFork, 
+  bsc, 
+  sepolia, 
+  base_custom,
+  optimism_custom} from "@/const/networks";
 
 import SettingsProvider from "./SettingsProvider";
 import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
+
 
 /*
 const isLocal =
@@ -137,7 +139,7 @@ export const wagmiConfig = getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
   projectId:
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
-  chains: [arbitrum, base, optimism, bsc, polygon, scroll, sepolia, baseFork],
+  chains: [arbitrum, base_custom, optimism_custom, bsc, polygon, scroll, sepolia, baseFork],
   ssr: true,
   //multiInjectedProviderDiscovery: false,
   
@@ -156,8 +158,10 @@ export const wagmiConfig = getDefaultConfig({
         phantomWallet,
       ],
     },
-  ], 
-});
+  ],
+}); 
+
+  console.log("MY_RPC_URL", process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL);
 
 // 🔥 디버깅 코드 추가
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
@@ -233,6 +237,9 @@ export default function Providers({ children }: PropsWithChildren) {
       sessionKeysToRemove.forEach((key) => sessionStorage.removeItem(key));
     }
   }, []);   */
+
+    // 개발환경에서 디버그 로그 활성화
+ 
 
   return (
     <WagmiProvider config={wagmiConfig}>

@@ -8,6 +8,6 @@ export default function getInsolvencyAmount(props: {
 }) {
   // TEMP LOGIC. IMPLEMENT LATER
   if (props.token?.symbol.includes("USD")) {
-    return new BigDecimal(1_000_000, props.token?.decimals ?? 18);
-  } else return new BigDecimal(5_000, props.token?.decimals ?? 18);
+    return new BigDecimal(1_000_000_000_000, props.token?.decimals ?? 18);
+  } else return new BigDecimal(5_000_000_000, props.token?.decimals ?? 18);
 }

@@ -36,7 +36,7 @@ export function useSingleStartPanel(item: FarmSingle) {
     stakeTokenAddress,
     routerAddress,
   } = useFarmPanelCommon(item);
-  
+
   const inputToken = stakeToken.input;
   const inputTokenAddress = getTokenAddress({
           token: inputToken,

@@ -37,9 +37,11 @@ export function FarmListTableHeader() {
       </FarmListTableHeaderCell>
       <FarmListTableHeaderCell column="apy">APY(%)</FarmListTableHeaderCell>
       <FarmListTableHeaderCell column="tvl">TVL($)</FarmListTableHeaderCell>
-      <FarmListTableHeaderCell colSpan={2} column="balance">
-        Your Balance
-      </FarmListTableHeaderCell>
+      <div className="flex items-center justify-end">
+        <FarmListTableHeaderCell colSpan={2} column="balance">
+          Your Balance
+        </FarmListTableHeaderCell>
+      </div>
     </motion.div>
   );
 }

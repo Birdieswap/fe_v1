@@ -23,6 +23,7 @@ export default function FarmListRowSummary({
   onClick,
   apy,
   tvl,
+  price
 }: {
   balance?: BigDecimal;
   isActive: boolean;
@@ -30,6 +31,7 @@ export default function FarmListRowSummary({
   item: Farm;
   apy: BigDecimal | null;
   tvl: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const stakeToken = item.wip_stakeToken;
   const account = useAccount();
@@ -148,7 +150,7 @@ export default function FarmListRowSummary({
               </p>
             </span>
           </motion.div>
-          {/* <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
+          <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
             {!account.isConnected && "Connect Wallet"}
             {account.isConnected && !isBalanceAvailable && "Loading..."}
             {account.isConnected &&
@@ -156,7 +158,7 @@ export default function FarmListRowSummary({
               price &&
               "$" +  suffixNumbers(balance.mul(price).roundToDecimals(2),0, 2, false, false)//balance.mul(price).roundToDecimals(2).toString()
               }
-          </p> */}
+          </p>
         </motion.div>
       </motion.div>
       <motion.div
