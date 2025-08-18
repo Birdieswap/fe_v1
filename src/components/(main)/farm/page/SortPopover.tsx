@@ -51,7 +51,7 @@ export default function SortPopover({
           />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[141px] h-[265px]  gap-4 p-3.5
+      <PopoverContent className="w-[141px] h-[230px]  gap-4 p-3.5
        border-default-300 bg-background text-foreground dark:text-p-4 dark:border-1 dark:border-default-100 dark:bg-dark_popup_bg">
         <p className="w-full">Sort by</p>
         <SortOptions

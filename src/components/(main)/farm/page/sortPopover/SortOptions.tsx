@@ -35,7 +35,7 @@ export default function SortOptions({
         setSortColumns(v as Set<keyof Farm>);
       }}
     >
-      <ListboxItem key="birdRate">Birdie Index</ListboxItem>
+      {/* <ListboxItem key="birdRate">Birdie Index</ListboxItem> */}
       <ListboxItem key="apy">APY (%)</ListboxItem>
       <ListboxItem key="tvl">TVL ($)</ListboxItem>
       <ListboxItem key="balance">Balance ($)</ListboxItem>

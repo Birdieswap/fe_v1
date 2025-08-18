@@ -22,6 +22,7 @@ import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 
+
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
   INSUFFICIENT_BALANCE = "INSUFFICIENT_BALANCE",
@@ -307,6 +308,7 @@ export function usePairStartPanel(item: FarmPair) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmounts([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+
         },
       },
     );

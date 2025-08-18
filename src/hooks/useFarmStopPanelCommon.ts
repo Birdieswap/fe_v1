@@ -142,6 +142,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
+
         },
       },
     );

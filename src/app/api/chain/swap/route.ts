@@ -36,8 +36,9 @@ export async function GET(request: NextRequest) {
   const publicClient = createPublicClient({
     chain: network.viemChain,
     transport: http(),
+    
   });
-
+  
   const [immutables, state] = await Promise.all([
     getPoolImmutables(publicClient, poolAddress as Address),
     getPoolState(publicClient, poolAddress as Address),
