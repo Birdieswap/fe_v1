@@ -4,14 +4,6 @@ import { Dispatch, SetStateAction } from "react";
 
 import { Farm } from "@/types/FarmListTableRowProps";
 
-// type SortableColumn = keyof Farm;
-
-// const SORTABLE_COLUMNS: Array<{ key: SortableColumn; label: string }> = [
-//   { key: 'apy', label: 'APY (%)' },
-//   { key: 'tvl', label: 'TVL ($)' },
-//   { key: 'MyBalance', label: 'Balance ($)' }
-// ];
-
 export default function SortOptions({
   sortColumns,
   setSortColumns,
@@ -25,11 +17,9 @@ export default function SortOptions({
 }) {
   const selectedColumn = sortColumns.size > 0 ? Array.from(sortColumns)[0] : null;
 
-  // HeroUI Selection 타입을 올바르게 처리
   function onSelectionChange(keys: any) {
     let selectedValue: keyof Farm | null = null;
-    
-    // Selection 타입 처리: Set, string, number, "all" 등을 고려
+
     if (!keys || keys === "all") {
       selectedValue = null;
     } else if (typeof keys === "string" || typeof keys === "number") {
@@ -45,7 +35,6 @@ export default function SortOptions({
       return;
     }
 
-    // 정렬 로직: 같은 컬럼 클릭 시 desc -> asc -> null 순환
     if (selectedColumn !== selectedValue) {
       setSortColumns(new Set([selectedValue]));
       setSortDirection("desc");
@@ -60,6 +49,11 @@ export default function SortOptions({
       }
     }
   }
+
+  // selectedKeys는 Set<string> 타입이어야 하므로 string 변환 처리
+  const selectedKeys = selectedColumn
+    ? new Set([String(selectedColumn)])
+    : new Set();
 
   return (
     <Listbox
