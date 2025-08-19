@@ -1,7 +1,7 @@
 "use client";
 
 import { Image, Skeleton } from "@heroui/react";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useChainId } from "wagmi";
@@ -70,9 +70,74 @@ export default function FarmListTable({
 }) {
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
-  const items = props.items || FarmList;
+  
+  const stakeTokenList = FarmList.map(farm => farm.wip_stakeToken);
+
   const { balances } = useContext(AssetsContext);
-  const sortedItems = useMemo(() => {
+  const total = useContext(AssetsContext);
+
+  // 1. farmStatusMap: address 키로 {apy, tvl, MyBalance} 저장 상태
+  const [farmStatusMap, setFarmStatusMap] = useState<Record<string, {
+    apy: number;
+    tvl: number;
+    MyBalance: number;
+  }>>({});
+
+  // 방어 로직 포함된 상태 업데이트 콜백
+  const handleStatusUpdate = useCallback((
+    address: string,
+    status: { apy: BigDecimal; tvl: BigDecimal | null; MyBalance: BigDecimal | null }
+  ) => {
+    setFarmStatusMap(prev => {
+      const prevStatus = prev[address];
+      const newApy = Number(status.apy.toString());
+      const newTvl = status.tvl ? Number(status.tvl.toString()) : 0;
+      const newMyBalance = status.MyBalance ? Number(status.MyBalance.toString()) : 0;
+
+      // 이전과 동일하면 변경 안 함 (무한 루프 방지)
+      if (
+        prevStatus &&
+        prevStatus.apy === newApy &&
+        prevStatus.tvl === newTvl &&
+        prevStatus.MyBalance === newMyBalance
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        [address]: {
+          apy: newApy,
+          tvl: newTvl,
+          MyBalance: newMyBalance,
+        },
+      };
+    });
+  }, []);
+
+  // 3. balance 값은 getFarmBalance 같은 기존 함수로 FarmList 각 아이템별로 받아온다.
+  // 예를 들어 이렇게 얻어온 값을 farmStatus에서 관리하지 말고 그대로 row에 전달하여 계산에 쓰게 한다.
+
+  // 4. 업데이트된 farmList 작성: 기존 FarmList에 farmStatusMap값을 병합
+  const updatedFarmList = useMemo(() => {
+    return FarmList.map(farm => {
+      const addr = farm.wip_stakeToken.addresses;
+      const stat = farmStatusMap[addr[chainId]];
+      return {
+        ...farm,
+        apy: stat?.apy ?? farm.apy,
+        tvl: stat?.tvl ?? farm.tvl,
+        MyBalance: stat?.MyBalance ?? farm.MyBalance,
+      };
+    });
+  }, [farmStatusMap]);
+
+  const items = updatedFarmList;
+
+  console.log("FarmListTable total", total, " mergedFarmList!!!", updatedFarmList); // Debugging line to check items and balances
+ 
+  
+    const sortedItems = useMemo(() => {
     const col = sortColumn;
 
     const filteredItems = items.filter((item) => {
@@ -103,14 +168,21 @@ export default function FarmListTable({
       return filteredItems;
     } else {
       return filteredItems.sort((a, b) => {
-        const cmp =
-          a[col] === b[col]
-            ? 0
-            : [a[col], b[col]].sort()[0] === a[col]
-              ? -1
-              : 1;
+        if (a[col] === b[col]) return 0;
 
-        return sortDirection === "asc" ? cmp : -cmp;
+          // a[col], b[col]이 BigDecimal 또는 객체인 경우 문자열→숫자 변환 시도
+        const valA = typeof a[col] === "object" && a[col] != null && typeof a[col].toString === "function"
+          ? Number(a[col].toString())
+          : Number(a[col]);
+
+        const valB = typeof b[col] === "object" && b[col] != null && typeof b[col].toString === "function"
+          ? Number(b[col].toString())
+          : Number(b[col]);
+
+  // 숫자 비교 
+        if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+        if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+        return 0;
       });
     }
   }, [
@@ -121,7 +193,7 @@ export default function FarmListTable({
     balances?.singleVaultBalances.balanceMap,
     balances?.lpVaultBalances.balanceMap,
     sortDirection,
-  ]);
+  ]); 
 
   return (
     <motion.div
@@ -144,9 +216,12 @@ export default function FarmListTable({
             balances?.lpVaultBalances.balanceMap,
           )}
           item={item}
+          onUpdate={handleStatusUpdate} 
           selectedRow={selectedRow}
           setSelectedRow={setSelectedRow}
+          chainId={chainId}
         />
+
       ))}
     </motion.div>
   );

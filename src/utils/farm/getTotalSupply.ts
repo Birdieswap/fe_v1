@@ -52,7 +52,6 @@ export default async function getTotalSupply(
   if (!data) return null;
 
   const totalSupply = new BigDecimal(data, farm.decimals);
-  console.log("totalSupply", farm.fullName, totalSupply);
 
   return Promise.resolve(totalSupply);
 }

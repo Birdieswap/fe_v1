@@ -26,12 +26,9 @@ export default function useFarmTVL(
       return null;
     }
     try {
-      console.log("[useFarmTVL] Fetching liquidity for farm:", farm.fullName);
       const liq = await getLiquidity(client as PublicClient, farm, assetValues);
-      console.log("[useFarmTVL] liquidity data:", liq);
       if (!liq) {
         setTvl(null);
-        console.warn("[useFarmTVL] Liquidity data missing");
         return null;
       }
       let totalValue: BigDecimal | null = null;
@@ -43,7 +40,6 @@ export default function useFarmTVL(
         const price1 = assetValues.chainLinkPriceMap.get(`LINK:${token1.symbol}_USD`)?.price;
         if (liq0 && liq1 && price0 && price1) {
           totalValue = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
-          console.log("[useFarmTVL] LP farm total value:", totalValue.toString());
         } else {
           console.warn("[useFarmTVL] Missing price/liquidity for LP farm");
         }
@@ -51,7 +47,6 @@ export default function useFarmTVL(
         const tokenPrice = assetValues.chainLinkPriceMap.get(`LINK:${farm.input.symbol}_USD`)?.price;
         if (tokenPrice) {
           totalValue = new BigDecimal(liq.mul(tokenPrice).toString());
-          console.log("[useFarmTVL] Single farm total value:", totalValue.toString());
         } else {
           console.warn("[useFarmTVL] Missing tokenPrice for single farm");
         }

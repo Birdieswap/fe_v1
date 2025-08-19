@@ -54,8 +54,8 @@ export type Farm = {
   feeTier: number;
   apy: number;
   point?: number;
-  birdRate: number;
-  tvl: string;
+  tvl: number;
+  MyBalance: number;
 } & (
   | {
       type: FarmType.SINGLE;
