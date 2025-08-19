@@ -45,18 +45,15 @@ export default async function totalDualUnderlyingTokens(
   };
 
   const data = await readContract(client, args) as [string, string, bigint, bigint];;
-  console.log("totalDualUnderlyingTokens data", farm,data);
   
   if (!data) return null;
   if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[0].input.addresses[chainId]) {
     const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[0].input.decimals);
     const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[1].input.decimals);
-    console.log("totalDualUnderlyingTokens", poolBalance0, poolBalance1);
     return [poolBalance0, poolBalance1];
   } else if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[1].input.addresses[chainId]) {
     const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[1].input.decimals);
     const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[0].input.decimals);
-    console.log("totalDualUnderlyingTokens", poolBalance0, poolBalance1);
     return [poolBalance0, poolBalance1];
   }
   

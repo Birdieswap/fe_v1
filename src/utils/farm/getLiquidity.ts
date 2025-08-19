@@ -67,9 +67,7 @@ async function getSingleLiquidity(
   >(client, args);
 
   if (!result) return null;
-  console.log("getSingleLiquidity result!!!", farm, currency, result);
   const totalUnderlyingTokens = new BigDecimal(result, currency.decimals);
-  console.log("totalUnderlyingTokens", totalUnderlyingTokens);
 
   return Promise.resolve(totalUnderlyingTokens);
 }
@@ -101,7 +99,6 @@ async function getLPLiquidity(
   if (result) {
     [balance0, balance1] = result;
   }
-  console.log("getLPLiquidity result!!!", farm.fullName, balance0, balance1);
   return Promise.all([balance0, balance1]);
 }
 
@@ -124,13 +121,6 @@ export default async function getLiquidity(
   
   if (isBirdieSingleFarm(farm)) {
     const liq = await getSingleLiquidity(client, farm);
-
-    console.log(
-      "getLiquidity",
-      farm.fullName,
-      "single farm liquidity",
-      liq?.toString(), liq,
-    );
 
     return liq;
   } else {

@@ -15,9 +15,10 @@ export default function FarmIndex() {
   const [selected, setSelected] = useState<Filter>(Filter.ALL);
   const [sortColumns, setSortColumns] = useState<Set<keyof Farm>>(new Set());
   const sortColumn = sortColumns.size > 0 ? Array.from(sortColumns)[0] : null;
-  const [sortDirection] = useState<"asc" | "desc" | null>("desc");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
   const items = FarmList;
   const [isSortOpen, setIsSortOpen] = useState(false);
+  console.log("FarmIndex", { selected, sortColumn, sortDirection, items });
 
   return (
     <section className="flex w-full flex-col items-center gap-2">
@@ -29,6 +30,8 @@ export default function FarmIndex() {
             setSortColumns={setSortColumns}
             sortColumn={sortColumn}
             sortColumns={sortColumns}
+            sortDirection={sortDirection}
+            setSortDirection={setSortDirection}
           />
           <FilterButtons selected={selected} setSelected={setSelected} />
         </div>

@@ -56,8 +56,7 @@ export default function useFarmCalc({ farm, assetValues, setTvl, setTotalSupply,
 
         // totalSupply 상태 업데이트
         if (supply instanceof BigDecimal) {
-          console.log("useFormCala!!!Total Supply for farm:", farm.fullName, supply.toString());
-          setTotalSupply(supply);
+                setTotalSupply(supply);
         } else {
           setTotalSupply(null);
         }

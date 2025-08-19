@@ -13,12 +13,16 @@ export default function SortPopover({
   sortColumn,
   sortColumns,
   setSortColumns,
+  sortDirection,
+  setSortDirection
 }: {
   isSortOpen: boolean;
   setIsSortOpen: Dispatch<SetStateAction<boolean>>;
   sortColumn: keyof Farm | null;
   sortColumns: Set<keyof Farm>;
   setSortColumns: Dispatch<SetStateAction<Set<keyof Farm>>>;
+  sortDirection: "asc" | "desc" | null;
+  setSortDirection: Dispatch<SetStateAction<"asc" | "desc" | null>>;
 }) {
   return (
     <Popover
@@ -57,6 +61,8 @@ export default function SortPopover({
         <SortOptions
           setSortColumns={setSortColumns}
           sortColumns={sortColumns}
+          sortDirection={sortDirection}
+          setSortDirection={setSortDirection}
         />
         <Button
           className={clsx(
@@ -69,6 +75,7 @@ export default function SortPopover({
           size="sm"
           onClick={() => {
             setSortColumns(new Set());
+            setSortDirection(null);
           }}
         >
           Clear
