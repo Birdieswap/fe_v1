@@ -40,7 +40,7 @@ export default function useFarmCalc({ farm, assetValues, setTvl, setTotalSupply,
             const token1 = farm.swap.input[1].input;
             const price0 = assetValues.chainLinkPriceMap.get(`LINK:${token0.symbol}_USD`)?.price;
             const price1 = assetValues.chainLinkPriceMap.get(`LINK:${token1.symbol}_USD`)?.price;
-           
+            //console.log("useFarmCalc!!!! Farm : ", farm, "token0 : ", token0, "price0 : ", price0, "token1 : ", token1, "price1 : ", price1, "liq0 : ", liq0, "liq1 : ", liq1);
             if (liq0 && liq1 && price0 && price1) {
               totalValue = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
             } 

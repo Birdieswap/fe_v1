@@ -2,9 +2,10 @@
 
 import { cn } from "@heroui/react";
 import Image from "next/image";
-import { Fragment } from "react";
+import { Fragment, useContext } from "react";
 
 import Icons from "@/assets/icons/icons";
+import { AssetsContext } from "@/app/AssetsContextProvider";
 
 export type WalletTokenInfo = {
   name: string;
@@ -43,6 +44,8 @@ function WalletTokenItem(props: WalletTokenInfo) {
 }
 
 export default function WalletTokens() {
+  const total = useContext(AssetsContext);
+  
   // const asdf = useBalance()
   // asdf.
   const tokens: WalletTokenInfo[] = [
