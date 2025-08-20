@@ -17,9 +17,9 @@ import WalletTransactions from "./walletPage/WalletTransactions";
 import WalletTokens from "./walletPage/WalletTokens";
 
 function TabSelector(props: {
-  selected: "extra-rewards" | "tokens" | "transaction";
-  value: "extra-rewards" | "tokens" | "transaction";
-  setTab: (value: "extra-rewards" | "tokens" | "transaction") => void;
+  selected: "rewards" | "tokens" | "transaction";
+  value: "rewards" | "tokens" | "transaction";
+  setTab: (value: "rewards" | "tokens" | "transaction") => void;
   name: string;
 }) {
   return (
@@ -115,8 +115,8 @@ export default function WalletPage(props: {
   toSettings: () => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"extra-rewards" | "tokens" | "transaction">(
-    "extra-rewards",
+  const [tab, setTab] = useState<"rewards" | "tokens" | "transaction">(
+    "rewards",
   );
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
@@ -167,10 +167,10 @@ export default function WalletPage(props: {
             />
             <div className="flex w-full flex-row justify-start gap-3 border-b-1 border-default-300 pb-3 pt-4 dark:border-default-100 max-sm:pb-4">
               <TabSelector
-                name="Extra Rewards"
+                name="Rewards"
                 selected={tab}
                 setTab={setTab}
-                value="extra-rewards"
+                value="rewards"
               />
               <TabSelector
                 name="Tokens"
@@ -187,7 +187,7 @@ export default function WalletPage(props: {
             </div>
           </div>
           <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">
-            {tab === "extra-rewards" && <WalletRewards />}
+            {tab === "rewards" && <WalletRewards />}
             {tab === "transaction" && <WalletTransactions />}
             {tab === "tokens" && <WalletTokens />}
           </div>

@@ -61,21 +61,23 @@ export default function FarmListTable({
   sortColumn,
   sortDirection,
   filter,
+  searchTerm,
   ...props
 }: {
   items?: Farm[];
   filter?: Filter | null;
   sortColumn: keyof Farm | null;
   sortDirection: "asc" | "desc" | null;
+  searchTerm?: string;
 }) {
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
   
-  const stakeTokenList = FarmList.map(farm => farm.wip_stakeToken);
+  //const stakeTokenList = FarmList.map(farm => farm.wip_stakeToken);
 
   const { balances } = useContext(AssetsContext);
   const total = useContext(AssetsContext);
-
+  console.log("FarmListTable total", total, " balances:", balances);
   // 1. farmStatusMap: address 키로 {apy, tvl, MyBalance} 저장 상태
   const [farmStatusMap, setFarmStatusMap] = useState<Record<string, {
     apy: number;
@@ -131,10 +133,31 @@ export default function FarmListTable({
       };
     });
   }, [farmStatusMap]);
+  //console.log("FarmListTable updatedFarmList:", updatedFarmList);
 
-  const items = updatedFarmList;
+  const q = (searchTerm ?? "").trim().toLowerCase();
 
-  console.log("FarmListTable total", total, " mergedFarmList!!!", updatedFarmList); // Debugging line to check items and balances
+  const searchedItems = useMemo(() => {
+    if (!q) return updatedFarmList;
+
+    return updatedFarmList.filter((item) => {
+      // 1) name 포함 검사
+      if (item.name && String(item.name).toLowerCase().includes(q)) return true;
+
+      // 2) tags 배열의 어떤 요소라도 포함 검사
+      if (Array.isArray(item.tags) && item.tags.some(t => String(t).toLowerCase().includes(q))) return true;
+
+      // 3) wip_stakeToken.provider.name 포함 검사
+      const providerName = item.wip_stakeToken?.provider?.name;
+      if (providerName && String(providerName).toLowerCase().includes(q)) return true;
+
+      return false;
+    });
+  }, [updatedFarmList, q]);
+
+  const items = searchedItems;
+
+  //console.log("FarmListTable total", total, " mergedFarmList!!!", updatedFarmList); // Debugging line to check items and balances
  
   
     const sortedItems = useMemo(() => {
@@ -182,6 +205,7 @@ export default function FarmListTable({
   // 숫자 비교 
         if (valA < valB) return sortDirection === "asc" ? -1 : 1;
         if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+        //(console.log("FarmListTable sorting:", filteredItems));
         return 0;
       });
     }

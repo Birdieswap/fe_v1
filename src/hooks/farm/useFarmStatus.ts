@@ -16,6 +16,6 @@ export default function useFarmStatus(farm: IBirdieSingleFarm | IBirdieLPFarm) {
   const [price, setPrice] = useState<BigDecimal | null>(null);
 
   useFarmCalc({ farm, assetValues, setTvl, setTotalSupply, setPrice });
-  console.log("useFarmStatus", farm, { apy, tvl, totalSupply, price });  
+  //console.log("useFarmStatus", farm, { apy, tvl, totalSupply, price });  
   return { apy, tvl, price };
 }
