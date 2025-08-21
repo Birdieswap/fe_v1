@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState, useContext } from "react";
-import { parseUnits } from "viem";
+import { useCallback, useMemo, useState, useContext, useEffect } from "react";
+import { parseUnits, PublicClient } from "viem";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -21,7 +21,7 @@ import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
-
+import previewRedeem from "@/utils/farm/previewRedeem";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -108,22 +108,64 @@ export function usePairStartPanel(item: FarmPair) {
 
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
 
+  const [underlyingBalance0, setUnderlyingBalance0] = useState<BigDecimal | null>(null);
+  const [underlyingBalance1, setUnderlyingBalance1] = useState<BigDecimal | null>(null);
+
+  // [추가] poolBalance0/1, client, bToken0/1 변경 시 previewRedeem 호출
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      try {
+        // 필수 의존성 가드
+        if (!client) return;
+
+        // poolBalance가 BigDecimal이라고 가정. null/undefined 가드
+        if (!poolBalance0 || !poolBalance1) return;
+
+        const [u0, u1] = await Promise.all([
+          previewRedeem(client as PublicClient, bToken0, poolBalance0),
+          previewRedeem(client as PublicClient, bToken1, poolBalance1),
+        ]);
+
+        if (!cancelled) {
+          // 실패/undefined/null 시 0으로 폴백 (계산부 안전을 위해)
+          setUnderlyingBalance0(u0 ?? BigDecimal.ZERO());
+          setUnderlyingBalance1(u1 ?? BigDecimal.ZERO());
+        }
+      } catch {
+        if (!cancelled) {
+          setUnderlyingBalance0(BigDecimal.ZERO());
+          setUnderlyingBalance1(BigDecimal.ZERO());
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [client, bToken0, bToken1, poolBalance0, poolBalance1]);
+
   const getOtherAmount = useCallback(
     (value: BigDecimal, index: 0 | 1) => {
       const otherToken = index === 0 ? inputToken1 : inputToken0;
-      const thisPoolBalance = index === 0 ? poolBalance0 : poolBalance1;
-      const otherPoolBalance = index === 0 ? poolBalance1 : poolBalance0;
 
-      if (thisPoolBalance.eq(0)) {
+      // null 가드 및 폴백
+      const thisUnderlying = (index === 0 ? underlyingBalance0 : underlyingBalance1) ?? BigDecimal.ZERO();
+      const otherUnderlying = (index === 0 ? underlyingBalance1 : underlyingBalance0) ?? BigDecimal.ZERO();
+
+      if (thisUnderlying.eq(0)) {
         return BigDecimal.ZERO();
       }
 
       return value
-        .mul(otherPoolBalance)
-        .div(thisPoolBalance)
+        .mul(otherUnderlying)
+        .div(thisUnderlying)
         .roundToDecimals(otherToken.decimals ?? 18);
     },
-    [inputToken0, inputToken1, poolBalance0, poolBalance1],
+    [inputToken0, inputToken1, underlyingBalance0, underlyingBalance1],
   );
 
   const getMaxAmount = useCallback(() => {

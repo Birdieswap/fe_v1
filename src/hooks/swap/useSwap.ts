@@ -68,22 +68,6 @@ export default function useSwap() {
     maxSlippage: maxSlippage === "auto" ? 0.005 : maxSlippage / 100, // 0.5% when auto
   });
 
-  /*
-  function switchTokens() {
-    if (!toToken) return;
-
-    const prevFromToken = fromToken;
-    const prevToToken = toToken;
-    const prevFromAmount = fromAmount;
-    const prevToAmount = toAmount;
-
-    setFromToken(prevToToken);
-    setToToken(prevFromToken);
-    setFromAmount(prevToAmount);
-    setToAmount(prevFromAmount);
-  }
-
-  */
 
   function setFromTokenWithGuard(token: ICurrency | undefined) {
     if (!token) {

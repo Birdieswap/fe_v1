@@ -2,14 +2,12 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
-  useEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
-import { Config, usePublicClient, useReadContract } from "wagmi";
+import { Config, useAccount, usePublicClient, useReadContract } from "wagmi";
 import { type UseReadContractReturnType } from "wagmi";
-import { Client, erc20Abi, parseUnits, PublicClient } from "viem";
+import { Client, erc20Abi, parseUnits, PublicClient, Abi } from "viem";
 import { WriteContractMutate } from "wagmi/query";
 import { Fraction } from "@uniswap/sdk-core";
 
@@ -25,7 +23,6 @@ import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
 import { BigDecimal } from "@/types/BigDecimal";
 import isAmountInputValid from "@/utils/isAmountInputValid";
 import { IBirdieSingleFarm, ICurrency } from "@/const/contracts/types/tokenTypes";
-import getSwapResult from "@/utils/assets/getSwapResult";
 import getSwapPool from "@/utils/assets/getSwapPool";
 //import { getSwapQuoteForProviders } from "@/utils/assets/getSwapQuote";
 import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
@@ -41,6 +38,20 @@ import getTokenAddress from "@/utils/assets/getTokenAddress";
 //import { fetchPreviewBTokenAmount } from "@/utils/farm/fetchPreviewBTokenAmount";
 import { quoteExactInputSingle, quoteExactOutputSingle } from "@/utils/uniswap/getSwapAmount";
 import previewRedeem from "@/utils/farm/previewRedeem";
+import { readContract } from "viem/actions";
+
+const erc20DecAbi: Abi = [
+  { inputs: [], name: "decimals", outputs: [{ type: "uint8", name: "" }], stateMutability: "view", type: "function" },
+];
+
+async function fetchTokenDecimals(client: PublicClient, token: `0x${string}`): Promise<number | null> {
+  try {
+    const dec = await readContract(client, { address: token, abi: erc20DecAbi, functionName: "decimals" }) as number;
+    return dec;
+  } catch {
+    return null;
+  }
+}
 
 export default function useSwapTokens({
   chainId,
@@ -179,114 +190,303 @@ export default function useSwapTokens({
   //   toToken?.decimals,
   // ]);
 
-
-  const getOtherAmount = useCallback(
-    async (thisAmount: string, thisSide: "in" | "out") => {
-      if (!thisAmount || !chainId || !assetValues || !fromToken || !toToken)
+const getOtherAmount = useCallback(
+  async (thisAmount: string, thisSide: "in" | "out") => {
+    try {
+      // 기본 가드
+      if (!thisAmount || !chainId || !assetValues || !fromToken || !toToken) {
+        console.warn("[getOtherAmount] guard return", {
+          thisAmount,
+          chainId,
+          hasAssetValues: !!assetValues,
+          hasFrom: !!fromToken,
+          hasTo: !!toToken,
+        });
         return "";
-      // Convert native token to ERC20
-      // TODO: handle other networks
-      const fromTokenERC20 =
-        fromToken.symbol === "ETH" ? tokens.WETH : fromToken;
-      const toTokenERC20 = toToken.symbol === "ETH" ? tokens.WETH : toToken;
-      const input = thisSide === "in" ? fromTokenERC20 : toTokenERC20;
-      const output = thisSide === "in" ? toTokenERC20 : fromTokenERC20;
-
-      const inputBToken = (input.symbol === swapPool?.input[0].input.symbol)? swapPool.input[0]:swapPool?.input[1];
-      const outputBToken = (output.symbol === swapPool?.input[0].input.symbol)? swapPool.input[0]:swapPool?.input[1];
-      
-      const latestBD = new BigDecimal(thisAmount, input.decimals);
-
-      // previewFullDeposit: 입력 토큰을 bToken 수량으로 변환
-      const resultBD = await previewFullDeposit(
-        client as PublicClient,
-        inputBToken as IBirdieSingleFarm,
-        latestBD
-      );
-
-      if (!resultBD) return "";
-      console.log("previewFullDeposit resultBD", resultBD);
-
-      //  Uniswap Quoter V2: bToken → bToken 예상 스왑
-
-      if (!inputBToken?.addresses[chainId] || !outputBToken?.addresses[chainId]) {
-        throw new Error("Invalid token addresses");
       }
-      const inputAddress = inputBToken.addresses[chainId] as `0x${string}`;
-      const outputAddress = outputBToken.addresses[chainId] as `0x${string}`;
-      const feeTier = swapPool?.fee_tier ;
-      let bTokenQuoteAmount: BigDecimal | null = null;
 
-      // 6) Quoter 호출: bToken → bToken 예상 스왑
+      // 1) ETH → WETH 정규화
+      const fromErc20 = fromToken.symbol === "ETH" ? tokens.WETH : fromToken;
+      const toErc20 = toToken.symbol === "ETH" ? tokens.WETH : toToken;
+
+      // 2) 분기별 역할 명시
+      // 항상 inputUnderlying = from, outputUnderlying = to
+      const inputUnderlying = fromErc20;
+      const outputUnderlying = toErc20;
+
+      // 3) underlying 주소
+      const inputAddrUnderlying = getTokenAddress({
+        token: inputUnderlying,
+        chainId,
+      }) as `0x${string}`;
+
+      const outputAddrUnderlying = getTokenAddress({
+        token: outputUnderlying,
+        chainId,
+      }) as `0x${string}`;
+
+      if (!swapPool) {
+        console.error("[getOtherAmount] swapPool null");
+        return "";
+      }
+
+      // 4) 풀 bToken 메타 안전 추출
+      const pickTokenMeta = (entry: any) => {
+        const bAddr = entry?.addresses?.[chainId] as `0x${string}` | undefined; // bToken 주소(풀 토큰)
+        const uAddr = entry?.input?.addresses?.[chainId] as
+          | `0x${string}`
+          | undefined; // underlying 주소
+        const uSym = entry?.input?.symbol as string | undefined; // underlying 심볼
+        const bDec = entry?.decimals as number | undefined; // bToken decimals(메타)
+        return { bAddr, uAddr, uSym, bDec, raw: entry };
+      };
+
+      const meta0 = pickTokenMeta(swapPool.input[0]);
+      const meta1 = pickTokenMeta(swapPool.input[1]);
+
+      // 5) underlying 주소로 input/output bToken 매칭
+      const inputMeta =
+        inputAddrUnderlying?.toLowerCase() === meta0.uAddr?.toLowerCase()
+          ? meta0
+          : meta1;
+
+      const outputMeta =
+        outputAddrUnderlying?.toLowerCase() === meta0.uAddr?.toLowerCase()
+          ? meta0
+          : meta1;
+
+      if (!inputMeta.bAddr || !outputMeta.bAddr) {
+        console.error("[getOtherAmount] invalid bToken addresses", {
+          inputMeta,
+          outputMeta,
+          chainId,
+        });
+        return "";
+      }
+
+      console.warn("[getOtherAmount] context", {
+        side: thisSide,
+        input: {
+          sym: inputUnderlying.symbol,
+          dec: inputUnderlying.decimals,
+          uAddr: inputAddrUnderlying,
+        },
+        output: {
+          sym: outputUnderlying.symbol,
+          dec: outputUnderlying.decimals,
+          uAddr: outputAddrUnderlying,
+        },
+        pool: {
+          input0: {
+            uAddr: meta0.uAddr,
+            bAddr: meta0.bAddr,
+            bDec: meta0.bDec,
+            uSym: meta0.uSym,
+          },
+          input1: {
+            uAddr: meta1.uAddr,
+            bAddr: meta1.bAddr,
+            bDec: meta1.bDec,
+            uSym: meta1.uSym,
+          },
+        },
+        chosen: {
+          input: {
+            uAddr: inputMeta.uAddr,
+            bAddr: inputMeta.bAddr,
+            bDec: inputMeta.bDec,
+            uSym: inputMeta.uSym,
+          },
+          output: {
+            uAddr: outputMeta.uAddr,
+            bAddr: outputMeta.bAddr,
+            bDec: outputMeta.bDec,
+            uSym: outputMeta.uSym,
+          },
+        },
+      });
+
+      const feeTier = swapPool.fee_tier as number;
+
       if (thisSide === "in") {
+        // =========================
+        // Exact Input 경로
+        // 사용자 입력: fromAmount
+        // 흐름: underlying(from) -> bIn -> Quoter exactInput -> bOut -> underlying(to)
+        // =========================
+
+        // 6) from 입력값을 from.decimals로 파싱
+        const latestBD = new BigDecimal(
+          thisAmount,
+          inputUnderlying.decimals ?? 18
+        );
+        console.warn("[getOtherAmount] latestBD (in)", {
+          value: latestBD.value.toString(),
+          dec: latestBD.decimals,
+        });
+        if (latestBD.isZero()) return "";
+
+        // 7) underlying(from) -> bToken(input)
+        const bAmountIn = await previewFullDeposit(
+          client as PublicClient,
+          inputMeta.raw as IBirdieSingleFarm,
+          latestBD
+        );
+        if (!bAmountIn) {
+          console.error("[getOtherAmount] previewFullDeposit null (in)");
+          return "";
+        }
+        console.warn("[getOtherAmount] after previewFullDeposit (in)", {
+          underlyingIn: { amt: thisAmount, dec: inputUnderlying.decimals },
+          bAmountIn: {
+            value: bAmountIn.value.toString(),
+            dec: bAmountIn.decimals,
+          },
+          bDec_meta: inputMeta.bDec,
+        });
+
+        // 8) Quoter exactInput: bIn -> bOut
         const quote = await quoteExactInputSingle(
           client as PublicClient,
-          inputAddress,
-          outputAddress,
-          resultBD.value,
-          feeTier as number,
-          BigInt(0)
+          inputMeta.bAddr,
+          outputMeta.bAddr,
+          bAmountIn.value,
+          feeTier,
+          BigInt(0),
+          {
+            tag: "exactInput",
+            tokenIn: inputMeta.bAddr,
+            tokenOut: outputMeta.bAddr,
+            fee: feeTier,
+            amountIn: bAmountIn.value,
+          }
         );
-        if (!quote) return "";
-        bTokenQuoteAmount = new BigDecimal(quote.amountOut, outputBToken.decimals);
-      } 
-      else { // thisSide === "out"
-        const quote = await quoteExactOutputSingle(
+        if (!quote) {
+          console.error("[getOtherAmount] exactInput quote null");
+          return "";
+        }
+        console.warn("[getOtherAmount] exactInput quote", {
+          amountIn_b: bAmountIn.value.toString(),
+          amountOut_b: quote.amountOut.toString(),
+        });
+
+        // 9) bOut -> underlying(output)
+        const bOutBD = new BigDecimal(
+          quote.amountOut,
+          outputMeta.bDec ?? 18
+        );
+        const finalTokenAmount = await previewRedeem(
           client as PublicClient,
-          inputAddress,
-          outputAddress,
-          resultBD.value,
-          feeTier as number,
-          BigInt(0)
+          outputMeta.raw as IBirdieSingleFarm,
+          bOutBD
         );
-        if (!quote) return "";
-        bTokenQuoteAmount = new BigDecimal(quote.amountOut, inputBToken.decimals);
+        if (!finalTokenAmount) {
+          console.error("[getOtherAmount] previewRedeem (output) null");
+          return "";
+        }
+        console.warn("[getOtherAmount] final underlying OUT", {
+          val_raw: finalTokenAmount.value.toString(),
+          dec: finalTokenAmount.decimals,
+          display: finalTokenAmount.toPrecisionString(true, false),
+        });
+        return finalTokenAmount.toPrecisionString(true, false);
       }
 
-      if (!bTokenQuoteAmount) return "";
+      // =========================
+      // Exact Output 경로
+      // 사용자 입력: toAmount
+      // 흐름: 원하는 underlying(to) -> bOut -> Quoter exactOutput -> bIn -> underlying(from)
+      // =========================
 
-      console.log("Uniswap Quoter V2 quote", bTokenQuoteAmount);
-
-
-      // previewRedeem: outputBtoken → underlying 토큰으로 환산
-      const finalTokenAmount = await previewRedeem(
-        client as PublicClient,
-        outputBToken as IBirdieSingleFarm,
-        bTokenQuoteAmount
+      // 6) 원하는 출력(to)을 to.decimals로 파싱
+      const latestBD = new BigDecimal(
+        thisAmount,
+        outputUnderlying.decimals ?? 18
       );
+      console.warn("[getOtherAmount] latestBD (out)", {
+        value: latestBD.value.toString(),
+        dec: latestBD.decimals,
+      });
+      if (latestBD.isZero()) return "";
 
-      if (!finalTokenAmount) return "";
-      console.log("previewRedeem finalTokenAmount", finalTokenAmount);
-      //  최종 결과 문자열 반환
-      return finalTokenAmount.toPrecisionString(true, false);
-    },
-    [client, chainId, fromToken, toToken, swapPool]
-    //   console.log("getOtherAmount_BD", latestBD);
-    //   try {
-    //     const other = getSwapResult({
-    //       swapFrom: inputBtoken,
-    //       swapTo: outputBtoken,
-    //       amount: latestBD as BigDecimal,
-    //       chainId,
-    //       assetValues,
-    //     });
+      // 7) underlying(to) -> bToken(output)
+      const desiredBOut = await previewFullDeposit(
+        client as PublicClient,
+        outputMeta.raw as IBirdieSingleFarm,
+        latestBD
+      );
+      if (!desiredBOut) {
+        console.error("[getOtherAmount] previewFullDeposit null (out)");
+        return "";
+      }
+      // 여기서 desiredBOut.decimals는 outputMeta.bDec(예: bUSDC=6)로 나와야 정상
+      console.warn("[getOtherAmount] after previewFullDeposit (out)", {
+        underlyingOutDesired: {
+          amt: thisAmount,
+          dec: outputUnderlying.decimals,
+        },
+        bOut: { value: desiredBOut.value.toString(), dec: desiredBOut.decimals },
+        bDec_meta: outputMeta.bDec,
+      });
 
-    //     return other?.toPrecisionString(true, false) ?? "";
-    //   } catch (e) {
-    //     console.error(e);
+      // 8) Quoter exactOutput: 원하는 bOut = desiredBOut.value
+      console.warn("[getOtherAmount] exactOutput desired bOut", {
+        bOut_value: desiredBOut.value.toString(),
+        pool_decimals: outputMeta.bDec ?? 18,
+      });
 
-    //     return "";
-    //   }
-    // },
-    // [chainId, assetValues, fromToken, toToken, swapPool],
-  );
+      const quote = await quoteExactOutputSingle(
+        client as PublicClient,
+        inputMeta.bAddr,
+        outputMeta.bAddr,
+        desiredBOut.value,
+        feeTier,
+        BigInt(0),
+        {
+          tag: "exactOutput",
+          tokenIn: inputMeta.bAddr,
+          tokenOut: outputMeta.bAddr,
+          fee: feeTier,
+          amount: desiredBOut.value,
+        }
+      );
+      if (!quote) {
+        console.error("[getOtherAmount] exactOutput quote null");
+        return "";
+      }
+      console.warn("[getOtherAmount] exactOutput quote", {
+        desired_bOut: desiredBOut.value.toString(),
+        required_bIn: quote.amountIn.toString(),
+      });
 
-  // const updateAmountTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-  //   null,
-  // );
-  // const updateAmountTimestampRef = useRef<number>(0);
+      // 9) 필요한 bIn -> underlying(from)
+      const bInRequiredBD = new BigDecimal(
+        quote.amountIn,
+        inputMeta.bDec ?? 18
+      );
+      const requiredUnderlyingIn = await previewRedeem(
+        client as PublicClient,
+        inputMeta.raw as IBirdieSingleFarm,
+        bInRequiredBD
+      );
+      if (!requiredUnderlyingIn) {
+        console.error("[getOtherAmount] previewRedeem (input) null");
+        return "";
+      }
+      console.warn("[getOtherAmount] final underlying IN required", {
+        val_raw: requiredUnderlyingIn.value.toString(),
+        dec: requiredUnderlyingIn.decimals,
+        display: requiredUnderlyingIn.toPrecisionString(true, false),
+      });
+      return requiredUnderlyingIn.toPrecisionString(true, false);
+    } catch (e) {
+      console.error("[getOtherAmount] error", e);
+      return "";
+    }
+  },
+  [client, chainId, assetValues, fromToken, toToken, swapPool]
+);
 
-  // const [sqrtX96PriceLimit, setSqrtX96PriceLimit] = useState<bigint>(BigInt(0));
   const [sqrtPriceX96, setSqrtPriceX96] = useState<Fraction | null>(null);
   const sqrtPriceLimitX96 = useMemo(() => {
     if (sqrtPriceX96) {
@@ -650,6 +850,7 @@ export default function useSwapTokens({
     });
     const amountBD = new BigDecimal(fromAmount, fromToken.decimals);
     const feeTier = swapPool?.fee_tier;
+    const refereeAddress = useAccount().address as `0x${string}`;
     writeContract(
       {
         address: contracts.birdieRouter.address as `0x${string}`,
@@ -662,6 +863,7 @@ export default function useSwapTokens({
           amountBD.value,
           BigInt(1),
           BigInt(0),
+          refereeAddress,
         ]
       },
       {

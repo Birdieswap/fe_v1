@@ -4,7 +4,7 @@ import { useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추�
 import useAccountBalances from "./useAccountBalances";
 import { useAssetValues } from "./useAssetValues";
 
-// 추가: farmInfo와 useFarmStatus
+
 import { FarmList } from "@/const/farmInfo";
 import { calcFarmOnce, FarmCalc } from "@/utils/farm/calcFarmOnce";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -195,6 +195,7 @@ export default function useAssets() {
     }),
     [assetValues, balances, farmValues, refetchAll, assetValues.isFetching, balances.isFetching],
   );
+  console.log("useAssets assets", assets);
 
   return assets;
 }

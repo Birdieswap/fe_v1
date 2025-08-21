@@ -12,7 +12,7 @@ const bHarvestAutopilotWETH = BirdieSingleFarmGuard({
   symbol: "bWETH",
   fullName: "Birdieswap WETH",
   addresses: {
-    [networks.sepolia.id]: "0x0A04a857b05185c3AbE04032ca766FC01eC87204",
+    [networks.sepolia.id]: "0x34363A0d470da2e1b4166D3e05C4d0A2A9DF582D",
     [networks.baseFork.id]: "0x195fF461bDDbd672F0f6F2e0D86a7e53D05288da",
   },
   abi: erc20_abi,
@@ -28,7 +28,7 @@ const bHarvestAutopilotCBBTC = BirdieSingleFarmGuard({
   symbol: "bcbBTC",
   fullName: "Birdieswap cbBTC",
   addresses: {
-    [networks.sepolia.id]: "0x672dB85a43408A6795fA2850F485416C70Ec0FcE",
+    [networks.sepolia.id]: "0xF14185752E4B64c230BcB4735B1ebE854d6f6F81",
     [networks.baseFork.id]: "0xB5b48036F263D449aA7d98013DB62b098DB11e13",
   },
   abi: erc20_abi,
@@ -44,7 +44,7 @@ const bHarvestAutopilotUSDC = BirdieSingleFarmGuard({
   symbol: "bUSDC",
   fullName: "Birdieswap USDC",
   addresses: {
-    [networks.sepolia.id]: "0xfAF581313BF76776581EC31a9fEe3efC7d317c96",
+    [networks.sepolia.id]: "0x48C311E24300f2F844d325071ACcB10044139c80",
     [networks.baseFork.id]: "0xeBA7f095ba93E573E5F979Ef6620906Ec85F6C66",
   },
   abi: erc20_abi,
