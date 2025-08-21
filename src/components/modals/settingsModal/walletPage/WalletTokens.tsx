@@ -2,10 +2,15 @@
 
 import { cn } from "@heroui/react";
 import Image from "next/image";
-import { Fragment, useContext } from "react";
+import { Fragment, useContext, useMemo } from "react";
+import { useChainId } from "wagmi";
 
 import Icons from "@/assets/icons/icons";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import tokensList from "@/const/contracts/tokens/tokens";
+import singleVaultsList from "@/const/contracts/tokens/singleVaults";
+import lpVaultsList from "@/const/contracts/tokens/lpVaults";
+import { buildWalletTokens } from "@/utils/wallet/tokens/buildWalletTokens";
 
 export type WalletTokenInfo = {
   name: string;
@@ -44,36 +49,47 @@ function WalletTokenItem(props: WalletTokenInfo) {
 }
 
 export default function WalletTokens() {
+  const chainId = useChainId();
   const total = useContext(AssetsContext);
   
-  // const asdf = useBalance()
-  // asdf.
-  const tokens: WalletTokenInfo[] = [
-    {
-      name: "Ethereum",
-      amount: "0.00",
-      src: "/tokens/ETH.svg",
-      usdAmount: "0.00",
-    },
-    {
-      name: "Bridged USDC",
-      amount: "0.00",
-      src: "/tokens/USDbC.svg",
-      usdAmount: "0.00",
-    },
-    {
-      name: "AAVE",
-      amount: "0.00",
-      src: "/tokens/AAVE.svg",
-      usdAmount: "0.00",
-    },
-    {
-      name: "DAI",
-      amount: "0.00",
-      src: "/tokens/DAI.svg",
-      usdAmount: "0.00",
-    },
-  ];
+  const tokens = useMemo<WalletTokenInfo[]>(() => {
+    return buildWalletTokens(
+      total,
+      {
+        tokens: tokensList as any,
+        singleVaults: singleVaultsList as any,
+        lpVaults: lpVaultsList as any,
+      },
+      chainId
+    );
+  }, [total, chainId]);
+
+  // const tokens: WalletTokenInfo[] = [
+  //   {
+  //     name: "Ethereum",
+  //     amount: "0.00",
+  //     src: "/tokens/ETH.svg",
+  //     usdAmount: "0.00",
+  //   },
+  //   {
+  //     name: "Bridged USDC",
+  //     amount: "0.00",
+  //     src: "/tokens/USDbC.svg",
+  //     usdAmount: "0.00",
+  //   },
+  //   {
+  //     name: "AAVE",
+  //     amount: "0.00",
+  //     src: "/tokens/AAVE.svg",
+  //     usdAmount: "0.00",
+  //   },
+  //   {
+  //     name: "DAI",
+  //     amount: "0.00",
+  //     src: "/tokens/DAI.svg",
+  //     usdAmount: "0.00",
+  //   },
+  // ];
 
   return (
     <div

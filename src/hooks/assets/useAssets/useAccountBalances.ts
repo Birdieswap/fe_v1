@@ -31,7 +31,14 @@ export default function useAccountBalances() {
         singleVaultBalances.query.isFetching ||
         lpVaultBalances.query.isFetching,
     }),
-    [tokenBalances, singleVaultBalances, lpVaultBalances],
+    [      
+      tokenBalances.query.isFetching,
+      singleVaultBalances.query.isFetching,
+      lpVaultBalances.query.isFetching,
+      tokenBalances,
+      singleVaultBalances,
+      lpVaultBalances,
+    ],
   );
 }
 

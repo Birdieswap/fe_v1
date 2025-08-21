@@ -81,43 +81,6 @@ export function SelectWalletListBox(props: {
     return filtered;
   }, [props.providers, availableWallets]); 
   
-  /* // 🔥 키 매핑 테이블: wallets.ts key → 실제 RainbowKit Connector ID
-  const keyMapping: Record<string, string> = {
-    "metaMask": "metaMask",           // ⭐ 핵심 매핑
-    //"coinbaseWallet": "coinbaseWalletSDK", // ⭐ 핵심 매핑
-    "walletConnect": "walletConnect",
-    //"uniswap": "uniswap",
-    //"phantom": "phantom",
-    //"trust": "trust",
-    //"brave": "brave",
-  };
-
-  // 실제 등록된 connector IDs
-  const availableConnectorIds = useMemo(() => {
-    const ids = config.connectors.map(c => c.id);
-    return [...new Set(ids)]; // 중복 제거
-  }, [config.connectors]);
-
-  // 🔥 매핑을 통한 필터링
-  const filteredProviders = useMemo(() => {
-    const filtered = props.providers.filter((provider) => {
-      const mappedConnectorId = keyMapping[provider.key] || provider.key;
-      const isAvailable = availableConnectorIds.includes(mappedConnectorId);
-      
-      console.log(`${provider.name}: ${provider.key} → ${mappedConnectorId} (${isAvailable ? 'OK' : 'x'})`);
-      
-      return isAvailable;
-    });
-    
-    console.log("=== 매핑 필터링 결과 ===");
-    console.log("Available Connector IDs:", availableConnectorIds);
-    console.log("Provider Keys:", props.providers.map(p => p.key));
-    console.log("Mapped IDs:", props.providers.map(p => keyMapping[p.key] || p.key));
-    console.log("Filtered Count:", filtered.length);
-    console.log("Filtered Providers:", filtered.map(p => p.name));
-    
-    return filtered;
-  }, [props.providers, availableConnectorIds]); */
 
   if (filteredProviders.length === 0) {
     return (
@@ -137,6 +100,7 @@ export function SelectWalletListBox(props: {
                 className="select-network-list-item min-w-[200px]"
                 startContent={<WalletIcon provider={provider} />}
                 onPress={async () => {
+                  
                   try {
                     await connect();
                     props.onClose();
