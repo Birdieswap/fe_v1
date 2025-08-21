@@ -34,10 +34,10 @@ export async function calcFarmOnce(
       const [liq0, liq1] = liq;
       const token0 = farm.swap.input[0].input;
       const token1 = farm.swap.input[1].input;
-
-      // 주의: 심볼 기반 키는 충돌 위험. 추후 주소 기반으로 개선 권장.
+            // 주의: 심볼 기반 키는 충돌 위험. 추후 주소 기반으로 개선 권장.
       const price0 = assetValues.chainLinkPriceMap.get(`LINK:${token0.symbol}_USD`)?.price;
       const price1 = assetValues.chainLinkPriceMap.get(`LINK:${token1.symbol}_USD`)?.price;
+      console.log("calcFarmOnce", farm.fullName, farm, { liq0, liq1, token0, token1, price0, price1 });
 
       if (liq0 && liq1 && price0 && price1) {
         tvl = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
