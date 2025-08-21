@@ -2,7 +2,7 @@
 import { BigDecimal } from "@/types/BigDecimal";
 import { bdToNumber, format2, isZeroBD } from "./calcBigdecimal";
 import { buildAddressToMetaMap, AddressedMeta } from "./buildAddressMetaMaps";
-import { getUsdPriceFromChainlink } from "./calcwithChainLink";
+import { getUsdPriceFromChainlink } from "./calcWithChainLink";
 
 export type WalletTokenInfo = {
   name: string;
