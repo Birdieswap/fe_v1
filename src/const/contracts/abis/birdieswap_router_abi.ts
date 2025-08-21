@@ -625,7 +625,7 @@ export const birdieswap_router_abi = [
         "internalType": "address"
       },
       {
-        "name": "_fee",
+        "name": "_feeTier",
         "type": "uint24",
         "internalType": "uint24"
       },
@@ -648,6 +648,11 @@ export const birdieswap_router_abi = [
         "name": "_sqrtPriceLimitX96",
         "type": "uint160",
         "internalType": "uint160"
+      },
+      {
+        "name": "_refereeAddress",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [
@@ -947,31 +952,49 @@ export const birdieswap_router_abi = [
   },
   {
     "type": "event",
-    "name": "TokenTransfer",
+    "name": "Swap",
     "inputs": [
       {
-        "name": "tokenAddress",
+        "name": "sender",
         "type": "address",
         "indexed": true,
         "internalType": "address"
       },
       {
-        "name": "from",
+        "name": "tokenIn",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "to",
+        "name": "feeTier",
+        "type": "uint24",
+        "indexed": false,
+        "internalType": "uint24"
+      },
+      {
+        "name": "tokenOut",
         "type": "address",
-        "indexed": true,
+        "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "tokenAmount",
+        "name": "amountIn",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "amountOut",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "refereeAddress",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false

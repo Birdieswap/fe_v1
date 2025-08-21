@@ -4,6 +4,16 @@ import { uniswapQuoterV2Abi } from "@/const/contracts/abis/uniswap_quoter_v2_abi
 import miscContracts from "@/const/contracts/tokens/others";
 import { simulateContract } from "viem/actions";
 
+type QuoteLog = {
+  tag?: string;
+  tokenIn?: string;
+  tokenOut?: string;
+  fee?: number;
+  amountIn?: bigint;
+  amount?: bigint;
+  sqrtPriceLimitX96?: bigint;
+};
+
 export async function getMinimumAmountOut() {}
 
 export async function quoteExactInputSingle(
@@ -13,6 +23,7 @@ export async function quoteExactInputSingle(
   amountIn: bigint,
   fee: number,
   sqrtPriceLimitX96?: bigint,
+  debug?: QuoteLog
 ) {
   const chainId = publicClient.chain?.id;
 
@@ -49,10 +60,30 @@ export async function quoteExactInputSingle(
     ],
   };
 
+  if (debug) {
+    console.warn("[QuoterV2 exactInput] call", {
+      ...debug,
+      tokenIn,
+      tokenOut,
+      fee,
+      amountIn: amountIn.toString(),
+      sqrtPriceLimitX96: (sqrtPriceLimitX96 || BigInt(0)).toString(),
+    });
+  }
+
   const data = await simulateContract(publicClient, args);
 
   const [amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
     data.result;
+
+    if (debug) {
+    console.warn("[QuoterV2 exactInput] result", {
+      amountOut: amountOut.toString(),
+      sqrtPriceX96After: sqrtPriceX96After.toString(),
+      initializedTicksCrossed,
+      gasEstimate: gasEstimate.toString(),
+    });
+  }
 
   return {
     amountOut,
@@ -69,6 +100,7 @@ export async function quoteExactOutputSingle(
   amount: bigint,
   fee: number,
   sqrtPriceLimitX96?: bigint,
+  debug?: QuoteLog
 ) {
   const chainId = publicClient.chain?.id;
 
@@ -77,6 +109,7 @@ export async function quoteExactOutputSingle(
   const quoterAddress = quoter.addresses[chainId];
 
   if (!quoterAddress) return null;
+  
   const args: ContractFunctionParameters<
     typeof uniswapQuoterV2Abi,
     "nonpayable",
@@ -99,19 +132,39 @@ export async function quoteExactOutputSingle(
         tokenIn,
         tokenOut,
         fee,
-        amount,
+        amount ,
         sqrtPriceLimitX96: sqrtPriceLimitX96 || BigInt(0), // Default to 0 if not provided
       },
     ],
   };
 
+    if (debug) {
+    console.warn("[QuoterV2 exactOutput] call", {
+      ...debug,
+      tokenIn,
+      tokenOut,
+      fee,
+      amount: amount.toString(),
+      sqrtPriceLimitX96: (sqrtPriceLimitX96 || BigInt(0)).toString(),
+    });
+  }
+
   const data = await simulateContract(publicClient, args);
 
-  const [amountOut, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
+  const [amountIn, sqrtPriceX96After, initializedTicksCrossed, gasEstimate] =
     data.result;
 
+  if (debug) {
+    console.warn("[QuoterV2 exactOutput] result", {
+      amountIn: amountIn.toString(),
+      sqrtPriceX96After: sqrtPriceX96After.toString(),
+      initializedTicksCrossed,
+      gasEstimate: gasEstimate.toString(),
+    });
+  }
+
   return {
-    amountOut,
+    amountIn,
     sqrtPriceX96After,
     initializedTicksCrossed,
     gasEstimate,
