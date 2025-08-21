@@ -1,7 +1,7 @@
 "use client";
 
 import { Image, Skeleton } from "@heroui/react";
-import { useContext, useMemo, useState, useCallback } from "react";
+import { useContext, useMemo, useState, useCallback, useEffect } from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useChainId } from "wagmi";
@@ -15,6 +15,13 @@ import { IToken } from "@/const/contracts/types/tokenTypes";
 import FarmListTableRow from "./farming/FarmListTableRow";
 import { FarmListTableHeader } from "./farming/FarmListTableHeader";
 import { Filter } from "./page/FilterButtons";
+
+type FarmStatus = {
+  apy: BigDecimal;
+  tvl: BigDecimal | null;
+  MyBalance: BigDecimal | null;
+  price: BigDecimal | null; // 표시용으로 Row에 직접 넘길 때 사용
+};
 
 export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
   return (
@@ -38,25 +45,6 @@ export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
   );
 }
 
-function getFarmBalance(
-  chainId: number,
-  farm: Farm,
-  singleVaultBalances?: Map<`0x${string}`, BigDecimal>,
-  lpVaultBalances?: Map<`0x${string}`, BigDecimal>,
-): BigDecimal | undefined {
-  const vaultAddress = farm.wip_stakeToken?.addresses[chainId];
-
-  if (!vaultAddress) return undefined;
-  if (farm.type === FarmType.SINGLE) {
-    return singleVaultBalances?.get(vaultAddress);
-  }
-  if (farm.type === FarmType.PAIR) {
-    return lpVaultBalances?.get(vaultAddress);
-  }
-
-  return undefined;
-}
-
 export default function FarmListTable({
   sortColumn,
   sortDirection,
@@ -73,66 +61,89 @@ export default function FarmListTable({
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
   
-  //const stakeTokenList = FarmList.map(farm => farm.wip_stakeToken);
-
-  const { balances } = useContext(AssetsContext);
   const total = useContext(AssetsContext);
-  console.log("FarmListTable total", total, " balances:", balances);
-  // 1. farmStatusMap: address 키로 {apy, tvl, MyBalance} 저장 상태
-  const [farmStatusMap, setFarmStatusMap] = useState<Record<string, {
-    apy: number;
-    tvl: number;
-    MyBalance: number;
-  }>>({});
 
-  // 방어 로직 포함된 상태 업데이트 콜백
-  const handleStatusUpdate = useCallback((
-    address: string,
-    status: { apy: BigDecimal; tvl: BigDecimal | null; MyBalance: BigDecimal | null }
-  ) => {
-    setFarmStatusMap(prev => {
-      const prevStatus = prev[address];
-      const newApy = Number(status.apy.toString());
-      const newTvl = status.tvl ? Number(status.tvl.toString()) : 0;
-      const newMyBalance = status.MyBalance ? Number(status.MyBalance.toString()) : 0;
+  const balances = total?.balances;
+  const farmValues = total?.farmValues;
 
-      // 이전과 동일하면 변경 안 함 (무한 루프 방지)
-      if (
-        prevStatus &&
-        prevStatus.apy === newApy &&
-        prevStatus.tvl === newTvl &&
-        prevStatus.MyBalance === newMyBalance
-      ) {
-        return prev;
+
+  const [farmStatusMap, setFarmStatusMap] = useState<Record<`0x${string}`, FarmStatus>>({});
+
+    // 각 맵들: 없으면 빈 Map로 처리해 안정성 확보
+  const apyMap = total?.farmValues?.apyMap as Map<`0x${string}`, BigDecimal> | undefined;
+  const tvlMap = total?.farmValues?.tvlMap as Map<`0x${string}`, BigDecimal | null> | undefined;
+  const priceMap = total?.farmValues?.priceMap as Map<`0x${string}`, BigDecimal | null> | undefined;
+
+    const singleBalanceMap = balances?.singleVaultBalances?.balanceMap as Map<`0x${string}`, BigDecimal> | undefined;
+  const lpBalanceMap = balances?.lpVaultBalances?.balanceMap as Map<`0x${string}`, BigDecimal> | undefined; 
+  
+  const getFarmBalance = useCallback(
+    (address: `0x${string}`): BigDecimal | null => {
+      if (!address) return null;
+      const s = singleBalanceMap?.get(address);
+      if (s) return s;
+      const l = lpBalanceMap?.get(address);
+      if (l) return l;
+      return null;
+    },
+    [singleBalanceMap, lpBalanceMap]
+  );
+  
+  useEffect(() => {
+    if (!apyMap || !tvlMap || !priceMap) return;
+
+    setFarmStatusMap((prev) => {
+      let next = prev;
+
+      for (const farm of FarmList) {
+        const address = farm.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+        if (!address) continue;
+
+        const apy = apyMap.get(address) ?? BigDecimal.ZERO();
+        const tvl = tvlMap.get(address) ?? null;
+        const price = priceMap.get(address) ?? null;
+        const balance = getFarmBalance(address);
+
+        const MyBalance = balance && price ? balance.mul(price) : null;
+
+        next = {
+          ...next,
+          [address]: {
+            apy,
+            tvl,
+            MyBalance,
+            price, // Row에 직접 내려줄 용도
+          },
+        };
       }
 
-      return {
-        ...prev,
-        [address]: {
-          apy: newApy,
-          tvl: newTvl,
-          MyBalance: newMyBalance,
-        },
-      };
+      return next;
     });
-  }, []);
+  }, [chainId, apyMap, tvlMap, priceMap, getFarmBalance]);
 
-  // 3. balance 값은 getFarmBalance 같은 기존 함수로 FarmList 각 아이템별로 받아온다.
-  // 예를 들어 이렇게 얻어온 값을 farmStatus에서 관리하지 말고 그대로 row에 전달하여 계산에 쓰게 한다.
-
-  // 4. 업데이트된 farmList 작성: 기존 FarmList에 farmStatusMap값을 병합
   const updatedFarmList = useMemo(() => {
     return FarmList.map(farm => {
-      const addr = farm.wip_stakeToken.addresses;
-      const stat = farmStatusMap[addr[chainId]];
+      const address = farm.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+      const stat = address ? farmStatusMap[address] : undefined;
+
+      const toNum = (v: BigDecimal | null | undefined): number => {
+        if (!v) return 0;
+        try {
+          // 소수점 반영된 문자열을 number로 변환(표시·정렬 목적)
+          return parseFloat(v.toString());
+        } catch {
+          return 0;
+        }
+      };
+
       return {
         ...farm,
-        apy: stat?.apy ?? farm.apy,
-        tvl: stat?.tvl ?? farm.tvl,
-        MyBalance: stat?.MyBalance ?? farm.MyBalance,
+        apy: toNum(stat?.apy),            // number
+        tvl: toNum(stat?.tvl),            // number
+        MyBalance: toNum(stat?.MyBalance) // number
       };
     });
-  }, [farmStatusMap]);
+  }, [chainId, farmStatusMap]);
   //console.log("FarmListTable updatedFarmList:", updatedFarmList);
 
   const q = (searchTerm ?? "").trim().toLowerCase();
@@ -157,8 +168,6 @@ export default function FarmListTable({
 
   const items = searchedItems;
 
-  //console.log("FarmListTable total", total, " mergedFarmList!!!", updatedFarmList); // Debugging line to check items and balances
- 
   
     const sortedItems = useMemo(() => {
     const col = sortColumn;
@@ -175,11 +184,7 @@ export default function FarmListTable({
           return item.tags?.includes(FarmTag.STABLE);
         case Filter.MY_FARM:
           return BigDecimal.ZERO().lt(
-            getFarmBalance(
-              chainId,
-              item,
-              balances?.singleVaultBalances.balanceMap,
-              balances?.lpVaultBalances.balanceMap,
+            getFarmBalance(item.wip_stakeToken.addresses?.[chainId]
             ) ?? 0,
           );
         default:
@@ -230,23 +235,31 @@ export default function FarmListTable({
       transition={{ delay: -0.2 }}
     >
       <FarmListTableHeader />
-      {sortedItems.map((item) => (
+      {sortedItems.map((item) => {
+        const address = item.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+        if (!address) return null;
+
+        const apy = apyMap?.get(address) ?? BigDecimal.ZERO();
+        const tvl = tvlMap?.get(address) ?? null;
+        const price = priceMap?.get(address) ?? null;
+
+        const balance = getFarmBalance(address) ?? undefined;
+
+        return (
         <FarmListTableRow
-          key={item.wip_stakeToken.fullName}
-          balance={getFarmBalance(
-            chainId,
-            item,
-            balances?.singleVaultBalances.balanceMap,
-            balances?.lpVaultBalances.balanceMap,
-          )}
+          key={address}
           item={item}
-          onUpdate={handleStatusUpdate} 
+          balance={balance}
+          apy={apy}
+          tvl={tvl}
+          price={price}
           selectedRow={selectedRow}
           setSelectedRow={setSelectedRow}
           chainId={chainId}
         />
-
-      ))}
+      );
+    })}
+        
     </motion.div>
   );
 }

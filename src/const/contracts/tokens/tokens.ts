@@ -65,57 +65,14 @@ const CBBTC = CurrencyGuard({
   iconSrc: "/tokens/CBBTC.svg",
 } as const);
 
-/*
-const USDT = CurrencyGuard({
-  type: EContractType.CURRENCY,
-  symbol: "USDT",
-  fullName: "Tether",
-  addresses: {
-    [networks.sepolia.id]: "0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0",
-    [networks.base.id]: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
-    [networks.baseFork.id]: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
-  },
-  abi: erc20_abi,
-  decimals: 6,
-  displayDecimals: 2,
-  iconSrc: "/tokens/USDT.svg",
-} as const);
 
-const DAI = CurrencyGuard({
-  type: EContractType.CURRENCY,
-  symbol: "DAI",
-  fullName: "Dai",
-  addresses: {
-    [networks.sepolia.id]: "0xFF34B3d4Aee8ddCd6F9AFFFB6Fe49bD371b8a357",
-  },
-  abi: erc20_abi,
-  decimals: 18,
-  displayDecimals: 4,
-  iconSrc: "/tokens/DAI.svg",
-} as const);
-
-const AAVE = CurrencyGuard({
-  type: EContractType.CURRENCY,
-  symbol: "AAVE",
-  fullName: "Aave",
-  addresses: {
-    [networks.sepolia.id]: "0x88541670E55cC00bEEFD87eB59EDd1b7C511AC9a",
-  },
-  abi: erc20_abi,
-  decimals: 18,
-  displayDecimals: 4,
-  iconSrc: "/tokens/AAVE.svg",
-} as const);       */
 
 
 
 const tokens = {
   ETH,
   WETH,
-  //USDT,
   USDC,
-  //DAI,
-  //AAVE,
   CBBTC,
 };
 

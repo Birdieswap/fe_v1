@@ -59,8 +59,9 @@ export function useAssetValues() {
       priceFeedList.filter(
         (feed) =>
           feed.addresses[chainId] &&
-          feed.base.addresses[chainId] &&
-          (feed.quote === "USD" || feed.quote.addresses[chainId]),
+          feed.base.addresses[chainId] && 
+          // 수정: feed.quote가 "USD" 문자열일 수 있어 안전 접근
+          (feed.quote === "USD" || (feed as any).quote?.addresses?.[chainId]),
       ),
     [chainId],
   );
@@ -76,8 +77,8 @@ export function useAssetValues() {
     [chainId],
   );
 
-  console.log("availablePriceFeeds", availablePriceFeeds);
-  console.log("availableLpPools", availableLpPools);
+  // console.log("availablePriceFeeds", availablePriceFeeds);
+  // console.log("availableLpPools", availableLpPools);
 
   const priceFeedArgs: ContractFunctionParameters<
     typeof priceFeedAbi,
@@ -132,12 +133,12 @@ export function useAssetValues() {
 
   // TODO: devise a better way to get data
   const [chainLinkPriceMap, setPriceMap] = useState<Map<string, ChainLinkData>>(
-    new Map<string, ChainLinkData>(),
+    new Map()
   );
   // TODO: devise a better way to get data
   const [uniswapPriceMap, setUniswapPriceMap] = useState<
     Map<string, UniswapData>
-  >(new Map<string, UniswapData>());
+  >(new Map());
 
   const chainLinkData = useReadContracts({
     contracts: priceFeedArgs,
@@ -157,85 +158,116 @@ export function useAssetValues() {
       staleTime: 10000, // 10 seconds
     },
   });
-  console.log("chainLinkData", chainLinkData);
-  console.log("uniswapBaseTokenData", uniswapBaseTokenData);
-  console.log("uniswapQuoteTokenData", uniswapQuoteTokenData);
+  // console.log("chainLinkData", chainLinkData);
+  // console.log("uniswapBaseTokenData", uniswapBaseTokenData);
+  // console.log("uniswapQuoteTokenData", uniswapQuoteTokenData);
     
   useEffect(() => {
     if (chainLinkData.data) {
-      setPriceMap((priceMap) => {
-        const newPriceMap = new Map<string, ChainLinkData>(priceMap);
+      setPriceMap((prev) => {
+        // const newPriceMap = new Map<string, ChainLinkData>(priceMap);
+      const next = new Map(prev);
+      let changed = false;
 
-        availablePriceFeeds.forEach((feed, index) => {
-          const roundData = chainLinkData.data[index]?.result;
+      availablePriceFeeds.forEach((feed, index) => {
+      const roundData = chainLinkData.data?.[index]?.result as
+        | [bigint, bigint, bigint, bigint, bigint]
+        | undefined;
 
-          if (roundData) {
-            const [roundId, answer, startedAt, updatedAt, answeredInRound] =
-              roundData;
-            const price = new BigDecimal(answer, feed.decimals);
+      if (!roundData) return;
 
-            newPriceMap.set(feed.symbol, {
-              base: feed.base,
-              quote: feed.quote,
-              price,
-              roundId,
-              startedAt,
-              updatedAt,
-              answeredInRound,
-            });
-          }
-        });
+      const [roundId, answer, startedAt, updatedAt, answeredInRound] = roundData;
+      const price = new BigDecimal(answer, feed.decimals);
 
-        return newPriceMap;
+        //     newPriceMap.set(feed.symbol, {
+        //       base: feed.base,
+        //       quote: feed.quote,
+        //       price,
+        //       roundId,
+        //       startedAt,
+        //       updatedAt,
+        //       answeredInRound,
+        //     });
+        //   }
+        // });
+
+        // return newPriceMap;
+        const prevVal = next.get(feed.symbol);
+        const nextVal = {
+          base: feed.base,
+          quote: feed.quote,
+          price,
+          roundId,
+          startedAt,
+          updatedAt,
+          answeredInRound,
+        };
+
+        // 수정: 동일성 비교로 불필요 set 차단
+        const same =
+          prevVal &&
+          prevVal.price.toString() === nextVal.price.toString() &&
+          prevVal.roundId === nextVal.roundId &&
+          prevVal.startedAt === nextVal.startedAt &&
+          prevVal.updatedAt === nextVal.updatedAt &&
+          prevVal.answeredInRound === nextVal.answeredInRound;
+
+        if (!same) {
+          next.set(feed.symbol, nextVal);
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
       });
     }
   }, [chainLinkData.data, availablePriceFeeds]);
 
   useEffect(() => {
-    if (uniswapBaseTokenData.data && uniswapQuoteTokenData.data) {
-      setUniswapPriceMap((priceMap) => {
-        const newPriceMap = new Map<string, UniswapData>(priceMap);
+    if (!uniswapBaseTokenData.data || !uniswapQuoteTokenData.data) return;
 
-        availableLpPools.forEach((pool, index) => {
-          if (
-            !uniswapBaseTokenData.data[index] ||
-            !uniswapQuoteTokenData.data[index]
-          ) {
-            console.warn(
-              `Missing Uniswap data for pool ${pool.symbol} at index ${index}`,
-            );
+    setUniswapPriceMap((prev) => {
+      const next = new Map(prev);
+      let changed = false;
 
-            return;
-          }
-          const baseBalance = new BigDecimal(
-            uniswapBaseTokenData.data[index]?.result,
-            pool.input[0].decimals,
-          );
-          const quoteBalance = new BigDecimal(
-            uniswapQuoteTokenData.data[index]?.result,
-            pool.input[1].decimals,
-          );
+      availableLpPools.forEach((pool, index) => {
+        const baseRes = uniswapBaseTokenData.data?.[index]?.result;
+        const quoteRes = uniswapQuoteTokenData.data?.[index]?.result;
 
-          // console.log(
-          //   `Uniswap Pool ${pool.symbol}: Base Balance: ${baseBalance.toString()}, Quote Balance: ${quoteBalance.toString()}`,
-          // );
+        if (baseRes === undefined || quoteRes === undefined) {
+          // console.warn(`Missing Uniswap data for pool ${pool.symbol} at index ${index}`);
+          return;
+        }
 
-          newPriceMap.set(pool.symbol, {
-            base: pool.input[0],
-            quote: pool.input[1],
-            baseBalance,
-            quoteBalance,
-          });
-        });
+        const baseBalance = new BigDecimal(baseRes, pool.input[0].decimals);
+        const quoteBalance = new BigDecimal(quoteRes, pool.input[1].decimals);
 
-        console.log("newPriceMap", newPriceMap);    
-        return newPriceMap;
+        const prevVal = next.get(pool.symbol);
+        const nextVal = {
+          base: pool.input[0], // <-- 수정 포인트
+          quote: pool.input[1], // <-- 수정 포인트
+          baseBalance,
+          quoteBalance,
+        };
+
+        // 수정: 동일성 비교
+        const same =
+          prevVal &&
+          prevVal.baseBalance.toString() === nextVal.baseBalance.toString() &&
+          prevVal.quoteBalance.toString() === nextVal.quoteBalance.toString();
+
+        if (!same) {
+          next.set(pool.symbol, nextVal);
+          changed = true;
+        }
       });
-    }
+
+      return changed ? next : prev;
+    });
   }, [uniswapBaseTokenData.data, uniswapQuoteTokenData.data, availableLpPools]);
 
-  console.log("chainLinkPriceMap", chainLinkPriceMap);
-  console.log("uniswapPriceMap", uniswapPriceMap);  
+  // console.log("chainLinkPriceMap", chainLinkPriceMap);
+  // console.log("uniswapPriceMap", uniswapPriceMap);  
   
   const isFetching = useMemo(
     () =>
