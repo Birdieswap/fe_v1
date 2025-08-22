@@ -10,14 +10,16 @@ import networks from "../networks";
 
 import stakingProviders from "./stakingProviders";
 import singleVaults from "./singleVaults";
+import { contractAddresses } from "../contractAddresses";
 
 const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "bUSDCWETH",
   fullName: "Birdieswap USDC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: "0x5591cE4E6AA6F951BD07092Cb3D7b6db1401bAED",
-    [networks.baseFork.id]: "0xd5e09e37f49af3563E3556e157E4d986D6708536",
+    [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_POOL as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.USDC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
   fee_tier : 3000,
@@ -36,8 +38,9 @@ const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
   symbol: "bcbBTCUSDC",
   fullName: "Birdieswap cbBTC 3000 USDC",
   addresses: {
-    [networks.sepolia.id]: "0x029Bfb17c0d345Aa119C0f6FCf3E968b13E2FF47",
-    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
+    [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_USDC_POOL as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.CBBTC_USDC_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_USDC_POOL as `0x${string}`,
   },
   decimals: 8,
   fee_tier : 3000,
@@ -56,8 +59,9 @@ const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
   symbol: "bcbBTCWETH",
   fullName: "Birdieswap cbBTC 500 WETH",
   addresses: {
-    [networks.sepolia.id]: "0x6e6a72D245C20D33581d35257ebf2431b769abeA",
-    [networks.baseFork.id]: "0xBc6aF90b0C82c9ecAa051c04F76842989e765070",
+    [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_WETH_POOL as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.CBBTC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
   fee_tier : 500,

@@ -90,7 +90,6 @@ export default function useSwapTokens({
   setPriceImpact?: Dispatch<SetStateAction<BigDecimal | undefined>>;
   maxSlippage?: number;
 }) {
-
   const fromTokenAddress = useTokenAddress(fromToken);
   const {
     data: allowanceFromToken,
@@ -142,53 +141,6 @@ export default function useSwapTokens({
 
   const [isLoadingFrom, setIsLoadingFrom] = useState<boolean>(false);
   const [isLoadingTo, setIsLoadingTo] = useState<boolean>(false);
-  // const amountBD = new BigDecimal(fromAmount, fromToken?.decimals);
-  // const [amountBTokenBD, setAmountBTokenBD] = useState<BigDecimal | null>(null);
-
-  // const checkBToken = useMemo(() => {
-  //   if (!swapPool) return null;
-  //   if (fromAmount) return swapPool.input[0] as IBirdieSingleFarm;
-  //   if (toAmount) return swapPool.input[1] as IBirdieSingleFarm;
-  //   return null;
-  // }, [swapPool, fromAmount, toAmount]);
-
-  // useEffect(() => { 
-  //   if (!client || !chainId || !assetValues || !checkBToken) {
-  //     setAmountBTokenBD(null);
-  //     return;
-  //   }
-  //   const latestAmountStr =
-  //     checkBToken?.input.symbol === fromToken?.symbol ? fromAmount : toAmount;
-  //   const latestTokenDecimals =
-  //     checkBToken?.input.symbol === fromToken?.symbol
-  //       ? fromToken?.decimals
-  //       : toToken?.decimals;
-  //   const latestAmountBD = new BigDecimal(latestAmountStr || "0", latestTokenDecimals);
-
-  //   if (latestAmountBD.isZero()) {
-  //     setAmountBTokenBD(null);
-  //     return;
-  //   }
-
-  //   async function runPreview() {
-  //     const resultBD = await fetchPreviewBTokenAmount(
-  //       client as PublicClient,
-  //       checkBToken as IBirdieSingleFarm,
-  //       latestAmountBD
-  //     );
-  //     setAmountBTokenBD(resultBD);
-  //   }
-  //   runPreview();
-  // }, [
-  //   client,
-  //   chainId,
-  //   assetValues,
-  //   checkBToken,
-  //   fromAmount,
-  //   toAmount,
-  //   fromToken?.decimals,
-  //   toToken?.decimals,
-  // ]);
 
 const getOtherAmount = useCallback(
   async (thisAmount: string, thisSide: "in" | "out") => {
@@ -850,7 +802,7 @@ const getOtherAmount = useCallback(
     });
     const amountBD = new BigDecimal(fromAmount, fromToken.decimals);
     const feeTier = swapPool?.fee_tier;
-    const refereeAddress = useAccount().address as `0x${string}`;
+    const refereeAddress = address as `0x${string}`;
     writeContract(
       {
         address: contracts.birdieRouter.address as `0x${string}`,

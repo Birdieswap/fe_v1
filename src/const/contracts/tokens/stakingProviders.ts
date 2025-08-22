@@ -1,6 +1,7 @@
 import { aave_pool_abi } from "../abis/aave_pool_abi";
 import { birdieswap_router_abi } from "../abis/birdieswap_router_abi";
 import { uniswap_factory_v3_abi } from "../abis/uniswap_factory_v3_abi";
+import { contractAddresses } from "../contractAddresses";
 import networks from "../networks";
 import { EProvider } from "../types/tokenTypes";
 import { StakingProviderGuard } from "../types/typeGuards";
@@ -21,22 +22,6 @@ const UNISWAP = StakingProviderGuard({
   abi: uniswap_factory_v3_abi,
 } as const);
 
-const AAVE = StakingProviderGuard({
-  name: "AAVE",
-  provider: EProvider.AAVE,
-  addresses: {
-    [networks.sepolia.id]: "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951",
-    [networks.arbitrum.id]: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
-    [networks.base.id]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
-    [networks.baseFork.id]: "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5",
-    [networks.bsc.id]: "0x6807dc923806fE8Fd134338EABCA509979a7e0cB",
-    [networks.optimism.id]: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
-    [networks.polygon.id]: "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
-    [networks.scroll.id]: "0x11fCfe756c05AD438e312a7fd934381537D3cFfe",
-  },
-  abi: aave_pool_abi,
-} as const);
-
 const HARVEST = StakingProviderGuard({
   name: "Autopilot",
   provider: EProvider.AUTOPILOT,
@@ -48,16 +33,15 @@ const BIRDIE = StakingProviderGuard({
   name: "AutoPilot", //"Birdie",
   provider: EProvider.BIRDIE,
   addresses: {
-    [networks.sepolia.id]: "0xc0F17032ed8B638dDF8e225922B6D2C46E5d4DB5",
-    [networks.base.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
-    [networks.baseFork.id]: "0x82917daD62e1a3D32E5f8a70B5664e941B20A3a3",
+    [networks.sepolia.id]: contractAddresses.sepolia.ROUTER as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.ROUTER as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.ROUTER as `0x${string}`,
   },
   abi: birdieswap_router_abi,
 } as const);
 
 const stakingProviders = {
   UNISWAP,
-  AAVE,
   HARVEST,
   BIRDIE,
 };
