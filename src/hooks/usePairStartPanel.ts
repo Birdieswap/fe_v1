@@ -159,7 +159,7 @@ export function usePairStartPanel(item: FarmPair) {
       if (thisUnderlying.eq(0)) {
         return BigDecimal.ZERO();
       }
-
+      console.log("getOtherAmount", { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0.value": poolBalance0.value, "poolBalance1.value": poolBalance1.value, "value": value, "thisUnderlying": thisUnderlying, "otherUnderlying": otherUnderlying });
       return value
         .mul(otherUnderlying)
         .div(thisUnderlying)
@@ -350,7 +350,11 @@ export function usePairStartPanel(item: FarmPair) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmounts([BigDecimal.ZERO(), BigDecimal.ZERO()]);
-
+          try {
+            await assetsContext.forceRefresh?.();
+          } catch (e) {
+            console.error("forceRefresh failed", e);
+          }
         },
       },
     );

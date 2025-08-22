@@ -25,7 +25,7 @@ const WETH_USD = PriceFeedGuard({
   },
   base: tokens.WETH,
   quote: "USD",
-  decimals: 18,
+  decimals: 8,
 });
 
 const ETH_USD = PriceFeedGuard({
@@ -38,7 +38,7 @@ const ETH_USD = PriceFeedGuard({
   },
   base: tokens.ETH,
   quote: "USD",
-  decimals: 18,
+  decimals: 8,
 });
 
 const USDC_USD = PriceFeedGuard({
@@ -51,7 +51,7 @@ const USDC_USD = PriceFeedGuard({
   },
   base: tokens.USDC,
   quote: "USD",
-  decimals: 6,
+  decimals: 8,
 });
 /*
 const USDT_USD = PriceFeedGuard({

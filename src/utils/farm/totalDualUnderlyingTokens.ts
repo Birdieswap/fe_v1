@@ -49,12 +49,16 @@ export default async function totalDualUnderlyingTokens(
   if (!data) return null;
   if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[0].input.addresses[chainId]) {
     const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[0].input.decimals);
+    const token0Address = farm.swap.input[0].input.addresses[chainId];
     const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[1].input.decimals);
-    return [poolBalance0, poolBalance1];
+    const token1Address = farm.swap.input[1].input.addresses[chainId];
+    return [token0Address, poolBalance0, token1Address, poolBalance1 ];
   } else if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[1].input.addresses[chainId]) {
     const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[1].input.decimals);
+    const token0Address = farm.swap.input[1].input.addresses[chainId];
     const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[0].input.decimals);
-    return [poolBalance0, poolBalance1];
+    const token1Address = farm.swap.input[0].input.addresses[chainId];
+    return [token0Address, poolBalance0, token1Address, poolBalance1 ];
   }
   
 }

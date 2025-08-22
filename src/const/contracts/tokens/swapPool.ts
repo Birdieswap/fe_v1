@@ -46,8 +46,8 @@ const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [
-    singleVaults.bHarvestAutopilotCBBTC,
     singleVaults.bHarvestAutopilotUSDC,
+    singleVaults.bHarvestAutopilotCBBTC,
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
