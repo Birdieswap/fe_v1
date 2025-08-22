@@ -153,6 +153,11 @@ export function useSingleStartPanel(item: FarmSingle) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
+          try {
+            await assetsContext.forceRefresh?.(); // [수정] 추가
+          } catch (e) {
+           console.error("forceRefresh failed", e);
+          }
         },
       },
     );

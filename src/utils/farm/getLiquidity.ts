@@ -76,7 +76,7 @@ async function getLPLiquidity(
   client: PublicClient,
   farm: IBirdieLPFarm,
   assetValues: useAssetValuesReturnType,
-): Promise<[BigDecimal | null, BigDecimal | null] | null> {
+): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | null> {
   const chainId = client.chain?.id;
 
   if (!chainId) return null;
@@ -91,15 +91,17 @@ async function getLPLiquidity(
   const result = await totalDualUnderlyingTokens(
     client,
     farm,
-  ) as [BigDecimal, BigDecimal] | null;
+  ) as [`0x${string}`,BigDecimal, `0x${string}`, BigDecimal] | null;
 
   let balance0: BigDecimal | null = null;
+  let token0Address: `0x${string}` | null = null;
   let balance1: BigDecimal | null = null;
+  let token1Address: `0x${string}` | null = null;
 
   if (result) {
-    [balance0, balance1] = result;
+    [token0Address, balance0, token1Address, balance1] = result;
   }
-  return Promise.all([balance0, balance1]);
+  return Promise.all([token0Address, balance0, token1Address, balance1]);
 }
 
 export async function getLiquidity(
@@ -111,12 +113,12 @@ export async function getLiquidity(
   client: PublicClient,
   farm: IBirdieLPFarm,
   assetValues: useAssetValuesReturnType,
-): Promise<[BigDecimal | null, BigDecimal | null] | null>;
+): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | null>;
 export default async function getLiquidity(
   client: PublicClient,
   farm: IBirdieSingleFarm | IBirdieLPFarm,
   assetValues?: useAssetValuesReturnType,
-): Promise<[BigDecimal | null, BigDecimal | null] | BigDecimal | null> {
+): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | BigDecimal | null> {
   if (!client || !farm) return null;
   
   if (isBirdieSingleFarm(farm)) {

@@ -124,6 +124,11 @@ export default function useFarmStopPanelCommon(item: Farm) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
+          try {
+           await assetsContext.forceRefresh?.();
+          } catch (e) {
+            console.error("forceRefresh failed", e);
+          }
         },
       },
     );} else if (stakeToken.type === "BirdieLP"){
@@ -142,7 +147,11 @@ export default function useFarmStopPanelCommon(item: Farm) {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
-
+          try {
+           await assetsContext.forceRefresh?.();
+          } catch (e) {
+           console.error("forceRefresh failed", e);
+          }
         },
       },
     );

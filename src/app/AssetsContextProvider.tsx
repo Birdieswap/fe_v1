@@ -17,9 +17,11 @@ export const AssetsContext = createContext<{
   assetValues?: ReturnType<typeof useAssetValues>;
   balances?: ReturnType<typeof useAccountBalances>;
   farmValues?: FarmValues;
+  forceRefresh: () => Promise<void>; // [수정] 추가
   refetchAll: () => Promise<void>;
   isFetching: boolean;
 }>({
+  forceRefresh: async () => {}, // [수정] 추가
   refetchAll: async () => {},
   isFetching: true,
 });
@@ -37,9 +39,10 @@ export default function AssetsContextProvider({
       balances: assets.balances,
       farmValues: assets.farmValues,
       refetchAll: assets.refetchAll,
+      forceRefresh: assets.forceRefresh, // [수정] 추가
       isFetching: assets.isFetching,
     }),
-    [assets.assetValues, assets.balances, assets.farmValues, assets.refetchAll, assets.isFetching],
+    [assets.assetValues, assets.balances, assets.farmValues, assets.refetchAll, assets.forceRefresh, assets.isFetching],
   );
 
   return (

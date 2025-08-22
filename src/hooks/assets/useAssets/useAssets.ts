@@ -69,7 +69,9 @@ export default function useAssets() {
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());
   const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(new Map());
   const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(new Map());
+  const [refreshIndex, setRefreshIndex] = useState(0);
 
+  const refetch = useCallback(() => setRefreshIndex(i => i + 1), []);
   // 이전 출력 스냅샷(ref)도 Map으로 유지
   const lastOutputsRef = useRef<{
     apyMap: Map<string, BigDecimal>;
@@ -81,21 +83,45 @@ export default function useAssets() {
     priceMap: new Map(),
   });
 
-  // 체인링크 버전 키(과도한 차단 없이 변화 감지에만 사용)
-  const priceFeedVersion = useMemo(() => {
-    const keys: string[] = [];
-    assetValues.chainLinkPriceMap.forEach((_, k) => keys.push(String(k)));
-    return keys.sort().join("|");
+  // [수정] chainlink/uniswap 맵의 버전 문자열 생성 (reference 변하지 않아도 값 변하면 캐치)
+  const chainLinkVersion = useMemo(() => {
+    const arr: string[] = [];
+    assetValues.chainLinkPriceMap.forEach((v, k) => {
+      // v.price.toString() + 메타로 버전화
+      arr.push(`${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`);
+    });
+    return arr.sort().join("|");
   }, [assetValues.chainLinkPriceMap]);
+
+  const uniswapVersion = useMemo(() => {
+    const arr: string[] = [];
+    assetValues.uniswapPriceMap.forEach((v, k) => {
+      arr.push(`${k}:${v.baseBalance?.toString?.() ?? "0"}:${v.quoteBalance?.toString?.() ?? "0"}`);
+    });
+    return arr.sort().join("|");
+  }, [assetValues.uniswapPriceMap]);
+
+  // [수정] balances의 버전 키 (토큰 주소별 balance 총합의 해시 유사 문자열)
+  const balancesVersion = useMemo(() => {
+    const arr: string[] = [];
+    balances.tokenBalances.balanceMap.forEach((v, k) => {
+      arr.push(`${k}:${v?.toString?.() ?? "0"}`);
+    });
+    balances.singleVaultBalances.balanceMap.forEach((v, k) => {
+      arr.push(`${k}:${v?.toString?.() ?? "0"}`);
+    });
+    balances.lpVaultBalances.balanceMap.forEach((v, k) => {
+      arr.push(`${k}:${v?.toString?.() ?? "0"}`);
+    });
+    return arr.sort().join("|");
+  }, [balances.tokenBalances.balanceMap, balances.singleVaultBalances.balanceMap, balances.lpVaultBalances.balanceMap]);
 
   // 3) 계산 실행
   useEffect(() => {
     let cancelled = false;
-
     async function run() {
       if (!client || farms.length === 0) {
         if (!cancelled) {
-          // 수정: 상태 초기화 시에도 스냅샷 동기화
           const emptyA = new Map<string, BigDecimal>();
           const emptyT = new Map<string, BigDecimal | null>();
           const emptyP = new Map<string, BigDecimal | null>();
@@ -107,7 +133,6 @@ export default function useAssets() {
         return;
       }
 
-      // 새 Map 준비
       const nextApy = new Map<string, BigDecimal>();
       const nextTvl = new Map<string, BigDecimal | null>();
       const nextPrice = new Map<string, BigDecimal | null>();
@@ -128,45 +153,37 @@ export default function useAssets() {
 
       if (cancelled) return;
 
-      // 값 기반 비교로 동일하면 setState 스킵
+      // [수정] 동일성 비교 완화 + refreshIndex 기반 강제 업데이트 선택
       const lastOut = lastOutputsRef.current;
 
-      const lastApyNorm = normalizeBDMapFromMap(lastOut.apyMap);
-      const nextApyNorm = normalizeBDMapFromMap(nextApy);
-      if (!shallowEqualNormalized(lastApyNorm, nextApyNorm)) {
-        setApyMap(nextApy);
-      }
+      const lastApyNorm = normalizeBDMapFromMap(lastOut.apyMap as any);
+      const nextApyNorm = normalizeBDMapFromMap(nextApy as any);
+      const lastTvlNorm = normalizeBDMapFromMap(lastOut.tvlMap as any);
+      const nextTvlNorm = normalizeBDMapFromMap(nextTvl as any);
+      const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
+      const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
 
-      const lastTvlNorm = normalizeBDMapFromMap(lastOut.tvlMap);
-      const nextTvlNorm = normalizeBDMapFromMap(nextTvl);
-      if (!shallowEqualNormalized(lastTvlNorm, nextTvlNorm)) {
-        setTvlMap(nextTvl);
-      }
+      const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
+      const tvlChanged = !shallowEqualNormalized(lastTvlNorm, nextTvlNorm);
+      const priceChanged = !shallowEqualNormalized(lastPriceNorm, nextPriceNorm);
 
-      const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap);
-      const nextPriceNorm = normalizeBDMapFromMap(nextPrice);
-      if (!shallowEqualNormalized(lastPriceNorm, nextPriceNorm)) {
-        setPriceMap(nextPrice);
-      }
+      // [수정] 어떤 변경이든 있으면 업데이트
+      if (apyChanged) setApyMap(nextApy);
+      if (tvlChanged) setTvlMap(nextTvl);
+      if (priceChanged) setPriceMap(nextPrice);
 
-      // 스냅샷 갱신
-      lastOutputsRef.current = { apyMap: nextApy, tvlMap: nextTvl, priceMap: nextPrice };
+      // [수정] 강제 업데이트 직후 스냅샷 갱신
+      if (apyChanged || tvlChanged || priceChanged) {
+        lastOutputsRef.current = { apyMap: nextApy, tvlMap: nextTvl, priceMap: nextPrice };
+      }
     }
 
     run();
     return () => { cancelled = true; };
-  }, [client, farms, priceFeedVersion, assetValues.chainLinkPriceMap]);
+  // [수정] 의존성 확장: refreshIndex, chainLinkVersion, uniswapVersion, balancesVersion
+  }, [client, farms, chainLinkVersion, uniswapVersion, balancesVersion, refreshIndex]);
 
-  // 4) farmValues 안에 세 Map을 그대로 넣어서 노출
-  const farmValues = useMemo(() => {
-    return {
-      apyMap,   // Map<string, BigDecimal>
-      tvlMap,   // Map<string, BigDecimal | null>
-      priceMap, // Map<string, BigDecimal | null>
-    };
-  }, [apyMap, tvlMap, priceMap]);
-
- // 9) refetchAll: 기존과 동일
+  
   const refetchAll = useCallback(async () => {
     await Promise.all([
       assetValues?.uniswapBaseTokenData?.refetch(),
@@ -185,15 +202,36 @@ export default function useAssets() {
     balances?.tokenBalances.query.refetch,
   ]);
 
+  // [수정] 강제 재계산 도우미 (refetch 후 refreshIndex bump)
+  const forceRefresh = useCallback(async () => {
+    try {
+      await refetchAll();
+      await new Promise((res) => setTimeout(res, 50)); // 최신 블록 반영 대기
+    } finally {
+      setRefreshIndex((i) => i + 1);
+    }
+  }, [refetchAll]);
+  
+  // 4) farmValues 안에 세 Map을 그대로 넣어서 노출
+  const farmValues = useMemo(() => {
+    return {
+      apyMap, // Map
+      tvlMap, // Map
+      priceMap, // Map
+    };
+  }, [apyMap, tvlMap, priceMap]);
+ // 9) refetchAll: 기존과 동일
+
   const assets = useMemo(
     () => ({
       assetValues,
       balances,
       farmValues,
       refetchAll,
+      forceRefresh, //추가
       isFetching: assetValues.isFetching || balances.isFetching,
     }),
-    [assetValues, balances, farmValues, refetchAll, assetValues.isFetching, balances.isFetching],
+    [assetValues, balances, farmValues, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching],
   );
   console.log("useAssets assets", assets);
 

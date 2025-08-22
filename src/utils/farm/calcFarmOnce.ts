@@ -10,6 +10,7 @@ import { BigDecimal } from "@/types/BigDecimal";
 import getLiquidity from "@/utils/farm/getLiquidity";
 import getTotalSupply from "@/utils/farm/getTotalSupply";
 import type { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
+import { findSymbolByAddress } from "../assets/getTokenSymbol";
 
 export type FarmCalc = {
   apy: BigDecimal;
@@ -22,30 +23,32 @@ export async function calcFarmOnce(
   farm: IBirdieSingleFarm | IBirdieLPFarm,
   assetValues: useAssetValuesReturnType
 ): Promise<FarmCalc> {
+  const chainId = client.chain?.id;
+
   const apy = BigDecimal.ZERO();
 
-  const liq = await getLiquidity(client, farm, assetValues);
+  const data = await getLiquidity(client, farm, assetValues);
   const supply = await getTotalSupply(client, farm);
 
   let tvl: BigDecimal | null = null;
 
-  if (liq !== null && liq !== undefined) {
-    if (isBirdieLPFarm(farm) && Array.isArray(liq)) {
-      const [liq0, liq1] = liq;
-      const token0 = farm.swap.input[0].input;
-      const token1 = farm.swap.input[1].input;
+  if (data !== null && data !== undefined) {
+    if (isBirdieLPFarm(farm) && Array.isArray(data)) {
+      const [token0, liq0, token1, liq1] = data;
+      const symbol0 = findSymbolByAddress(token0 as `0x${string}`,chainId as number)
+      const symbol1 = findSymbolByAddress(token1 as `0x${string}`,chainId as number)
             // 주의: 심볼 기반 키는 충돌 위험. 추후 주소 기반으로 개선 권장.
-      const price0 = assetValues.chainLinkPriceMap.get(`LINK:${token0.symbol}_USD`)?.price;
-      const price1 = assetValues.chainLinkPriceMap.get(`LINK:${token1.symbol}_USD`)?.price;
-      console.log("calcFarmOnce", farm.fullName, farm, { liq0, liq1, token0, token1, price0, price1 });
+      const price0 = assetValues.chainLinkPriceMap.get(`LINK:${symbol0}_USD`)?.price;
+      const price1 = assetValues.chainLinkPriceMap.get(`LINK:${symbol1}_USD`)?.price;
+      console.log("calcFarmOnce", farm.fullName, farm, { liq0, liq1, token0, token1, symbol0, symbol1, price0, price1 });
 
       if (liq0 && liq1 && price0 && price1) {
         tvl = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
       }
-    } else if (isBirdieSingleFarm(farm) && liq instanceof BigDecimal) {
+    } else if (isBirdieSingleFarm(farm) && data instanceof BigDecimal) {
       const tokenPrice = assetValues.chainLinkPriceMap.get(`LINK:${farm.input.symbol}_USD`)?.price;
       if (tokenPrice) {
-        tvl = new BigDecimal(liq.mul(tokenPrice).toString());
+        tvl = new BigDecimal(data.mul(tokenPrice).toString());
       }
     }
   }
