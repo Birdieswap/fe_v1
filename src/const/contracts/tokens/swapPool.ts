@@ -28,8 +28,8 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [
-    singleVaults.bHarvestAutopilotWETH,
     singleVaults.bHarvestAutopilotUSDC,
+    singleVaults.bHarvestAutopilotWETH,
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
@@ -49,8 +49,8 @@ const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [
-    singleVaults.bHarvestAutopilotUSDC,
     singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotUSDC,
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
@@ -70,8 +70,8 @@ const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
   protocol: "Uniswap V3",
   isInternal: true,
   input: [
-    singleVaults.bHarvestAutopilotWETH,
     singleVaults.bHarvestAutopilotCBBTC,
+    singleVaults.bHarvestAutopilotWETH,
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
