@@ -28,6 +28,8 @@ export default function VaultInfoModal({
   item: Vault;
   disclosure: ReturnType<typeof useDisclosure>;
 }) {
+  const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
+
   return (
     <Fragment>
       <Tooltip
@@ -54,7 +56,7 @@ export default function VaultInfoModal({
             "data-[hover=true]:bg-background data-[hover=true]:opacity-100",
           )}
           variant="light"
-          onClick={disclosure.onOpen}
+          onPress={onOpen}
         >
           <Icons.Info
             className={clsx(
@@ -67,7 +69,8 @@ export default function VaultInfoModal({
         </Button>
       </Tooltip>
       <ModalBase
-        {...disclosure}
+        isOpen={isOpen} 
+        onOpenChange={onOpenChange}
         className="p-6"
         classNames={{
           wrapper: "items-end sm:items-center",
@@ -151,7 +154,7 @@ export default function VaultInfoModal({
             </div>
           </ModalBody>
           <ModalFooter className="p-0">
-            <ThemedButton variant="MINT" onClick={disclosure.onClose}>
+            <ThemedButton variant="MINT" onPress={onClose}>
               Close
             </ThemedButton>
           </ModalFooter>
