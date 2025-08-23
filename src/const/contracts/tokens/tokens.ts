@@ -32,7 +32,7 @@ const WETH = CurrencyGuard({
   },
   abi: erc20_abi,
   decimals: 18,
-  displayDecimals: 3,
+  displayDecimals: 6,
   iconSrc: "/tokens/WETH.svg",
 } as const);
 
@@ -62,7 +62,7 @@ const CBBTC = CurrencyGuard({
   },
   abi: erc20_abi,
   decimals: 8,
-  displayDecimals: 4,
+  displayDecimals: 6,
   iconSrc: "/tokens/CBBTC.svg",
 } as const);
 

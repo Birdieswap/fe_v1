@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useRef, useEffect } from "react";
 import { useAccount, useChainId, useClient, useWriteContract } from "wagmi";
 
 import { TransactionContext } from "@/app/TransactionContextProvider";
@@ -44,6 +44,9 @@ export default function useSwap() {
 
   const transactionContext = useContext(TransactionContext);
 
+    // 입력 중 디바운스 제어
+  const [isTyping, setIsTyping] = useState(false);
+
   const [priceImpact, setPriceImpact] = useState<BigDecimal | undefined>(
     undefined,
   );
@@ -66,7 +69,62 @@ export default function useSwap() {
     balances,
     setPriceImpact,
     maxSlippage: maxSlippage === "auto" ? 0.005 : maxSlippage / 100, // 0.5% when auto
+    isTyping,              // 추가: 입력중 여부
+    stopTyping: () => setIsTyping(false), // 디바운스 완료시 호출'
   });
+//=====================================================================================
+// ADD: 토큰 변경 시 fromAmount/toAmount 일괄 초기화(useEffect 방식)
+// - 어디서 토큰이 바뀌든 항상 초기화 규칙을 강제
+// - 실제 값이 바뀐 경우에만 초기화하도록 이전 값(ref)과 비교
+// =====================================================================================
+
+// CHANGE(필수): 이전 토큰을 추적하기 위한 ref
+const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
+const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
+
+// CHANGE(필수): fromToken 변경 시 입력값 초기화
+useEffect(() => {
+  const prev = prevFromTokenRef.current;
+  const changed =
+  (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
+  (fromToken?.symbol || fromToken?.fullName || fromToken?.addresses?.[chainId!]);
+
+ 
+  if (changed) {
+    console.log("[reset] fromToken changed → reset fromAmount/toAmount", {
+      prev: prev?.symbol,
+      next: fromToken?.symbol,
+    });
+    setFromAmount(""); // CHANGE(필수): 초기화
+    setToAmount("");   // CHANGE(필수): 초기화
+  }
+
+  prevFromTokenRef.current = fromToken;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fromToken, chainId]); // chainId도 키로 넣어 체인 변경 시 처리 일관성 강화
+
+  // CHANGE(필수): toToken 변경 시 입력값 초기화
+  useEffect(() => {
+  const prev = prevToTokenRef.current;
+  const changed =
+  (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
+  (toToken?.symbol || toToken?.fullName || toToken?.addresses?.[chainId!]);
+
+
+  if (changed) {
+    console.log("[reset] toToken changed → reset fromAmount/toAmount", {
+      prev: prev?.symbol,
+      next: toToken?.symbol,
+    });
+    setFromAmount(""); // CHANGE(필수): 초기화
+    setToAmount("");   // CHANGE(필수): 초기화
+  }
+
+  prevToTokenRef.current = toToken;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [toToken, chainId]);
+
+//============================여기까지 토큰 변경시 초기화
 
 
   function setFromTokenWithGuard(token: ICurrency | undefined) {
@@ -83,7 +141,10 @@ export default function useSwap() {
     });
 
     if (tokenAddress === fromTokenAddress) return;
+    
+    // 토큰 스위치 시 PI 리셋
     setPriceImpact(new BigDecimal(0, 18));
+
     if (tokenAddress === toTokenAddress) {
       //  switchTokens();
       setFromToken(token);
@@ -219,5 +280,8 @@ export default function useSwap() {
     chainId,
     exchangeRate: tempStuff.exchangeRate,
     priceImpact,
+    updateAmount: tempStuff.updateAmount,
+    isTyping,
+    setIsTyping,
   };
 }
