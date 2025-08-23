@@ -28,7 +28,9 @@ export default function SwapIndex() {
     isPending,
     isLoadingFrom,
     isLoadingTo,
-    isApproved
+    isApproved,
+    setIsTyping,
+    updateAmount,
   } = useSwapContext();
 
   return (
@@ -52,13 +54,29 @@ export default function SwapIndex() {
             //disabled={!toToken}
             onClick={() => {
               if (!fromToken && !toToken) return;
-              const prevFromToken = fromToken;
-              const prevFromAmount = fromAmount;
 
-              setFromToken(toToken);
-              setToToken(prevFromToken);
-              setFromAmount(toAmount);
-              setToAmount(prevFromAmount);
+              // 1) 스냅샷
+              const oldFromToken = fromToken;
+              const oldToToken = toToken;
+              const oldToAmount = toAmount;
+
+              // setIsTyping(false);
+              // setFromToken(undefined);
+              // setToToken(undefined);
+              // setFromAmount("");
+              // setToAmount("");
+
+              // 2) 새 조합
+              const newFromToken = oldToToken; // 토큰 교환
+              const newToToken = oldFromToken;
+              //const newFromAmount = oldToAmount; // 기존 toAmount가 입력 기준
+
+              // 3) 초기화
+              setIsTyping(true);
+              setFromToken(newFromToken);
+              setToToken(newToToken);
+              setFromAmount("");
+              setToAmount("");
             }}
           >
             <Icons.ChangeArrow className="fill-foreground" />

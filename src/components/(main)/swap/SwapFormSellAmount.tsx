@@ -8,7 +8,7 @@ import { BigDecimal } from "@/types/BigDecimal";
 import Icons from "@/assets/icons/icons";
 import { SwapTokens } from "@/const/tokenInfo";
 import { onAmountValueChange } from "@/utils/onAmountValueChange";
-import { ICurrency } from "@/const/contracts/types/tokenTypes";
+import { ICurrency,IToken } from "@/const/contracts/types/tokenTypes";
 import suffixNumbers from "@/utils/suffixNumbers";
 
 import {
@@ -18,6 +18,7 @@ import {
 } from "./SwapFormComponents";
 import SwapFormSelectTokenModal from "./SwapFormSelectTokenModal";
 import BalanceDisplay from "./swapFormAmount/BalanceDisplay";
+import { useSwapContext } from "./SwapProvider";
 
 export default function SwapFormAmount({
   type,
@@ -42,6 +43,7 @@ export default function SwapFormAmount({
   isDisabled?: boolean;
   isApproved?: boolean;
 }) {
+  const { setIsTyping } = useSwapContext();
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
   const step = token?.decimals ? `0.${"0".repeat(token.decimals - 1)}1` : "1";
@@ -86,24 +88,29 @@ export default function SwapFormAmount({
             isDisabled={isPending || isDisabled || !token}
             min={0}
             placeholder="0"
+            inputMode="decimal"            // CHANGE
             step={step}
             type="number"
             value={amount}
-            onBlur={() => {
-              if (amount.includes(".") && amount.endsWith("0")) {
-                setAmount(amount.replace(/0+$/, "").replace(/\.$/, ""));
-              }
+            onWheel={(e) => e.stopPropagation()}
+            onChange={(e) => {
+              const v = e.currentTarget.value;
+
+              // 자리수/길이 검증
+              if (!isValidAmount(v)) return;
+
+              // 타이핑 시작 신호 → 디바운스 완료 시까지 exchangeRate/PI 보류
+              setIsTyping(true);
+              // DEBUG: 입력 시작 로그
+              console.log("[SwapFormAmount] typing start, value:", v);
+
+              // 포맷/유효성 적용 (내부에서 setAmount 호출됨)
+              onAmountValueChange(v, token as IToken, setAmount);
             }}
             onKeyDown={(e) => {
-              if (e.key === "-") {
-                e.preventDefault();
-              }
+              if (e.key === "-") e.preventDefault();
             }}
-            onValueChange={(v) => {
-              if (token) {
-                onAmountValueChange(v, token, setAmount);
-              }
-            }}
+
           />
           {type ==="sell" && token && !isApproved ? (
              <Icons.Lock
