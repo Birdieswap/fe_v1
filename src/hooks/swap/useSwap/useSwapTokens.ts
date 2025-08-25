@@ -133,6 +133,11 @@ export default function useSwapTokens({
 
   const publicClient = usePublicClient();
 
+  // 15초 값 갱신을 위한 state/Ref 추가
+  const pulseRef = useRef<ReturnType<typeof setInterval> | null>(null); // 15초 주기 타이머
+  type LastInput = { amount: string; side: "in" | "out"; withToToken?: ICurrency | undefined };
+  const lastInputRef = useRef<LastInput | null>(null); // 마지막 입력 스냅샷
+
   const [poolAddress, zeroForOne, outBToken, outBpool, token0Decimals, token1Decimals] = useMemo<zeroForOneResult>(() => {
     const poolAddress = swapPool?.addresses[chainId] ?? null;
     const input0Address = swapPool?.input[0].addresses[chainId];
@@ -524,7 +529,10 @@ export default function useSwapTokens({
       // const newToToken = withToToken ?? toToken;
       const newToToken = withToToken ?? toToken;
 
+      // 15초 후 가격 업데이트를 위한 마지막 입력 스냅샷 갱신
       if (!fromToken || !newToToken || !publicClient) return;
+
+      lastInputRef.current = { amount: newAmount, side, withToToken };
 
       const newAmountBD = new BigDecimal(newAmount);
       const setAmount = side === "in" ? setToAmount : setFromAmount;
@@ -593,7 +601,7 @@ export default function useSwapTokens({
           setIsLoading(false);
           stopTyping(); // 디바운스 완료
         }
-      }, 1000);
+      }, 750);
     },
     [
       toToken,
@@ -612,6 +620,56 @@ export default function useSwapTokens({
       fromToken?.decimals,
     ],
   );
+
+  // 15초 주기 재계산 useEffect 추가
+useEffect(() => {
+// 안전 가드: 클라이언트/토큰 준비 안 됐거나 입력 중이면 주기 계산 중지
+  const canPulse = !!publicClient && !!fromToken && !!toToken && !isTyping;
+
+  // 기존 interval 해제
+  if (pulseRef.current) {
+  clearInterval(pulseRef.current);
+  pulseRef.current = null;
+  }
+
+  if (!canPulse) return;
+
+  // 최초 15초 기다리기 싫다면, 초기에 한 번 트리거:
+  // if (lastInputRef.current) {
+  // const { amount, side, withToToken } = lastInputRef.current;
+  // updateAmountCommon(amount, side, withToToken);
+  // }
+
+  pulseRef.current = setInterval(() => {
+  // 마지막 입력 스냅샷이 있어야만 재계산
+  const snap = lastInputRef.current;
+  if (!snap) return;
+
+  const { amount, side, withToToken } = snap;
+
+  // 현재 토큰 구성이 마지막 입력 당시와 달라졌다면(옵션) withToToken를 우선 사용
+  updateAmountCommon(amount, side, withToToken);
+  }, 15000); // 15초
+
+  return () => {
+  if (pulseRef.current) {
+  clearInterval(pulseRef.current);
+  pulseRef.current = null;
+  }
+  };
+  }, [publicClient, fromToken, toToken, isTyping, updateAmountCommon]);
+
+  // 언마운트/의존성 변경 시 모든 타이머 해제(기존 clean-up 유지)
+  useEffect(() => {
+  return () => {
+  if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+  if (pulseRef.current) { clearInterval(pulseRef.current); pulseRef.current = null; }
+  };
+  }, []);
+
+  //=================15초 계산 값
+
+
 
   useEffect(() => {
   return () => {
