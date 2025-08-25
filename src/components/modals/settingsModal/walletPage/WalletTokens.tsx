@@ -64,33 +64,6 @@ export default function WalletTokens() {
     );
   }, [total, chainId]);
 
-  // const tokens: WalletTokenInfo[] = [
-  //   {
-  //     name: "Ethereum",
-  //     amount: "0.00",
-  //     src: "/tokens/ETH.svg",
-  //     usdAmount: "0.00",
-  //   },
-  //   {
-  //     name: "Bridged USDC",
-  //     amount: "0.00",
-  //     src: "/tokens/USDbC.svg",
-  //     usdAmount: "0.00",
-  //   },
-  //   {
-  //     name: "AAVE",
-  //     amount: "0.00",
-  //     src: "/tokens/AAVE.svg",
-  //     usdAmount: "0.00",
-  //   },
-  //   {
-  //     name: "DAI",
-  //     amount: "0.00",
-  //     src: "/tokens/DAI.svg",
-  //     usdAmount: "0.00",
-  //   },
-  // ];
-
   return (
     <div
       className={cn(

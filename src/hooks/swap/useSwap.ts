@@ -279,6 +279,7 @@ useEffect(() => {
     isLoadingTo: tempStuff.isLoadingTo,
     chainId,
     exchangeRate: tempStuff.exchangeRate,
+    rExchangeRate: tempStuff.rExchangeRate,
     priceImpact,
     updateAmount: tempStuff.updateAmount,
     isTyping,

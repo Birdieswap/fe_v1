@@ -193,6 +193,8 @@ export default function useSwapTokens({
   // exchangeRate 문자열과 BD
   const [exchangeRateStr, setExchangeRateStr] = useState<string>("");
   const [exchangeRateBD, setExchangeRateBD] = useState<BigDecimal | null>(null);
+  const [rExchangeRateStr, setRExchangeRateStr] = useState<string>("");
+  const [rExchangeRateBD, setRExchangeRateBD] = useState<BigDecimal | null>(null);
 
   // CHANGE: 디바운스 ref 관리
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -570,10 +572,15 @@ export default function useSwapTokens({
           if (latestFromBD.isZero() || latestToBD.isZero()) {
             setExchangeRateStr("");
             setExchangeRateBD(null);
+            setRExchangeRateStr("");
+            setRExchangeRateBD(null);
           } else {
             const ratio = latestToBD.div(latestFromBD);
+            const Rratio = latestFromBD.div(latestToBD);
             setExchangeRateBD(ratio);
             setExchangeRateStr(ratio.toFixed(toToken?.displayDecimals ?? 8));
+            setRExchangeRateBD(Rratio);
+            setRExchangeRateStr(Rratio.toFixed(fromToken?.displayDecimals ?? 8));
             console.log("setExchangeRateStr", ratio, ratio.toFixed(toToken?.displayDecimals ?? 8));
           }
         } catch (err) {
@@ -616,6 +623,7 @@ export default function useSwapTokens({
 }, []);
 
     const exchangeRate = exchangeRateStr;
+    const rExchangeRate = rExchangeRateStr;
 
   // const exchangeRate = useMemo(() => {
   //   const toAmountBD = new BigDecimal(toAmount || "0", toToken?.decimals ?? 18);
@@ -977,6 +985,7 @@ export default function useSwapTokens({
     isLoadingFrom,
     isLoadingTo,
     exchangeRate,
+    rExchangeRate,
     setToTokenAmountWithGuard,
     setFromTokenAmountWithGuard,
     swap,
