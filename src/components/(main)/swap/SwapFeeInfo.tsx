@@ -20,9 +20,13 @@ export default function SwapFeeInfo() {
     toToken,
     toAmount,
     toPrice,
+    fromPrice,
     exchangeRate,
+    rExchangeRate,
     priceImpact,
   } = useSwapContext();
+
+  const [showReverse, setShowReverse] = useState(false);
 
   const exchangeRateInfo = useMemo(() => {
     if (!exchangeRate || !toPrice || !toToken || !fromToken) return "";
@@ -38,17 +42,27 @@ export default function SwapFeeInfo() {
     return `1 ${fromToken?.symbol} = ${exchangeRateString} ${toToken?.symbol} ($\u00A0${toValueString})`;
   }, [exchangeRate, fromToken, toPrice, toToken]);
 
+  const rExchangeRateInfo = useMemo(() => {
+    if (!rExchangeRate || !fromPrice || !toToken || !fromToken) return "";
+    const rExchangeRateValue = new BigDecimal(rExchangeRate || "0");
+    const fromValueString = fromPrice
+      .mul(rExchangeRateValue)
+      .roundToDecimals(2)
+      .toPrecisionString(false, false);
+    const rExchangeRateString = rExchangeRateValue
+      .roundToDecimals(fromToken.displayDecimals ?? fromToken.decimals ?? 3)
+      .toPrecisionString(false, false);
+
+    return `1 ${toToken?.symbol} = ${rExchangeRateString} ${fromToken?.symbol} ($\u00A0${fromValueString})`;
+  }, [rExchangeRate, fromToken, toPrice, toToken]);
+
   if (!fromToken || !toToken) {
     return; //<div>Select tokens to see fee information</div>;
   }
 
   return (
-    <motion.section layout className="w-full" {...defaultTransition}>
-      <motion.div
-        layout
-        className="flex w-full flex-col gap-2.5 pb-4"
-        {...defaultTransition}
-      >
+    <motion.section className="w-full" {...defaultTransition}>
+      <div className="flex w-full flex-col gap-2.5 pb-4">
         <Button
           className={cn(
             "group h-fit max-h-fit w-full rounded-none px-0 text-left",
@@ -59,20 +73,28 @@ export default function SwapFeeInfo() {
           variant="light"
           onPress={() => setOpen((v) => !v)}
         >
-          <motion.div layout className="flex w-full flex-col gap-2.5">
-            <div className="flex w-full max-w-full flex-row items-center gap-1">
-              <span className="grow self-start text-wrap break-words font-medium">
-                {exchangeRateInfo}
+          <div className="flex w-full flex-col gap-2.5">
+            <div className="flex w-full max-w-full flex-row items-center justify-between">
+              <span
+                className={cn("inline-flex font-medium cursor-pointer")}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowReverse((prev) => !prev);
+                }}
+              >
+                {showReverse ? rExchangeRateInfo : exchangeRateInfo}
               </span>
-              <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
-                <Icons.Gas />
-                {/*<Icons.ArrowRL />*/}
-                0.5%
+              <div className="flex flex-row items-center gap-0.5">
+                <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
+                  <Icons.Gas />
+                  0.5%
+                </div>
+                <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
               </div>
-              <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
             </div>
-          </motion.div>
+          </div>
         </Button>
+      </div>
         <AnimatePresence>
           {priceImpact && priceImpact.abs().gt(0.05) && (
             <SwapError>
@@ -84,28 +106,17 @@ export default function SwapFeeInfo() {
             </SwapError>
           )}
         </AnimatePresence>
-      </motion.div>
+
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
+            key="accordion"
             layout
-            animate={{
-              opacity: 1,
-              scaleY: 1,
-              height: "auto",
-              originY: 0,
-            }}
-            exit={{
-              opacity: 0,
-              padding: 0,
-              margin: 0,
-              height: 0,
-            }}
-            initial={{
-              opacity: 0,
-              originY: 0,
-              height: 0,
-            }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
           >
             <div
               className={clsx(

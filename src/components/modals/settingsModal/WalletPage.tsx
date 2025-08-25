@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalHeader, Button, ModalBody, cn } from "@heroui/react";
+import { ModalHeader, Button, ModalBody, cn, ButtonGroup } from "@heroui/react";
 import { Fragment, useContext, useMemo, useState } from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains } from "wagmi";
@@ -25,18 +25,19 @@ function TabSelector(props: {
   return (
     <Button
       className={cn(
-        "group p-0 flex max-h-max min-h-min min-w-min max-w-max flex-row gap-3",
-        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70",
+        "flex h-9 border-1 text-center text-[14px] font-normal md:w",    
+        "border-default-400 bg-transparent text-default-600 data-[hover=true]:bg-default-400/20",
+	      "dark:border-default-100 dark:text-default-400 data-[hover=true]:opacity-100 ",
+        "data-[selected=true]:border-light_primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light_primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white",
       )}
       data-selected={props.value === props.selected}
-      radius="none"
+      //radius="none"
       variant="light"
       onPress={() => props.setTab(props.value)}
     >
       <h2
         className={cn(
           "text-[14px] font-semibold leading-[17px]",
-          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600",
           "dark:group-data-[selected=false]:text-default-400",
         )}
       >
@@ -158,32 +159,45 @@ export default function WalletPage(props: {
         </div>
       </ModalHeader>
       <ModalBody className="max-h-full overflow-hidden p-0">
-        <div className="flex max-h-full w-full grow flex-col items-center gap-3 overflow-hidden max-sm:gap-0">
-          <div className="flex w-full flex-col items-center gap-3 px-3 max-sm:px-6">
+        <div className="flex max-h-full w-full grow flex-col items-center overflow-hidden max-sm:gap-0">
+          <div className="flex w-full flex-col items-center px-3 max-sm:px-6">
             <WalletDisplay
               network={selectedNetwork}
               provider={selectedProvider}
               wallet={account}
             />
-            <div className="flex w-full flex-row justify-start gap-3 border-b-1 border-default-300 pb-3 pt-4 dark:border-default-100 max-sm:pb-4">
-              <TabSelector
-                name="Rewards"
-                selected={tab}
-                setTab={setTab}
-                value="rewards"
-              />
-              <TabSelector
-                name="Tokens"
-                selected={tab}
-                setTab={setTab}
-                value="tokens"
-              />
-              <TabSelector
-                name="Transaction"
-                selected={tab}
-                setTab={setTab}
-                value="transaction"
-              />
+            <div className="flex w-full rounded-t-xl flex-row justify-start pt-4">
+              <ButtonGroup 
+              fullWidth={true} 
+              className={cn(
+                // 1) 자식 버튼의 라운딩을 기본적으로 모두 제거
+                "[&>button]:rounded-none",
+                // 2) 첫 번째 버튼: 좌상단만 둥글게, 좌하단은 각지게
+                "[&>button:first-child]:rounded-tl-xl",
+                "[&>button:first-child]:rounded-bl-none",
+                // 3) 마지막 버튼: 우상단만 둥글게, 우하단은 각지게
+                "[&>button:last-child]:rounded-tr-xl",
+                "[&>button:last-child]:rounded-br-none",
+              )}>
+                <TabSelector
+                  name="Rewards"
+                  selected={tab}
+                  setTab={setTab}
+                  value="rewards"
+                />
+                <TabSelector
+                  name="Tokens"
+                  selected={tab}
+                  setTab={setTab}
+                  value="tokens"
+                />
+                <TabSelector
+                  name="Transaction"
+                  selected={tab}
+                  setTab={setTab}
+                  value="transaction"
+                />
+              </ButtonGroup>
             </div>
           </div>
           <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">

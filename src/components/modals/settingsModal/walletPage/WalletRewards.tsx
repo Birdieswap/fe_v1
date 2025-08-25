@@ -1,97 +1,81 @@
-import Image from "next/image";
-import { cn } from "@heroui/react";
-import { Fragment } from "react";
+"use client";
 
-import Icons from "@/assets/icons/icons";
-import ThemedButton from "@/components/atoms/ThemedButton";
+import { ModalHeader, Button, ModalBody, cn } from "@heroui/react";
+import { Fragment, useState } from "react";
 
-export type RewardItemProps = {
+
+import RewardsExtra from "./walletRewardsPage/RewardsExtra";
+import RewardsSwap from "./walletRewardsPage/RewardsSwap";
+import RewardsReferral from "./walletRewardsPage/RewardsReferral";
+
+function TabSelector(props: {
+  selected: "swap" | "referral" | "extra";
+  value: "swap" | "referral" | "extra";
+  setTab: (value: "swap" | "referral" | "extra") => void;
   name: string;
-  amount: string;
-  iconSrc?: string;
-  usdAmount: string;
-};
-
-function RewardItem(props: RewardItemProps) {
+}) {
   return (
-    <div className="flex w-full items-center gap-2">
-      <div className="size-8 rounded-full">
-        {props.iconSrc && (
-          <Image
-            alt={props.name}
-            className="size-full rounded-full"
-            height={40}
-            src={props.iconSrc}
-            width={40}
-          />
+    <Button
+      className={cn(
+        "group p-0 flex max-h-max min-h-min min-w-min max-w-max flex-row",
+        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70",
+      )}
+      data-selected={props.value === props.selected}
+      radius="none"
+      variant="light"
+      onPress={() => props.setTab(props.value)}
+    >
+      <h2
+        className={cn(
+          "text-[13px] font-semibold leading-[17px] pl-3 pr-3",
+          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600",
+          "dark:group-data-[selected=false]:text-default-400",
         )}
-      </div>
-      <span className="text-[15px] font-bold leading-[18px] text-foreground">
+      >
         {props.name}
-      </span>
-      <div className="flex grow flex-col items-end gap-0.5">
-        <span className="text-[16px] font-semibold leading-[19px] text-foreground">
-          {props.amount}
-        </span>
-        <span className="text-[12px] font-bold leading-[16px] text-default-300">
-          $ {props.usdAmount}
-        </span>
-      </div>
-    </div>
+      </h2>
+    </Button>
   );
 }
 
 export default function WalletRewards() {
-  const rewards: RewardItemProps[] = [
-    {
-      name: "AAVE",
-      amount: "0.00",
-      iconSrc: "/tokens/AAVE.svg",
-      usdAmount: "0.00",
-    },
-    {
-      name: "Birdie",
-      amount: "0.00",
-      iconSrc: "/tokens/Birdie.svg",
-      usdAmount: "0.00",
-    },
-  ];
+  const [tab, setTab] = useState<"swap" | "referral" | "extra">(
+    "swap",
+  );
 
   return (
-    <div
-      className={cn(
-        "flex w-full grow flex-col gap-3 p-0 pb-4",
-        "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4",
-      )}
-    >
-      {rewards.length === 0 ? (
-        <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
-          <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
-            You have no extra rewards to claim
-          </span>
-        </div>
-      ) : (
-        <Fragment>
-          <h2 className="w-full text-right text-[14px] font-semibold leading-[17px] text-primary">
-            Your Claim
-          </h2>
-          <div className="flex w-full grow flex-col gap-3 p-0 max-sm:gap-6">
-            {rewards.map((reward, index) => (
-              <RewardItem
-                key={index}
-                amount={reward.amount}
-                iconSrc={reward.iconSrc}
-                name={reward.name}
-                usdAmount={reward.usdAmount}
+    <Fragment>
+      <ModalBody className="max-h-full overflow-hidden p-0">
+        <div className="flex max-h-full w-full grow flex-col items-center gap-3 overflow-hidden max-sm:gap-0">
+          <div className="flex w-full flex-col items-center gap-3 px-3 max-sm:px-6">
+            <div className="flex w-full flex-row justify-start gap-3 border-b-1 mt-0 bg-default-100 dark:bg-[#363B4C] border-default-300 pt-3 pl-3 pb-3 dark:border-default-100 max-sm:pb-4">
+              <TabSelector
+                name="Swap"
+                selected={tab}
+                setTab={setTab}
+                value="swap"
               />
-            ))}
+              <TabSelector
+                name="Referral"
+                selected={tab}
+                setTab={setTab}
+                value="referral"
+              />
+              <TabSelector
+                name="Extra"
+                selected={tab}
+                setTab={setTab}
+                value="extra"
+              />
+            </div>
           </div>
-          <div className="flex w-full flex-row">
-            <ThemedButton variant="MINT">Claim all</ThemedButton>
+          <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">
+            {tab === "swap" && <RewardsSwap />}
+            {tab === "referral" && <RewardsReferral />}
+            {tab === "extra" && <RewardsExtra />}
           </div>
-        </Fragment>
-      )}
-    </div>
+        </div>
+      </ModalBody>
+    </Fragment>
   );
 }
