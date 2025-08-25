@@ -11,7 +11,7 @@ import { Config, useAccount, usePublicClient, useReadContract } from "wagmi";
 import { type UseReadContractReturnType } from "wagmi";
 import { Client, erc20Abi, parseUnits, PublicClient, Abi } from "viem";
 import { WriteContractMutate } from "wagmi/query";
-import { Fraction } from "@uniswap/sdk-core";
+import { Fraction, sqrt } from "@uniswap/sdk-core";
 
 import { contracts } from "@/const/contracts";
 import {
@@ -200,7 +200,8 @@ export default function useSwapTokens({
   const [exchangeRateBD, setExchangeRateBD] = useState<BigDecimal | null>(null);
   const [rExchangeRateStr, setRExchangeRateStr] = useState<string>("");
   const [rExchangeRateBD, setRExchangeRateBD] = useState<BigDecimal | null>(null);
-
+  const [quoteReceive, setQuoteReceive] = useState<bigint | null>(null);
+  
   // CHANGE: 디바운스 ref 관리
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -282,6 +283,14 @@ export default function useSwapTokens({
         console.error("[getOtherAmount] slot0Data null");
         return "";
       }
+
+      console.log("slot0Data:", slot0Data,slot0Data.sqrtPriceX96.toString());
+      setSqrtPriceX96(
+        new Fraction(
+          slot0Data.sqrtPriceX96.toString(),         // numerator
+          (BigInt(2) ** BigInt(96)).toString()       // denominator
+        )
+      );
 
       const swapPoolPrice = getPoolPrice({
       sqrtPriceX96: slot0Data.sqrtPriceX96,
@@ -384,6 +393,7 @@ export default function useSwapTokens({
           amountIn_b: bAmountIn.value.toString(),
           amountOut_b: quote.amountOut.toString(),
         });
+        setQuoteReceive(quote.amountOut);
 
         // 9) bOut -> underlying(output)
         const bOutBD = new BigDecimal(
@@ -427,7 +437,11 @@ export default function useSwapTokens({
         console.error("[getOtherAmount] previewFullDeposit null (out)");
         return "";
       }
-       
+
+      setQuoteReceive(desiredBOut.value);
+
+      console.log("useSwapTokens desiredBOut:", desiredBOut.value);
+
       const quote = await quoteExactOutputSingle(
         client as PublicClient,
         inputMeta.bAddr,
@@ -489,13 +503,14 @@ export default function useSwapTokens({
   const sqrtPriceLimitX96 = useMemo(() => {
     if (sqrtPriceX96) {
       console.log("zeroForOne...", zeroForOne);
-      console.log("maxSlippage...", maxSlippage);
+      const Tolerance : number = 0.05;
+
       const multiplier = zeroForOne
         ? new BigDecimal(1, 18)
-            .sub(new BigDecimal(maxSlippage || 0.1, 18))
+            .sub(new BigDecimal(Tolerance || 0.1, 18))
             .sqrt()
         : new BigDecimal(1, 18)
-            .add(new BigDecimal(maxSlippage || 0.1, 18))
+            .add(new BigDecimal(Tolerance || 0.1, 18))
             .sqrt();
 
       console.log("multiplier...", multiplier.toFixed(18));
@@ -518,11 +533,46 @@ export default function useSwapTokens({
       );
       console.log("sqrtPriceLimit...", sqrtPriceLimit.toString());
 
+      console.log("slot0.sqrtPriceX96 raw:", sqrtPriceX96.toString());
+      console.log("fraction numerator:", sqrtPriceX96.numerator.toString());
+      console.log("fraction denominator:", sqrtPriceX96.denominator.toString());
+      console.log("back to Q64.96:", mathUtils.fractionToQ6496(
+        sqrtPriceX96.numerator, sqrtPriceX96.denominator
+      ).toString());
+
       return BigInt(sqrtPriceLimit.toString());
     } else {
       return BigInt(0);
     }
-  }, [maxSlippage, sqrtPriceX96, zeroForOne]);
+  }, [sqrtPriceX96, zeroForOne]);
+
+  const receiveWithSlippage = (
+    quoteReceive: bigint | null,
+    maxSlippage: number | null | undefined
+  ): bigint => {
+    if (!quoteReceive) return BigInt(1);
+    if (maxSlippage == null) return BigInt(1);
+
+    // 유효 범위 체크 (0 ~ 100%)
+    if (maxSlippage < 0) maxSlippage = 0;
+    if (maxSlippage > 1) maxSlippage = 1; // 1 == 100%
+
+    // 소수 -> BigInt 분수 변환
+    const maxSlippageStr = maxSlippage.toString(); // 예: "0.005"
+    const [ints, frac = ""] = maxSlippageStr.split(".");
+    const scale = BigInt(10) ** BigInt(frac.length);
+    const maxSlippageInt = BigInt(ints + frac); // 0.005 → 5
+    // (1 - a) × scale
+    const numer = scale - maxSlippageInt;
+    const denom = scale;
+
+    // quoteReceive × (1 - slippage)
+    return (quoteReceive * numer) / denom;
+  };
+
+  const receiveAtLeast = useMemo(() => {
+    return receiveWithSlippage(quoteReceive, maxSlippage);
+  }, [quoteReceive, maxSlippage]);
 
   const updateAmountCommon = useCallback(
     async (newAmount: string, side: "in" | "out", withToToken?: ICurrency) => {
@@ -921,6 +971,20 @@ useEffect(() => {
     const amountBD = new BigDecimal(fromAmount, fromToken.decimals);
     const feeTier = swapPool?.fee_tier;
     const refereeAddress = address as `0x${string}`;
+    const minReceive = receiveAtLeast;
+    const sqrtPriceLimit = sqrtPriceLimitX96*BigInt(0);
+
+    console.log("swap params", 
+      "inputTokenAddress",inputTokenAddress,
+      "feeTier", feeTier,
+      "outputTokenAddress", outputTokenAddress,
+      "amountBD", amountBD,
+      "minReceive", minReceive,
+      "sqrtPriceLimit", sqrtPriceLimit,
+      "refereeAddress", refereeAddress,
+    );
+
+
     writeContract(
       {
         address: contracts.birdieRouter.address as `0x${string}`,
@@ -931,8 +995,8 @@ useEffect(() => {
           feeTier as number,
           outputTokenAddress as `0x${string}`,
           amountBD.value,
-          BigInt(1),
-          BigInt(0),
+          minReceive,
+          sqrtPriceLimit,
           refereeAddress,
         ]
       },

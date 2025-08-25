@@ -168,16 +168,24 @@ export default function MaxSlippagePopover(props: {
                 endContent="%"
                 isDisabled={false}
                 min={0}
+                max={99.99}
                 placeholder=""
                 size="md"
-                step="0.0001"
+                step="0.01"
                 type="number"
-                value={props.maxSlippage === "auto" ? "5.5" : customSlippage} // Auto일 때 표시 값 추후 계산 값으로 업데이트 필요
+                value={props.maxSlippage === "auto" ? "0.5" : customSlippage} // Auto일 때 표시 값 추후 계산 값으로 업데이트 필요
                 onFocus={() => {
                   // Input을 클릭하면 자동으로 Custom 모드로 전환
                   if (props.maxSlippage === "auto") {
                     setCustomSlippage("");
                     props.setMaxSlippage(0);
+                  }
+                }}
+                onBlur={() => {
+                  // ✅ blur 시 빈 값("") 또는 "0" → auto 전환
+                  if (!customSlippage || customSlippage === "0") {
+                    props.setMaxSlippage("auto");
+                    setCustomSlippage("0.5"); // 기본 auto 값 표시
                   }
                 }}
                 onKeyDown={(e) => {
@@ -189,13 +197,18 @@ export default function MaxSlippagePopover(props: {
                   if (e.key === "Enter") {
                     e.preventDefault();
 
-                    // 유효한 값이 입력되었는지 확인
-                    if (customSlippage && customSlippage.trim() !== "") {
-                      const numValue = parseFloat(customSlippage);
+                    // 빈칸("") 또는 "0" → auto 전환
+                    if (!customSlippage || customSlippage.trim() === "" || customSlippage === "0") {
+                      props.setMaxSlippage("auto");
+                      setCustomSlippage("0.5"); // auto 기본값 표시
+                      setIsOpen(false);
+                      return;
+                    }
 
-                      if (!isNaN(numValue) && numValue >= 0) {
-                        props.setMaxSlippage(numValue);
-                      }
+                    // 유효한 숫자 입력 시 → 그대로 적용
+                    const numValue = parseFloat(customSlippage);
+                    if (!isNaN(numValue) && numValue > 0 && numValue < 100) {
+                      props.setMaxSlippage(numValue);
                     }
 
                     // Popover 닫기
@@ -203,17 +216,18 @@ export default function MaxSlippagePopover(props: {
                   }
                 }}
                 onValueChange={(v) => {
-                  setCustomSlippage(v);
-                  // 빈 문자열일 때는 아무것도 하지 않음 (Auto 모드로 전환하지 않음)
-                  if (!v || v.trim() === "") {
-                    props.setMaxSlippage(0);
+                  const sanitized = v.replace(/^(\d+)(\.\d{0,2})?.*$/, "$1$2");
 
+                  setCustomSlippage(sanitized);
+
+                  if (!sanitized || sanitized === "0") {
                     return;
                   }
 
-                  const numValue = parseFloat(v);
+                  const numValue = parseFloat(sanitized);
 
-                  if (v && !isNaN(numValue) && numValue >= 0) {
+                  // ✅ 범위 체크: 0 < numValue < 100
+                  if (!isNaN(numValue) && numValue > 0 && numValue < 100) {
                     props.setMaxSlippage(numValue);
                   }
                 }}
