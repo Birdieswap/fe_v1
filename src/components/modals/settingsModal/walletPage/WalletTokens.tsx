@@ -80,7 +80,7 @@ export default function WalletTokens() {
         </div>
       ) : (
         <Fragment>
-          <h2 className="w-full text-right text-[14px] font-semibold leading-[17px] text-primary">
+          <h2 className="w-full text-right text-[14px] font-semibold mt-3 leading-[17px] text-primary">
             {tokens.length} Tokens
           </h2>
           {tokens.map((token) => (

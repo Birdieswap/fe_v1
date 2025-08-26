@@ -102,10 +102,10 @@ export default function WalletContextProvider({
   const { referralAddress, setReferralAddress } = useReferral();
 
   useEffect(() => {
-    if (account.address && referralAddress === "") {
-      setReferralAddress(account.address); // ✅ ref 없으면 내 주소로 세팅
-    }
-  }, [account.address, referralAddress, setReferralAddress]);
+  if (account.isConnected && account.address && referralAddress === "") {
+    setReferralAddress(account.address); 
+  }
+}, [account.isConnected, account.address, referralAddress, setReferralAddress]);
 
   // ⭐ 이 부분을 새로운 코드로 교체
   const selectedProvider = useMemo(() => {
