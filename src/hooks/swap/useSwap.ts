@@ -270,6 +270,7 @@ useEffect(() => {
     isConnected,
     isPending: tempStuff.isPending,
     swap: tempStuff.swap,
+    swapPool : tempStuff.swapPool,
     approve: tempStuff.approve,
     setToTokenWithGuard,
     setFromTokenWithGuard,

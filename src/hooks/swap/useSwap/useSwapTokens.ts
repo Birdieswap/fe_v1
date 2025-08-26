@@ -43,6 +43,7 @@ import previewRedeem from "@/utils/farm/previewRedeem";
 import { readContract } from "viem/actions";
 import { getSlot0 } from "@/utils/uniswap/getPoolState";
 import { getPoolPrice } from "@/utils/uniswap/getPoolPrice";
+import { useReferral } from "@/app/ReferralContextProvider";
 
 const erc20DecAbi: Abi = [
   { inputs: [], name: "decimals", outputs: [{ type: "uint8", name: "" }], stateMutability: "view", type: "function" },
@@ -99,7 +100,7 @@ export default function useSwapTokens({
   stopTyping: () => void;
 }) {
 
-  
+  const { referralAddress } = useReferral();  
   const fromTokenAddress = useTokenAddress(fromToken);
   const {
     data: allowanceFromToken,
@@ -970,7 +971,6 @@ useEffect(() => {
     });
     const amountBD = new BigDecimal(fromAmount, fromToken.decimals);
     const feeTier = swapPool?.fee_tier;
-    const refereeAddress = address as `0x${string}`;
     const minReceive = receiveAtLeast;
     const sqrtPriceLimit = sqrtPriceLimitX96*BigInt(0);
 
@@ -981,7 +981,7 @@ useEffect(() => {
       "amountBD", amountBD,
       "minReceive", minReceive,
       "sqrtPriceLimit", sqrtPriceLimit,
-      "refereeAddress", refereeAddress,
+      "referralAddress", referralAddress,
     );
 
 
@@ -997,7 +997,7 @@ useEffect(() => {
           amountBD.value,
           minReceive,
           sqrtPriceLimit,
-          refereeAddress,
+          referralAddress as `0x${string}`,
         ]
       },
       {
@@ -1106,6 +1106,7 @@ useEffect(() => {
     isFetchingAllowanceFromToken,
     isLoadingFrom,
     isLoadingTo,
+    swapPool,
     exchangeRate,
     rExchangeRate,
     setToTokenAmountWithGuard,

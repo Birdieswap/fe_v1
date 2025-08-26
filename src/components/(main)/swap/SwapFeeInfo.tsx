@@ -11,22 +11,53 @@ import { BigDecimal } from "@/types/BigDecimal";
 
 import { useSwapContext } from "./SwapProvider";
 import SwapError from "./SwapError";
+import { RiTokenSwapLine } from "react-icons/ri";
+import { useReferral } from "@/app/ReferralContextProvider";
+import { useAccount } from "wagmi";
 
 export default function SwapFeeInfo() {
   const [open, setOpen] = useState(false);
   const {
     fromToken,
+    fromAmount,
     maxSlippage,
     toToken,
     toAmount,
     toPrice,
     fromPrice,
+    swapPool,
     exchangeRate,
     rExchangeRate,
     priceImpact,
   } = useSwapContext();
 
   const [showReverse, setShowReverse] = useState(false);
+  const { referralAddress } = useReferral();  
+  const { address } = useAccount();
+
+  const RewardRatio = () =>{
+    if (!referralAddress || !address) return 0;
+
+    if(referralAddress.toLowerCase() === address.toLowerCase()) {
+      return 1;
+    } else {
+      return 0.8;
+    }  
+  }
+  console.log("Referral Address in SwapFeeInfo:", referralAddress, "User Address:", address);
+  const feeTier = swapPool?.fee_tier ? swapPool.fee_tier / 10000 : 0;
+  const feeFractionBD = useMemo(() => {
+    if (!swapPool?.fee_tier) return new BigDecimal(0);
+
+    return new BigDecimal(Number(swapPool.fee_tier)).div(new BigDecimal(1000000));
+  }, [swapPool?.fee_tier]);
+
+  // 간단한 포맷 함수: round 후 trailing zero 제거
+  const formatBD = (bd: BigDecimal, decimals: number) => {
+    // stripZero = true, useComma = false
+    return bd.roundToDecimals(decimals).toPrecisionString(true, false);
+  };
+
 
   const exchangeRateInfo = useMemo(() => {
     if (!exchangeRate || !toPrice || !toToken || !fromToken) return "";
@@ -54,7 +85,7 @@ export default function SwapFeeInfo() {
       .toPrecisionString(false, false);
 
     return `1 ${toToken?.symbol} = ${rExchangeRateString} ${fromToken?.symbol} ($\u00A0${fromValueString})`;
-  }, [rExchangeRate, fromToken, toPrice, toToken]);
+  }, [rExchangeRate, fromToken, toToken, fromPrice]);
 
   if (!fromToken || !toToken) {
     return; //<div>Select tokens to see fee information</div>;
@@ -86,8 +117,9 @@ export default function SwapFeeInfo() {
               </span>
               <div className="flex flex-row items-center gap-0.5">
                 <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
-                  <Icons.Gas />
-                  0.5%
+                  {swapPool && (
+                    <RiTokenSwapLine className="h-4 w-4" />
+                  )}
                 </div>
                 <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
               </div>
@@ -95,28 +127,28 @@ export default function SwapFeeInfo() {
           </div>
         </Button>
       </div>
-        <AnimatePresence>
-          {priceImpact && priceImpact.abs().gt(0.05) && (
-            <SwapError>
-              <Icons.Error />
-              <span>
-                High price impact! More than{" "}
-                {priceImpact?.abs().mul(100).toFixed(2) ?? "-"}% drop!
-              </span>
-            </SwapError>
-          )}
-        </AnimatePresence>
+      <AnimatePresence>
+        {priceImpact && priceImpact.abs().gt(0.05) && (
+          <SwapError>
+            <Icons.Error />
+            <span>
+              High price impact! More than{" "}
+              {priceImpact?.abs().mul(100).toFixed(2) ?? "-"}% drop!
+            </span>
+          </SwapError>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence initial={false}>
         {open && (
           <motion.div
             key="accordion"
             layout
-            initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
             className="overflow-hidden"
+            exit={{ opacity: 0, height: 0 }}
+            initial={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.25 }}
           >
             <div
               className={clsx(
@@ -128,21 +160,35 @@ export default function SwapFeeInfo() {
               )}
             >
               <span>Max slippage</span>
-              <span>{maxSlippage === "auto" ? "Auto" : `${maxSlippage}%`}</span>
-              <span>Receive at least</span>
+              <span>{maxSlippage === "auto" ? `Auto(0.5%)` : `${maxSlippage}%`}</span>
+              <span>Price Impact</span>
               <span>
-                {toAmount} {toToken?.symbol}
+                -{priceImpact?.abs().mul(100).toFixed(2)}%
               </span>
-              <span>Fee (0.3%)</span>
+              <span>Fee ({feeTier}%)</span>
               <span>
-                {toAmount && toPrice
-                  ? `$${new BigDecimal(toAmount).mul(toPrice).mul(0.003).roundToDecimals(2).toPrecisionString(false, true)}`
+                {fromAmount && fromPrice
+                  ? (() => {
+                      // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보
+                      const fromBD = new BigDecimal(Number(fromAmount));
+                      const feeTokenBD = fromBD.mul(feeFractionBD); // token 단위의 fee
+                      const feeUSDBD = fromBD.mul(fromPrice).mul(feeFractionBD); // 달러 환산
+                      return `${fromToken?.symbol} ${formatBD(feeTokenBD, 8)} ($${formatBD(feeUSDBD, 4)})`;
+                    })()
                   : ""}
               </span>
-              <span>Network cost</span>
+              <span>Swap Reward</span>
               <span>
-                <Icons.Gas />
-                0.5%
+                <RiTokenSwapLine className="h-4 w-4" />
+                {fromAmount && fromPrice
+                  ? (() => {
+                      // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보
+                      const fromBD = new BigDecimal(Number(fromAmount));
+                      const RewardTokenBD = fromBD.mul(feeFractionBD).div(10).mul(RewardRatio()); // token 단위의 fee
+                      const RewardUSDBD = RewardTokenBD.mul(fromPrice); // 달러 환산
+                      return `${fromToken?.symbol} ${formatBD(RewardTokenBD, 8)} ($${formatBD(RewardUSDBD, 5)})`;
+                    })()
+                  : ""}
               </span>
             </div>
           </motion.div>

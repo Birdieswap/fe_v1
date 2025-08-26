@@ -1,11 +1,13 @@
 "use client";
 
-import { createContext, useMemo, useState } from "react";
+import { createContext, useMemo, useRef, useState, useEffect } from "react";
 import { Config, useAccount, UseAccountReturnType, useChainId } from "wagmi";
 
 import { WalletProviderInfo } from "@/types/WalletProviderInfo";
 import { NetworkInfo } from "@/types/NetworkInfo";
 import { walletProviders } from "@/const/wallets";
+import { useReferral } from "./ReferralContextProvider";
+
 
 export type WalletContextType = {
   selectedProvider?: WalletProviderInfo;
@@ -97,6 +99,13 @@ export default function WalletContextProvider({
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState<boolean>(false);
 
   const account = useAccount();
+  const { referralAddress, setReferralAddress } = useReferral();
+
+  useEffect(() => {
+    if (account.address && referralAddress === "") {
+      setReferralAddress(account.address); // ✅ ref 없으면 내 주소로 세팅
+    }
+  }, [account.address, referralAddress, setReferralAddress]);
 
   // ⭐ 이 부분을 새로운 코드로 교체
   const selectedProvider = useMemo(() => {
