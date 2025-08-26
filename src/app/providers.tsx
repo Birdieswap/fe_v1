@@ -262,11 +262,11 @@ export default function Providers({ children }: PropsWithChildren) {
           >
             <HeroUIProvider>
               <ThemeProvider enableSystem attribute="class">
-                <WalletContextProvider>
-                  <ReferralProvider>
+                <ReferralProvider>
+                  <WalletContextProvider>                 
                     <SettingsProvider>{children}</SettingsProvider>
-                  </ReferralProvider>
-                </WalletContextProvider>
+                  </WalletContextProvider>
+                </ReferralProvider>
               </ThemeProvider>
             </HeroUIProvider>
           </RainbowKitProvider>

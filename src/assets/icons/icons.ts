@@ -52,6 +52,9 @@ import WalletTxDetailsSwap from "./wallet-tx-details-swap.svg";
 import WalletTxError from "./wallet-tx-error.svg";
 import WalletTxOk from "./wallet-tx-ok.svg";
 import Wallet from "./wallet.svg";
+import WalletEmptyReferralRewards from "./Wallet-empty-ReferralRewards.svg";
+import WalletEmptySwapRewards from "./Wallet-empty-SwapRewards.svg";
+import Subtract from "./subtract.svg";
 
 export const Icons = {
   Arrow,
@@ -79,6 +82,7 @@ export const Icons = {
   SocialTwitter,
   Sort,
   Sorting,
+  Subtract,
   SummarySwap,
   SummaryStart,
   SummaryStop,
@@ -98,6 +102,8 @@ export const Icons = {
   WalletExit,
   WalletFarmPlus,
   WalletSwapArrowSmall,
+  WalletEmptyReferralRewards,
+  WalletEmptySwapRewards,
   WalletSwapArrow,
   WalletTitleStartFarm,
   WalletTitleStopFarm,
