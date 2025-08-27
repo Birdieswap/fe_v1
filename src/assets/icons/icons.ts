@@ -54,7 +54,7 @@ import WalletTxOk from "./wallet-tx-ok.svg";
 import Wallet from "./wallet.svg";
 import WalletEmptyReferralRewards from "./Wallet-empty-ReferralRewards.svg";
 import WalletEmptySwapRewards from "./Wallet-empty-SwapRewards.svg";
-import Subtract from "./subtract.svg";
+import Subtract from "./Subtract.svg";
 
 export const Icons = {
   Arrow,
