@@ -59,12 +59,7 @@ function ButtonSelector(props: {
   );
 }
 
-export default function EarningsPanel({
-  item,
-}: {
-  item: Farm;
-  aprDataState: any;
-}) {
+export default function EarningsPanel({ item }: { item: Farm }) {
   const [tab, setTab] = useState<Period>("1d");
   const chainId = useChainId();
   const { aprDataState } = useContext(AssetsContext);
