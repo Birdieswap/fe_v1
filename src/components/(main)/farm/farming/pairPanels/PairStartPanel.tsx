@@ -35,7 +35,7 @@ export function PairStartPanel({ item }: { item: FarmPair }) {
             )
           </div>
         </div>
-        <PairSlider isDisabled={false} item={item} state={state} />
+        {/* <PairSlider isDisabled={false} item={item} state={state} /> */}
       </PanelHeader>
       <motion.div
         layout

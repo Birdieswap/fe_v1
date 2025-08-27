@@ -43,25 +43,25 @@ function RewardItem(props: RewardItemProps) {
 
 export default function RewardsExtra() {
   const rewards: RewardItemProps[] = [
-    {
-      name: "AAVE",
-      amount: "0.00",
-      iconSrc: "/tokens/AAVE.svg",
-      usdAmount: "0.00",
-    },
-    {
-      name: "Birdie",
-      amount: "0.00",
-      iconSrc: "/tokens/Birdie.svg",
-      usdAmount: "0.00",
-    },
+    // {
+    //   name: "AAVE",
+    //   amount: "0.00",
+    //   iconSrc: "/tokens/AAVE.svg",
+    //   usdAmount: "0.00",
+    // },
+    // {
+    //   name: "Birdie",
+    //   amount: "0.00",
+    //   iconSrc: "/tokens/Birdie.svg",
+    //   usdAmount: "0.00",
+    // },
   ];
 
   return (
     <div
       className={cn(
         "flex w-full grow flex-col gap-3 p-0 pb-4",
-        "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4",
+        "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4"
       )}
     >
       {rewards.length === 0 ? (
