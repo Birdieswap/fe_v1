@@ -18,7 +18,6 @@ export default function VaultInfo({
   onOpenModal?: (item: VaultRowItem) => void;
 }) {
   const disclosure = useDisclosure();
-  console.log("VaultInfo item:!!!!!!!!!!", item);
   return (
     <div
       className="group flex w-full cursor-pointer flex-row items-center gap-1.5"

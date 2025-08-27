@@ -278,7 +278,7 @@ export const VaultInfo: {
   BCBBTC_harvest_autopilot_V1,
   BLP_autopilot_USDC_WETH_V1,
   BLP_autopilot_USDC_CBBTC_V1,
-  BLP_autopilot_WETH_CBBTC_V1
+  BLP_autopilot_WETH_CBBTC_V1,
 };
 
 export default VaultInfo;

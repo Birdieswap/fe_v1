@@ -40,7 +40,7 @@ export async function calcFarmOnce(
             // 주의: 심볼 기반 키는 충돌 위험. 추후 주소 기반으로 개선 권장.
       const price0 = assetValues.chainLinkPriceMap.get(`LINK:${symbol0}_USD`)?.price;
       const price1 = assetValues.chainLinkPriceMap.get(`LINK:${symbol1}_USD`)?.price;
-      console.log("calcFarmOnce", farm.fullName, farm, { liq0, liq1, token0, token1, symbol0, symbol1, price0, price1 });
+      // console.log("calcFarmOnce", farm.fullName, farm, { liq0, liq1, token0, token1, symbol0, symbol1, price0, price1 });
 
       if (liq0 && liq1 && price0 && price1) {
         tvl = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());

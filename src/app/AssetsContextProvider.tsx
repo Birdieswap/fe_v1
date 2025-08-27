@@ -21,7 +21,6 @@ export type aprDataState = {
 };
 
 export type AprEntry = {
-  notice?: string;
   chain_id: string;
   fee_tier: string;
   contract_address: string;
@@ -33,6 +32,8 @@ export type AprEntry = {
 };
 
 export type AprVault = {
+  type?: string;
+  notice?: string;
   name: string;
   underlying_protocol_text: string;
   underlying_protocol_url: string;
@@ -44,6 +45,7 @@ export type AprVault = {
   apr_7d: string;
   apr_30d: string;
   time_stamp: string;
+  last_harvest?: string;
 };
 
 export const AssetsContext = createContext<{

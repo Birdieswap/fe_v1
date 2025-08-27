@@ -269,7 +269,6 @@ export default function FarmListTable({
         const price = priceMap?.get(address) ?? null;
 
         const balance = getFarmBalance(address) ?? undefined;
-        console.log("FarmListTable!!!!!!!!!!!!!!", item);
 
         return (
           <FarmListTableRow
