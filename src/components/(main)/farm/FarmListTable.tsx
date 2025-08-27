@@ -39,7 +39,7 @@ export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
           />
         ) : (
           <Skeleton key={token.symbol} className="size-9 rounded-full" />
-        ),
+        )
       )}
     </div>
   );
@@ -60,23 +60,35 @@ export default function FarmListTable({
 }) {
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
-  
+
   const total = useContext(AssetsContext);
+  const { aprDataState } = useContext(AssetsContext);
+  console.log("FarmListTable total", total, "aprDataState", aprDataState);
 
   const balances = total?.balances;
-  const farmValues = total?.farmValues;
 
+  const [farmStatusMap, setFarmStatusMap] = useState<
+    Record<`0x${string}`, FarmStatus>
+  >({});
 
-  const [farmStatusMap, setFarmStatusMap] = useState<Record<`0x${string}`, FarmStatus>>({});
+  // 각 맵들: 없으면 빈 Map로 처리해 안정성 확보
+  const apyMap = total?.farmValues?.apyMap as
+    | Map<`0x${string}`, BigDecimal>
+    | undefined;
+  const tvlMap = total?.farmValues?.tvlMap as
+    | Map<`0x${string}`, BigDecimal | null>
+    | undefined;
+  const priceMap = total?.farmValues?.priceMap as
+    | Map<`0x${string}`, BigDecimal | null>
+    | undefined;
 
-    // 각 맵들: 없으면 빈 Map로 처리해 안정성 확보
-  const apyMap = total?.farmValues?.apyMap as Map<`0x${string}`, BigDecimal> | undefined;
-  const tvlMap = total?.farmValues?.tvlMap as Map<`0x${string}`, BigDecimal | null> | undefined;
-  const priceMap = total?.farmValues?.priceMap as Map<`0x${string}`, BigDecimal | null> | undefined;
+  const singleBalanceMap = balances?.singleVaultBalances?.balanceMap as
+    | Map<`0x${string}`, BigDecimal>
+    | undefined;
+  const lpBalanceMap = balances?.lpVaultBalances?.balanceMap as
+    | Map<`0x${string}`, BigDecimal>
+    | undefined;
 
-    const singleBalanceMap = balances?.singleVaultBalances?.balanceMap as Map<`0x${string}`, BigDecimal> | undefined;
-  const lpBalanceMap = balances?.lpVaultBalances?.balanceMap as Map<`0x${string}`, BigDecimal> | undefined; 
-  
   const getFarmBalance = useCallback(
     (address: `0x${string}`): BigDecimal | null => {
       if (!address) return null;
@@ -88,7 +100,7 @@ export default function FarmListTable({
     },
     [singleBalanceMap, lpBalanceMap]
   );
-  
+
   useEffect(() => {
     if (!apyMap || !tvlMap || !priceMap) return;
 
@@ -96,7 +108,9 @@ export default function FarmListTable({
       let next = prev;
 
       for (const farm of FarmList) {
-        const address = farm.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+        const address = farm.wip_stakeToken.addresses?.[chainId] as
+          | `0x${string}`
+          | undefined;
         if (!address) continue;
 
         const apy = apyMap.get(address) ?? BigDecimal.ZERO();
@@ -122,8 +136,10 @@ export default function FarmListTable({
   }, [chainId, apyMap, tvlMap, priceMap, getFarmBalance]);
 
   const updatedFarmList = useMemo(() => {
-    return FarmList.map(farm => {
-      const address = farm.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+    return FarmList.map((farm) => {
+      const address = farm.wip_stakeToken.addresses?.[chainId] as
+        | `0x${string}`
+        | undefined;
       const stat = address ? farmStatusMap[address] : undefined;
 
       const toNum = (v: BigDecimal | null | undefined): number => {
@@ -138,9 +154,9 @@ export default function FarmListTable({
 
       return {
         ...farm,
-        apy: toNum(stat?.apy),            // number
-        tvl: toNum(stat?.tvl),            // number
-        MyBalance: toNum(stat?.MyBalance) // number
+        apy: toNum(stat?.apy), // number
+        tvl: toNum(stat?.tvl), // number
+        MyBalance: toNum(stat?.MyBalance), // number
       };
     });
   }, [chainId, farmStatusMap]);
@@ -156,11 +172,16 @@ export default function FarmListTable({
       if (item.name && String(item.name).toLowerCase().includes(q)) return true;
 
       // 2) tags 배열의 어떤 요소라도 포함 검사
-      if (Array.isArray(item.tags) && item.tags.some(t => String(t).toLowerCase().includes(q))) return true;
+      if (
+        Array.isArray(item.tags) &&
+        item.tags.some((t) => String(t).toLowerCase().includes(q))
+      )
+        return true;
 
       // 3) wip_stakeToken.provider.name 포함 검사
       const providerName = item.wip_stakeToken?.provider?.name;
-      if (providerName && String(providerName).toLowerCase().includes(q)) return true;
+      if (providerName && String(providerName).toLowerCase().includes(q))
+        return true;
 
       return false;
     });
@@ -168,8 +189,7 @@ export default function FarmListTable({
 
   const items = searchedItems;
 
-  
-    const sortedItems = useMemo(() => {
+  const sortedItems = useMemo(() => {
     const col = sortColumn;
 
     const filteredItems = items.filter((item) => {
@@ -184,8 +204,7 @@ export default function FarmListTable({
           return item.tags?.includes(FarmTag.STABLE);
         case Filter.MY_FARM:
           return BigDecimal.ZERO().lt(
-            getFarmBalance(item.wip_stakeToken.addresses?.[chainId]
-            ) ?? 0,
+            getFarmBalance(item.wip_stakeToken.addresses?.[chainId]) ?? 0
           );
         default:
           return false;
@@ -198,16 +217,22 @@ export default function FarmListTable({
       return filteredItems.sort((a, b) => {
         if (a[col] === b[col]) return 0;
 
-          // a[col], b[col]이 BigDecimal 또는 객체인 경우 문자열→숫자 변환 시도
-        const valA = typeof a[col] === "object" && a[col] != null && typeof a[col].toString === "function"
-          ? Number(a[col].toString())
-          : Number(a[col]);
+        // a[col], b[col]이 BigDecimal 또는 객체인 경우 문자열→숫자 변환 시도
+        const valA =
+          typeof a[col] === "object" &&
+          a[col] != null &&
+          typeof a[col].toString === "function"
+            ? Number(a[col].toString())
+            : Number(a[col]);
 
-        const valB = typeof b[col] === "object" && b[col] != null && typeof b[col].toString === "function"
-          ? Number(b[col].toString())
-          : Number(b[col]);
+        const valB =
+          typeof b[col] === "object" &&
+          b[col] != null &&
+          typeof b[col].toString === "function"
+            ? Number(b[col].toString())
+            : Number(b[col]);
 
-  // 숫자 비교 
+        // 숫자 비교
         if (valA < valB) return sortDirection === "asc" ? -1 : 1;
         if (valA > valB) return sortDirection === "asc" ? 1 : -1;
         //(console.log("FarmListTable sorting:", filteredItems));
@@ -222,44 +247,46 @@ export default function FarmListTable({
     balances?.singleVaultBalances.balanceMap,
     balances?.lpVaultBalances.balanceMap,
     sortDirection,
-  ]); 
+  ]);
 
   return (
     <motion.div
       className={clsx(
         "container grid origin-top items-center justify-center gap-x-1",
         "md:grid-cols-[2fr_4.5fr_2fr_2fr_3fr_72px]",
-        "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]",
+        "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}
       layout="size"
       transition={{ delay: -0.2 }}
     >
       <FarmListTableHeader />
       {sortedItems.map((item) => {
-        const address = item.wip_stakeToken.addresses?.[chainId] as `0x${string}` | undefined;
+        const address = item.wip_stakeToken.addresses?.[chainId] as
+          | `0x${string}`
+          | undefined;
         if (!address) return null;
 
-        const apy = apyMap?.get(address) ?? BigDecimal.ZERO();
+        const apy = apyMap?.get(address)?.mul(100) ?? BigDecimal.ZERO();
         const tvl = tvlMap?.get(address) ?? null;
         const price = priceMap?.get(address) ?? null;
 
         const balance = getFarmBalance(address) ?? undefined;
+        console.log("FarmListTable!!!!!!!!!!!!!!", item);
 
         return (
-        <FarmListTableRow
-          key={address}
-          item={item}
-          balance={balance}
-          apy={apy}
-          tvl={tvl}
-          price={price}
-          selectedRow={selectedRow}
-          setSelectedRow={setSelectedRow}
-          chainId={chainId}
-        />
-      );
-    })}
-        
+          <FarmListTableRow
+            key={address}
+            item={item}
+            balance={balance}
+            apy={apy}
+            tvl={tvl}
+            price={price}
+            selectedRow={selectedRow}
+            setSelectedRow={setSelectedRow}
+            chainId={chainId}
+          />
+        );
+      })}
     </motion.div>
   );
 }

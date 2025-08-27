@@ -4,10 +4,21 @@ import { useDisclosure } from "@heroui/react";
 import { Vault } from "@/types/FarmListTableRowProps";
 
 import VaultInfoModal from "./vaultInfo/VaultInfoModal";
+import { VaultRowItem } from "../EarningsPanel";
+import Icons from "@/assets/icons/icons";
+type PeriodKey = "apr_1d" | "apr_7d" | "apr_30d";
 
-export default function VaultInfo({ item }: { item: Vault }) {
+export default function VaultInfo({
+  item,
+  periodKey,
+  onOpenModal,
+}: {
+  item: VaultRowItem;
+  periodKey: PeriodKey;
+  onOpenModal?: (item: VaultRowItem) => void;
+}) {
   const disclosure = useDisclosure();
-
+  console.log("VaultInfo item:!!!!!!!!!!", item);
   return (
     <div
       className="group flex w-full cursor-pointer flex-row items-center gap-1.5"
@@ -24,16 +35,24 @@ export default function VaultInfo({ item }: { item: Vault }) {
             "font-medium text-default-800",
             "group-hover:text-foreground",
             "dark:text-default-700 group-hover:dark:text-default-500",
-            "transition-colors",
+            "transition-colors"
           )}
         >
           {item.name}
         </p>
+        <Icons.Info
+          className={clsx(
+            "fill-default-500 group-hover:fill-default-700",
+            "dark:fill-default-800 dark:group-hover:fill-default-600",
+            "transition-[fill]"
+          )}
+          fillRule="evenodd"
+        />
         <VaultInfoModal disclosure={disclosure} item={item} />
       </div>
       <div className="grow" />
       <p className="whitespace-nowrap font-normal">
-        {item.apy.toFixed(2)}% APY
+        {item.apy.toFixed(2)}% APR
       </p>
     </div>
   );

@@ -20,22 +20,23 @@ import ThemedButton from "@/components/atoms/ThemedButton";
 
 import VaultInfoIcon from "./vaultInfoIcon.svg";
 import VaultChatBubble from "./vaultChatBubble.svg";
+import { VaultRowItem } from "../../EarningsPanel";
 
 export default function VaultInfoModal({
   item,
   disclosure,
 }: {
-  item: Vault;
+  item: VaultRowItem;
   disclosure: ReturnType<typeof useDisclosure>;
 }) {
   const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
 
   return (
     <Fragment>
-      <Tooltip
+      {/* <Tooltip
         classNames={{
           base: "max-w-64 group mt-2.5",
-          content: "bg-default-800 text-xs text-white px-3 py-2.5",
+          content: "bg-default-200 text-xs text-white px-3 py-2.5",
         }}
         content={
           <p>
@@ -53,7 +54,7 @@ export default function VaultInfoModal({
             "w-6 min-w-6",
             "h-6 min-h-6",
             "flex items-center justify-center",
-            "data-[hover=true]:bg-background data-[hover=true]:opacity-100",
+            "data-[hover=true]:bg-background data-[hover=true]:opacity-100"
           )}
           variant="light"
           onPress={onOpen}
@@ -62,14 +63,14 @@ export default function VaultInfoModal({
             className={clsx(
               "fill-default-500 group-hover:fill-default-700",
               "dark:fill-default-800 dark:group-hover:fill-default-600",
-              "transition-[fill]",
+              "transition-[fill]"
             )}
             fillRule="evenodd"
           />
         </Button>
-      </Tooltip>
+      </Tooltip> */}
       <ModalBase
-        isOpen={isOpen} 
+        isOpen={isOpen}
         onOpenChange={onOpenChange}
         className="p-6"
         classNames={{
@@ -84,10 +85,10 @@ export default function VaultInfoModal({
               <VaultInfoIcon className="[&>path]:themed-fill-primary" />
               <div className="flex flex-col gap-1">
                 <h1 className="text-sm font-semibold text-foreground">
-                  {item.details.title}
+                  {/* {item.details.title} */}
                 </h1>
                 <p className="text-sm font-normal text-default-600">
-                  {item.details.subtitle}
+                  {/* {item.details.subtitle} */}
                 </p>
               </div>
             </div>
@@ -99,10 +100,10 @@ export default function VaultInfoModal({
                 <h2 className="text-sm text-foreground">
                   <span className="font-medium">Underlying protocol: </span>
                   <span className="font-normal">
-                    {item.details.underlyingProtocolName}
+                    {/* {item.details.underlyingProtocolName} */}
                   </span>
                 </h2>
-                {typeof item.details.underlyingProtocolInfo === "string" && (
+                {/* {typeof item.details.underlyingProtocolInfo === "string" && (
                   <Link
                     className="text-xs text-foreground underline transition-colors hover:text-default-800"
                     href={item.details.underlyingProtocolInfo}
@@ -127,10 +128,10 @@ export default function VaultInfoModal({
                       {item.details.underlyingProtocolInfo.rewardAPR}
                     </h2>
                   </div>
-                )}
+                )} */}
               </div>
               <div className="flex flex-col gap-1.5">
-                <h2 className="text-sm font-medium text-foreground">
+                {/* <h2 className="text-sm font-medium text-foreground">
                   Crypttempo Vault Contract:
                 </h2>
                 <Link
@@ -149,7 +150,7 @@ export default function VaultInfoModal({
                   href={`https://etherscan.io/token/${item.details.receiptToken}`}
                 >
                   <p>{item.details.receiptToken}</p>
-                </Link>
+                </Link> */}
               </div>
             </div>
           </ModalBody>

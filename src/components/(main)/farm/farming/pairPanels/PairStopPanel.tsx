@@ -32,7 +32,7 @@ export function PairStopPanel({
       <PanelHeader>
         <SectionHeader>Receives</SectionHeader>
         <div className="grow" />
-        <PairSlider item={item} state={state} />
+        {/* <PairSlider item={item} state={state} /> */}
       </PanelHeader>
       <motion.div
         layout

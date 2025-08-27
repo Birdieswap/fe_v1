@@ -25,10 +25,10 @@ function TabSelector(props: {
   return (
     <Button
       className={cn(
-        "flex h-9 border-1 text-center text-[14px] font-normal md:w",    
+        "flex h-9 border-1 text-center text-[14px] font-normal md:w",
         "border-default-400 bg-transparent text-default-600 data-[hover=true]:bg-default-400/20",
-	      "dark:border-default-100 dark:text-default-400 data-[hover=true]:opacity-100 ",
-        "data-[selected=true]:border-light_primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light_primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white",
+        "dark:border-default-100 dark:text-default-400 data-[hover=true]:opacity-100 ",
+        "data-[selected=true]:border-light_primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light_primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white"
       )}
       data-selected={props.value === props.selected}
       //radius="none"
@@ -38,7 +38,7 @@ function TabSelector(props: {
       <h2
         className={cn(
           "text-[14px] font-semibold leading-[17px]",
-          "dark:group-data-[selected=false]:text-default-400",
+          "dark:group-data-[selected=false]:text-default-400"
         )}
       >
         {props.name}
@@ -70,7 +70,7 @@ function WalletDisplay({
       className={cn(
         "flex h-[61px] w-full rounded-xl bg-primary/10 px-4 dark:bg-dark_mid_mint max-sm:h-[104px]",
         "flex-row items-center gap-2",
-        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start",
+        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
       )}
     >
       <div className="flex flex-row items-center gap-2 sm:grow">
@@ -117,7 +117,7 @@ export default function WalletPage(props: {
   onClose: () => void;
 }) {
   const [tab, setTab] = useState<"rewards" | "tokens" | "transaction">(
-    "rewards",
+    "rewards"
   );
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
@@ -167,18 +167,19 @@ export default function WalletPage(props: {
               wallet={account}
             />
             <div className="flex w-full rounded-t-xl flex-row justify-start pt-4">
-              <ButtonGroup 
-              fullWidth={true} 
-              className={cn(
-                // 1) 자식 버튼의 라운딩을 기본적으로 모두 제거
-                "[&>button]:rounded-none",
-                // 2) 첫 번째 버튼: 좌상단만 둥글게, 좌하단은 각지게
-                "[&>button:first-child]:rounded-tl-xl",
-                "[&>button:first-child]:rounded-bl-none",
-                // 3) 마지막 버튼: 우상단만 둥글게, 우하단은 각지게
-                "[&>button:last-child]:rounded-tr-xl",
-                "[&>button:last-child]:rounded-br-none",
-              )}>
+              <ButtonGroup
+                fullWidth={true}
+                className={cn(
+                  // 1) 자식 버튼의 라운딩을 기본적으로 모두 제거
+                  "[&>button]:rounded-none",
+                  // 2) 첫 번째 버튼: 좌상단만 둥글게, 좌하단은 각지게
+                  "[&>button:first-child]:rounded-tl-xl",
+                  "[&>button:first-child]:rounded-bl-none",
+                  // 3) 마지막 버튼: 우상단만 둥글게, 우하단은 각지게
+                  "[&>button:last-child]:rounded-tr-xl",
+                  "[&>button:last-child]:rounded-br-none"
+                )}
+              >
                 <TabSelector
                   name="Rewards"
                   selected={tab}

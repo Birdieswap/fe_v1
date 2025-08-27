@@ -33,14 +33,13 @@ export default function FarmListTableRow({
 }) {
   const isActive = useMemo(
     () => selectedRow === item.wip_stakeToken.fullName,
-    [selectedRow, item.wip_stakeToken.fullName],
+    [selectedRow, item.wip_stakeToken.fullName]
   );
   const onClick = useCallback(() => {
     if (isActive) setSelectedRow(null);
     else setSelectedRow(item.wip_stakeToken.fullName);
   }, [item.wip_stakeToken.fullName, setSelectedRow, isActive]);
 
-  
   return (
     <Fragment key={item.wip_stakeToken.fullName}>
       <FarmListRowSummary

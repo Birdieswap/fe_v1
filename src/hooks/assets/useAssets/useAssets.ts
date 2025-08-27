@@ -40,6 +40,15 @@ function shallowEqualNormalized(
   return true;
 }
 
+function makeCompositeKey(chainId: number | string, address: string) {
+  const cid = typeof chainId === "string" ? Number(chainId) : chainId;
+  return `${cid}:${address.toLowerCase()}`;
+}
+
+const TargetBlockTime = 24 * 60 * 60; // seconds
+const annualBlockQty = Math.floor((365 * 24 * 60 * 60) / TargetBlockTime); // 정수
+const SCALE_DECIMALS = 1e18;
+
 export default function useAssets() {
   // 1) 여기서만 훅 호출 (고정 순서)
   const chainId = useChainId();
@@ -65,13 +74,22 @@ export default function useAssets() {
       });
   }, [chainId]);
 
+  console.log("useAssets farms", farms);
+
     // 2) 결과를 Map으로 관리
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());
   const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(new Map());
   const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(new Map());
+  
+    // aprData (raw parsed data) — 한 번만 fetch하고 forceRefresh 시 초기화
+  const [aprDataState, setAprDataState] = useState<any | null>(null);
+    // apr 데이터 캐시용 ref (rerender를 억제하기 위해 useRef로 보관)
+  const aprDataRef = useRef<any | null>(null);
+
   const [refreshIndex, setRefreshIndex] = useState(0);
 
   const refetch = useCallback(() => setRefreshIndex(i => i + 1), []);
+  
   // 이전 출력 스냅샷(ref)도 Map으로 유지
   const lastOutputsRef = useRef<{
     apyMap: Map<string, BigDecimal>;
@@ -116,73 +134,6 @@ export default function useAssets() {
     return arr.sort().join("|");
   }, [balances.tokenBalances.balanceMap, balances.singleVaultBalances.balanceMap, balances.lpVaultBalances.balanceMap]);
 
-  // 3) 계산 실행
-  useEffect(() => {
-    let cancelled = false;
-    async function run() {
-      if (!client || farms.length === 0) {
-        if (!cancelled) {
-          const emptyA = new Map<string, BigDecimal>();
-          const emptyT = new Map<string, BigDecimal | null>();
-          const emptyP = new Map<string, BigDecimal | null>();
-          setApyMap(emptyA);
-          setTvlMap(emptyT);
-          setPriceMap(emptyP);
-          lastOutputsRef.current = { apyMap: new Map(), tvlMap: new Map(), priceMap: new Map() };
-        }
-        return;
-      }
-
-      const nextApy = new Map<string, BigDecimal>();
-      const nextTvl = new Map<string, BigDecimal | null>();
-      const nextPrice = new Map<string, BigDecimal | null>();
-
-      for (const { farm, address } of farms) {
-        try {
-          const { apy, tvl, price }: FarmCalc = await calcFarmOnce(client, farm as any, assetValues);
-          if (cancelled) return;
-          nextApy.set(address, apy);
-          nextTvl.set(address, tvl);
-          nextPrice.set(address, price);
-        } catch {
-          nextApy.set(address, BigDecimal.ZERO());
-          nextTvl.set(address, null);
-          nextPrice.set(address, null);
-        }
-      }
-
-      if (cancelled) return;
-
-      // [수정] 동일성 비교 완화 + refreshIndex 기반 강제 업데이트 선택
-      const lastOut = lastOutputsRef.current;
-
-      const lastApyNorm = normalizeBDMapFromMap(lastOut.apyMap as any);
-      const nextApyNorm = normalizeBDMapFromMap(nextApy as any);
-      const lastTvlNorm = normalizeBDMapFromMap(lastOut.tvlMap as any);
-      const nextTvlNorm = normalizeBDMapFromMap(nextTvl as any);
-      const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
-      const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
-
-      const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
-      const tvlChanged = !shallowEqualNormalized(lastTvlNorm, nextTvlNorm);
-      const priceChanged = !shallowEqualNormalized(lastPriceNorm, nextPriceNorm);
-
-      // [수정] 어떤 변경이든 있으면 업데이트
-      if (apyChanged) setApyMap(nextApy);
-      if (tvlChanged) setTvlMap(nextTvl);
-      if (priceChanged) setPriceMap(nextPrice);
-
-      // [수정] 강제 업데이트 직후 스냅샷 갱신
-      if (apyChanged || tvlChanged || priceChanged) {
-        lastOutputsRef.current = { apyMap: nextApy, tvlMap: nextTvl, priceMap: nextPrice };
-      }
-    }
-
-    run();
-    return () => { cancelled = true; };
-  // [수정] 의존성 확장: refreshIndex, chainLinkVersion, uniswapVersion, balancesVersion
-  }, [client, farms, chainLinkVersion, uniswapVersion, balancesVersion, refreshIndex]);
-
   
   const refetchAll = useCallback(async () => {
     await Promise.all([
@@ -205,6 +156,7 @@ export default function useAssets() {
   // [수정] 강제 재계산 도우미 (refetch 후 refreshIndex bump)
   const forceRefresh = useCallback(async () => {
     try {
+      // aprData를 null로 만들어 다음 run에서 /apr를 재요청하게 함
       await refetchAll();
       await new Promise((res) => setTimeout(res, 50)); // 최신 블록 반영 대기
     } finally {
@@ -212,6 +164,140 @@ export default function useAssets() {
     }
   }, [refetchAll]);
   
+    useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      // client/ farms 없으면 초기화
+      if (!client || farms.length === 0) {
+        if (!cancelled) {
+          setApyMap(new Map());
+          setTvlMap(new Map());
+          setPriceMap(new Map());
+          // Data는 유지해도 무방하나, 초기 화면 단순화를 위해 null로
+          setAprDataState(null);
+          lastOutputsRef.current = { apyMap: new Map(), tvlMap: new Map(), priceMap: new Map() };
+        }
+        return;
+      }
+
+      // a) on-chain 계산 (기본값)
+      const nextApy = new Map<string, BigDecimal>();
+      const nextTvl = new Map<string, BigDecimal | null>();
+      const nextPrice = new Map<string, BigDecimal | null>();
+
+      for (const { farm, address } of farms) {
+        try {
+          const { apy, tvl, price }: FarmCalc = await calcFarmOnce(client, farm as any, assetValues);
+          nextApy.set(address, apy);
+          nextTvl.set(address, tvl);
+          nextPrice.set(address, price);
+        } catch (e) {
+          // 실패한 vault도 앱 멈추지 않도록 안전한 기본값
+          nextApy.set(address, BigDecimal.ZERO());
+          nextTvl.set(address, null);
+          nextPrice.set(address, null);
+        }
+      }
+      if (cancelled) return;
+
+      // b) TVL 변경 감지
+      const lastOut = lastOutputsRef.current;
+      const lastTvlNorm = normalizeBDMapFromMap(lastOut.tvlMap as any);
+      const nextTvlNorm = normalizeBDMapFromMap(nextTvl as any);
+      const tvlChanged = !shallowEqualNormalized(lastTvlNorm, nextTvlNorm);
+
+      // c) /apr 필요 시 fetch (최초 or TVL 변경)
+      //    - /apr 실패 → 기존 aprDataRef 유지(화면은 유지)
+      //    - 우선 /apr 시도, 실패 시 /apr_data.json 폴백
+      if (aprDataRef.current === null || tvlChanged) {
+        try {
+          let data: any | null = null;
+          try {
+            const res = await fetch("/apr", { cache: "no-store" });
+            data = await res.json();
+          } catch {
+            // fallback
+            const res2 = await fetch("/apr_data.json", { cache: "no-store" });
+            data = await res2.json();
+          }
+          if (cancelled) return;
+
+          aprDataRef.current = data;
+          setAprDataState(data);
+        } catch (err) {
+          // 실패해도 멈추지 않음: 기존 Data 유지
+          // aprDataRef.current 그대로 두기 (처음부터 실패라면 null 유지)
+          // console.warn("fetch /apr failed", err);
+        }
+      }
+
+      // d) APY 오버레이: aprDataRef가 있으면 오버레이 계산
+      if (aprDataRef.current && aprDataRef.current.apr && Array.isArray(aprDataRef.current.apr)) {
+        const list = aprDataRef.current.apr as any[];
+        // compositeKey -> apy(decimal number)
+        const apyByComposite = new Map<string, number>();
+
+        for (const entry of list) {
+          const cid = Number(entry?.chain_id ?? 0);
+          const addr: string | undefined = entry?.contract_address;
+          const vaults: any[] = Array.isArray(entry?.vaults) ? entry.vaults : [];
+          if (!cid || !addr || vaults.length < 3) continue;
+
+          let sum = BigInt(0);               // apr_7d (정수문자열, 18 decimals)
+          for (let i = 0; i < 3; i++) {
+            const s = vaults[i]?.apr_7d ?? "0";
+            try { sum += BigInt(s); } catch {}
+          }
+          const aprDecimal = Number(sum.toString()) / SCALE_DECIMALS; // ex: 0.05
+          const base = 1 + aprDecimal / annualBlockQty;
+          const apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
+
+          apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);
+        }
+
+        // farms에 덮어쓰기
+        for (const { address } of farms) {
+          const key = makeCompositeKey(chainId, address);
+          if (apyByComposite.has(key)) {
+            const apyNumber = apyByComposite.get(key)!;
+            try {
+              const bd = new BigDecimal(apyNumber, 18); // 소수(18자리)로 저장 (표시는 % 변환)
+              nextApy.set(address, bd);
+            } catch {
+              // 변환 실패 시 on-chain 값 유지
+            }
+          }
+        }
+      }
+
+      if (cancelled) return;
+
+      // e) 변경분만 반영
+      const lastApyNorm = normalizeBDMapFromMap(lastOut.apyMap as any);
+      const nextApyNorm = normalizeBDMapFromMap(nextApy as any);
+      const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
+      const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
+
+      const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
+      const tvlChangedFinal = tvlChanged; // 위에서 계산
+      const priceChanged = !shallowEqualNormalized(lastPriceNorm, nextPriceNorm);
+
+      if (apyChanged) setApyMap(nextApy);
+      if (tvlChangedFinal) setTvlMap(nextTvl);
+      if (priceChanged) setPriceMap(nextPrice);
+
+      if (apyChanged || tvlChangedFinal || priceChanged) {
+        lastOutputsRef.current = { apyMap: nextApy, tvlMap: nextTvl, priceMap: nextPrice };
+      }
+    }
+
+    run();
+
+    return () => { cancelled = true; };
+    // 가격/밸런스/유니스왑 버전 + farms + refreshIndex 변화 시 run
+  }, [client, farms, chainLinkVersion, uniswapVersion, balancesVersion, refreshIndex, assetValues, chainId]);
+
   // 4) farmValues 안에 세 Map을 그대로 넣어서 노출
   const farmValues = useMemo(() => {
     return {
@@ -227,11 +313,12 @@ export default function useAssets() {
       assetValues,
       balances,
       farmValues,
+      aprDataState,
       refetchAll,
       forceRefresh, //추가
       isFetching: assetValues.isFetching || balances.isFetching,
     }),
-    [assetValues, balances, farmValues, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching],
+    [assetValues, balances, farmValues, aprDataState, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching],
   );
   console.log("useAssets assets", assets);
 
