@@ -74,7 +74,7 @@ export default function useAssets() {
       });
   }, [chainId]);
 
-  console.log("useAssets farms", farms);
+  //console.log("useAssets farms", farms);
 
     // 2) 결과를 Map으로 관리
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());

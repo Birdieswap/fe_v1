@@ -10,7 +10,7 @@ import {
 } from "@heroui/react";
 import clsx from "clsx";
 import Link from "next/link";
-import { Fragment } from "react";
+import { Fragment, useMemo } from "react";
 
 import { Vault } from "@/types/FarmListTableRowProps";
 import ModalBase from "@/components/atoms/ModalBase";
@@ -19,8 +19,10 @@ import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
 import VaultInfoIcon from "./vaultInfoIcon.svg";
-import VaultChatBubble from "./vaultChatBubble.svg";
 import { VaultRowItem } from "../../EarningsPanel";
+import { useChainId } from "wagmi";
+import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
+import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
 
 export default function VaultInfoModal({
   item,
@@ -30,45 +32,20 @@ export default function VaultInfoModal({
   disclosure: ReturnType<typeof useDisclosure>;
 }) {
   const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
+  console.log("VaultInfoModal!!!!", item);
 
+  const chainId = useChainId();
+  const explorerURL = getBlockExplorerUrl(chainId);
+  const src = item.aprSource;
+  const timeAgoText = useMemo(() => {
+    const ts = src?.last_harvest;
+    if (ts == null) return;
+    return getTimeAgoLinux(String(ts));
+  }, [src?.last_harvest]);
+
+  console.log("VaultInfoModal timeAgo", timeAgoText);
   return (
     <Fragment>
-      {/* <Tooltip
-        classNames={{
-          base: "max-w-64 group mt-2.5",
-          content: "bg-default-200 text-xs text-white px-3 py-2.5",
-        }}
-        content={
-          <p>
-            <VaultChatBubble className="absolute -left-2 top-px size-4" />
-            {item.details.summary}
-          </p>
-        }
-        offset={2}
-        placement="right-start"
-        showArrow={false}
-      >
-        <Button
-          isIconOnly
-          className={clsx(
-            "w-6 min-w-6",
-            "h-6 min-h-6",
-            "flex items-center justify-center",
-            "data-[hover=true]:bg-background data-[hover=true]:opacity-100"
-          )}
-          variant="light"
-          onPress={onOpen}
-        >
-          <Icons.Info
-            className={clsx(
-              "fill-default-500 group-hover:fill-default-700",
-              "dark:fill-default-800 dark:group-hover:fill-default-600",
-              "transition-[fill]"
-            )}
-            fillRule="evenodd"
-          />
-        </Button>
-      </Tooltip> */}
       <ModalBase
         isOpen={isOpen}
         onOpenChange={onOpenChange}
@@ -80,78 +57,130 @@ export default function VaultInfoModal({
         scrollBehavior="outside"
       >
         <ModalContent>
-          <ModalHeader className="px-0 pb-4 pt-2">
+          <ModalHeader className="px-0 pb-3">
             <div className="flex flex-row items-center gap-1">
               <VaultInfoIcon className="[&>path]:themed-fill-primary" />
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 pl-1">
                 <h1 className="text-sm font-semibold text-foreground">
-                  {/* {item.details.title} */}
+                  {src.type === "single"
+                    ? "Single token vault information"
+                    : src.type === "dual"
+                    ? "Pair token vault information"
+                    : "Reward token vault information"}
                 </h1>
                 <p className="text-sm font-normal text-default-600">
-                  {/* {item.details.subtitle} */}
+                  {src.name}
                 </p>
+                {src.last_harvest && (
+                  <p className="text-sm font-normal text-default-200">
+                    {`Harvested ${timeAgoText} ago`}
+                  </p>
+                )}
               </div>
             </div>
           </ModalHeader>
           <Divider />
-          <ModalBody className="px-0 py-6">
+          <ModalBody className="px-0 py-3">
+            {src.notice && (
+              <h2 className="text-sm text-foreground">
+                <span className="font-medium">{src.notice}</span>
+                <div className="pb-3"></div>
+                <Divider />
+              </h2>
+            )}
             <div className="flex flex-col gap-4 break-all">
               <div className="flex flex-col gap-1.5 text-sm">
                 <h2 className="text-sm text-foreground">
                   <span className="font-medium">Underlying protocol: </span>
                   <span className="font-normal">
-                    {/* {item.details.underlyingProtocolName} */}
+                    {src.underlying_protocol_text}
                   </span>
                 </h2>
-                {/* {typeof item.details.underlyingProtocolInfo === "string" && (
+                {typeof src.underlying_protocol_url === "string" && (
                   <Link
-                    className="text-xs text-foreground underline transition-colors hover:text-default-800"
-                    href={item.details.underlyingProtocolInfo}
+                    className="text-xs text-default-400 underline transition-colors hover:text-default-800"
+                    href={src.underlying_protocol_url}
+                    target="_blank"
                   >
-                    <p>{item.details.underlyingProtocolInfo}</p>
+                    <p>{src.underlying_protocol_url}</p>
                   </Link>
                 )}
-                {typeof item.details.underlyingProtocolInfo === "object" && (
-                  <div className="flex flex-col gap-0 pt-2.5 font-normal text-foreground">
-                    <h2 className="pb-0.5 text-[13px]">
-                      Reward Token:{" "}
-                      {item.details.underlyingProtocolInfo.rewardToken}
+              </div>
+              {"single_vault_contract" in src &&
+              "single_strategy_contract" in src ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Single token vault contract :
                     </h2>
                     <Link
-                      className="pb-2 text-xs transition-colors hover:text-default-800"
-                      href={`https://etherscan.io/address/${item.details.underlyingProtocolInfo.rewardTokenContract}#code`}
+                      className="text-xs text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.single_vault_contract}`}
+                      target="_blank"
                     >
-                      {item.details.underlyingProtocolInfo.rewardTokenContract}
+                      <p>{src.single_vault_contract}</p>
                     </Link>
-                    <h2 className="text-[13px]">
-                      Reward APR:{" "}
-                      {item.details.underlyingProtocolInfo.rewardAPR}
-                    </h2>
                   </div>
-                )} */}
-              </div>
-              <div className="flex flex-col gap-1.5">
-                {/* <h2 className="text-sm font-medium text-foreground">
-                  Crypttempo Vault Contract:
-                </h2>
-                <Link
-                  className="text-xs text-foreground transition-colors hover:text-default-800"
-                  href={`https://etherscan.io/address/${item.details.vaultContract}#code`}
-                >
-                  <p>{item.details.vaultContract}</p>
-                </Link>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <h2 className="text-sm font-medium text-foreground">
-                  Crypttempo Receipt Token:
-                </h2>
-                <Link
-                  className="text-xs text-foreground transition-colors hover:text-default-800"
-                  href={`https://etherscan.io/token/${item.details.receiptToken}`}
-                >
-                  <p>{item.details.receiptToken}</p>
-                </Link> */}
-              </div>
+
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Single token strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.single_strategy_contract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.single_strategy_contract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : "dual_vault_contract" in src &&
+                "dual_strategy_contract" in src ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Pair token vault contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dual_vault_contract}`}
+                      target="_blank"
+                    >
+                      <p>{src.dual_vault_contract}</p>
+                    </Link>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Pair token strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dual_strategy_contract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.dual_strategy_contract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                // ── ③ REWARD (컨트랙트 정보 없을 수 있음) ───────────────
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Reward token contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dual_vault_contract}`}
+                      target="_blank"
+                    >
+                      <p>{src.dual_vault_contract}</p>
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           </ModalBody>
           <ModalFooter className="p-0">

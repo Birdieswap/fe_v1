@@ -77,9 +77,9 @@ const WETH_USDC_AAVE_harvest_autopilot: Farm = {
       VaultInfo.REWARD_BIRDIE,
     ],
     rewards: [
-      {
-        token: TokenInfo.BIRDIE,
-      },
+      // {
+      //   token: TokenInfo.BIRDIE,
+      // },
     ],
   },
   apy: 0,
@@ -102,9 +102,9 @@ const CBBTC_USDC_AAVE_harvest_autopilot: Farm = {
       VaultInfo.REWARD_BIRDIE,
     ],
     rewards: [
-      {
-        token: TokenInfo.BIRDIE,
-      },
+      // {
+      //   token: TokenInfo.BIRDIE,
+      // },
     ],
   },
   apy: 0,

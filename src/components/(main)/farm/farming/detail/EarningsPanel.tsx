@@ -10,6 +10,7 @@ import { useState, useMemo, use, useContext } from "react";
 import { useChainId } from "wagmi";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import { aprDataState, AprVault } from "@/app/AssetsContextProvider";
+import Icons from "@/assets/icons/icons";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr_1d" | "apr_7d" | "apr_30d";
@@ -70,6 +71,8 @@ export default function EarningsPanel({ item }: { item: Farm }) {
     if (tab === "7d") return "apr_7d";
     return "apr_30d";
   }, [tab]);
+
+  console.log("EarningsPanel", item.details.rewards);
 
   const stakeAddr = item?.wip_stakeToken?.addresses?.[chainId];
 
@@ -171,37 +174,50 @@ export default function EarningsPanel({ item }: { item: Farm }) {
         )}
       </div>
       <SectionHeader>Extra Rewards</SectionHeader>
-      <div className="mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
-        {item.details.rewards.map((v) => {
-          const amount = 0; // TODO calculate the balance
-          const price = 0; // TODO calculate the price
-          // const amount = v.amount.toFixed(v.token.balance?.decimals || 0);
-          const dollarAmount = (amount * price).toFixed(2);
-          const stakeAt = v.token.symbol;
-          const stakeAtSrc = v.token.iconSrc;
-
-          return (
-            <RewardInfoRow
-              key={stakeAt}
-              amount={amount.toFixed(
-                v.token.displayDecimals ?? v.token.decimals ?? 3
-              )}
-              dollarAmount={dollarAmount}
-              rewardToken={stakeAt}
-              rewardTokenSrc={stakeAtSrc}
-            />
-          );
-        })}
-        <div className="flex grow flex-row items-center gap-2 text-foreground">
-          <p className="grow text-sm">Claim all rewards into your wallet.</p>
-          <Button
-            className="btn-mint h-[43px] w-40 rounded-2xl text-base font-semibold"
-            size="sm"
-          >
-            Claim
-          </Button>
+      {item.details.rewards.length === 0 ? (
+        <div className="mt-[14px] flex grow flex-col items-center justify-center gap-4 rounded-2xl bg-background p-4">
+          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+          <span className="text-[12px] leading-[17px] text-default-700 max-sm:dark:text-default-600 text-center pb-2">
+            <p>There are no extra rewards for this pool at the moment.</p>
+            <p>
+              But you are still enjoying the double growth rate of Birdieswap!{" "}
+            </p>
+          </span>
         </div>
-      </div>
+      ) : (
+        <div className="mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
+          {item.details.rewards.map((v) => {
+            const amount = 0; // TODO calculate the balance
+            const price = 0; // TODO calculate the price
+            // const amount = v.amount.toFixed(v.token.balance?.decimals || 0);
+            const dollarAmount = (amount * price).toFixed(2);
+            const stakeAt = v.token.symbol;
+            const stakeAtSrc = v.token.iconSrc;
+
+            return (
+              <RewardInfoRow
+                key={stakeAt}
+                amount={amount.toFixed(
+                  v.token.displayDecimals ?? v.token.decimals ?? 3
+                )}
+                dollarAmount={dollarAmount}
+                rewardToken={stakeAt}
+                rewardTokenSrc={stakeAtSrc}
+              />
+            );
+          })}
+
+          <div className="flex grow flex-row items-center gap-2 text-foreground">
+            <p className="grow text-sm">Claim all rewards into your wallet.</p>
+            <Button
+              className="btn-mint h-[43px] w-40 rounded-2xl text-base font-semibold"
+              size="sm"
+            >
+              Claim
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
