@@ -1,10 +1,10 @@
-// app/apr/route.ts
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const APR_URL = "https://realkimp.com/birdieswap/apr.json";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(_req: NextRequest) {
   const upstreamRes = await fetch(APR_URL, {
     method: "GET",
     cache: "no-store",

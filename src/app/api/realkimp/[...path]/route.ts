@@ -1,4 +1,5 @@
-// src/app/api/realkimp/[...path]/route.ts
+
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const UPSTREAM = "https://realkimp.com/birdieswap";
@@ -6,10 +7,17 @@ const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
 
 export const dynamic = "force-dynamic";
 
-export async function GET(req: Request, { params }: { params: { path: string[] } }) {
-  const endpoint = strip((params?.path ?? []).join("/"));  // "Transactions" 등
+export async function GET(
+  req: NextRequest, // or Request
+  ctx: { params: Record<string, string | string[]> } 
+) {
+  // `[...path]` → ctx.params.path 가 string|string[] | undefined 일 수 있으므로 정규화
+  const raw = ctx.params?.path;
+  const segs = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
+  const endpoint = strip(segs.join("/"));
+
   const incoming = new URL(req.url);
-  console.log("[realkimp] hit:", endpoint, incoming.search);
+
   // 1) 1차 요청
   const u1 = new URL(`${UPSTREAM}/${endpoint}`);
   u1.search = incoming.search;
@@ -17,7 +25,7 @@ export async function GET(req: Request, { params }: { params: { path: string[] }
   let r = await fetch(u1.toString(), {
     method: "GET",
     cache: "no-store",
-    redirect: "manual",             // ★ 클라이언트로 리다이렉트 내보내지 않기
+    redirect: "manual", // 클라이언트로 3xx 내보내지 않기
     headers: { accept: "application/json" },
   });
 
@@ -25,7 +33,7 @@ export async function GET(req: Request, { params }: { params: { path: string[] }
   if (r.status >= 300 && r.status < 400) {
     const loc = r.headers.get("location");
     if (loc) {
-      const u2 = new URL(loc, UPSTREAM);   // 상대일 수도 있으니 base 지정
+      const u2 = new URL(loc, UPSTREAM);
       if (u2.protocol === "http:") u2.protocol = "https:";
       u2.pathname = strip(u2.pathname);
       r = await fetch(u2.toString(), {
@@ -36,11 +44,14 @@ export async function GET(req: Request, { params }: { params: { path: string[] }
       });
     }
   }
- 
 
+  // 원본 상태 코드를 유지하는 편이 좋습니다(200 강제 X)
   const buf = await r.arrayBuffer();
-  // 최종은 200으로 전달(필요시 r.status 유지해도 무방)
-  const res = new NextResponse(buf, { status: 200 });
-  res.headers.set("content-type", r.headers.get("content-type") || "application/json");
+  const res = new NextResponse(buf, { status: r.status });
+
+  // content-type 등 필요한 헤더를 전달
+  const ct = r.headers.get("content-type") || "application/json";
+  res.headers.set("content-type", ct);
+
   return res;
 }
