@@ -62,10 +62,29 @@ const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
+const blpHarvestAutopilotEURCUSDC = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bEURCUSDC",
+  fullName: "Birdieswap EURC 3000 USDC",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.EURC_USDC_VAULT as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.EURC_USDC_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_USDC_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIE,
+  swap: swapPools.blpUniswapHarvestAutopilotEURCUSDC,
+  lpPool: swapPools.blpUniswapHarvestAutopilotEURCUSDC,
+  decimals: 8,
+  displayDecimals: 4,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
+
 const lpVaults = {
   blpHarvestAutopilotWETHUSDC,
   blpHarvestAutopilotCBBTCUSDC,
   blpHarvestAutopilotCBBTCWETH,
+  blpHarvestAutopilotEURCUSDC,
 };
 
 export default lpVaults;

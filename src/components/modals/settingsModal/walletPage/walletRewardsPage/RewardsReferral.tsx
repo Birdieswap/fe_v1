@@ -182,8 +182,8 @@ export default function RewardsReferral() {
           </div>
           <div className="flex w-full flex-row mt-6">
             <ThemedButton
-              variant="MINT"
-              className="h-[48px] rounded-xl"
+              // variant="MINT"
+              className="h-[48px] rounded-xl dark:disabled:bg-[#363b4C]"
               disabled
             >
               Claim all
@@ -191,32 +191,30 @@ export default function RewardsReferral() {
           </div>
         </div>
         {Array.isArray(ReferralRewardList) && ReferralRewardList.length > 0 && (
-          <div className="rounded-lg divide-y divide-default-300">
+          <div className="rounded-lg divide-y divide-default-100">
             {ReferralRewardList.map((it) => (
-              <div
+              <Link
                 key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
-                className="flex flex-row items-center gap-1.5 pt-4 pb-4"
+                className="block w-full hover:bg-default-200 dark:hover:bg-default-100 px-1"
+                href={`${explorerURL}/tx/${it.transactionHash}`}
+                target="_blank"
               >
-                <div className="flex grow flex-col items-start gap-1">
-                  <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
-                  {it.transactionHash && (
-                    <Link
-                      className="text-xs text-default-700 transition-colors hover:text-default-800 dark:text-default-300 dark:hover:text-default-200"
-                      href={`${explorerURL}/tx/${it.transactionHash}`}
-                      target="_blank"
-                    >
-                      <p>
+                <div className="flex w-full flex-row items-center justify-between text-foreground gap-1.5 pt-4 pb-4">
+                  <div className="flex min-w-0 grow flex-col items-start gap-1">
+                    <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
+                    {it.transactionHash && (
+                      <p className="text-xs text-default-700 transition-colors dark:text-default-300">
                         {it.transactionHash.length > 44
                           ? `${it.transactionHash.slice(0, 42)}...`
                           : it.transactionHash}
                       </p>
-                    </Link>
-                  )}
+                    )}
+                  </div>
+                  <div className="flex flex-row justify-end items-center gap-2">
+                    <p>{getTimeAgoLinux(it.blockTimestamp)}</p>
+                  </div>
                 </div>
-                <div className="flex flex-row items-center gap-2">
-                  <p>{getTimeAgoLinux(it.blockTimestamp)}</p>
-                </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}

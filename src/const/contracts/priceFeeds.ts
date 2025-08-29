@@ -8,7 +8,6 @@ const CBBTC_USD = PriceFeedGuard({
   addresses: {
     [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
     [networks.base.id]: "0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D",
-    [networks.baseFork.id]: "0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D",
   },
   base: tokens.CBBTC,
   quote: "USD",
@@ -21,7 +20,7 @@ const WETH_USD = PriceFeedGuard({
   addresses: {
     [networks.sepolia.id]: "0x694AA1769357215DE4FAC081bf1f309aDC325306", //ETH/USD price
     [networks.base.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
-    [networks.baseFork.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
+    [networks.arbitrum.id]: "0xEAeFFF521cb36dFb414E8580f8635BFB44d96255",
   },
   base: tokens.WETH,
   quote: "USD",
@@ -34,7 +33,7 @@ const ETH_USD = PriceFeedGuard({
   addresses: {
     [networks.sepolia.id]: "0x694AA1769357215DE4FAC081bf1f309aDC325306", //ETH/USD price
     [networks.base.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
-    [networks.baseFork.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
+    [networks.arbitrum.id]: "0xEAeFFF521cb36dFb414E8580f8635BFB44d96255",
   },
   base: tokens.ETH,
   quote: "USD",
@@ -47,12 +46,26 @@ const USDC_USD = PriceFeedGuard({
   addresses: {
     [networks.sepolia.id]: "0xA2F78ab2355fe2f984D808B5CeE7FD0A93D5270E",
     [networks.base.id]: "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B",
-    [networks.baseFork.id]: "0x7e860098F58bBFC8648a4311b374B1D669a2bc6B",
+    [networks.arbitrum.id]: "0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3",
   },
   base: tokens.USDC,
   quote: "USD",
   decimals: 8,
 });
+
+const EURC_USD = PriceFeedGuard({
+  symbol: "LINK:EURC_USD",
+  fullName: "Chainlink EURC/USD Price Feed",
+  addresses: {
+    [networks.sepolia.id]: "0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910", //EUR/USD
+    [networks.base.id]: "0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250",
+    [networks.arbitrum.id]: "0xCF9752295D0ac9215461fA095faFEC1B854b849B",
+  },
+  base: tokens.USDC,
+  quote: "USD",
+  decimals: 8,
+});
+
 /*
 const USDT_USD = PriceFeedGuard({
   symbol: "LINK:USDT_USD",

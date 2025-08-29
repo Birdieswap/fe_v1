@@ -75,6 +75,27 @@ const blpUniswapHarvestAutopilotCBBTCWETH = SwapPoolGuard({
   ],
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
+const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "bEURCUSDC",
+  fullName: "Birdieswap EURC 3000 USDC",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.EURC_USDC_POOL as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.EURC_USDC_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_USDC_POOL as `0x${string}`,
+  },
+  decimals: 8,
+  fee_tier : 3000,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotEURC,
+    singleVaults.bHarvestAutopilotUSDC,
+  ],
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
 
 
 const swapPools = {
@@ -82,6 +103,7 @@ const swapPools = {
   blpUniswapHarvestAutopilotWETHUSDC,
   blpUniswapHarvestAutopilotCBBTCUSDC,
   blpUniswapHarvestAutopilotCBBTCWETH,
+  blpUniswapHarvestAutopilotEURCUSDC,
 };
 
 export default swapPools;
