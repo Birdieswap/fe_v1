@@ -67,13 +67,13 @@ function TransactionTokenDisplay(props: { token: TransactionTokenInfo }) {
       <span className="text-[12px] font-medium leading-[15px] text-foreground">
         {props.token.amount} {props.token.symbol}
       </span>
-      {props.token.usdAmount && (
+      {/* {props.token.usdAmount && (
         <span className="ml-0.5 text-[12px] font-normal leading-[15px] text-default-800 dark:text-default-700">
           (${" "}
           {setPrecisionString(parseFloat(props.token.usdAmount), 2, true, true)}
           )
         </span>
-      )}
+      )} */}
     </div>
   );
 }
@@ -224,129 +224,6 @@ function StopFarmItem(
     </div>
   );
 }
-
-// const transactions: TransactionProps[] = [
-//   {
-//     type: TransactionType.SWAP,
-//     hash: "0x1234123412341234123412341234123412341234123412341234123412341234",
-//     timestamp: Date.now() - 1000,
-//     from: {
-//       symbol: "USDC.e",
-//       amount: "3603",
-//       src: "/tokens/USDC.svg",
-//       usdAmount: "3583",
-//     },
-//     to: {
-//       symbol: "WETH",
-//       amount: "1.02",
-//       src: "/tokens/WETH.svg",
-//       usdAmount: "3574",
-//     },
-//   },
-//   {
-//     type: TransactionType.START_FARM,
-//     hash: "0x1234123412341234123412341234123412341234123412341234123412341234",
-//     timestamp: Date.now() - 1000 * 60 * 60 * 2,
-//     from: [
-//       {
-//         symbol: "USDC.e",
-//         amount: "3603",
-//         src: "/tokens/USDC.svg",
-//         usdAmount: "3583",
-//       },
-//       {
-//         symbol: "WETH",
-//         amount: "1.02",
-//         src: "/tokens/WETH.svg",
-//         usdAmount: "3583",
-//       },
-//     ],
-//     to: {
-//       symbol: "blpUSDC.e_WETH_v1",
-//       amount: "5.532",
-//     },
-//   },
-//   {
-//     type: TransactionType.STOP_FARM,
-//     hash: "0x1234123412341234123412341234123412341234123412341234123412341234",
-//     timestamp: Date.now() - 1000 * 60 * 60 * 24,
-//     from: {
-//       symbol: "blpUSDC.e_WETH_v1",
-//       amount: "5.532",
-//     },
-//     to: [
-//       {
-//         symbol: "USDC.e",
-//         amount: "3603",
-//         src: "/tokens/USDC.svg",
-//         usdAmount: "3583",
-//       },
-//       {
-//         symbol: "WETH",
-//         amount: "1.02",
-//         src: "/tokens/WETH.svg",
-//         usdAmount: "3583",
-//       },
-//     ],
-//   },
-// ];
-
-// const TransactionInfo: TransactionEvent[] = [
-//   {
-//     type: "Swap",
-//     blockNumber: "9078230",
-//     blockTimestamp: "1756337268",
-//     transactionHash:
-//       "0x524c943abc0a3509f91f99aaf89fe437c9d419744e813f366b789658b2d2af33",
-//     transactionIndex: "3",
-//     data: {
-//       tokenIn: "0x5b1B56533128A23b8908d58f32Ee05b65ecF9FFF",
-//       feeTier: "3000",
-//       tokenOut: "0x25554f552a72d1263a868d8be2bc50096b2953eb",
-//       amountIn: "40000000000",
-//       amountOut: "42734412",
-//       refereeAddress: "0xd91cd0ca18a6eca59ee52adb98fb90833bea6da5",
-//     },
-//   },
-//   {
-//     type: "DualDeposit",
-//     chainId: "11155111",
-//     blockNumber: "9078213",
-//     blockTimestamp: "1756337052",
-//     transactionHash:
-//       "0x98af063f628622aa211034575e4942aea94e0d2b9893ec5ef16fbdd85974c7c4",
-//     transactionIndex: "18",
-//     vaultName: "bcbBTCUSDC",
-//     data: {
-//       owner: "0xd91cd0ca18a6eca59ee52adb98fb90833bea6da5",
-//       Token0Address: "0x5b1B56533128A23b8908d58f32Ee05b65ecF9FFF",
-//       Token0Amount: "90026322550",
-//       Token1Address: "0x25554f552a72D1263a868D8BE2BC50096b2953Eb",
-//       Token1Amount: "99804269",
-//       blpTokenAddress: "0x2d6de1c6ccc4fa91188773df66c357b5b2bb407c",
-//       blpTokenAmount: "2997144541",
-//     },
-//   },
-//   {
-//     type: "DualWithdraw",
-//     chainId: "11155111",
-//     blockNumber: "9036326",
-//     blockTimestamp: "1755825624",
-//     transactionHash:
-//       "0x9c9410b3254a696fe2a4f4779022a5cf15d2996672efef8d0bc183623d5c4fae",
-//     transactionIndex: "17",
-//     vaultName: "bcbBTCUSDC",
-//     data: {
-//       receiver: "0xd91cd0ca18a6eca59ee52adb98fb90833bea6da5",
-//       blpTokenAddress: "0x2d6de1c6ccc4fa91188773df66c357b5b2bb407c",
-//       blpTokenAmount: "6869989812",
-//       Token0Address: "0x5b1B56533128A23b8908d58f32Ee05b65ecF9FFF",
-//       Token0Amount: "231957553055",
-//       Token1Address: "0x25554f552a72D1263a868D8BE2BC50096b2953Eb",
-//       Token1Amount: "203471537",
-//     },
-//   },
-// ];
 
 export default function WalletTransactions() {
   const chainId = useChainId();
