@@ -36,6 +36,93 @@ import SettingsProvider from "./SettingsProvider";
 import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 import { ReferralProvider } from "./ReferralContextProvider";
+import { http, fallback } from "viem";
+
+const sepoliaUrls = [
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
+  "https://sepolia.drpc.org",
+].filter(Boolean) as string[];
+
+const baseUrls = [
+  process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY,
+  process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA,
+  "https://mainnet.base.org",
+].filter(Boolean) as string[];
+
+if (
+  process.env.NEXT_PUBLIC_VERCEL_ENV &&
+  sepoliaUrls.length === 1 &&
+  sepoliaUrls[0].includes("drpc")
+) {
+  console.warn(
+    "[RPC] Only DRPC (Sepolia) configured on Vercel. Add ALCHEMY/INFURA to reduce timeouts."
+  );
+}
+if (
+  process.env.NEXT_PUBLIC_VERCEL_ENV &&
+  baseUrls.length === 1 &&
+  baseUrls[0].includes("mainnet.base.org")
+) {
+  console.warn(
+    "[RPC] Only mainnet.base.org configured for Base. Add ALCHEMY/INFURA for stability."
+  );
+}
+
+// 2) 로깅 가능한 http 트랜스포트 래퍼 (Transport 타입 의존 X)
+function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
+  const baseFactory = http(url, opts);
+  return ((config: Parameters<typeof baseFactory>[0]) => {
+    const baseT = baseFactory(config);
+    return {
+      ...baseT,
+      async request(args: any) {
+        const start = Date.now();
+        const method = args?.method ?? "unknown_method";
+        try {
+          console.info(`[RPC ->] ${url} ${method}`);
+          const res = await baseT.request(args);
+          const ms = Date.now() - start;
+          console.info(`[RPC <-] ${url} ${method} (${ms}ms)`);
+          return res;
+        } catch (e) {
+          const ms = Date.now() - start;
+          console.warn(`[RPC xx] ${url} ${method} failed in ${ms}ms`, e);
+          throw e;
+        }
+      },
+    };
+  }) as typeof baseFactory;
+}
+// ──────────────────────────────────────────────────────────────
+
+const chains = [
+  arbitrum,
+  base_custom,
+  optimism_custom,
+  bsc,
+  polygon,
+  scroll,
+  sepolia,
+  baseFork,
+];
+
+const transports: Record<number, any> = {};
+for (const ch of chains) transports[ch.id] = http(); // 체인 정의의 rpcUrls.default 사용
+
+transports[sepolia.id] = fallback(
+  (sepoliaUrls.length ? sepoliaUrls : ["https://sepolia.drpc.org"]).map((url) =>
+    httpWithLog(url, { timeout: 15_000 })
+  ),
+  { rank: false, retryCount: 3, retryDelay: 3000 }
+);
+
+transports[base_custom.id] = fallback(
+  (baseUrls.length ? baseUrls : ["https://mainnet.base.org"]).map((url) =>
+    httpWithLog(url, { timeout: 15_000 })
+  ),
+  { rank: false, retryCount: 3, retryDelay: 3000 }
+);
 
 export const wagmiConfig = getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
@@ -51,6 +138,8 @@ export const wagmiConfig = getDefaultConfig({
     sepolia,
     baseFork,
   ],
+
+  transports,
   ssr: true,
   //multiInjectedProviderDiscovery: false,
 

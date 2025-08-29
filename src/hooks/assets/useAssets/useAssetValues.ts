@@ -143,19 +143,19 @@ export function useAssetValues() {
   const chainLinkData = useReadContracts({
     contracts: priceFeedArgs,
     query: {
-      staleTime: 10000, // 10 seconds
+      staleTime: 30_000, // 10 seconds
     },
   });
   const uniswapBaseTokenData = useReadContracts({
     contracts: uniswapBaseTokenArgs,
     query: {
-      staleTime: 10000, // 10 seconds
+      staleTime: 60_000, // 10 seconds
     },
   });
   const uniswapQuoteTokenData = useReadContracts({
     contracts: uniswapQuoteTokenArgs,
     query: {
-      staleTime: 10000, // 10 seconds
+      staleTime: 60_000, // 10 seconds
     },
   });
   // console.log("chainLinkData", chainLinkData);
