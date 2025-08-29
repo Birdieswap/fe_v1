@@ -257,7 +257,7 @@ export default function WalletTransactions() {
           </span>
         </div>
       ) : (
-        <div className="w-full rounded-lg divide-y divide-default-100 px-3">
+        <div className="w-full rounded-lg divide-y divide-default-100 px-3 sm:px-6">
           {transactions.map((tx) => (
             <BaseTransactionItem key={tx.hash} {...tx} />
           ))}

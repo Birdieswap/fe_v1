@@ -32,7 +32,7 @@ function ReferralDisplay() {
   return (
     <div
       className={cn(
-        "flex h-[100px] w-full px-4 py-3 rounded-lg bg-default-100 max-sm:h-[104px]",
+        "flex h-[100px] w-full px-4 py-3 rounded-lg bg-default-100 sm:h-[144px]",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
       )}
