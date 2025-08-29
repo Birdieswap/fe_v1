@@ -3,7 +3,6 @@
 import { ModalHeader, Button, ModalBody, cn } from "@heroui/react";
 import { Fragment, useState } from "react";
 
-
 import RewardsExtra from "./walletRewardsPage/RewardsExtra";
 import RewardsSwap from "./walletRewardsPage/RewardsSwap";
 import RewardsReferral from "./walletRewardsPage/RewardsReferral";
@@ -18,7 +17,7 @@ function TabSelector(props: {
     <Button
       className={cn(
         "group p-0 flex max-h-max min-h-min min-w-min max-w-max flex-row",
-        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70",
+        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70"
       )}
       data-selected={props.value === props.selected}
       radius="none"
@@ -29,7 +28,7 @@ function TabSelector(props: {
         className={cn(
           "text-[13px] font-semibold leading-[17px] pl-3 pr-3",
           "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600",
-          "dark:group-data-[selected=false]:text-default-400",
+          "dark:group-data-[selected=false]:text-default-400"
         )}
       >
         {props.name}
@@ -39,9 +38,7 @@ function TabSelector(props: {
 }
 
 export default function WalletRewards() {
-  const [tab, setTab] = useState<"swap" | "referral" | "extra">(
-    "swap",
-  );
+  const [tab, setTab] = useState<"swap" | "referral" | "extra">("swap");
 
   return (
     <Fragment>

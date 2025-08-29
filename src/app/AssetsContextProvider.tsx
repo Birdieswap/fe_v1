@@ -21,31 +21,31 @@ export type aprDataState = {
 };
 
 export type AprEntry = {
-  chain_id: string;
-  fee_tier: string;
-  contract_address: string;
+  chainId: string;
+  feeTier: string;
+  contractAddress: string;
   name: string;
-  underlying_protocol_text: string;
-  underlying_protocol_url: string;
+  underlyingProtocolText: string;
+  underlyingProtocolUrl: string;
   vaults: AprVault[];
-  extra_rewards?: AprVault[];
+  extraRewards?: AprVault[];
 };
 
 export type AprVault = {
   type?: string;
   notice?: string;
   name: string;
-  underlying_protocol_text: string;
-  underlying_protocol_url: string;
-  single_vault_contract?: `0x${string}`;
-  single_strategy_contract?: `0x${string}`;
-  dual_vault_contract?: `0x${string}`;
-  dual_strategy_contract?: `0x${string}`;
-  apr_1d: string;
-  apr_7d: string;
-  apr_30d: string;
-  time_stamp: string;
-  last_harvest?: string;
+  underlyingProtocolText: string;
+  underlyingProtocolUrl: string;
+  singleVaultContract?: `0x${string}`;
+  singleStrategyContract?: `0x${string}`;
+  dualVaultContract?: `0x${string}`;
+  dualStrategyContract?: `0x${string}`;
+  apr1d: string;
+  apr7d: string;
+  apr30d: string;
+  timeStamp: string;
+  lastHarvest?: string;
 };
 
 export const AssetsContext = createContext<{

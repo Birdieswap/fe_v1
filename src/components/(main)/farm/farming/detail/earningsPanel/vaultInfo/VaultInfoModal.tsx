@@ -38,10 +38,10 @@ export default function VaultInfoModal({
   const explorerURL = getBlockExplorerUrl(chainId);
   const src = item.aprSource;
   const timeAgoText = useMemo(() => {
-    const ts = src?.last_harvest;
+    const ts = src?.lastHarvest;
     if (ts == null) return;
     return getTimeAgoLinux(String(ts));
-  }, [src?.last_harvest]);
+  }, [src?.lastHarvest]);
 
   console.log("VaultInfoModal timeAgo", timeAgoText);
   return (
@@ -71,7 +71,7 @@ export default function VaultInfoModal({
                 <p className="text-sm font-normal text-default-600">
                   {src.name}
                 </p>
-                {src.last_harvest && (
+                {src.lastHarvest && (
                   <p className="text-sm font-normal text-default-200">
                     {`Harvested ${timeAgoText} ago`}
                   </p>
@@ -93,16 +93,16 @@ export default function VaultInfoModal({
                 <h2 className="text-sm text-foreground">
                   <span className="font-medium">Underlying protocol: </span>
                   <span className="font-normal">
-                    {src.underlying_protocol_text}
+                    {src.underlyingProtocolText}
                   </span>
                 </h2>
-                {typeof src.underlying_protocol_url === "string" && (
+                {typeof src.underlyingProtocolUrl === "string" && (
                   <Link
                     className="text-xs text-default-400 underline transition-colors hover:text-default-800"
-                    href={src.underlying_protocol_url}
+                    href={src.underlyingProtocolUrl}
                     target="_blank"
                   >
-                    <p>{src.underlying_protocol_url}</p>
+                    <p>{src.underlyingProtocolUrl}</p>
                   </Link>
                 )}
               </div>
@@ -115,10 +115,10 @@ export default function VaultInfoModal({
                     </h2>
                     <Link
                       className="text-xs text-default-400 transition-colors hover:text-default-800"
-                      href={`${explorerURL}/address/${src.single_vault_contract}`}
+                      href={`${explorerURL}/address/${src.singleVaultContract}`}
                       target="_blank"
                     >
-                      <p>{src.single_vault_contract}</p>
+                      <p>{src.singleVaultContract}</p>
                     </Link>
                   </div>
 
@@ -128,10 +128,10 @@ export default function VaultInfoModal({
                     </h2>
                     <Link
                       className="text-xs text-default-400 transition-colors hover:text-default-800"
-                      href={`${explorerURL}/address/${src.single_strategy_contract}#code`}
+                      href={`${explorerURL}/address/${src.singleStrategyContract}#code`}
                       target="_blank"
                     >
-                      <p>{src.single_strategy_contract}</p>
+                      <p>{src.singleStrategyContract}</p>
                     </Link>
                   </div>
                 </div>
@@ -144,10 +144,10 @@ export default function VaultInfoModal({
                     </h2>
                     <Link
                       className="text-xs text-default-400 transition-colors hover:text-default-800"
-                      href={`${explorerURL}/address/${src.dual_vault_contract}`}
+                      href={`${explorerURL}/address/${src.dualVaultContract}`}
                       target="_blank"
                     >
-                      <p>{src.dual_vault_contract}</p>
+                      <p>{src.dualVaultContract}</p>
                     </Link>
                   </div>
 
@@ -157,10 +157,10 @@ export default function VaultInfoModal({
                     </h2>
                     <Link
                       className="text-xs text-default-400 transition-colors hover:text-default-800"
-                      href={`${explorerURL}/address/${src.dual_strategy_contract}#code`}
+                      href={`${explorerURL}/address/${src.dualStrategyContract}#code`}
                       target="_blank"
                     >
-                      <p>{src.dual_strategy_contract}</p>
+                      <p>{src.dualStrategyContract}</p>
                     </Link>
                   </div>
                 </div>
@@ -173,10 +173,10 @@ export default function VaultInfoModal({
                     </h2>
                     <Link
                       className="text-xs text-default-400 transition-colors hover:text-default-800"
-                      href={`${explorerURL}/address/${src.dual_vault_contract}`}
+                      href={`${explorerURL}/address/${src.dualVaultContract}`}
                       target="_blank"
                     >
-                      <p>{src.dual_vault_contract}</p>
+                      <p>{src.dualVaultContract}</p>
                     </Link>
                   </div>
                 </div>

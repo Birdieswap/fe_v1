@@ -10,8 +10,12 @@ export function getTimeAgoLinux(timeStamp: string): string {
     time = `${Math.floor(diffSec)}s`;
   } else if (diffSec < 3600) {
     time = `${Math.floor(diffSec / 60)}m`;
-  } else {
+  } else if (diffSec < 86400) {
     time = `${Math.floor(diffSec / 3600)}h`;
+  } else if (diffSec < 31536000) {
+    time = `${Math.floor(diffSec / 86400)}D`;
+  } else {
+    time = `${Math.floor(diffSec / 31536000)}Y`;
   }
 
   return time;
