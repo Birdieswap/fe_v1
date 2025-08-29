@@ -29,13 +29,13 @@ export function FarmListTableHeader() {
       className={clsx(
         "grid origin-top grid-cols-subgrid p-6",
         "md:col-span-6",
-        "max-md:col-span-3 max-md:hidden",
+        "max-md:col-span-3 max-md:hidden"
       )}
     >
       <FarmListTableHeaderCell colSpan={2} column="name">
         Crypto
       </FarmListTableHeaderCell>
-      <FarmListTableHeaderCell column="apy">APY(%)</FarmListTableHeaderCell>
+      <FarmListTableHeaderCell column="apy">7d APY(%)</FarmListTableHeaderCell>
       <FarmListTableHeaderCell column="tvl">TVL($)</FarmListTableHeaderCell>
       <div className="flex items-center justify-end">
         <FarmListTableHeaderCell colSpan={2} column="balance">

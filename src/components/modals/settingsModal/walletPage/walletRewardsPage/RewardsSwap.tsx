@@ -2,6 +2,7 @@ import Image from "next/image";
 import { Fragment, useContext, useMemo, useState } from "react";
 import { Button, cn, Link } from "@heroui/react";
 import { useAccount, useChainId } from "wagmi";
+import NextLink from "next/link";
 
 import Icons from "@/assets/icons/icons";
 import ThemedButton from "@/components/atoms/ThemedButton";
@@ -198,32 +199,34 @@ export default function RewardsSwap() {
 
         {Array.isArray(SwapRewardList) && SwapRewardList.length > 0 && (
           <div className="rounded-lg divide-y divide-default-300">
-            {SwapRewardList.map((it) => (
-              <div
-                key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
-                className="flex flex-row items-center gap-1.5 pt-4 pb-4"
-              >
-                <div className="flex grow flex-col items-start gap-1">
-                  <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
-                  {it.transactionHash && (
-                    <Link
-                      className="text-xs text-default-700 transition-colors hover:text-default-800 dark:text-default-300 dark:hover:text-default-200"
-                      href={`${explorerURL}/tx/${it.transactionHash}`}
-                      target="_blank"
-                    >
-                      <p>
-                        {it.transactionHash.length > 44
-                          ? `${it.transactionHash.slice(0, 42)}...`
-                          : it.transactionHash}
-                      </p>
-                    </Link>
-                  )}
+            <div className="rounded-lg divide-y divide-default-300">
+              {SwapRewardList.map((it) => (
+                <div
+                  key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
+                  className="flex flex-row items-center gap-1.5 pt-4 pb-4"
+                >
+                  <div className="flex grow flex-col items-start gap-1">
+                    <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
+                    {it.transactionHash && (
+                      <Link
+                        className="text-xs text-default-700 transition-colors hover:text-default-800 dark:text-default-300 dark:hover:text-default-200"
+                        href={`${explorerURL}/tx/${it.transactionHash}`}
+                        target="_blank"
+                      >
+                        <p>
+                          {it.transactionHash.length > 44
+                            ? `${it.transactionHash.slice(0, 42)}...`
+                            : it.transactionHash}
+                        </p>
+                      </Link>
+                    )}
+                  </div>
+                  <div className="flex flex-row items-center gap-2">
+                    <p>{getTimeAgoLinux(it.blockTimestamp)}</p>
+                  </div>
                 </div>
-                <div className="flex flex-row items-center gap-2">
-                  <p>{getTimeAgoLinux(it.blockTimestamp)}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </Fragment>

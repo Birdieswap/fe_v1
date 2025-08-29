@@ -13,7 +13,7 @@ export function getTimeAgoLinux(timeStamp: string): string {
   } else if (diffSec < 86400) {
     time = `${Math.floor(diffSec / 3600)}h`;
   } else if (diffSec < 31536000) {
-    time = `${Math.floor(diffSec / 86400)}D`;
+    time = `${Math.floor(diffSec / 86400)}d`;
   } else {
     time = `${Math.floor(diffSec / 31536000)}Y`;
   }
