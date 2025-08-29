@@ -12,7 +12,7 @@ export type ThemedButtonProps = Omit<
 
 function ThemedButtonComponent(
   props: PropsWithRef<ThemedButtonProps>,
-  ref: ForwardedRef<HTMLButtonElement>,
+  ref: ForwardedRef<HTMLButtonElement>
 ) {
   return (
     <Button
@@ -20,7 +20,7 @@ function ThemedButtonComponent(
       className={clsx(
         "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl text-lg font-semibold",
         "disabled:bg-default-300 disabled:text-default-600",
-        "dark:disabled:bg-dark_popup_bg dark:disabled:text-default-800",
+        "dark:disabled:bg-dark_popup_bg dark:disabled:text-default-400",
         props.variant === "MINT" && "btn-mint",
         props.variant === "LIGHT" && [
           "text-light_primary dark:text-dark_green_key",
@@ -33,14 +33,14 @@ function ThemedButtonComponent(
           "data-[hover=true]:bg-light_pink_hover dark:data-[hover=true]:bg-dark_pink_hover",
           "hover:bg-light_pink_hover dark:hover:bg-dark_pink_hover",
         ],
-        props.className,
+        props.className
       )}
     />
   );
 }
 
 const ThemedButton = forwardRef<HTMLButtonElement, ThemedButtonProps>(
-  ThemedButtonComponent,
+  ThemedButtonComponent
 );
 
 export default ThemedButton;

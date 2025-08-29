@@ -58,7 +58,6 @@ const CBBTC = CurrencyGuard({
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.CBBTC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.CBBTC as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC as `0x${string}`,
   },
   abi: erc20_abi,
   decimals: 8,
@@ -66,11 +65,27 @@ const CBBTC = CurrencyGuard({
   iconSrc: "/tokens/CBBTC.svg",
 } as const);
 
+const EURC = CurrencyGuard({
+  type: EContractType.CURRENCY,
+  symbol: "EURC",
+  fullName: "Euro Coin",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.EURC as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.EURC as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.EURC as `0x${string}`,
+  },
+  abi: erc20_abi,
+  decimals: 6,
+  displayDecimals: 2,
+  iconSrc: "/tokens/EURC.svg",
+} as const);
+
 const tokens = {
   ETH,
   WETH,
   USDC,
   CBBTC,
+  EURC,
 };
 
 export default tokens;

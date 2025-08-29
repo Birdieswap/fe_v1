@@ -3,7 +3,7 @@
 
 @layer components {
   .wallet-tx-details-container {
-    @apply flex flex-col gap-1.5 rounded-[4px] bg-default-100 p-3 dark:bg-dark_popup_bg group-hover:dark:bg-dark_popup_bg;
+    @apply flex flex-col gap-1.5 rounded-[4px] bg-default-100 mx-2 p-3 dark:bg-background group-hover:dark:bg-background;
   }
   .wallet-tx-farm-swap-container {
     @apply flex flex-col gap-3 my-1.5 rounded-[4px] border-1 fill-background py-3 pl-[22px] pr-0;

@@ -72,7 +72,7 @@ export default function VaultInfoModal({
                   {src.name}
                 </p>
                 {src.lastHarvest && (
-                  <p className="text-sm font-normal text-default-500">
+                  <p className="text-sm font-normal text-default-500 dark:text-default-300">
                     {`Harvested ${timeAgoText} ago`}
                   </p>
                 )}
@@ -98,7 +98,7 @@ export default function VaultInfoModal({
                 </h2>
                 {typeof src.underlyingProtocolUrl === "string" && (
                   <Link
-                    className="text-xs text-default-500 underline transition-colors hover:text-default-800"
+                    className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 underline transition-colors hover:text-default-800"
                     href={src.underlyingProtocolUrl}
                     target="_blank"
                   >
@@ -114,7 +114,7 @@ export default function VaultInfoModal({
                       Single token vault contract :
                     </h2>
                     <Link
-                      className="text-xs text-default-500 transition-colors hover:text-default-800"
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
                       href={`${explorerURL}/address/${src.singleVaultContract}`}
                       target="_blank"
                     >
@@ -127,7 +127,7 @@ export default function VaultInfoModal({
                       Single token strategy contract :
                     </h2>
                     <Link
-                      className="text-xs text-default-500 transition-colors hover:text-default-800"
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
                       href={`${explorerURL}/address/${src.singleStrategyContract}#code`}
                       target="_blank"
                     >
@@ -143,7 +143,7 @@ export default function VaultInfoModal({
                       Pair token vault contract :
                     </h2>
                     <Link
-                      className="text-xs text-default-500 transition-colors hover:text-default-800"
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
                       href={`${explorerURL}/address/${src.dualVaultContract}`}
                       target="_blank"
                     >
@@ -156,7 +156,7 @@ export default function VaultInfoModal({
                       Pair token strategy contract :
                     </h2>
                     <Link
-                      className="text-xs text-default-500 transition-colors hover:text-default-800"
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
                       href={`${explorerURL}/address/${src.dualStrategyContract}#code`}
                       target="_blank"
                     >
@@ -172,7 +172,7 @@ export default function VaultInfoModal({
                       Reward token contract :
                     </h2>
                     <Link
-                      className="text-xs text-default-500 transition-colors hover:text-default-800"
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
                       href={`${explorerURL}/address/${src.dualVaultContract}`}
                       target="_blank"
                     >

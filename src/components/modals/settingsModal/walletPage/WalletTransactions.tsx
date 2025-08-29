@@ -126,10 +126,14 @@ function BaseTransactionItem(props: TransactionProps) {
   }, [props.type]);
 
   return (
-    <Link href={`${explorerURL}/tx/${props.hash}`} target="_blank">
+    <Link
+      className="block w-full"
+      href={`${explorerURL}/tx/${props.hash}`}
+      target="_blank"
+    >
       <div
         className={cn(
-          "group flex flex-col p-4 max-sm:px-6 gap-3 w-full",
+          "group flex flex-col px-1 py-4 max-sm:px-6 gap-3 w-full",
           "hover:bg-default-200 dark:hover:bg-default-100 transition-background"
         )}
       >
@@ -253,7 +257,11 @@ export default function WalletTransactions() {
           </span>
         </div>
       ) : (
-        transactions.map((tx, i) => <BaseTransactionItem key={i} {...tx} />)
+        <div className="w-full rounded-lg divide-y divide-default-100 px-3">
+          {transactions.map((tx) => (
+            <BaseTransactionItem key={tx.hash} {...tx} />
+          ))}
+        </div>
       )}
     </div>
   );

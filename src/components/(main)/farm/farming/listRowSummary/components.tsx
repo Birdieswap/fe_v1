@@ -17,12 +17,15 @@ function Apy(props: {
   value: BigDecimal | number | null;
   isLoading?: boolean;
 }) {
+  const s = props.value?.toFixed?.(2) as string | undefined;
+  const display = s ? (parseFloat(s) > 999.99 ? "999.99" : s) : "...";
+
   return (
     <span
       className="data-[loading=true]:loading text-sm font-semibold max-md:font-medium"
       data-loading={props.isLoading}
     >
-      {props.value?.toFixed(2) || "..."}%
+      {display /* {props.value?.toFixed(2) || "..."}% */}%
     </span>
   );
 }
