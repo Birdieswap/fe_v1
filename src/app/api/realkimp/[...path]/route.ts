@@ -1,5 +1,4 @@
 
-import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 const UPSTREAM = "https://realkimp.com/birdieswap";
@@ -7,25 +6,23 @@ const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  req: NextRequest, // or Request
-  ctx: { params: Record<string, string | string[]> } 
-) {
-  // `[...path]` → ctx.params.path 가 string|string[] | undefined 일 수 있으므로 정규화
-  const raw = ctx.params?.path;
-  const segs = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
-  const endpoint = strip(segs.join("/"));
+export async function GET(req: Request) {
+  const url = new URL(req.url);
 
-  const incoming = new URL(req.url);
+  // '/api/realkimp/' 이후의 경로 부분을 직접 추출
+  const base = "/api/realkimp/";
+  const idx = url.pathname.indexOf(base);
+  const after = idx >= 0 ? url.pathname.slice(idx + base.length) : "";
+  const endpoint = strip(after); // "Transactions" 같은 세그먼트 조합
 
   // 1) 1차 요청
   const u1 = new URL(`${UPSTREAM}/${endpoint}`);
-  u1.search = incoming.search;
+  u1.search = url.search;
 
   let r = await fetch(u1.toString(), {
     method: "GET",
     cache: "no-store",
-    redirect: "manual", // 클라이언트로 3xx 내보내지 않기
+    redirect: "manual", // 클라이언트로 3xx 노출하지 않음
     headers: { accept: "application/json" },
   });
 
@@ -45,13 +42,8 @@ export async function GET(
     }
   }
 
-  // 원본 상태 코드를 유지하는 편이 좋습니다(200 강제 X)
-  const buf = await r.arrayBuffer();
-  const res = new NextResponse(buf, { status: r.status });
-
-  // content-type 등 필요한 헤더를 전달
-  const ct = r.headers.get("content-type") || "application/json";
-  res.headers.set("content-type", ct);
-
+  // 스트림 그대로 전달(대용량에서 메모리 효율 ↑)
+  const res = new NextResponse(r.body, { status: r.status });
+  res.headers.set("content-type", r.headers.get("content-type") ?? "application/json");
   return res;
 }
