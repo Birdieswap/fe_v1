@@ -1,13 +1,13 @@
 "use client";
 
-import { createContext, useMemo, useRef, useState, useEffect } from "react";
+import { createContext, useMemo, useState, useEffect } from "react";
 import { Config, useAccount, UseAccountReturnType, useChainId } from "wagmi";
 
 import { WalletProviderInfo } from "@/types/WalletProviderInfo";
 import { NetworkInfo } from "@/types/NetworkInfo";
 import { walletProviders } from "@/const/wallets";
 import { useReferral } from "./ReferralContextProvider";
-
+import useAccountWalletData from "@/hooks/wallet/useAccountWalletData";
 
 export type WalletContextType = {
   selectedProvider?: WalletProviderInfo;
@@ -19,6 +19,7 @@ export type WalletContextType = {
   networks: NetworkInfo[];
   chainId?: number;
   selectedNetwork?: NetworkInfo;
+  walletData?: ReturnType<typeof useAccountWalletData>;
 };
 
 const networks: NetworkInfo[] = [
@@ -100,26 +101,25 @@ export default function WalletContextProvider({
 
   const account = useAccount();
   const { referralAddress, setReferralAddress } = useReferral();
+  const walletData = useAccountWalletData(
+    (account?.address as `0x${string}`) || undefined
+  );
 
   useEffect(() => {
-  if (account.isConnected && account.address && referralAddress === "") {
-    setReferralAddress(account.address); 
-  }
-}, [account.isConnected, account.address, referralAddress, setReferralAddress]);
+    if (account.isConnected && account.address && referralAddress === "") {
+      setReferralAddress(account.address);
+    }
+  }, [
+    account.isConnected,
+    account.address,
+    referralAddress,
+    setReferralAddress,
+  ]);
 
   // ⭐ 이 부분을 새로운 코드로 교체
   const selectedProvider = useMemo(() => {
     if (!account?.connector?.id) return undefined;
 
-    /* 디버깅을 위한 로그 (개발 중에만 사용)
-    if (process.env.NODE_ENV === "development") {
-      console.log("=== Wallet Detection Debug ===");
-      console.log("Connector ID:", account.connector.id);
-      console.log("Connector Name:", account.connector.name);
-      console.log("Connector Type:", account.connector.type);
-    }*/
-
-    // ⭐ 정확한 매핑 테이블 - 간단하고 명확하게
     const connectorMapping: Record<string, string> = {
       // MetaMask 관련 모든 케이스
       "io.metamask": "metaMask",
@@ -143,50 +143,8 @@ export default function WalletContextProvider({
     if (mappedKey) {
       const provider = walletProviders.find((p) => p.key === mappedKey);
 
-      /*
-      if (provider) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("✅ Wallet detected:", provider.name);
-        }
-      */
       return provider;
     }
-
-    /*
-
-    // ⭐ 2차 매핑 시도 - connector name 기반
-    const connectorName = account.connector.name?.toLowerCase() || "";
-
-    if (connectorName.includes("metamask")) {
-      const provider = walletProviders.find((p) => p.key === "metaMask");
-
-      if (provider) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("✅ Wallet detected by name:", provider.name);
-        }
-
-        return provider;
-      }
-    }
-
-    // ⭐ 3차 매핑 시도 - 기본값으로 MetaMask 설정 (injected의 경우)
-    if (account.connector.id === "injected") {
-      const provider = walletProviders.find((p) => p.key === "metaMask");
-
-      if (provider) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("✅ Defaulting to MetaMask for injected connector");
-        }
-
-        return provider;
-      }
-    }
-      
-
-    // ⭐ 매핑 실패 시 로그
-    if (process.env.NODE_ENV === "development") {
-      console.warn("❌ Unknown connector, no wallet mapped");
-    }  */
 
     return walletProviders.find((p) => p.key === "metaMask"); //undefined;
   }, [account?.connector?.id]);
@@ -218,6 +176,7 @@ export default function WalletContextProvider({
       networks,
       chainId,
       selectedNetwork,
+      walletData,
     }),
     [
       isConnectModalOpen,
@@ -228,7 +187,8 @@ export default function WalletContextProvider({
       account,
       chainId,
       selectedNetwork,
-    ],
+      walletData,
+    ]
   );
 
   return (

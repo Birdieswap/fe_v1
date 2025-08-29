@@ -13,14 +13,14 @@ import { aprDataState, AprVault } from "@/app/AssetsContextProvider";
 import Icons from "@/assets/icons/icons";
 
 type Period = "1d" | "7d" | "30d";
-type PeriodKey = "apr_1d" | "apr_7d" | "apr_30d";
+type PeriodKey = "apr1d" | "apr7d" | "apr30d";
 
 type AprEntry = {
-  chain_id: string;
-  contract_address: string;
+  chainId: string;
+  contractAddress: string;
   name: string;
   vaults: AprVault[];
-  extra_rewards?: AprVault[];
+  extraRewards?: AprVault[];
 };
 
 export type VaultRowItem = {
@@ -51,7 +51,7 @@ function ButtonSelector(props: {
       <h2
         className={cn(
           "text-[12px] font-semibold leading-[17px]",
-          "dark:group-data-[selected=false]:text-default-200"
+          "group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
         )}
       >
         {props.name}
@@ -61,15 +61,15 @@ function ButtonSelector(props: {
 }
 
 export default function EarningsPanel({ item }: { item: Farm }) {
-  const [tab, setTab] = useState<Period>("1d");
+  const [tab, setTab] = useState<Period>("7d");
   const chainId = useChainId();
   const { aprDataState } = useContext(AssetsContext);
   const aprList: AprEntry[] = aprDataState?.apr ?? [];
 
   const periodKey: PeriodKey = useMemo(() => {
-    if (tab === "1d") return "apr_1d";
-    if (tab === "7d") return "apr_7d";
-    return "apr_30d";
+    if (tab === "1d") return "apr1d";
+    if (tab === "7d") return "apr7d";
+    return "apr30d";
   }, [tab]);
 
   console.log("EarningsPanel", item.details.rewards);
@@ -84,8 +84,8 @@ export default function EarningsPanel({ item }: { item: Farm }) {
     () =>
       aprList.find(
         (e) =>
-          e.chain_id === chainIdStr &&
-          (e.contract_address ?? "").toLowerCase() === stakeAddrLower
+          e.chainId === chainIdStr &&
+          (e.contractAddress ?? "").toLowerCase() === stakeAddrLower
       ),
     [aprList, chainIdStr, stakeAddr]
   );
@@ -106,7 +106,7 @@ export default function EarningsPanel({ item }: { item: Farm }) {
   // Vaults 영역에 vaults → extra_rewards 순서로 하나의 리스트로 합치기
   const combinedRows: VaultRowItem[] = useMemo(() => {
     const vaultRows = (matched?.vaults ?? []).map((v) => toRowItem(v, "vault"));
-    const rewardRows = (matched?.extra_rewards ?? []).map((r) =>
+    const rewardRows = (matched?.extraRewards ?? []).map((r) =>
       toRowItem(r, "reward")
     );
     return [...vaultRows, ...rewardRows];
@@ -120,7 +120,7 @@ export default function EarningsPanel({ item }: { item: Farm }) {
     // 모달 payload: 선택된 행 + 전체 목록 + 현재 기간키 + 컨텍스트
     const allAprArray = [
       ...(matched?.vaults ?? []).map((v) => ({ kind: "vault" as const, ...v })),
-      ...(matched?.extra_rewards ?? []).map((r) => ({
+      ...(matched?.extraRewards ?? []).map((r) => ({
         kind: "reward" as const,
         ...r,
       })),

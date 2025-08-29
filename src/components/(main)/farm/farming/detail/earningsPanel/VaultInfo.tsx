@@ -6,7 +6,7 @@ import { Vault } from "@/types/FarmListTableRowProps";
 import VaultInfoModal from "./vaultInfo/VaultInfoModal";
 import { VaultRowItem } from "../EarningsPanel";
 import Icons from "@/assets/icons/icons";
-type PeriodKey = "apr_1d" | "apr_7d" | "apr_30d";
+type PeriodKey = "apr1d" | "apr7d" | "apr30d";
 
 export default function VaultInfo({
   item,

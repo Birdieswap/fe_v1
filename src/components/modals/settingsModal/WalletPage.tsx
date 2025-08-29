@@ -121,8 +121,15 @@ export default function WalletPage(props: {
   );
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
-  const { selectedProvider, account, setIsConnectModalOpen, selectedNetwork } =
-    useContext(WalletContext);
+  const {
+    selectedProvider,
+    account,
+    setIsConnectModalOpen,
+    selectedNetwork,
+    walletData,
+  } = useContext(WalletContext);
+
+  console.log("WalletPage walletData", walletData);
 
   return (
     <Fragment>

@@ -239,14 +239,14 @@ export default function useAssets() {
         const apyByComposite = new Map<string, number>();
 
         for (const entry of list) {
-          const cid = Number(entry?.chain_id ?? 0);
-          const addr: string | undefined = entry?.contract_address;
+          const cid = Number(entry?.chainId ?? 0);
+          const addr: string | undefined = entry?.contractAddress;
           const vaults: any[] = Array.isArray(entry?.vaults) ? entry.vaults : [];
           if (!cid || !addr || vaults.length < 3) continue;
 
           let sum = BigInt(0);               // apr_7d (정수문자열, 18 decimals)
           for (let i = 0; i < 3; i++) {
-            const s = vaults[i]?.apr_7d ?? "0";
+            const s = vaults[i]?.apr7d ?? "0";
             try { sum += BigInt(s); } catch {}
           }
           const aprDecimal = Number(sum.toString()) / SCALE_DECIMALS; // ex: 0.05

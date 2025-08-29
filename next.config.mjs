@@ -46,17 +46,6 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-
-  async rewrites() {
-    return [
-      {
-        source: "/apr",
-        destination: "https://realkimp.com/birdieswap/apr.json",
-      },
-      // 동적 경로를 프록시하고 싶다면:
-      // { source: "/birdieswap/:path*", destination: "https://realkimp.com/birdieswap/:path*" },
-    ];
-  },
 };
 
 export default nextConfig;

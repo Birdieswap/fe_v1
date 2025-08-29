@@ -1,11 +1,22 @@
 import Image from "next/image";
-import { Fragment, useState } from "react";
-import { Button, cn } from "@heroui/react";
-import { useAccount } from "wagmi";
+import { Fragment, useContext, useMemo, useState } from "react";
+import { Button, cn, Link } from "@heroui/react";
+import { useAccount, useChainId } from "wagmi";
 
 import Icons from "@/assets/icons/icons";
 import ThemedButton from "@/components/atoms/ThemedButton";
 import { useReferral } from "@/app/ReferralContextProvider";
+import { WalletContext } from "@/app/WalletContextProvider";
+import { AssetsContext } from "@/app/AssetsContextProvider";
+import tokens from "@/const/contracts/tokens/tokens";
+import { BigDecimal } from "@/types/BigDecimal";
+import { getRewardsTotal } from "@/utils/wallet/getRewardsTotal";
+import {
+  getRewardList,
+  type RewardListItem,
+} from "@/utils/wallet/getRewardList";
+import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
+import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
 
 export type RewardItemProps = {
   name: string;
@@ -15,9 +26,8 @@ export type RewardItemProps = {
 };
 
 function SwapDisplay() {
-
   const { address } = useAccount();
-  const { referralAddress, setReferralAddress} = useReferral();
+  const { referralAddress, setReferralAddress } = useReferral();
 
   const isSelfReferral = address === referralAddress;
 
@@ -26,7 +36,7 @@ function SwapDisplay() {
       className={cn(
         "flex h-[100px] w-full px-4 py-3 rounded-lg bg-default-100 max-sm:h-[104px]",
         "flex-col items-start justify-between",
-        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start",
+        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
       )}
     >
       <div className="text-[11px] font-light text-foreground">
@@ -41,7 +51,7 @@ function SwapDisplay() {
             isIconOnly
             className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
             variant="light"
-            isDisabled={isSelfReferral} 
+            isDisabled={isSelfReferral}
             onPress={() => {
               if (address) {
                 setReferralAddress(address);
@@ -80,7 +90,7 @@ function RewardItem(props: RewardItemProps) {
         <span className="text-[16px] font-semibold leading-[19px] text-foreground">
           {props.amount}
         </span>
-        <span className="text-[12px] font-bold leading-[16px] text-default-300">
+        <span className="text-[12px] font-bold leading-[16px] text-default-700 dark:text-default-300">
           $ {props.usdAmount}
         </span>
       </div>
@@ -89,61 +99,134 @@ function RewardItem(props: RewardItemProps) {
 }
 
 export default function RewardsSwap() {
-
   const { address } = useAccount();
+  const chainId = useChainId();
+  const { assetValues } = useContext(AssetsContext);
   const { referralAddress } = useReferral();
+  const explorerURL = getBlockExplorerUrl(chainId);
+  const { walletData } = useContext(WalletContext);
+
+  // ---------- 원본 데이터: 존재 안하면 안전 디폴트 ----------
+  const SwapRewardItem = walletData?.currentUserReward?.SwapRewards ?? {}; // 객체 or {}
+  const SwapRewardInfo =
+    walletData?.swapRewards ?? walletData?.swapRewards ?? [];
   const isSelfReferral = address === referralAddress;
 
-  const rewards: RewardItemProps[] = [
-    // {
-    //   name: "AAVE",
-    //   amount: "0.00",
-    //   iconSrc: "/tokens/AAVE.svg",
-    //   usdAmount: "0.00",
-    // },
-    // {
-    //   name: "Birdie",
-    //   amount: "0.00",
-    //   iconSrc: "/tokens/Birdie.svg",
-    //   usdAmount: "0.00",
-    // },
-  ];
+  // ---------- 계산 1: rewards/raw (항상 useMemo 호출, 내부에서 방어) ----------
+  const rewardsMemo = useMemo(() => {
+    try {
+      if (!chainId) return { rows: [], raw: [] };
+      if (!SwapRewardItem || typeof SwapRewardItem !== "object") {
+        return { rows: [], raw: [] };
+      }
+      return (
+        getRewardsTotal(
+          SwapRewardItem,
+          chainId,
+          assetValues?.chainLinkPriceMap
+        ) ?? { rows: [], raw: [] }
+      );
+    } catch {
+      return { rows: [], raw: [] };
+    }
+  }, [SwapRewardItem, chainId, assetValues?.chainLinkPriceMap]);
+
+  const rewards = rewardsMemo.rows ?? [];
+  const raw = rewardsMemo.raw ?? [];
+
+  // ---------- 계산 2: SwapRewardList (항상 useMemo 호출, 내부에서 방어) ----------
+  const SwapRewardList = useMemo(() => {
+    try {
+      if (!Array.isArray(SwapRewardInfo) || raw.length === 0) return [];
+      return getRewardList(SwapRewardInfo, raw) ?? [];
+    } catch {
+      return [];
+    }
+  }, [SwapRewardInfo, raw]);
+
+  // ---------- 화면 분기: "훅 호출 후"에만 조건 ----------
+  const showEmpty =
+    !Array.isArray(rewards) ||
+    rewards.length === 0 ||
+    !Array.isArray(SwapRewardList) ||
+    SwapRewardList.length === 0;
+
+  if (showEmpty) {
+    return (
+      <div className="flex grow flex-col items-center justify-center gap-4">
+        <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+        <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+          You have no Swap rewards to claim
+        </span>
+      </div>
+    );
+  }
+
+  console.log("RewardsSwap", "rewards", rewards);
 
   return (
     <div
       className={cn(
         "flex w-full grow flex-col gap-3 p-0 pb-4",
-        "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4",
+        "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4"
       )}
     >
       {!isSelfReferral ? <SwapDisplay /> : null}
-      {rewards.length === 0 ? (
-        <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
-          <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
-            You have no Swap rewards to claim
-          </span>
-        </div>
-      ) : (
-        <Fragment>
-          <div className="border-1 border-default-400 px-4 py-4 rounded-lg">
-            <div className="flex w-full grow flex-col gap-3 p-0 max-sm:gap-6">
-              {rewards.map((reward, index) => (
-                <RewardItem
-                  key={index}
-                  amount={reward.amount}
-                  iconSrc={reward.iconSrc}
-                  name={reward.name}
-                  usdAmount={reward.usdAmount}
-                />
-              ))}
-            </div>
-            <div className="flex w-full flex-row mt-6">
-              <ThemedButton variant="MINT" className="h-[48px] rounded-xl">Claim all</ThemedButton>
-            </div>
+      <Fragment>
+        <div className="border-1 border-default-400 px-4 py-4 rounded-lg">
+          <div className="flex w-full grow flex-col gap-3 p-0 max-sm:gap-6">
+            {rewards.map((reward, index) => (
+              <RewardItem
+                key={index}
+                amount={reward.amount}
+                iconSrc={reward.iconSrc}
+                name={reward.name}
+                usdAmount={reward.usdAmount}
+              />
+            ))}
           </div>
-        </Fragment>
-      )}
+          <div className="flex w-full flex-row mt-6">
+            <ThemedButton
+              variant="MINT"
+              className="h-[48px] rounded-xl"
+              disabled
+            >
+              Claim all
+            </ThemedButton>
+          </div>
+        </div>
+
+        {Array.isArray(SwapRewardList) && SwapRewardList.length > 0 && (
+          <div className="rounded-lg divide-y divide-default-300">
+            {SwapRewardList.map((it) => (
+              <div
+                key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
+                className="flex flex-row items-center gap-1.5 pt-4 pb-4"
+              >
+                <div className="flex grow flex-col items-start gap-1">
+                  <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
+                  {it.transactionHash && (
+                    <Link
+                      className="text-xs text-default-700 transition-colors hover:text-default-800 dark:text-default-300 dark:hover:text-default-200"
+                      href={`${explorerURL}/tx/${it.transactionHash}`}
+                      target="_blank"
+                    >
+                      <p>
+                        {it.transactionHash.length > 44
+                          ? `${it.transactionHash.slice(0, 42)}...`
+                          : it.transactionHash}
+                      </p>
+                    </Link>
+                  )}
+                </div>
+                <div className="flex flex-row items-center gap-2">
+                  <p>{getTimeAgoLinux(it.blockTimestamp)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Fragment>
     </div>
   );
 }

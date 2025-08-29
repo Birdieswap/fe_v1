@@ -40,7 +40,7 @@ function WalletTokenItem(props: WalletTokenInfo) {
         <span className="text-[16px] font-semibold leading-[19px] text-foreground">
           {props.amount}
         </span>
-        <span className="text-[12px] font-bold leading-[16px] text-default-300">
+        <span className="text-[12px] font-bold leading-[16px] text-default-700 dark:text-default-300">
           $ {props.usdAmount}
         </span>
       </div>
@@ -51,7 +51,7 @@ function WalletTokenItem(props: WalletTokenInfo) {
 export default function WalletTokens() {
   const chainId = useChainId();
   const total = useContext(AssetsContext);
-  
+
   const tokens = useMemo<WalletTokenInfo[]>(() => {
     return buildWalletTokens(
       total,
@@ -68,7 +68,7 @@ export default function WalletTokens() {
     <div
       className={cn(
         "flex w-full grow flex-col gap-3 px-4 pb-3",
-        "max-sm:pt-3 max-sm:px-6 max-sm:gap-6",
+        "max-sm:pt-3 max-sm:px-6 max-sm:gap-6"
       )}
     >
       {tokens.length === 0 ? (
