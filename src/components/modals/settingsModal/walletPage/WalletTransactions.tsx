@@ -133,12 +133,12 @@ function BaseTransactionItem(props: TransactionProps) {
     >
       <div
         className={cn(
-          "group flex flex-col px-1 py-4 max-sm:px-6 gap-3 w-full",
+          "group flex flex-col px-1 py-4 max-sm:px-2 gap-3 w-full",
           "hover:bg-default-200 dark:hover:bg-default-100 transition-background"
         )}
       >
         <div className={cn("flex flex-row items-center gap-1.5 w-full")}>
-          <div className="flex grow flex-col items-start gap-1">
+          <div className="flex grow flex-col items-start gap-1 px-1">
             <h2 className="flex flex-row items-center gap-1 text-[15px] font-medium leading-[18px]">
               {props.type === TransactionType.SWAP && (
                 <Icons.WalletTitleSwap className="fill-foreground" />
@@ -155,11 +155,11 @@ function BaseTransactionItem(props: TransactionProps) {
               {title}
             </h2>
             <span className="text-[12px] leading-[15px] text-default-800 dark:text-default-700">
-              {props.hash.slice(0, 42)}...
+              {props.hash.slice(0, 40)}...
             </span>
           </div>
           <div className="flex flex-row items-center gap-2">
-            <span className="text-[14px] font-medium leading-[17px] text-default-800 dark:text-default-700">
+            <span className="text-[14px] font-medium leading-[17px] pr-1 text-default-800 dark:text-default-700">
               {getTimeAgoLinux(props.timestamp)}
             </span>
             {/* {props.success ? (
@@ -235,21 +235,33 @@ export default function WalletTransactions() {
   const { walletData } = useContext(WalletContext);
   const TransactionInfo = walletData?.transactions;
 
-  if (!TransactionInfo) return;
+  const transactions = useMemo(() => {
+    try {
+      // chainId 없거나 원본이 배열이 아니면 빈 배열
+      if (!chainId || !Array.isArray(TransactionInfo)) return [];
 
-  const transactions: TransactionProps[] = useMemo(
-    () =>
-      buildTransactions(
-        TransactionInfo,
-        chainId,
-        assetValues?.chainLinkPriceMap
-      ),
-    [TransactionInfo, chainId, assetValues?.chainLinkPriceMap]
-  );
-  console.log("WalletTransactions", transactions);
+      // priceMap 없어도 내부에서 가격만 빠지고 나머지는 만들 수 있다면 그대로 호출
+      const priceMap = assetValues?.chainLinkPriceMap;
+      const built = buildTransactions(TransactionInfo, chainId, priceMap);
+
+      return Array.isArray(built) ? built : [];
+    } catch (e) {
+      console.error("[WalletTransactions] buildTransactions failed:", e);
+      return [];
+    }
+  }, [chainId, TransactionInfo, assetValues?.chainLinkPriceMap]);
+
+  const showEmpty = useMemo(() => {
+    // 체인 정보가 없거나, 원본 데이터가 아직 도착 안 했거나, 결과가 비었으면 빈 상태
+    if (!chainId) return true;
+    if (!Array.isArray(TransactionInfo)) return true;
+    if (!transactions.length) return true;
+    return false;
+  }, [chainId, TransactionInfo, transactions]);
+
   return (
     <div className="flex w-full grow flex-col gap-0 p-0">
-      {transactions.length === 0 ? (
+      {showEmpty ? (
         <div className="flex grow flex-col items-center justify-center gap-4">
           <Icons.WalletEmptyTx className="fill-light_mid_mint_2 stroke-light_mid_mint_2 dark:fill-dark_empty_state dark:stroke-dark_empty_state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
@@ -257,7 +269,7 @@ export default function WalletTransactions() {
           </span>
         </div>
       ) : (
-        <div className="w-full rounded-lg divide-y divide-default-100 px-3 sm:px-6">
+        <div className="w-full rounded-lg divide-y divide-default-100 px-6 sm:px-3">
           {transactions.map((tx) => (
             <BaseTransactionItem key={tx.hash} {...tx} />
           ))}

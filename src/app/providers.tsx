@@ -36,7 +36,7 @@ import SettingsProvider from "./SettingsProvider";
 import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 import { ReferralProvider } from "./ReferralContextProvider";
-import { http, fallback } from "viem";
+import { http, fallback, webSocket } from "viem";
 
 const sepoliaUrls = [
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,

@@ -32,7 +32,7 @@ function ReferralDisplay() {
   return (
     <div
       className={cn(
-        "flex h-[100px] w-full px-4 py-3 rounded-lg bg-default-100 sm:h-[144px]",
+        "flex max-h-[180px] w-full px-4 py-3 rounded-lg bg-default-100 sm:h-[100px]",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
       )}
@@ -149,11 +149,20 @@ export default function RewardsReferral() {
 
   if (showEmpty) {
     return (
-      <div className="flex grow flex-col items-center justify-center gap-4">
-        <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
-        <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
-          You have no Referral rewards to claim
-        </span>
+      <div
+        className={cn(
+          "flex w-full grow flex-col gap-3 p-0 pb-4",
+          "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4"
+        )}
+      >
+        <ReferralDisplay />
+
+        <div className="flex grow flex-col items-center justify-center gap-4">
+          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+          <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            You have no Referral rewards to claim
+          </span>
+        </div>
       </div>
     );
   }
@@ -195,7 +204,7 @@ export default function RewardsReferral() {
             {ReferralRewardList.map((it) => (
               <Link
                 key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
-                className="block w-full hover:bg-default-200 dark:hover:bg-default-100 px-1"
+                className="block w-full hover:bg-default-200 dark:hover:bg-default-100 px-2"
                 href={`${explorerURL}/tx/${it.transactionHash}`}
                 target="_blank"
               >
@@ -204,8 +213,8 @@ export default function RewardsReferral() {
                     <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
                     {it.transactionHash && (
                       <p className="text-xs text-default-700 transition-colors dark:text-default-300">
-                        {it.transactionHash.length > 44
-                          ? `${it.transactionHash.slice(0, 42)}...`
+                        {it.transactionHash.length > 42
+                          ? `${it.transactionHash.slice(0, 40)}...`
                           : it.transactionHash}
                       </p>
                     )}
