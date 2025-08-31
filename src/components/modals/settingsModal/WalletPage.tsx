@@ -105,7 +105,14 @@ function WalletDisplay({
         rel="noopener noreferrer"
         target="_blank"
       >
-        View on {network?.blockExplorer?.name ?? "Etherscan"}
+        <span className="whitespace-nowrap max-[360px]:whitespace-normal">
+          View on
+        </span>
+        <span className="inline-flex items-center gap-0.5 whitespace-nowrap max-[360px]:whitespace-normal break-words">
+          {network?.blockExplorer?.name ?? "Etherscan"}
+          {/* <Icons.WalletArrowRU className="ml-0.5 max-[360px]:hidden fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" /> */}
+        </span>
+        {/* View on {network?.blockExplorer?.name ?? "Etherscan"} */}
         <Icons.WalletArrowRU className="fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" />
       </Link>
     </div>

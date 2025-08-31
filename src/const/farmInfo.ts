@@ -85,7 +85,7 @@ const WETH_USDC_harvest_autopilot: Farm = {
   apy: 0,
   tvl: 0,
   MyBalance: 0,
-  feeTier: 0.3,
+  feeTier: 0.05,
   point: 0,
 };
 
@@ -110,7 +110,7 @@ const CBBTC_USDC_harvest_autopilot: Farm = {
   apy: 0,
   tvl: 0,
   MyBalance: 0,
-  feeTier: 0.3,
+  feeTier: 0.05,
   point: 0,
 };
 
@@ -135,7 +135,7 @@ const CBBTC_WETH_harvest_autopilot: Farm = {
   apy: 0,
   tvl: 0,
   MyBalance: 0,
-  feeTier: 0.05,
+  feeTier: 0.3,
   point: 0,
 };
 
@@ -160,7 +160,7 @@ const EURC_USDC_harvest_autopilot: Farm = {
   apy: 0,
   tvl: 0,
   MyBalance: 0,
-  feeTier: 0.3,
+  feeTier: 0.05,
   point: 0,
 };
 
@@ -171,7 +171,7 @@ export const FarmList = [
   WETH_USDC_harvest_autopilot,
   CBBTC_USDC_harvest_autopilot,
   CBBTC_WETH_harvest_autopilot,
-  //EURC_USDC_harvest_autopilot,
+  EURC_USDC_harvest_autopilot,
 ];
 export const FarmInfo = {
   // CBBTC_harvest_autopilot,
@@ -180,6 +180,6 @@ export const FarmInfo = {
   WETH_USDC_harvest_autopilot,
   CBBTC_USDC_harvest_autopilot,
   CBBTC_WETH_harvest_autopilot,
-  //EURC_USDC_harvest_autopilot,
+  EURC_USDC_harvest_autopilot,
 };
 export default FarmInfo;
