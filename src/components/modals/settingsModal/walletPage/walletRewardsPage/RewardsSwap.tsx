@@ -154,11 +154,19 @@ export default function RewardsSwap() {
 
   if (showEmpty) {
     return (
-      <div className="flex grow flex-col items-center justify-center gap-4">
-        <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
-        <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
-          You have no Swap rewards to claim
-        </span>
+      <div
+        className={cn(
+          "flex w-full grow flex-col gap-3 p-0 pb-4",
+          "max-sm:gap-6 max-sm:px-6 max-sm:pt-3 sm:px-4"
+        )}
+      >
+        {!isSelfReferral ? <SwapDisplay /> : null}
+        <div className="flex grow flex-col items-center justify-center gap-4">
+          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+          <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            You have no Swap rewards to claim
+          </span>
+        </div>
       </div>
     );
   }

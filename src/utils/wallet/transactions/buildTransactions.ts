@@ -127,14 +127,16 @@ function makeTokenInfo(
   preferLpMeta = false,
   tokensOverride?: any,
   vaultsOverride?: any
-): TransactionTokenInfo {
+): TransactionTokenInfo | null {
   const baseMeta = preferLpMeta
     ? findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride) ??
       findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride)
     : findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride) ??
       findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride);
 
-  const symbol = baseMeta?.symbol ?? "UNKNOWN";
+  if (!baseMeta) return null;                        // [CHANGED] 메타 없으면 null 반환
+
+  const symbol = baseMeta.symbol; 
   const decimals = baseMeta?.decimals ?? 18;
   const iconSrc = (baseMeta as any)?.iconSrc;
 
@@ -213,6 +215,8 @@ export function buildTransactions(
       const from = makeTokenInfo(tokenInAddr, amountIn, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride);
       const to   = makeTokenInfo(tokenOutAddr, amountOut, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride);
 
+      if (!from || !to) continue;    
+
       txs.push({ type: TransactionType.SWAP, hash, timestamp, from, to });
       continue;
     }
@@ -222,18 +226,75 @@ export function buildTransactions(
       const d = ev?.data ?? {};
 
       // from: singleDeposits[*].underlyingTokenAddress/underlyingTokenAmount
-      const pairs = extractUnderlyingFromDeposits(d);
-      const from: TransactionTokenInfo[] = pairs.map(({ address, amount }) =>
-        makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+      // const pairs = extractUnderlyingFromDeposits(d);
+      // const from: TransactionTokenInfo[] = pairs.map(({ address, amount }) =>
+      //   makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+      // );
+
+      // // to: LP (주소/수량 키는 blpTokenAddress|bTokenAddress, blpTokenAmount|bTokenAmount)
+      // const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
+      // const lpAmt  = d?.blpTokenAmount  ?? d?.bTokenAmount  ?? d?.lpAmount ?? d?.amountLP;
+      // const to = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
+      // delete to.usdAmount; // LP는 usdAmount 보통 없음
+
+      // txs.push({ type: TransactionType.START_FARM, hash, timestamp, from, to });
+      // continue;
+      const t0Addr = d?.Token0Address ?? d?.token0 ?? d?.token0Address;
+      const t1Addr = d?.Token1Address ?? d?.token1 ?? d?.token1Address;
+      const t0Amt = d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
+      const t1Amt = d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
+
+      const lpAddr = d?.blpTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
+      const lpAmt = d?.blpTokenAmount ?? d?.lpAmount ?? d?.amountLP;
+
+      const from: TransactionTokenInfo[] = [];
+
+      if (t0Addr && t0Amt) {
+        const f0 = makeTokenInfo(
+          t0Addr,
+          t0Amt,
+          chainId,
+          chainLinkPriceMap,
+          false,
+          tokensOverride,
+          vaultsOverride
+        );
+        if (!f0) continue;                        // [CHANGED] 하나라도 못 찾으면 제외
+        from.push(f0);
+      }
+      if (t1Addr && t1Amt) {
+        const f1 = makeTokenInfo(
+          t1Addr,
+          t1Amt,
+          chainId,
+          chainLinkPriceMap,
+          false,
+          tokensOverride,
+          vaultsOverride
+        );
+        if (!f1) continue;                        // [CHANGED]
+        from.push(f1);
+      }
+
+      const to = makeTokenInfo(
+        lpAddr,
+        lpAmt,
+        chainId,
+        chainLinkPriceMap,
+        true, // LP 메타 우선
+        tokensOverride,
+        vaultsOverride
       );
+      if (!to) continue;                          // [CHANGED] LP 메타 못 찾으면 제외
+      delete to.usdAmount;                        // LP는 usdAmount 의미 없으니 제거 (기존 유지)
 
-      // to: LP (주소/수량 키는 blpTokenAddress|bTokenAddress, blpTokenAmount|bTokenAmount)
-      const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
-      const lpAmt  = d?.blpTokenAmount  ?? d?.bTokenAmount  ?? d?.lpAmount ?? d?.amountLP;
-      const to = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
-      delete to.usdAmount; // LP는 usdAmount 보통 없음
-
-      txs.push({ type: TransactionType.START_FARM, hash, timestamp, from, to });
+      txs.push({
+        type: TransactionType.START_FARM,
+        hash,
+        timestamp,
+        from,
+        to,
+      });
       continue;
     }
 
@@ -242,18 +303,74 @@ export function buildTransactions(
       const d = ev?.data ?? {};
 
       // from: LP
-      const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
-      const lpAmt  = d?.blpTokenAmount  ?? d?.bTokenAmount  ?? d?.lpAmount ?? d?.amountLP;
-      const from = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
-      delete (from as any).usdAmount;
+      // const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
+      // const lpAmt  = d?.blpTokenAmount  ?? d?.bTokenAmount  ?? d?.lpAmount ?? d?.amountLP;
+      // const from = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
+      // delete (from as any).usdAmount;
 
-      // to: singleWithdraws[*].underlyingTokenAddress/underlyingTokenAmount
-      const pairs = extractUnderlyingFromWithdraws(d);
-      const to: TransactionTokenInfo[] = pairs.map(({ address, amount }) =>
-        makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+      // // to: singleWithdraws[*].underlyingTokenAddress/underlyingTokenAmount
+      // const pairs = extractUnderlyingFromWithdraws(d);
+      // const to: TransactionTokenInfo[] = pairs.map(({ address, amount }) =>
+      //   makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+      // );
+
+      // txs.push({ type: TransactionType.STOP_FARM, hash, timestamp, from, to });
+      // continue;
+      const lpAddr = d?.blpTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress;
+      const lpAmt = d?.blpTokenAmount ?? d?.lpAmount ?? d?.amountLP;
+
+      const t0Addr = d?.Token0Address ?? d?.token0 ?? d?.token0Address;
+      const t1Addr = d?.Token1Address ?? d?.token1 ?? d?.token1Address;
+      const t0Amt = d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
+      const t1Amt = d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
+
+      const from = makeTokenInfo(
+        lpAddr,
+        lpAmt,
+        chainId,
+        chainLinkPriceMap,
+        true, // LP 메타 우선
+        tokensOverride,
+        vaultsOverride
       );
+      if (!from) continue;                        // [CHANGED]
+      delete from.usdAmount;                      // 기존 유지
 
-      txs.push({ type: TransactionType.STOP_FARM, hash, timestamp, from, to });
+      const to: TransactionTokenInfo[] = [];
+      if (t0Addr && t0Amt) {
+        const t0 = makeTokenInfo(
+          t0Addr,
+          t0Amt,
+          chainId,
+          chainLinkPriceMap,
+          false,
+          tokensOverride,
+          vaultsOverride
+        );
+        if (!t0) continue;                        // [CHANGED]
+        to.push(t0);
+      }
+      if (t1Addr && t1Amt) {
+        const t1 = makeTokenInfo(
+          t1Addr,
+          t1Amt,
+          chainId,
+          chainLinkPriceMap,
+          false,
+          tokensOverride,
+          vaultsOverride
+        );
+        if (!t1) continue;                        // [CHANGED]
+        to.push(t1);
+      }
+
+      txs.push({
+        type: TransactionType.STOP_FARM,
+        hash,
+        timestamp,
+        from,
+        to,
+      });
       continue;
     }
 
