@@ -35,7 +35,7 @@ function SwapDisplay() {
   return (
     <div
       className={cn(
-        "flex h-[100px] w-full px-4 py-3 rounded-lg bg-default-100 max-sm:h-[104px]",
+        "flex max-h-[180px] w-full px-4 py-3 rounded-lg bg-default-100 sm:h-[100px]",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
       )}
@@ -202,7 +202,7 @@ export default function RewardsSwap() {
             {SwapRewardList.map((it) => (
               <Link
                 key={it.transactionHash || `${it.type}-${it.blockTimestamp}`}
-                className="block w-full hover:bg-default-200 dark:hover:bg-default-100 px-1"
+                className="block w-full hover:bg-default-200 dark:hover:bg-default-100 px-2"
                 href={`${explorerURL}/tx/${it.transactionHash}`}
                 target="_blank"
               >
@@ -211,8 +211,8 @@ export default function RewardsSwap() {
                     <p>{`${it.type}  ${it.amount}  ${it.symbol}`}</p>
                     {it.transactionHash && (
                       <p className="text-xs text-default-700 transition-colors dark:text-default-300">
-                        {it.transactionHash.length > 44
-                          ? `${it.transactionHash.slice(0, 42)}...`
+                        {it.transactionHash.length > 42
+                          ? `${it.transactionHash.slice(0, 40)}...`
                           : it.transactionHash}
                       </p>
                     )}
