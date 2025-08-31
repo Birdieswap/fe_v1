@@ -98,6 +98,7 @@ const priceFeeds = {
   ETH_USD,
   WETH_USD,
   USDC_USD,
+  EURC_USD,
 };
 
 export default priceFeeds;
