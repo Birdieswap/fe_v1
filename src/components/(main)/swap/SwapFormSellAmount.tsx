@@ -8,7 +8,7 @@ import { BigDecimal } from "@/types/BigDecimal";
 import Icons from "@/assets/icons/icons";
 import { SwapTokens } from "@/const/tokenInfo";
 import { onAmountValueChange } from "@/utils/onAmountValueChange";
-import { ICurrency,IToken } from "@/const/contracts/types/tokenTypes";
+import { ICurrency, IToken } from "@/const/contracts/types/tokenTypes";
 import suffixNumbers from "@/utils/suffixNumbers";
 
 import {
@@ -19,6 +19,7 @@ import {
 import SwapFormSelectTokenModal from "./SwapFormSelectTokenModal";
 import BalanceDisplay from "./swapFormAmount/BalanceDisplay";
 import { useSwapContext } from "./SwapProvider";
+import { useSwapCandidates } from "@/utils/assets/getCandidateTokens";
 
 export default function SwapFormAmount({
   type,
@@ -30,7 +31,7 @@ export default function SwapFormAmount({
   token,
   setToken,
   isDisabled,
-  isApproved
+  isApproved,
 }: {
   type: "buy" | "sell";
   isPending?: boolean;
@@ -43,7 +44,7 @@ export default function SwapFormAmount({
   isDisabled?: boolean;
   isApproved?: boolean;
 }) {
-  const { setIsTyping } = useSwapContext();
+  const { setIsTyping, fromToken, toToken } = useSwapContext();
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
   const step = token?.decimals ? `0.${"0".repeat(token.decimals - 1)}1` : "1";
@@ -56,21 +57,25 @@ export default function SwapFormAmount({
     return suffixNumbers(amountValue.mul(price), 100_000, 2, true, true);
   }, [amount, price, token?.decimals]);
 
- //입력 자리수 검사 진행
+  //입력 자리수 검사 진행
   function isValidAmount(value: string) {
-  if (value === "") return true; // 빈 값 허용
-  const [integerPart, decimalPart] = value.split(".");
-  if (integerPart.length > 18) return false;
-  if (decimalPart && decimalPart.length > 18) return false;
-  return true;
-}
+    if (value === "") return true; // 빈 값 허용
+    const [integerPart, decimalPart] = value.split(".");
+    if (integerPart.length > 18) return false;
+    if (decimalPart && decimalPart.length > 18) return false;
+    return true;
+  }
 
+  const candidateTokens = useSwapCandidates(type, fromToken, toToken);
+  console.log("SwapFormSellAmount SwapTokens", SwapTokens, fromToken, toToken);
   return (
     <Fragment>
       <SwapFormContainer
         className={clsx(
           "transition-colors duration-200",
-          !token ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-dark_popup_bg" : "cursor-text", // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
+          !token
+            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-dark_popup_bg"
+            : "cursor-text" // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
         )}
         onClick={() => {
           if (!token) {
@@ -88,7 +93,7 @@ export default function SwapFormAmount({
             isDisabled={isPending || isDisabled || !token}
             min={0}
             placeholder="0"
-            inputMode="decimal"            // CHANGE
+            inputMode="decimal" // CHANGE
             step={step}
             type="number"
             value={amount}
@@ -110,21 +115,20 @@ export default function SwapFormAmount({
             onKeyDown={(e) => {
               if (e.key === "-") e.preventDefault();
             }}
-
           />
-          {type ==="sell" && token && !isApproved ? (
-             <Icons.Lock
-               className="fill-default-800 dark:fill-default-700 w-12"
-               fillRule="evenodd"
-             />
-           ) : (
-             <div className="size-6" />
+          {type === "sell" && token && !isApproved ? (
+            <Icons.Lock
+              className="fill-default-800 dark:fill-default-700 w-12"
+              fillRule="evenodd"
+            />
+          ) : (
+            <div className="size-6" />
           )}
           <Button
             className={clsx(
               "flex h-10 w-fit max-w-fit shrink-0 flex-row gap-1 px-1 py-0.5 text-xl",
               "bg-background font-semibold text-foreground shadow-[0px_2px_rgba(0,0,0,0.25)]",
-              "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-100",
+              "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-100"
             )}
             isDisabled={isPending}
             radius="full"

@@ -253,7 +253,11 @@ export default function useAssets() {
           const base = 1 + aprDecimal / annualBlockQty;
           const apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
 
+          console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
+
+
           apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);
+          console.log("useAssets apyByComposite", apyByComposite)
         }
 
         // farms에 덮어쓰기
@@ -261,14 +265,17 @@ export default function useAssets() {
           const key = makeCompositeKey(chainId, address);
           if (apyByComposite.has(key)) {
             const apyNumber = apyByComposite.get(key)!;
+            console.log("useAssets apyNumber",apyNumber)
             try {
               const bd = new BigDecimal(apyNumber, 18); // 소수(18자리)로 저장 (표시는 % 변환)
               nextApy.set(address, bd);
+              console.log("useAssets bd",bd,"addr",address)
             } catch {
               // 변환 실패 시 on-chain 값 유지
             }
           }
         }
+        
       }
 
       if (cancelled) return;

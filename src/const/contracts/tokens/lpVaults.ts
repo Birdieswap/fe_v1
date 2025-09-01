@@ -11,7 +11,7 @@ import { contractAddresses } from "../contractAddresses";
 const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
   symbol: "bUSDCWETH",
-  fullName: "Birdieswap USDC 3000 WETH",
+  fullName: "Birdieswap USDC 500 WETH",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
@@ -29,7 +29,7 @@ const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
 const blpHarvestAutopilotCBBTCUSDC = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
   symbol: "bcbBTCUSDC",
-  fullName: "Birdieswap cbBTC 3000 USDC",
+  fullName: "Birdieswap cbBTC 500 USDC",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_USDC_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.CBBTC_USDC_VAULT as `0x${string}`,
@@ -47,7 +47,7 @@ const blpHarvestAutopilotCBBTCUSDC = BirdieLPFarmGuard({
 const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
   symbol: "bcbBTCWETH",
-  fullName: "Birdieswap cbBTC 500 WETH",
+  fullName: "Birdieswap cbBTC 3000 WETH",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_WETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.CBBTC_WETH_VAULT as `0x${string}`,
@@ -65,7 +65,7 @@ const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
 const blpHarvestAutopilotEURCUSDC = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
   symbol: "bEURCUSDC",
-  fullName: "Birdieswap EURC 3000 USDC",
+  fullName: "Birdieswap EURC 500 USDC",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.EURC_USDC_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.EURC_USDC_VAULT as `0x${string}`,

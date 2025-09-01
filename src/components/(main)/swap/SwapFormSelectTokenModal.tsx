@@ -46,7 +46,7 @@ const TokenDisplay = ({
       key={token.symbol}
       className={clsx(
         "relative flex flex-row items-center gap-2 rounded-md px-2 py-2.5",
-        "transition-background hover:bg-default/10 focus:bg-default/30 active:bg-default/30",
+        "transition-background hover:bg-default/10 focus:bg-default/30 active:bg-default/30"
       )}
       onClick={setToken}
     >
@@ -92,7 +92,6 @@ export default function SwapFormSelectTokenModal(props: {
 
   const balanceData = useMemo(
     () =>
-      
       props.tokens.map((v) => {
         const address = getTokenAddress({
           token: v,
@@ -108,15 +107,15 @@ export default function SwapFormSelectTokenModal(props: {
           balance: balance ?? BigDecimal.ZERO(),
         };
       }),
-    [balances?.tokenBalances?.balanceMap, chainId, props.tokens],
+    [balances?.tokenBalances?.balanceMap, chainId, props.tokens]
   );
   const withBalance = useMemo(
     () => balanceData.filter((v) => v.balance.gt(BigDecimal.ZERO())),
-    [balanceData],
+    [balanceData]
   );
   const withoutBalance = useMemo(
     () => balanceData.filter((v) => v.balance.lte(BigDecimal.ZERO())),
-    [balanceData],
+    [balanceData]
   );
 
   return (
@@ -126,7 +125,9 @@ export default function SwapFormSelectTokenModal(props: {
       onClose={props.onClose}
     >
       <ModalContent>
-        <ModalHeader className="p-4 text-foreground">Select a Token</ModalHeader>
+        <ModalHeader className="p-4 text-foreground">
+          Select a Token
+        </ModalHeader>
         <ModalBody className="px-0 pb-4 pt-0">
           <Container>
             <Header>Your Tokens</Header>

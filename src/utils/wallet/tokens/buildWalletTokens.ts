@@ -13,7 +13,7 @@ export type WalletTokenInfo = {
 
 type Registries = {
   tokens: Record<string, AddressedMeta & { symbol: string; fullName: string; iconSrc?: string }>;
-  singleVaults: Record<string, AddressedMeta & { fullName: string; iconSrc?: string }>;
+  //singleVaults: Record<string, AddressedMeta & { fullName: string; iconSrc?: string }>;
   lpVaults: Record<string, AddressedMeta & { fullName: string; iconSrc?: string }>;
 };
 
@@ -43,7 +43,7 @@ export function buildWalletTokens(
 
   // 주소 → 메타 맵 생성
   const tokenMetaByAddr = buildAddressToMetaMap(registries.tokens, chainId);
-  const singleMetaByAddr = buildAddressToMetaMap(registries.singleVaults, chainId);
+  //const singleMetaByAddr = buildAddressToMetaMap(registries.singleVaults, chainId);
   const lpMetaByAddr = buildAddressToMetaMap(registries.lpVaults, chainId);
 
   // 1) 일반 토큰
@@ -73,30 +73,30 @@ export function buildWalletTokens(
   }
 
   // 2) 싱글 볼트
-  const singleBalanceMap = assets.balances?.singleVaultBalances?.balanceMap;
+  // const singleBalanceMap = assets.balances?.singleVaultBalances?.balanceMap;
   const farmPriceMap = assets.farmValues?.priceMap;
-  if (singleBalanceMap) {
-    singleBalanceMap.forEach((balBD, addr) => {
-      if (isZeroBD(balBD)) return;
+  // if (singleBalanceMap) {
+  //   singleBalanceMap.forEach((balBD, addr) => {
+  //     if (isZeroBD(balBD)) return;
 
-      const meta = singleMetaByAddr.get(addr.toLowerCase());
-      if (!meta) return;
+  //     const meta = singleMetaByAddr.get(addr.toLowerCase());
+  //     if (!meta) return;
 
-      const { fullName, iconSrc } = meta as any;
+  //     const { fullName, iconSrc } = meta as any;
 
-      const priceBD = farmPriceMap?.get(addr) ?? null;
-      const amountNum = bdToNumber(balBD);
-      const priceNum = bdToNumber(priceBD);
-      const usdNum = amountNum * priceNum;
+  //     const priceBD = farmPriceMap?.get(addr) ?? null;
+  //     const amountNum = bdToNumber(balBD);
+  //     const priceNum = bdToNumber(priceBD);
+  //     const usdNum = amountNum * priceNum;
 
-      out.push({
-        name: fullName ?? "Single Vault",
-        amount: format2(amountNum),
-        src: iconSrc,
-        usdAmount: format2(usdNum),
-      });
-    });
-  }
+  //     out.push({
+  //       name: fullName ?? "Single Vault",
+  //       amount: format2(amountNum),
+  //       src: iconSrc,
+  //       usdAmount: format2(usdNum),
+  //     });
+  //   });
+  // }
 
   // 3) LP 볼트
   const lpBalanceMap = assets.balances?.lpVaultBalances?.balanceMap;
