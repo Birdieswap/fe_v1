@@ -1,7 +1,14 @@
 "use client";
 
 import { Button, Image, useDisclosure } from "@heroui/react";
-import { Dispatch, Fragment, SetStateAction, useMemo, useRef } from "react";
+import {
+  Dispatch,
+  Fragment,
+  SetStateAction,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import clsx from "clsx";
 
 import { BigDecimal } from "@/types/BigDecimal";
@@ -19,7 +26,8 @@ import {
 import SwapFormSelectTokenModal from "./SwapFormSelectTokenModal";
 import BalanceDisplay from "./swapFormAmount/BalanceDisplay";
 import { useSwapContext } from "./SwapProvider";
-import { useSwapCandidates } from "@/utils/assets/getCandidateTokens";
+import { useChainId } from "wagmi";
+import getAvailableTokens from "@/utils/assets/getAvailableTokens";
 
 export default function SwapFormAmount({
   type,
@@ -44,10 +52,14 @@ export default function SwapFormAmount({
   isDisabled?: boolean;
   isApproved?: boolean;
 }) {
+  const chainId = useChainId();
   const { setIsTyping, fromToken, toToken } = useSwapContext();
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
   const step = token?.decimals ? `0.${"0".repeat(token.decimals - 1)}1` : "1";
+  const [availableTokens, setAvailableTokens] =
+    useState<ICurrency[]>(SwapTokens);
+
   const dollarAmount = useMemo(() => {
     if (!price) return "";
     const amountValue = new BigDecimal(amount || "0", token?.decimals ?? 18);
@@ -66,8 +78,21 @@ export default function SwapFormAmount({
     return true;
   }
 
-  const candidateTokens = useSwapCandidates(type, fromToken, toToken);
-  console.log("SwapFormSellAmount SwapTokens", SwapTokens, fromToken, toToken);
+  function openSelectTokenModal() {
+    const baseToken = type === "sell" ? toToken : fromToken;
+    if (!baseToken) {
+      setAvailableTokens(SwapTokens);
+    } else {
+      const list = getAvailableTokens(baseToken);
+      setAvailableTokens(list && list.length ? list : SwapTokens);
+    }
+    disclosure.onOpen();
+  }
+
+  // useEffect(() => {
+  //   if (chainId) prebuildAvailableTokens(chainId); // ← 체인별 예열
+  // }, [chainId]);
+
   return (
     <Fragment>
       <SwapFormContainer
@@ -79,7 +104,8 @@ export default function SwapFormAmount({
         )}
         onClick={() => {
           if (!token) {
-            disclosure.onOpen();
+            openSelectTokenModal();
+            //disclosure.onOpen();
           } else {
             inputRef.current?.focus();
           }
@@ -133,7 +159,7 @@ export default function SwapFormAmount({
             isDisabled={isPending}
             radius="full"
             size="lg"
-            onPress={() => disclosure.onOpen()}
+            onPress={openSelectTokenModal}
           >
             {token?.iconSrc && (
               <Image
@@ -171,7 +197,7 @@ export default function SwapFormAmount({
         isOpen={disclosure.isOpen}
         selectedToken={token}
         setToken={setToken}
-        tokens={SwapTokens}
+        tokens={availableTokens}
         onClose={disclosure.onClose}
       />
     </Fragment>

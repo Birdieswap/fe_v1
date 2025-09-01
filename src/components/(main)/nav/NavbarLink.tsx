@@ -44,7 +44,7 @@ export function NavbarLinkItem({
         "data-[active=true]:text-light_primary",
         "data-[active=true]:hover:text-light_primary_hover",
         "dark:data-[active=true]:text-dark_primary",
-        "dark:data-[active=true]:hover:text-dark_primary_hover",
+        "dark:data-[active=true]:hover:text-dark_primary_hover"
       )}
       isActive={isActive}
     >
@@ -77,7 +77,7 @@ export function NavbarLink() {
       </NavbarLinkItem>
       <NavbarLinkItem
         currentPage={currentPage}
-        href="https://crypttempo.gitbook.io/birdie"
+        href="https://docs.birdieswap.com"
         target="_blank"
       >
         DOCS
@@ -155,7 +155,7 @@ export function MobileNavLink({
         "data-[active=true]:text-light_primary",
         "data-[active=true]:hover:text-light_primary_hover",
         "dark:data-[active=true]:text-dark_primary",
-        "dark:data-[active=true]:hover:text-dark_primary_hover",
+        "dark:data-[active=true]:hover:text-dark_primary_hover"
       )}
       isActive={isActive}
     >
@@ -165,7 +165,7 @@ export function MobileNavLink({
           //isActive
           //  ? "bg-primary-100 text-primary-600 font-medium"
           //  : "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
-          className,
+          className
         )}
         href={href}
         target={target}

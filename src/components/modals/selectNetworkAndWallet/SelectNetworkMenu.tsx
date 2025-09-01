@@ -59,7 +59,7 @@ export function SelectNetworkListBox(props: {
                 onSettled: () => {
                   props.onClose();
                 },
-              },
+              }
             );
           }}
         >
@@ -80,28 +80,6 @@ export default function SelectNetworkMenu() {
 
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  /* // ⭐ 핵심 추가: 화면 크기 변화 감지
-  useEffect(() => {
-    const handleResize = () => {
-      // 모바일로 전환 시 (640px 미만) Popover 닫기
-      if (window.innerWidth < 640 && isNetworkModalOpen) {
-        setIsNetworkModalOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isNetworkModalOpen, setIsNetworkModalOpen]);
-
-  const isOpen = useMemo(() => {
-    return (
-      isNetworkModalOpen && (popoverRef.current?.checkVisibility() ?? false)
-    );
-  }, [isNetworkModalOpen, popoverRef]);
-*/
-
-  // ⭐ 핵심 수정: isOpen 계산 로직 개선
   const isOpen = useMemo(() => {
     const isVisible = popoverRef.current?.checkVisibility() ?? false;
     const result = isNetworkModalOpen && isVisible;

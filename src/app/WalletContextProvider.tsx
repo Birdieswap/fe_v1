@@ -24,61 +24,62 @@ export type WalletContextType = {
 
 const networks: NetworkInfo[] = [
   {
-    id: 42161,
-    name: "Arbitrum",
-    iconSrc: "/networks/arbitrum.svg",
-    blockExplorer: { name: "Arbiscan", url: "https://arbiscan.io/" },
-  },
-  {
-    id: 8453,
-    name: "Base",
-    iconSrc: "/networks/base.svg",
-    blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
-  },
-  {
-    id: 10,
-    name: "Optimism",
-    iconSrc: "/networks/optimism.svg",
-    blockExplorer: {
-      name: "Optimistic Etherscan",
-      url: "https://optimistic.etherscan.io/",
-    },
-  },
-  {
-    id: 56,
-    name: "BSC",
-    iconSrc: "/networks/bsc.svg",
-    blockExplorer: { name: "BscScan", url: "https://bscscan.com/" },
-  },
-  {
-    id: 137,
-    name: "Polygon",
-    iconSrc: "/networks/polygon.svg",
-    blockExplorer: { name: "PolygonScan", url: "https://polygonscan.com/" },
-  },
-  {
-    id: 534352,
-    name: "Scroll",
-    iconSrc: "/networks/scroll.svg",
-    blockExplorer: {
-      name: "Scroll Explorer",
-      url: "https://scrollscan.com/",
-    },
-  },
-  {
     id: 11155111,
     name: "Sepolia",
     iconSrc: "/networks/sepolia.svg",
     blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
   },
-  {
-    id: 9998453,
-    name: "Base Fork",
-    blockExplorer: {
-      name: "Tenderly Explorer",
-      url: "https://dashboard.tenderly.co/birdie/birdie-v1-contract/testnet/c8ec9017-0ae8-462d-91d6-4ce4bd5f32de/",
-    },
-  },
+  // {
+  //   id: 8453,
+  //   name: "Base",
+  //   iconSrc: "/networks/base.svg",
+  //   blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
+  // },
+  // {
+  //   id: 42161,
+  //   name: "Arbitrum",
+  //   iconSrc: "/networks/arbitrum.svg",
+  //   blockExplorer: { name: "Arbiscan", url: "https://arbiscan.io/" },
+  // },
+
+  // {
+  //   id: 10,
+  //   name: "Optimism",
+  //   iconSrc: "/networks/optimism.svg",
+  //   blockExplorer: {
+  //     name: "Optimistic Etherscan",
+  //     url: "https://optimistic.etherscan.io/",
+  //   },
+  // },
+  // {
+  //   id: 56,
+  //   name: "BSC",
+  //   iconSrc: "/networks/bsc.svg",
+  //   blockExplorer: { name: "BscScan", url: "https://bscscan.com/" },
+  // },
+  // {
+  //   id: 137,
+  //   name: "Polygon",
+  //   iconSrc: "/networks/polygon.svg",
+  //   blockExplorer: { name: "PolygonScan", url: "https://polygonscan.com/" },
+  // },
+  // {
+  //   id: 534352,
+  //   name: "Scroll",
+  //   iconSrc: "/networks/scroll.svg",
+  //   blockExplorer: {
+  //     name: "Scroll Explorer",
+  //     url: "https://scrollscan.com/",
+  //   },
+  // },
+  // {
+  //   id: 9998453,
+  //   name: "Base Fork",
+  //   blockExplorer: {
+  //     name: "Tenderly Explorer",
+  //     url: "https://dashboard.tenderly.co/birdie/birdie-v1-contract/testnet/c8ec9017-0ae8-462d-91d6-4ce4bd5f32de/",
+  //   },
+  // },
 ];
 
 const fallback: WalletContextType = {

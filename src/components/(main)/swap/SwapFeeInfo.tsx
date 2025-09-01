@@ -32,24 +32,26 @@ export default function SwapFeeInfo() {
   } = useSwapContext();
 
   const [showReverse, setShowReverse] = useState(false);
-  const { referralAddress } = useReferral();  
+  const { referralAddress } = useReferral();
   const { address } = useAccount();
 
-  const RewardRatio = () =>{
+  const RewardRatio = () => {
     if (!referralAddress || !address) return 0;
 
-    if(referralAddress.toLowerCase() === address.toLowerCase()) {
+    if (referralAddress.toLowerCase() === address.toLowerCase()) {
       return 1;
     } else {
       return 0.8;
-    }  
-  }
-  console.log("Referral Address in SwapFeeInfo:", referralAddress, "User Address:", address);
+    }
+  };
+  //console.log("Referral Address in SwapFeeInfo:", referralAddress, "User Address:", address);
   const feeTier = swapPool?.fee_tier ? swapPool.fee_tier / 10000 : 0;
   const feeFractionBD = useMemo(() => {
     if (!swapPool?.fee_tier) return new BigDecimal(0);
 
-    return new BigDecimal(Number(swapPool.fee_tier)).div(new BigDecimal(1000000));
+    return new BigDecimal(Number(swapPool.fee_tier)).div(
+      new BigDecimal(1000000)
+    );
   }, [swapPool?.fee_tier]);
 
   // 간단한 포맷 함수: round 후 trailing zero 제거
@@ -57,7 +59,6 @@ export default function SwapFeeInfo() {
     // stripZero = true, useComma = false
     return bd.roundToDecimals(decimals).toPrecisionString(true, false);
   };
-
 
   const exchangeRateInfo = useMemo(() => {
     if (!exchangeRate || !toPrice || !toToken || !fromToken) return "";
@@ -98,7 +99,7 @@ export default function SwapFeeInfo() {
           className={cn(
             "group h-fit max-h-fit w-full rounded-none px-0 text-left",
             "border-none bg-none",
-            "text-foreground data-[hover=true]:bg-background data-[hover=true]:opacity-80",
+            "text-foreground data-[hover=true]:bg-background data-[hover=true]:opacity-80"
           )}
           data-open={open}
           variant="light"
@@ -117,9 +118,7 @@ export default function SwapFeeInfo() {
               </span>
               <div className="flex flex-row items-center gap-0.5">
                 <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
-                  {swapPool && (
-                    <RiTokenSwapLine className="h-4 w-4" />
-                  )}
+                  {swapPool && <RiTokenSwapLine className="h-4 w-4" />}
                 </div>
                 <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
               </div>
@@ -156,15 +155,15 @@ export default function SwapFeeInfo() {
                 "[&>*]:flex [&>*]:flex-row [&>*]:items-center [&>*]:gap-1",
                 "[&>*:nth-child(even)]:justify-self-end",
                 "[&>*:nth-child(even)]:text-foreground",
-                "[&>*:nth-child(odd)]:text-default-700",
+                "[&>*:nth-child(odd)]:text-default-700"
               )}
             >
               <span>Max slippage</span>
-              <span>{maxSlippage === "auto" ? `Auto(0.5%)` : `${maxSlippage}%`}</span>
-              <span>Price Impact</span>
               <span>
-                -{priceImpact?.abs().mul(100).toFixed(2)}%
+                {maxSlippage === "auto" ? `Auto(0.5%)` : `${maxSlippage}%`}
               </span>
+              <span>Price Impact</span>
+              <span>-{priceImpact?.abs().mul(100).toFixed(2)}%</span>
               <span>Fee ({feeTier}%)</span>
               <span>
                 {fromAmount && fromPrice
@@ -173,7 +172,10 @@ export default function SwapFeeInfo() {
                       const fromBD = new BigDecimal(Number(fromAmount));
                       const feeTokenBD = fromBD.mul(feeFractionBD); // token 단위의 fee
                       const feeUSDBD = fromBD.mul(fromPrice).mul(feeFractionBD); // 달러 환산
-                      return `${fromToken?.symbol} ${formatBD(feeTokenBD, 8)} ($${formatBD(feeUSDBD, 4)})`;
+                      return `${fromToken?.symbol} ${formatBD(
+                        feeTokenBD,
+                        8
+                      )} ($${formatBD(feeUSDBD, 4)})`;
                     })()
                   : ""}
               </span>
@@ -184,9 +186,15 @@ export default function SwapFeeInfo() {
                   ? (() => {
                       // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보
                       const fromBD = new BigDecimal(Number(fromAmount));
-                      const RewardTokenBD = fromBD.mul(feeFractionBD).div(10).mul(RewardRatio()); // token 단위의 fee
+                      const RewardTokenBD = fromBD
+                        .mul(feeFractionBD)
+                        .div(10)
+                        .mul(RewardRatio()); // token 단위의 fee
                       const RewardUSDBD = RewardTokenBD.mul(fromPrice); // 달러 환산
-                      return `${fromToken?.symbol} ${formatBD(RewardTokenBD, 8)} ($${formatBD(RewardUSDBD, 5)})`;
+                      return `${fromToken?.symbol} ${formatBD(
+                        RewardTokenBD,
+                        8
+                      )} ($${formatBD(RewardUSDBD, 5)})`;
                     })()
                   : ""}
               </span>

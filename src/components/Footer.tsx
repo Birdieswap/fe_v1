@@ -9,14 +9,14 @@ export default function Footer() {
       <div className="flex size-full flex-row items-center justify-start gap-10 px-6 max-md:gap-4">
         <Link
           className="text-sm text-foreground"
-          href="https://crypttempo.gitbook.io/birdie/legal/terms-of-service"
+          href="https://docs.birdieswap.com/legal/terms-of-service"
           target="_blank"
         >
           Terms of Service
         </Link>
         <Link
           className="text-sm text-foreground"
-          href="https://crypttempo.gitbook.io/birdie/legal/privacy-policy"
+          href="https://docs.birdieswap.com/legal/privacy-policy"
           target="_blank"
         >
           Privacy Policy

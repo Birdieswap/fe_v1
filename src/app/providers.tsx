@@ -97,13 +97,13 @@ function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
 // ──────────────────────────────────────────────────────────────
 
 const chains = [
+  sepolia,
   arbitrum,
   base_custom,
   optimism_custom,
   bsc,
   polygon,
   scroll,
-  sepolia,
   baseFork,
 ];
 
@@ -129,13 +129,13 @@ export const wagmiConfig = getDefaultConfig({
   projectId:
     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
   chains: [
+    sepolia,
     arbitrum,
     base_custom,
     optimism_custom,
     bsc,
     polygon,
     scroll,
-    sepolia,
     baseFork,
   ],
 
@@ -195,6 +195,7 @@ export default function Providers({ children }: PropsWithChildren) {
       <QueryClientProvider client={queryClient}>
         <AssetsContextProvider>
           <RainbowKitProvider
+            initialChain={sepolia}
             locale="en"
             showRecentTransactions={true}
             theme={theme}
