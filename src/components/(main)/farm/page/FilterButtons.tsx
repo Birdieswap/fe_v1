@@ -26,7 +26,7 @@ export default function FilterButtons({
       >
         All
       </FilterButton>
-      <FilterButton
+      {/* <FilterButton
         selected={selected}
         setSelected={setSelected}
         value={Filter.SINGLE}
@@ -39,7 +39,7 @@ export default function FilterButtons({
         value={Filter.LP}
       >
         LP
-      </FilterButton>
+      </FilterButton> */}
       <FilterButton
         selected={selected}
         setSelected={setSelected}

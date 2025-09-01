@@ -24,7 +24,7 @@ export const TokenInfo = {
 export const SwapTokens = [
   tokens.WETH,
   tokens.USDC,
-  tokens.ETH,
+  //tokens.ETH,
   //tokens.USDT,
   //tokens.AAVE,
   tokens.CBBTC,

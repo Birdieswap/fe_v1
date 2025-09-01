@@ -8,7 +8,7 @@ import ThemedButton from "@/components/atoms/ThemedButton";
 import ModalBase from "../atoms/ModalBase";
 
 export default function ConnectionFailedModal(
-  props: ReturnType<typeof useDisclosure> & { onTryAgain?: () => void },
+  props: ReturnType<typeof useDisclosure> & { onTryAgain?: () => void }
 ) {
   return (
     <ModalBase hideCloseButton isOpen={props.isOpen} onClose={props.onClose}>
