@@ -24,12 +24,19 @@ import { useChainId } from "wagmi";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
 
+const toNum = (v: unknown) => {
+  const n = typeof v === "bigint" ? Number(v) : Number(v ?? NaN);
+  return Number.isFinite(n) ? n : NaN;
+};
+
 export default function VaultInfoModal({
   item,
   disclosure,
+  onJustClosed,
 }: {
   item: VaultRowItem;
   disclosure: ReturnType<typeof useDisclosure>;
+  onJustClosed?: () => void;
 }) {
   const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
   console.log("VaultInfoModal!!!!", item);
@@ -37,24 +44,40 @@ export default function VaultInfoModal({
   const chainId = useChainId();
   const explorerURL = getBlockExplorerUrl(chainId);
   const src = item.aprSource;
+  const lastHarvestSec = useMemo(
+    () => toNum(src?.lastHarvest),
+    [src?.lastHarvest]
+  );
+
   const timeAgoText = useMemo(() => {
-    const ts = src?.lastHarvest;
-    if (ts == null) return;
-    return getTimeAgoLinux(String(ts));
-  }, [src?.lastHarvest]);
+    if (!Number.isFinite(lastHarvestSec) || lastHarvestSec <= 0) return;
+    return getTimeAgoLinux(String(lastHarvestSec));
+  }, [lastHarvestSec]);
+
+  const handleOpenChange = () => {
+    // [ADD]
+    if (!open) onJustClosed?.();
+    onOpenChange();
+  };
 
   console.log("VaultInfoModal timeAgo", timeAgoText);
   return (
     <Fragment>
       <ModalBase
         isOpen={isOpen}
-        onOpenChange={onOpenChange}
+        onOpenChange={handleOpenChange} // [UNCHANGED] 인자 없이 그대로
+        onClose={() => {
+          // [ADD] 닫힐 때 부모에게 알림
+          onJustClosed?.();
+          onClose(); // disclosure의 onClose 호출
+        }}
         className="p-6"
         classNames={{
           wrapper: "items-end sm:items-center",
         }}
         closeButton={<ModalCloseButton />}
         scrollBehavior="outside"
+        isDismissable
       >
         <ModalContent>
           <ModalHeader className="px-0 pb-3">
@@ -71,7 +94,7 @@ export default function VaultInfoModal({
                 <p className="text-sm font-normal text-default-800">
                   {src.name}
                 </p>
-                {src.lastHarvest && (
+                {lastHarvestSec > 0 && timeAgoText && (
                   <p className="text-sm font-normal text-default-500 dark:text-default-300">
                     {`Harvested ${timeAgoText} ago`}
                   </p>

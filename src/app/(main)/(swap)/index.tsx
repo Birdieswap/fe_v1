@@ -45,7 +45,7 @@ export default function SwapIndex() {
           setAmount={setFromTokenAmountWithGuard}
           setToken={setFromTokenWithGuard}
           token={fromToken}
-          isApproved ={isApproved}
+          isApproved={isApproved}
           type="sell"
         />
         <div className="flex items-center justify-center">

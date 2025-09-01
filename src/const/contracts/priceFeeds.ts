@@ -61,7 +61,7 @@ const EURC_USD = PriceFeedGuard({
     [networks.base.id]: "0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250",
     [networks.arbitrum.id]: "0xCF9752295D0ac9215461fA095faFEC1B854b849B",
   },
-  base: tokens.USDC,
+  base: tokens.EURC,
   quote: "USD",
   decimals: 8,
 });

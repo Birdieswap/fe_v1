@@ -57,7 +57,7 @@ export default function WalletTokens() {
       total,
       {
         tokens: tokensList as any,
-        singleVaults: singleVaultsList as any,
+        //singleVaults: singleVaultsList as any,
         lpVaults: lpVaultsList as any,
       },
       chainId

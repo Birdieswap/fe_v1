@@ -6,6 +6,7 @@ import { Vault } from "@/types/FarmListTableRowProps";
 import VaultInfoModal from "./vaultInfo/VaultInfoModal";
 import { VaultRowItem } from "../EarningsPanel";
 import Icons from "@/assets/icons/icons";
+import { useCallback, useRef } from "react";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
 
 export default function VaultInfo({
@@ -18,13 +19,22 @@ export default function VaultInfo({
   onOpenModal?: (item: VaultRowItem) => void;
 }) {
   const disclosure = useDisclosure();
+  const justClosedAtRef = useRef(0); // [ADD] 닫힘 시각 저장
+
+  const handleOpen = useCallback(() => {
+    // [ADD] 안전 오픈(쿨다운 250ms)
+    if (Date.now() - justClosedAtRef.current < 250) return;
+    disclosure.onOpen();
+  }, [disclosure]);
   return (
     <div
       className="group flex w-full cursor-pointer flex-row items-center gap-1.5"
-      onClick={() => disclosure.onOpen()}
+      // onClick={() => disclosure.onOpen()}
+      onClick={handleOpen}
       onKeyDown={(e) => {
         if (e.key === "Enter") {
-          disclosure.onOpen();
+          // disclosure.onOpen();
+          handleOpen();
         }
       }}
     >
@@ -47,7 +57,13 @@ export default function VaultInfo({
           )}
           fillRule="evenodd"
         />
-        <VaultInfoModal disclosure={disclosure} item={item} />
+        <VaultInfoModal
+          disclosure={disclosure}
+          item={item}
+          onJustClosed={() => {
+            justClosedAtRef.current = Date.now();
+          }}
+        />
       </div>
       <div className="grow" />
       <p className="whitespace-nowrap font-normal">
