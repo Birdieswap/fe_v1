@@ -53,12 +53,12 @@ export default function DeniedWalletModalHost() {
                 width={28}
               />
               <h1 className="pl-2 pb-5 text-xl font-semibold text-foreground">
-                Not a Beta Tester Yet.
+                You are not a Beta Tester.
               </h1>
             </div>
-            <p className="break text-base font-normal  p-5 text-sm text-foreground">
+            <p className="break text-sm font-normal  p-5 text-foreground">
               We’re currently in a closed beta period. To participate, please
-              visit the Birdieswap pre‑launch page and leave an email address
+              visit the Birdieswap prelaunch page and leave an email address
               under “Stay in the Loop.”
             </p>
             <div className="flex justify-center items-center gap-2 p-4">

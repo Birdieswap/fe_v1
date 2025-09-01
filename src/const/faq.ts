@@ -8,39 +8,39 @@ export enum FaqFilter {
 
 export const items = [
   {
-    key: "what-is-birdie",
+    key: "what-is-birdieswap",
     topic: [FaqFilter.GENERAL],
-    title: "What is Birdie?",
+    title: "What is Birdieswap?",
     content:
-      "Birdie is a decentralized, non-custodial software platform that allows users to simultaneously earn trading fee rewards from a decentralized exchange (DEX) and interest from lending. By supplying liquidity through Birdie, you can benefit from two distinct sources of income, and you retain the flexibility to withdraw your liquidity at any time.",
+      "Birdieswap is a decentralized, non-custodial software platform that allows users to simultaneously earn trading fee rewards from a decentralized exchange (DEX) and interest from lending. By supplying liquidity through Birdieswap, you can benefit from two distinct sources of income, and you retain the flexibility to withdraw your liquidity at any time.",
   },
   {
     key: "need-wallet",
     topic: [FaqFilter.GENERAL],
-    title: "Do I need a wallet to interact with Birdie?",
+    title: "Do I need a wallet to interact with Birdieswap?",
     content:
-      "Yes. Because Birdie is deployed on a blockchain network, you must have a wallet compatible with that network in order to use Birdie. Common options include mobile wallets, browser wallets, and WalletConnect. When you connect your wallet to Birdie, you will sign messages and transactions within your wallet to confirm any actions taken on Birdie.",
+      "Yes. Because Birdieswap is deployed on a blockchain network, you must have a wallet compatible with that network in order to use Birdieswap. Common options include mobile wallets, browser wallets, and WalletConnect. When you connect your wallet to Birdieswap, you will sign messages and transactions within your wallet to confirm any actions taken on Birdieswap.",
   },
   {
-    key: "cost-of-using-birdie",
+    key: "cost-of-using-birdieswap",
     topic: [FaqFilter.GENERAL],
-    title: "What is the cost of interacting with Birdie?",
+    title: "What is the cost of interacting with Birdieswap?",
     content:
-      "Generally, users may encounter three main costs when using Birdie:\n\n1. Gas fees on the blockchain network\n2. Usage fees imposed by the underlying protocol\n3. Birdie software fees\n\nThe first two costs are common to most DeFi (Decentralized Finance) protocols and are not directly related to Birdie. The Birdie software fee is a fixed amount charged only when accumulated trading fees are automatically harvested. These collected fees are used to cover expenses such as the gas required for automated harvesting, as well as other operational costs of the software. Importantly, this fee is not charged on an individual basis. Rather, it is allocated proportionally among all participants supplying liquidity to a given pool, based on their respective shares. Consequently, the effective fee borne by any single user is typically significantly lower than the nominal fixed fee.",
+      "Generally, users may encounter three main costs when using Birdieswap:\n\n1. Gas fees on the blockchain network\n2. Usage fees imposed by the underlying protocol\n3. Birdieswap software fees\n\nThe first two costs are common to most DeFi (Decentralized Finance) protocols and are not directly related to Birdieswap. The Birdieswap software fee is a fixed amount charged only when accumulated trading fees are automatically harvested. These collected fees are used to cover expenses such as the gas required for automated harvesting, as well as other operational costs of the software. Importantly, this fee is not charged on an individual basis. Rather, it is allocated proportionally among all participants supplying liquidity to a given pool, based on their respective shares. Consequently, the effective fee borne by any single user is typically significantly lower than the nominal fixed fee.",
   },
   {
     key: "risks",
     topic: [FaqFilter.GENERAL],
-    title: "What are the risks involved in using Birdie?",
+    title: "What are the risks involved in using Birdieswap?",
     content:
-      "No protocol is entirely without risk, but Birdie has taken various measures to mitigate potential issues. Birdie's code is publicly available and has undergone multiple audits. Below are the main categories of risk:\n\n- Smart Contract Risk: There may be bugs or vulnerabilities in Birdie's smart contracts.\n- Oracle Risk: Because Birdie relies on external data providers (e.g., for price feeds), any failure or compromise of an oracle may result in incorrect asset valuations.\n- Underlying Protocol Risk: Birdie uses other DeFi protocols—such as DEXs, lending platforms, and yield farming—to generate returns. If these protocols carry inherent risks, you would be exposed to those risks as well.",
+      "No protocol is entirely without risk, but Birdieswap has taken various measures to mitigate potential issues. Birdieswap's code is publicly available and has undergone multiple audits. Below are the main categories of risk:\n\n- Smart Contract Risk: There may be bugs or vulnerabilities in Birdieswap's smart contracts.\n- Oracle Risk: Because Birdieswap relies on external data providers (e.g., for price feeds), any failure or compromise of an oracle may result in incorrect asset valuations.\n- Underlying Protocol Risk: Birdieswap uses other DeFi protocols—such as DEXs, lending platforms, and yield farming—to generate returns. If these protocols carry inherent risks, you would be exposed to those risks as well.",
   },
   {
     key: "risk-mitigation",
     topic: [FaqFilter.GENERAL],
     title: "What steps are taken to mitigate risks?",
     content:
-      "- Smart Contract Security: Birdie's code is publicly available and has been audited by multiple reputable institutions.\n- Oracle Protection: We employ various methods to ensure stable and tamper-resistant price feeds.\n- Underlying Protocol Selection: We carefully choose protocols that have demonstrated stability and reliability to minimize risk.",
+      "- Smart Contract Security: Birdieswap's code is publicly available and has been audited by multiple reputable institutions.\n- Oracle Protection: We employ various methods to ensure stable and tamper-resistant price feeds.\n- Underlying Protocol Selection: We carefully choose protocols that have demonstrated stability and reliability to minimize risk.",
   },
   {
     key: "how-to-supply",
@@ -54,14 +54,14 @@ export const items = [
     topic: [FaqFilter.FARM],
     title: "How much can I earn?",
     content:
-      "As a liquidity provider, you will earn a continuous return that varies based on market conditions. The Annual Percentage Yield (APY) shown on the page is derived from historical data and may not perfectly reflect actual returns.\n\n- Interest Income: You share in the interest paid by borrowers, calculated by multiplying the token's average lending rate by the utilization rate in the underlying protocol. Higher utilization generally translates to higher returns for liquidity providers.\n- Trading Fee Income: Whenever trades occur in your chosen pool via the Birdie swap interface, you receive a share of the trading fees according to the fee distribution model for that pool.",
+      "As a liquidity provider, you will earn a continuous return that varies based on market conditions. The Annual Percentage Yield (APY) shown on the page is derived from historical data and may not perfectly reflect actual returns.\n\n- Interest Income: You share in the interest paid by borrowers, calculated by multiplying the token's average lending rate by the utilization rate in the underlying protocol. Higher utilization generally translates to higher returns for liquidity providers.\n- Trading Fee Income: Whenever trades occur in your chosen pool via the Birdieswap swap interface, you receive a share of the trading fees according to the fee distribution model for that pool.",
   },
   {
     key: "supply-limitations",
     topic: [FaqFilter.FARM],
     title: "Are there limitations to supply?",
     content:
-      "Birdie itself does not impose specific limitations on supply. However, if the underlying protocol enforces its own supply constraints, those will apply.",
+      "Birdieswap itself does not impose specific limitations on supply. However, if the underlying protocol enforces its own supply constraints, those will apply.",
   },
   {
     key: "how-to-withdraw",
@@ -75,49 +75,42 @@ export const items = [
     topic: [FaqFilter.FARM],
     title: "What do I have to do to earn profits?",
     content:
-      "Essentially nothing beyond supplying your tokens. Birdie automates all tasks related to generating returns. You only need to provide liquidity in one of Birdie's pools.",
+      "Essentially nothing beyond supplying your tokens. Birdieswap automates all tasks related to generating returns. You only need to provide liquidity in one of Birdieswap's pools.",
   },
   {
     key: "underlying-protocol",
     topic: [FaqFilter.GENERAL],
     title: "What is an Underlying Protocol?",
     content:
-      "An underlying protocol refers to any DeFi protocol that Birdie utilizes to generate returns—commonly DEXs, lending platforms, or yield farming protocols.",
+      "An underlying protocol refers to any DeFi protocol that Birdieswap utilizes to generate returns—commonly DEXs, lending platforms, or yield farming protocols.",
   },
   {
     key: "choose-underlying-protocol",
     topic: [FaqFilter.GENERAL],
     title: "Can I choose which Underlying Protocol to use?",
     content:
-      "Not directly. When Birdie launches a new pool, the underlying protocol is predetermined to maintain stability and prevent liquidity fragmentation. However, you can review which underlying protocol each pool uses and select the pool (and thus the protocol) that best aligns with your preferences.",
+      "Not directly. When Birdieswap launches a new pool, the underlying protocol is predetermined to maintain stability and prevent liquidity fragmentation. However, you can review which underlying protocol each pool uses and select the pool (and thus the protocol) that best aligns with your preferences.",
   },
   {
     key: "principal-guarantee",
     topic: [FaqFilter.GENERAL],
-    title: "Does Birdie guarantee my principal?",
+    title: "Does Birdieswap guarantee my principal?",
     content:
-      "Birdie is merely a software tool designed to help users easily engage with DeFi protocols of their choosing, and does not itself produce any direct gain or loss to a user's principal. Any profit or loss arising from the liquidity you provide is determined by the performance of the underlying protocol used by the chosen pool, and is therefore independent of Birdie.",
+      "Birdieswap is merely a software tool designed to help users easily engage with DeFi protocols of their choosing, and does not itself produce any direct gain or loss to a user's principal. Any profit or loss arising from the liquidity you provide is determined by the performance of the underlying protocol used by the chosen pool, and is therefore independent of Birdieswap.",
   },
   {
-    key: "birdie-points",
+    key: "birdieswap-rewards",
     topic: [FaqFilter.GENERAL],
-    title: "How can I earn Birdie Points?",
+    title: "How can I earn Birdieswap Rewards?",
     content:
-      "Birdie Points are awarded whenever you execute a token swap using Birdie's own swap interface, irrespective of the transaction amount. For further information on how points are earned, please consult our documentation.",
-  },
-  {
-    key: "birdie-index",
-    topic: [FaqFilter.GENERAL],
-    title: "What is the Birdie Index?",
-    content:
-      "When you supply liquidity through Birdie, you receive LP tokens as evidence of your contribution. However, merely knowing the number of LP tokens does not indicate the overall value of your liquidity. For this reason, we introduced the Birdie Index. By multiplying your LP token balance by the Birdie Index, you can approximate the dollar value of your liquidity in that specific token pair.",
+      "Birdieswap Rewards are awarded whenever you execute a token swap using Birdieswap's own swap interface, irrespective of the transaction amount. For further information on how rewards are earned, please consult our documentation.",
   },
   {
     key: "how-to-swap",
     topic: [FaqFilter.SWAP],
     title: "How do I swap?",
     content:
-      '1. Select the "Swap" menu at the top of the page.\n2. In the swap interface, choose the tokens you wish to exchange.\n3. Confirm the transaction in your connected wallet.\n\nOur interface is designed to be intuitive, similar to other widely used DEXs. However, please note that you can only swap tokens that are listed as part of Birdie Farm\'s token pairs.',
+      '1. Select the "Swap" menu at the top of the page.\n2. In the swap interface, choose the tokens you wish to exchange.\n3. Confirm the transaction in your connected wallet.\n\nOur interface is designed to be intuitive, similar to other widely used DEXs. However, please note that you can only swap tokens that are listed as part of Birdieswap Farm\'s token pairs.',
   },
   {
     key: "price-impact",
@@ -127,10 +120,10 @@ export const items = [
       "Price Impact measures the extent to which your trade affects the token price in a particular liquidity pool. It is the difference between the current market price and the price following the execution of your trade. In a pool with substantial liquidity, the price impact is typically lower, whereas in a pool with less liquidity, the effect may be more pronounced. A higher price impact can lead to greater losses, and this rate fluctuates continuously due to supply and demand within the pool.",
   },
   {
-    key: "birdie-fee",
+    key: "birdieswap-fee",
     topic: [FaqFilter.GENERAL],
-    title: "How much is the Birdie software fee?",
+    title: "How much is the Birdieswap software fee?",
     content:
-      "The Birdie software fee is charged when the returns generated by the underlying protocol are harvested and reinvested. Executing the harvest process requires a transaction, which incurs gas fees. To cover these gas costs and other operational expenses, Birdie imposes a fixed fee whenever a harvest takes place. This fixed fee is not applied to any single individual; rather, it is shared proportionally among all participants in the pool according to their respective liquidity shares. Consequently, the amount each user actually pays is substantially lower than the nominal fixed fee.\n\nMoreover, in order to avoid charging fees on minimal returns, Birdie sets a minimum profit threshold tied to the fixed fee. Harvesting occurs only if the pool's accumulated returns exceed this threshold. For instance, if the fixed fee for one harvest is set at 0.001 ETH, Birdie might establish a minimum profit threshold of 0.01 ETH. Under this arrangement, harvesting would proceed only if the pool's yield prior to harvest is greater than 0.01 ETH. Even when a harvest is triggered, the 0.001 ETH fee is distributed among all liquidity providers based on their contribution ratios, thereby ensuring that the actual fee borne by each individual is significantly less than 0.001 ETH.",
+      "The Birdieswap software fee is charged when the returns generated by the underlying protocol are harvested and reinvested. Executing the harvest process requires a transaction, which incurs gas fees. To cover these gas costs and other operational expenses, Birdieswap imposes a fixed fee whenever a harvest takes place. This fixed fee is not applied to any single individual; rather, it is shared proportionally among all participants in the pool according to their respective liquidity shares. Consequently, the amount each user actually pays is substantially lower than the nominal fixed fee.\n\nMoreover, in order to avoid charging fees on minimal returns, Birdieswap sets a minimum profit threshold tied to the fixed fee. Harvesting occurs only if the pool's accumulated returns exceed this threshold. For instance, if the fixed fee for one harvest is set at 0.001 ETH, Birdieswap might establish a minimum profit threshold of 0.01 ETH. Under this arrangement, harvesting would proceed only if the pool's yield prior to harvest is greater than 0.01 ETH. Even when a harvest is triggered, the 0.001 ETH fee is distributed among all liquidity providers based on their contribution ratios, thereby ensuring that the actual fee borne by each individual is significantly less than 0.001 ETH.",
   },
 ];

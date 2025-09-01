@@ -10,7 +10,7 @@ export type SearchBoxProps = InputProps & {
 
 function SearchBoxComponent(
   props: SearchBoxProps,
-  ref: ForwardedRef<HTMLInputElement>,
+  ref: ForwardedRef<HTMLInputElement>
 ) {
   return (
     <Input
@@ -27,7 +27,7 @@ function SearchBoxComponent(
           "group-data-[focus=true]:border-default-800",
           "dark:group-data-[focus=true]:border-default-700",
           "group-data-[focus-within=true]:border-default-800",
-          "dark:group-data-[focus-within=true]:border-default-700",
+          "dark:group-data-[focus-within=true]:border-default-700"
         ),
         innerWrapper: "px-0 py-0",
         input: clsx(
@@ -46,7 +46,7 @@ function SearchBoxComponent(
             "group-data-[focus-within=true]:bg-light_primary group-data-[focus-within=true]:hover:bg-light_primary_hover",
             "dark:group-data-[focus=true]:bg-dark_primary dark:group-data-[focus=true]:hover:bg-dark_primary_hover",
             "dark:group-data-[focus-within=true]:bg-dark_primary dark:group-data-[focus-within=true]:hover:bg-dark_primary_hover",
-            "[&>svg]:fill-background",
+            "[&>svg]:fill-background"
           )}
           onClick={() => props.onSearch?.(props.value || "")}
         >
@@ -60,7 +60,7 @@ function SearchBoxComponent(
 }
 
 const SearchBox = forwardRef<HTMLInputElement, SearchBoxProps>(
-  SearchBoxComponent,
+  SearchBoxComponent
 );
 
 export default SearchBox;

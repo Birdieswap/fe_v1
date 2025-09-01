@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import clsx from "clsx";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 
 import { Farm, FarmType } from "@/types/FarmListTableRowProps";
 import Arrow from "@/assets/icons/arrow.svg";
@@ -15,6 +15,8 @@ import { CryptoTokenIcons } from "../FarmListTable";
 
 import Components from "./listRowSummary/components";
 import suffixNumbers from "@/utils/suffixNumbers";
+import { useContext, useMemo } from "react";
+import { AssetsContext } from "@/app/AssetsContextProvider";
 
 export default function FarmListRowSummary({
   balance,
@@ -23,7 +25,7 @@ export default function FarmListRowSummary({
   onClick,
   apy,
   tvl,
-  price
+  price,
 }: {
   balance?: BigDecimal;
   isActive: boolean;
@@ -35,11 +37,56 @@ export default function FarmListRowSummary({
 }) {
   const stakeToken = item.wip_stakeToken;
   const account = useAccount();
+  const chainId = useChainId();
+  const { aprDataState } = useContext(AssetsContext);
   const isBalanceAvailable = !!balance;
   const input = isBirdieLPFarm(stakeToken)
     ? stakeToken.swap.input.map((v) => v.input)
     : [stakeToken.input];
 
+  const poolDescription = useMemo(() => {
+    const targetAddr = stakeToken?.addresses?.[chainId];
+    if (!targetAddr) return;
+
+    const norm = (s?: string) => String(s ?? "").toLowerCase();
+    const T = norm(targetAddr);
+    const S = aprDataState as any;
+
+    // 1) 배열 후보 (apr / aprs / data / 자체가 배열)
+    const arr: any[] | undefined = Array.isArray(S?.apr)
+      ? S.apr
+      : Array.isArray(S?.aprs)
+      ? S.aprs
+      : Array.isArray(S?.data)
+      ? S.data
+      : Array.isArray(S)
+      ? S
+      : undefined;
+
+    if (arr) {
+      const hit = arr.find(
+        (e) => norm(e?.contractAddress ?? e?.apr?.contractAddress) === T
+      );
+      if (hit) return hit?.description ?? hit?.apr?.description;
+    }
+
+    // 2) 맵(사전) 후보 (byAddress / aprMap / map)
+    const dict = S?.byAddress ?? S?.aprMap ?? S?.map;
+    if (dict && typeof dict === "object") {
+      const entry =
+        dict[targetAddr] ??
+        dict[targetAddr.toLowerCase()] ??
+        dict[targetAddr.toUpperCase()];
+      if (entry) return entry?.description ?? entry?.apr?.description;
+    }
+
+    // 3) 단일 객체 후보
+    if (norm(S?.apr?.contractAddress) === T) return S?.apr?.description;
+
+    return;
+  }, [aprDataState, chainId, stakeToken]);
+
+  console.log("FarmListRowSummary item!!!!!", item, poolDescription);
   return (
     <motion.div
       layout
@@ -50,7 +97,7 @@ export default function FarmListRowSummary({
         "[&:nth-child(2)]:dark:border-default-400",
         "md:col-span-6 md:px-6",
         "max-md:col-span-3 max-md:row-span-2 max-md:px-4",
-        "transition-colors hover:bg-default-200 dark:hover:bg-default-100",
+        "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
       )}
       onClick={onClick}
     >
@@ -58,7 +105,7 @@ export default function FarmListRowSummary({
         layout
         className={clsx(
           "md:col-span-2 md:grid md:grid-cols-subgrid md:items-center md:justify-center",
-          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:gap-3 max-md:py-4",
+          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:gap-3 max-md:py-4"
         )}
       >
         <motion.div layout>
@@ -80,17 +127,8 @@ export default function FarmListRowSummary({
                       .join(" - ")
                   : stakeToken.input.symbol}
               </div>
-              <div className="flex flex-row gap-2 font-medium text-default-600">
-                <p className="whitespace-nowrap">
-                  {isBirdieLPFarm(stakeToken)
-                    ? stakeToken.swap.input
-                        .map((token) => token.provider.name)
-                        .join(" - ")
-                    : stakeToken.provider.name}
-                </p>
-                <span>
-                  {isBirdieLPFarm(stakeToken) ? "Uniswap" : "" } {/*stakeToken.provider.name : ""*/}
-                </span>
+              <div className="flex flex-row gap-2 text-xs font-medium text-default-600">
+                {poolDescription}
               </div>
               {/* <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
                 <Icons.BirdRate
@@ -107,7 +145,7 @@ export default function FarmListRowSummary({
         layout
         className={clsx(
           "md:col-span-3 md:grid md:grid-cols-subgrid md:items-center md:justify-center",
-          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:items-end max-md:gap-3",
+          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:items-end max-md:gap-3"
         )}
       >
         <motion.div layout className="flex flex-row items-center gap-2">
@@ -143,21 +181,28 @@ export default function FarmListRowSummary({
                     .roundToDecimals(
                       item.wip_stakeToken?.displayDecimals ??
                         item.wip_stakeToken?.decimals ??
-                        3,
+                        3
                     )
                     .toPrecisionString(true, true)}
-
               </p>
             </span>
           </motion.div>
           <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
             {!account.isConnected && "Connect Wallet"}
             {account.isConnected && !isBalanceAvailable && "Loading..."}
-            {account.isConnected &&
-              isBalanceAvailable &&
-              price &&
-              "$" +  suffixNumbers(balance.mul(price).roundToDecimals(2),0, 2, false, false)//balance.mul(price).roundToDecimals(2).toString()
-              }
+            {
+              account.isConnected &&
+                isBalanceAvailable &&
+                price &&
+                "$" +
+                  suffixNumbers(
+                    balance.mul(price).roundToDecimals(2),
+                    0,
+                    2,
+                    false,
+                    false
+                  ) //balance.mul(price).roundToDecimals(2).toString()
+            }
           </p>
         </motion.div>
       </motion.div>

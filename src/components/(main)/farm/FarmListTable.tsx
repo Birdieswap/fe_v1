@@ -50,6 +50,7 @@ export default function FarmListTable({
   sortDirection,
   filter,
   searchTerm,
+  overrideQuery,
   ...props
 }: {
   items?: Farm[];
@@ -57,6 +58,7 @@ export default function FarmListTable({
   sortColumn: keyof Farm | null;
   sortDirection: "asc" | "desc" | null;
   searchTerm?: string;
+  overrideQuery?: string; // ★ 추가
 }) {
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
@@ -160,30 +162,28 @@ export default function FarmListTable({
   }, [chainId, farmStatusMap]);
   //console.log("FarmListTable updatedFarmList:", updatedFarmList);
 
-  const q = (searchTerm ?? "").trim().toLowerCase();
+  const qSearchTerm = (searchTerm ?? "").trim().toLowerCase();
+  const qOverride = (overrideQuery ?? "").trim().toLowerCase();
+  const q =
+    filter === Filter.ALL && overrideQuery !== undefined
+      ? qOverride
+      : qSearchTerm;
 
   const searchedItems = useMemo(() => {
     if (!q) return updatedFarmList;
-
     return updatedFarmList.filter((item) => {
-      // 1) name 포함 검사
       if (item.name && String(item.name).toLowerCase().includes(q)) return true;
-
-      // 2) tags 배열의 어떤 요소라도 포함 검사
       if (
         Array.isArray(item.tags) &&
         item.tags.some((t) => String(t).toLowerCase().includes(q))
       )
         return true;
-
-      // 3) wip_stakeToken.provider.name 포함 검사
       const providerName = item.wip_stakeToken?.provider?.name;
       if (providerName && String(providerName).toLowerCase().includes(q))
         return true;
-
       return false;
     });
-  }, [updatedFarmList, q]);
+  }, [updatedFarmList, q, filter, overrideQuery, searchTerm]); // ★ overrideQuery 포함
 
   const items = searchedItems;
 
