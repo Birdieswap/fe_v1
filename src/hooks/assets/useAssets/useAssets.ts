@@ -327,7 +327,7 @@ export default function useAssets() {
     }),
     [assetValues, balances, farmValues, aprDataState, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching],
   );
-  //console.log("useAssets assets", assets);
+  console.log("useAssets assets", assets);
 
   return assets;
 }

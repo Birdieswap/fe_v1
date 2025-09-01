@@ -12,8 +12,15 @@ export function bdToNumber(bd: BigDecimal | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function format2(n: number): string {
-  return n.toFixed(2);
+export function format2(n: number, stripZero = true): string {
+  if (!Number.isFinite(n)) return "0";
+  const s = n.toFixed(5);
+  if (!stripZero) return s;
+  let out = s.replace(/(?:\.0+|(\.\d*?[1-9])0+)$/, "$1");
+
+  // 2) -0 방지
+  if (out === "-0") out = "0";
+  return out;
 }
 
 // 0 판정 헬퍼

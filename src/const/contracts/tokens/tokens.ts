@@ -68,7 +68,7 @@ const CBBTC = CurrencyGuard({
 const EURC = CurrencyGuard({
   type: EContractType.CURRENCY,
   symbol: "EURC",
-  fullName: "Euro Coin",
+  fullName: "EURC",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.EURC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.EURC as `0x${string}`,
