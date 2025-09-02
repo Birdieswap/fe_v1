@@ -1,14 +1,20 @@
 import { BigDecimal } from "@/types/BigDecimal";
 import "./components.css";
 import suffixNumbers from "@/utils/suffixNumbers";
+import { LoadingPulse } from "../FarmListRowSummary";
 
 function Price(props: { value: BigDecimal | null; isLoading?: boolean }) {
+  const isEmpty = props.value == null;
+  if (props.isLoading || isEmpty) {
+    return <LoadingPulse w="w-10" className="ml-1" />;
+  }
+
   return (
     <span
       className="data-[loading=true]:loading ml-1"
       data-loading={props.isLoading}
     >
-      {props.value?.toFixed(2) || "..."}
+      {props.value?.toFixed(2)}
     </span>
   );
 }
@@ -32,28 +38,33 @@ function Apy(props: {
     return NaN;
   })();
 
-  // 2) 표시 문자열: 숫자가 아니면 "...", 숫자면 상한 캡 + 소수 2자리
-  const display = Number.isFinite(num)
-    ? Math.min(num, 9999.99).toFixed(2)
-    : "...";
+  const isEmpty = Number.isNaN(num);
+  if (props.isLoading || isEmpty) {
+    return <LoadingPulse w="w-12" />;
+  }
 
   return (
     <span
       className="data-[loading=true]:loading text-sm font-semibold max-md:font-medium"
       data-loading={props.isLoading}
     >
-      {display /* {props.value?.toFixed(2) || "..."}% */}%
+      {`${num} %`}
     </span>
   );
 }
 
 function Tvl(props: { tvl: BigDecimal | null; isLoading?: boolean }) {
+  const isEmpty = props.tvl == null;
+  if (props.isLoading || isEmpty) {
+    return <LoadingPulse w="w-16" />;
+  }
+
   return (
     <span
       className="data-[loading=true]:loading text-sm font-semibold max-md:font-medium"
       data-loading={props.isLoading}
     >
-      {props.tvl ? `$ ${suffixNumbers(props.tvl, 0, 2, false, false)}` : "..."}
+      {`$ ${suffixNumbers(props.tvl!, 0, 2, false, false)}`}
     </span>
   );
 }
