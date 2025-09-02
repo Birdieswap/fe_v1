@@ -86,8 +86,8 @@ export default function VaultInfoModal({
                   {src.type === "single"
                     ? "Farming information"
                     : src.type === "dual"
-                    ? "Pair token vault information"
-                    : "Farming information"}
+                    ? "Farming information"
+                    : "Extra Reward information"}
                 </h1>
                 <p className="text-sm font-normal text-default-800">
                   {src.name}
