@@ -132,8 +132,6 @@ export default function SwapFormAmount({
 
               // 타이핑 시작 신호 → 디바운스 완료 시까지 exchangeRate/PI 보류
               setIsTyping(true);
-              // DEBUG: 입력 시작 로그
-              console.log("[SwapFormAmount] typing start, value:", v);
 
               // 포맷/유효성 적용 (내부에서 setAmount 호출됨)
               onAmountValueChange(v, token as IToken, setAmount);

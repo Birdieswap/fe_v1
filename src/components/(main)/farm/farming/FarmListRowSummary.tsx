@@ -86,7 +86,6 @@ export default function FarmListRowSummary({
     return;
   }, [aprDataState, chainId, stakeToken]);
 
-  console.log("FarmListRowSummary item!!!!!", item, poolDescription);
   return (
     <motion.div
       layout

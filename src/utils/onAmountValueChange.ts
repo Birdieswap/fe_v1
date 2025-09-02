@@ -7,7 +7,7 @@ export function onAmountValueChange(
   setAmountStr: (v: string) => void,
   setAmountBD?: (v: BigDecimal) => void,
 ) {
-  console.log("onAmountValueChange", v, token);
+  // console.log("onAmountValueChange", v, token);
   // Test if v is a number using regex
   const regexTest = /^[0-9]*\.?[0-9]*$/.test(v);
 

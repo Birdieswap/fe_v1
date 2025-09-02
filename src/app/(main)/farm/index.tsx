@@ -27,14 +27,6 @@ export default function FarmIndex() {
     undefined
   );
 
-  console.log("FarmIndex", {
-    selected,
-    sortColumn,
-    sortDirection,
-    items,
-    searchTerm,
-  });
-
   const handleSetSelected: React.Dispatch<React.SetStateAction<Filter>> = (
     value
   ) => {
