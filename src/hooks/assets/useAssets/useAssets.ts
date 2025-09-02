@@ -244,16 +244,25 @@ export default function useAssets() {
           const vaults: any[] = Array.isArray(entry?.vaults) ? entry.vaults : [];
           if (!cid || !addr || vaults.length < 3) continue;
 
+          const SUM_LIMIT = BigInt(4644420100000000000);
+          const APY_CAP_PERCENT = 99.99999; 
+
           let sum = BigInt(0);               // apr_7d (정수문자열, 18 decimals)
           for (let i = 0; i < 3; i++) {
             const s = vaults[i]?.apr7d ?? "0";
             try { sum += BigInt(s); } catch {}
           }
-          const aprDecimal = Number(sum.toString()) / SCALE_DECIMALS; // ex: 0.05
-          const base = 1 + aprDecimal / annualBlockQty;
-          const apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
 
-          //console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
+          let apyNumber: number;
+          if (sum > SUM_LIMIT) {
+            apyNumber = APY_CAP_PERCENT; // 혹은 APY_CAP_FRACTION (UI 단위에 맞춰 선택
+          } else {
+            const aprDecimal = Number(sum.toString()) / SCALE_DECIMALS; // ex: 0.05
+            const base = 1 + aprDecimal / annualBlockQty;
+            apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
+          }
+
+          console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
 
 
           apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);

@@ -39,7 +39,6 @@ export default function VaultInfoModal({
   onJustClosed?: () => void;
 }) {
   const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
-  console.log("VaultInfoModal!!!!", item);
 
   const chainId = useChainId();
   const explorerURL = getBlockExplorerUrl(chainId);
@@ -60,7 +59,6 @@ export default function VaultInfoModal({
     onOpenChange();
   };
 
-  console.log("VaultInfoModal timeAgo", timeAgoText);
   return (
     <Fragment>
       <ModalBase

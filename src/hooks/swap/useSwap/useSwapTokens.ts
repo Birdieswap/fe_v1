@@ -139,6 +139,7 @@ export default function useSwapTokens({
   type LastInput = { amount: string; side: "in" | "out"; withToToken?: ICurrency | undefined };
   const lastInputRef = useRef<LastInput | null>(null); // 마지막 입력 스냅샷
 
+
   const [poolAddress, zeroForOne, outBToken, outBpool, token0Decimals, token1Decimals] = useMemo<zeroForOneResult>(() => {
     const poolAddress = swapPool?.addresses[chainId] ?? null;
     const input0Address = swapPool?.input[0].addresses[chainId];
@@ -202,6 +203,7 @@ export default function useSwapTokens({
   const [rExchangeRateStr, setRExchangeRateStr] = useState<string>("");
   const [rExchangeRateBD, setRExchangeRateBD] = useState<BigDecimal | null>(null);
   const [quoteReceive, setQuoteReceive] = useState<bigint | null>(null);
+
   
   // CHANGE: 디바운스 ref 관리
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -285,7 +287,7 @@ export default function useSwapTokens({
         return "";
       }
 
-      console.log("slot0Data:", slot0Data,slot0Data.sqrtPriceX96.toString());
+      // console.log("slot0Data:", slot0Data,slot0Data.sqrtPriceX96.toString());
       setSqrtPriceX96(
         new Fraction(
           slot0Data.sqrtPriceX96.toString(),         // numerator
@@ -410,11 +412,11 @@ export default function useSwapTokens({
           console.error("[getOtherAmount] previewRedeem (output) null");
           return "";
         }
-        console.warn("[getOtherAmount] final underlying OUT", {
-          val_raw: finalTokenAmount.value.toString(),
-          dec: finalTokenAmount.decimals,
-          display: finalTokenAmount.toPrecisionString(true, false),
-        });
+        // console.warn("[getOtherAmount] final underlying OUT", {
+        //   val_raw: finalTokenAmount.value.toString(),
+        //   dec: finalTokenAmount.decimals,
+        //   display: finalTokenAmount.toPrecisionString(true, false),
+        // });
         return finalTokenAmount.toPrecisionString(true, false);
       }
 
@@ -422,10 +424,10 @@ export default function useSwapTokens({
         thisAmount,
         outputUnderlying.decimals ?? 18
       );
-      console.warn("[getOtherAmount] latestBD (out)", {
-        value: latestBD.value.toString(),
-        dec: latestBD.decimals,
-      });
+      // console.warn("[getOtherAmount] latestBD (out)", {
+      //   value: latestBD.value.toString(),
+      //   dec: latestBD.decimals,
+      // });
       if (latestBD.isZero()) return "";
 
       // 7) underlying(to) -> bToken(output)
@@ -441,7 +443,7 @@ export default function useSwapTokens({
 
       setQuoteReceive(desiredBOut.value);
 
-      console.log("useSwapTokens desiredBOut:", desiredBOut.value);
+      // console.log("useSwapTokens desiredBOut:", desiredBOut.value);
 
       const quote = await quoteExactOutputSingle(
         client as PublicClient,
@@ -503,7 +505,7 @@ export default function useSwapTokens({
   const [sqrtPriceX96, setSqrtPriceX96] = useState<Fraction | null>(null);
   const sqrtPriceLimitX96 = useMemo(() => {
     if (sqrtPriceX96) {
-      console.log("zeroForOne...", zeroForOne);
+      // console.log("zeroForOne...", zeroForOne);
       const Tolerance : number = 0.05;
 
       const multiplier = zeroForOne
@@ -514,7 +516,7 @@ export default function useSwapTokens({
             .add(new BigDecimal(Tolerance || 0.1, 18))
             .sqrt();
 
-      console.log("multiplier...", multiplier.toFixed(18));
+      // console.log("multiplier...", multiplier.toFixed(18));
       const fSqrtPriceLimit = sqrtPriceX96.multiply(
         new Fraction(
           multiplier.roundToDecimals(18).value.toString(10),
@@ -526,20 +528,20 @@ export default function useSwapTokens({
         fSqrtPriceLimit.denominator,
       );
 
-      console.log(
-        "sqrtPrice...",
-        mathUtils
-          .fractionToQ6496(sqrtPriceX96.numerator, sqrtPriceX96.denominator)
-          .toString(10),
-      );
-      console.log("sqrtPriceLimit...", sqrtPriceLimit.toString());
+      // console.log(
+      //   "sqrtPrice...",
+      //   mathUtils
+      //     .fractionToQ6496(sqrtPriceX96.numerator, sqrtPriceX96.denominator)
+      //     .toString(10),
+      // );
+      // console.log("sqrtPriceLimit...", sqrtPriceLimit.toString());
 
-      console.log("slot0.sqrtPriceX96 raw:", sqrtPriceX96.toString());
-      console.log("fraction numerator:", sqrtPriceX96.numerator.toString());
-      console.log("fraction denominator:", sqrtPriceX96.denominator.toString());
-      console.log("back to Q64.96:", mathUtils.fractionToQ6496(
-        sqrtPriceX96.numerator, sqrtPriceX96.denominator
-      ).toString());
+      // console.log("slot0.sqrtPriceX96 raw:", sqrtPriceX96.toString());
+      // console.log("fraction numerator:", sqrtPriceX96.numerator.toString());
+      // console.log("fraction denominator:", sqrtPriceX96.denominator.toString());
+      // console.log("back to Q64.96:", mathUtils.fractionToQ6496(
+      //   sqrtPriceX96.numerator, sqrtPriceX96.denominator
+      // ).toString());
 
       return BigInt(sqrtPriceLimit.toString());
     } else {
@@ -685,12 +687,6 @@ useEffect(() => {
 
   if (!canPulse) return;
 
-  // 최초 15초 기다리기 싫다면, 초기에 한 번 트리거:
-  // if (lastInputRef.current) {
-  // const { amount, side, withToToken } = lastInputRef.current;
-  // updateAmountCommon(amount, side, withToToken);
-  // }
-
   pulseRef.current = setInterval(() => {
   // 마지막 입력 스냅샷이 있어야만 재계산
   const snap = lastInputRef.current;
@@ -720,8 +716,6 @@ useEffect(() => {
 
   //=================15초 계산 값
 
-
-
   useEffect(() => {
   return () => {
     if (timerRef.current) {
@@ -734,57 +728,6 @@ useEffect(() => {
     const exchangeRate = exchangeRateStr;
     const rExchangeRate = rExchangeRateStr;
 
-  // const exchangeRate = useMemo(() => {
-  //   const toAmountBD = new BigDecimal(toAmount || "0", toToken?.decimals ?? 18);
-  //   const fromAmountBD = new BigDecimal(
-  //     fromAmount || "0",
-  //     fromToken?.decimals || 18,
-  //   );
-
-  //   if (toAmountBD.isZero() || fromAmountBD.isZero()) return "";
-  //     // return getOtherAmount("1", "in");
-
-  //   return toAmountBD.div(fromAmountBD).toFixed(toToken?.displayDecimals ?? 8);
-  // }, [
-  //   toAmount,
-  //   toToken?.decimals,
-  //   toToken?.displayDecimals,
-  //   fromAmount,
-  //   fromToken?.decimals,
-  //   //getOtherAmount,
-  // ]);
-
-  //  // 정확 계산용 BigDecimal 환율
-  // const exchangeRateBD = useMemo(() => {
-  //   const toAmountBD = new BigDecimal(toAmount || "0", toToken?.decimals ?? 18);
-  //   const fromAmountBD = new BigDecimal(fromAmount || "0", fromToken?.decimals || 18);
-  //   if (toAmountBD.isZero() || fromAmountBD.isZero()) return null;
-  //   return toAmountBD.div(fromAmountBD);
-  // }, [toAmount, toToken?.decimals, fromAmount, fromToken?.decimals]);
-
-  // // price impact = |(exchangeRate - midPoolPrice) / midPoolPrice|
-  // useEffect(() => {
-  //   if (!setPriceImpact) return;
-
-  //   if (!midPoolPrice || midPoolPrice.isZero()) {
-  //     setPriceImpact(new BigDecimal(0, 18));
-  //     return;
-  //   }
-
-  //   // exchangeRateBD가 아직 없으면 계산 보류
-  //   if (!exchangeRateBD) {
-  //     setPriceImpact(new BigDecimal(0, 18)); // 또는 이전값 유지하려면 이 줄 제거
-  //     return;
-  //   }
-
-  //   const diff = exchangeRateBD.sub(midPoolPrice);
-  //   const ratio = diff.div(midPoolPrice);
-  //   const abs = ratio.abs();
-  //   // 필요 시 프로젝트 표준으로 decimals 고정
-  //   const pi = abs.roundToDecimals(18);
-  //   setPriceImpact(pi);
-  // }, [exchangeRateBD, midPoolPrice, setPriceImpact]);
-
   const setToTokenAmountWithGuard = useCallback(
     (newAmount: SetStateAction<string>) => {
       setToAmount((prev) => {
@@ -793,6 +736,7 @@ useEffect(() => {
           typeof newAmount === "function" ? newAmount(prev) : newAmount;
 
         if (!newToAmount) {
+          console.debug("[handlers.onSuccess] exit");
           setFromAmount("");
           if (fromToken) {
             updateAmountCommon(newToAmount, "out");
@@ -879,8 +823,8 @@ useEffect(() => {
             onError: handlers.onError,
             onSuccess: (v) => {
               handlers.onSuccess(v);
-              setFromAmount("");
-              setToAmount("");
+              // setFromAmount("");
+              // setToAmount("");
             },
           },
         );
@@ -896,8 +840,8 @@ useEffect(() => {
             onError: handlers.onError,
             onSuccess: (v) => {
               handlers.onSuccess(v);
-              setFromAmount("");
-              setToAmount("");
+              // setFromAmount("");
+              // setToAmount("");
             },
           },
         );
@@ -914,7 +858,8 @@ useEffect(() => {
       writeContract,
     ],
   );
-  //function swap(address poolAddress, address recipient, bool zeroForOne, uint256 amountSpecified, uint160 sqrtPriceLimitX96) returns (uint256 amount0, uint256 amount1)
+
+
   const swap = useCallback(async () => {
     setPriceImpact?.(new BigDecimal(0, 18));
 
@@ -974,17 +919,21 @@ useEffect(() => {
     const minReceive = receiveAtLeast;
     const sqrtPriceLimit = sqrtPriceLimitX96*BigInt(0);
 
-    console.log("swap params", 
-      "inputTokenAddress",inputTokenAddress,
-      "feeTier", feeTier,
-      "outputTokenAddress", outputTokenAddress,
-      "amountBD", amountBD,
-      "minReceive", minReceive,
-      "sqrtPriceLimit", sqrtPriceLimit,
-      "referralAddress", referralAddress,
-    );
+    // console.log("swap params", 
+    //   "inputTokenAddress",inputTokenAddress,
+    //   "feeTier", feeTier,
+    //   "outputTokenAddress", outputTokenAddress,
+    //   "amountBD", amountBD,
+    //   "minReceive", minReceive,
+    //   "sqrtPriceLimit", sqrtPriceLimit,
+    //   "referralAddress", referralAddress,
+    // );
 
+    // console.log("[swap] writeContract.arity", (writeContract as any).length);
 
+    try {
+  // 1) 해시를 Promise로 획득
+  const hash: `0x${string}` = await new Promise((resolve, reject) => {
     writeContract(
       {
         address: contracts.birdieRouter.address as `0x${string}`,
@@ -1001,15 +950,35 @@ useEffect(() => {
         ]
       },
       {
-        onError: handlers.onError,
-        onSuccess: (v) => {
-          handlers.onSuccess(v);
-          setFromAmount("");
-          setToAmount("");
+        onError: (e) => {
+          console.debug("[swap] onError fired:", e);
+          reject(e);
+        },
+        onSuccess: (h) => {
+          console.debug("[swap] onSuccess fired with hash:", h);
+          resolve(h as `0x${string}`);
         },
       },
     );
-  }, [
+  });
+  
+  try { handlers.onSuccess?.(hash); } catch (e) { console.debug("handlers.onSuccess err:", e); }
+
+  // 2) 영수증 대기
+  const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+  if (receipt?.status === "success") {
+    // 3) 마지막 입력 스냅샷으로 후처리
+    const snap = lastInputRef.current;
+    console.debug("[swap] snap at mined:", snap);
+    if (snap?.amount && Number(snap.amount) > 0) {
+      await updateAmountCommon(snap.amount, snap.side, snap.withToToken);
+    }
+  }
+} catch (e) {
+  handlers.onError?.(e as Error);
+  throw e;
+}},
+ [
     address,
     balances?.tokenBalances.query,
     chainId,
@@ -1027,6 +996,8 @@ useEffect(() => {
     toToken,
     transactionContext,
     writeContract,
+    getOtherAmount,
+    updateAmountCommon,    // ★ 추가
   ]);
 
   async function approve() {
