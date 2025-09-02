@@ -117,42 +117,98 @@ export default function WalletContextProvider({
     setReferralAddress,
   ]);
 
-  // ⭐ 이 부분을 새로운 코드로 교체
-  const selectedProvider = useMemo(() => {
-    if (!account?.connector?.id) return undefined;
+  const [selectedProvider, setSelectedProvider] = useState<
+    WalletProviderInfo | undefined
+  >(undefined);
 
-    const connectorMapping: Record<string, string> = {
-      // MetaMask 관련 모든 케이스
-      "io.metamask": "metaMask",
-      metamask: "metaMask",
-      injected: "metaMask", // 대부분의 경우 injected = MetaMask
+  useEffect(() => {
+    let cancelled = false;
 
-      // 다른 지갑들
-      coinbaseWallet: "coinbase",
-      walletConnect: "walletConnect",
-      uniswap: "uniswap",
+    (async () => {
+      try {
+        // connector가 없으면 초기화
+        if (!account?.connector) {
+          if (!cancelled) setSelectedProvider(undefined);
+          return;
+        }
 
-      // 로컬에서 제외할 지갑들 (혹시 모를 상황 대비)
-      phantom: "phantom",
-      brave: "brave",
-      trust: "trust",
+        // wagmi connector가 실제 사용하는 EIP-1193 provider
+        const raw = await account.connector.getProvider?.();
+        const p = raw as any;
+
+        /** 우선순위:
+         * 1) connector id로만 판별 가능한 것들
+         * 2) 개별 지갑 고유 플래그 (phantom/brave/trust/coinbase)
+         * 3) isMetaMask
+         * 4) injected/metaMask fallback
+         */
+        let key:
+          | "phantom"
+          | "brave"
+          | "trust"
+          | "coinbase"
+          | "walletConnect"
+          | "uniswap"
+          | "metaMask"
+          | "injected";
+
+        // 1) connector id 우선 분기
+        if (account.connector.id === "walletConnect") key = "walletConnect";
+        else if (account.connector.id === "coinbaseWallet") key = "coinbase";
+        else if (account.connector.id === "uniswap") key = "uniswap";
+        // 2) 개별 플래그
+        else if (p?.isPhantom) key = "phantom";
+        else if (p?.isBraveWallet) key = "brave";
+        else if (p?.isTrust) key = "trust";
+        else if (p?.isCoinbaseWallet) key = "coinbase";
+        // 3) 메타마스크 (일부 지갑이 isMetaMask를 켜기도 하므로 뒤쪽에 둠)
+        else if (p?.isMetaMask) key = "metaMask";
+        // 4) injected → metaMask로 보정
+        else if (
+          account.connector.id === "io.metamask" ||
+          account.connector.id === "metamask" ||
+          account.connector.id === "injected"
+        ) {
+          key = "metaMask";
+        } else {
+          key = "injected";
+        }
+
+        const info =
+          walletProviders.find((w) => w.key === key) ??
+          walletProviders.find((w) => w.key === "metaMask");
+
+        if (!cancelled) setSelectedProvider(info);
+
+        if (process.env.NODE_ENV === "development") {
+          console.log("[WalletContext] detected provider", {
+            connectorId: account.connector.id,
+            flags: {
+              isPhantom: p?.isPhantom,
+              isBraveWallet: p?.isBraveWallet,
+              isTrust: p?.isTrust,
+              isCoinbaseWallet: p?.isCoinbaseWallet,
+              isMetaMask: p?.isMetaMask,
+            },
+            resolvedKey: key,
+            resolvedInfo: info,
+          });
+        }
+      } catch (e) {
+        if (!cancelled) {
+          const fallback = walletProviders.find((w) => w.key === "metaMask");
+          setSelectedProvider(fallback);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-
-    // ⭐ 1차 매핑 시도
-    const mappedKey = connectorMapping[account.connector.id];
-
-    if (mappedKey) {
-      const provider = walletProviders.find((p) => p.key === mappedKey);
-
-      return provider;
-    }
-
-    return walletProviders.find((p) => p.key === "metaMask"); //undefined;
-  }, [account?.connector?.id]);
+  }, [account?.connector]);
 
   const chainId = useChainId();
 
-  // ⭐ 핵심 수정: selectedNetwork 로직 강화 (네트워크 아이콘 표시 문제 해결)
   const selectedNetwork = useMemo(() => {
     const network = networks.find((network) => network.id === chainId);
 
