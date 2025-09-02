@@ -105,25 +105,6 @@ export function MobileNavLink({
   target,
   className,
 }: MobileNavLinkProps) {
-  /*  const pathname = usePathname();
-
-  // ⭐ 홈페이지 특별 처리 로직 추가
-  const isActive = (() => {
-    // 홈페이지인 경우 정확히 "/" 경로일 때만 active
-    if (href === "/") {
-      return pathname === "/";
-    }
-    // 외부 링크는 active 처리 안함
-    if (href.startsWith("http")) {
-      return false;
-    }
-
-    // 다른 내부 페이지는 기존 로직 사용
-    return (
-      pathname === href || (href.startsWith("/") && pathname.startsWith(href))
-    );
-  })();
-*/
   const currentPage = usePathname();
 
   const isActive = (() => {
