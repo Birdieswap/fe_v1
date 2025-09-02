@@ -1,16 +1,12 @@
 import Image from "next/image";
-import { Fragment, useContext, useMemo, useState } from "react";
+import { Fragment, useContext, useMemo } from "react";
 import { Button, cn, Link } from "@heroui/react";
 import { useAccount, useChainId } from "wagmi";
-import NextLink from "next/link";
-
 import Icons from "@/assets/icons/icons";
 import ThemedButton from "@/components/atoms/ThemedButton";
 import { useReferral } from "@/app/ReferralContextProvider";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { AssetsContext } from "@/app/AssetsContextProvider";
-import tokens from "@/const/contracts/tokens/tokens";
-import { BigDecimal } from "@/types/BigDecimal";
 import { getRewardsTotal } from "@/utils/wallet/getRewardsTotal";
 import {
   getRewardList,

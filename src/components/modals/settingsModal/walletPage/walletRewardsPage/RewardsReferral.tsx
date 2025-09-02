@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Button, cn, Link } from "@heroui/react";
-import { Fragment, useMemo, useContext, useState } from "react";
+import { Fragment, useMemo, useContext } from "react";
 import { useAccount, useChainId } from "wagmi";
 
 import Icons from "@/assets/icons/icons";
@@ -8,8 +8,6 @@ import ThemedButton from "@/components/atoms/ThemedButton";
 
 import { WalletContext } from "@/app/WalletContextProvider";
 import { AssetsContext } from "@/app/AssetsContextProvider";
-import tokens from "@/const/contracts/tokens/tokens";
-import { BigDecimal } from "@/types/BigDecimal";
 import { getRewardsTotal } from "@/utils/wallet/getRewardsTotal";
 import {
   getRewardList,
@@ -94,13 +92,10 @@ function RewardItem(props: RewardItemProps) {
 }
 
 export default function RewardsReferral() {
-  const { address } = useAccount();
   const chainId = useChainId();
   const { assetValues } = useContext(AssetsContext);
   const explorerURL = getBlockExplorerUrl(chainId);
   const { walletData } = useContext(WalletContext);
-
-  if (!walletData || !walletData.currentUserReward) return;
 
   // 2) 원본 데이터: 안전 디폴트
   const ReferralRewardItem =

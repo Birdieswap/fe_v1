@@ -18,6 +18,44 @@ import suffixNumbers from "@/utils/suffixNumbers";
 import { useContext, useMemo } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
+import { Spacer } from "@heroui/react";
+
+// 상단 import 아래 유틸 함수 추가
+const toNum = (v: any): number | undefined => {
+  if (v == null) return undefined;
+  if (typeof v === "number") return Number.isFinite(v) ? v : undefined;
+  if (typeof v?.toPrecisionString === "function") {
+    const n = parseFloat(v.toPrecisionString());
+    return Number.isFinite(n) ? n : undefined;
+  }
+  if (typeof v?.toFixed === "function") {
+    const n = parseFloat(v.toFixed(2));
+    return Number.isFinite(n) ? n : undefined;
+  }
+  const n = parseFloat(String(v));
+  return Number.isFinite(n) ? n : undefined;
+};
+
+export function LoadingPulse({
+  w = "w-12",
+  className = "",
+}: {
+  w?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center align-middle ${className}`}
+      aria-busy="true"
+    >
+      <Spacer x={0.5} />
+      <span
+        className={`inline-block h-[14px] ${w} rounded-md bg-default-200 dark:bg-default-700 animate-pulse`}
+      />
+    </span>
+  );
+}
+
 export default function FarmListRowSummary({
   balance,
   item,
@@ -86,12 +124,54 @@ export default function FarmListRowSummary({
     return;
   }, [aprDataState, chainId, stakeToken]);
 
+  const hasAprEntry = useMemo(() => {
+    const targetAddr = stakeToken?.addresses?.[chainId];
+    if (!targetAddr) return false;
+
+    const norm = (s?: string) => String(s ?? "").toLowerCase();
+    const T = norm(targetAddr);
+    const S = aprDataState as any;
+
+    const arr: any[] | undefined = Array.isArray(S?.apr)
+      ? S.apr
+      : Array.isArray(S?.aprs)
+      ? S.aprs
+      : Array.isArray(S?.data)
+      ? S.data
+      : Array.isArray(S)
+      ? S
+      : undefined;
+
+    if (arr) {
+      const hit = arr.find(
+        (e) => norm(e?.contractAddress ?? e?.apr?.contractAddress) === T
+      );
+      if (hit) return true;
+    }
+
+    const dict = S?.byAddress ?? S?.aprMap ?? S?.map;
+    if (dict && typeof dict === "object") {
+      const entry =
+        dict[targetAddr] ??
+        dict[targetAddr.toLowerCase()] ??
+        dict[targetAddr.toUpperCase()];
+      if (entry) return true;
+    }
+
+    if (norm(S?.apr?.contractAddress) === T) return true;
+    return false;
+  }, [aprDataState, chainId, stakeToken]);
+
+  const apyNum = toNum(apy);
+  const apyIsLoading =
+    apy == null || apyNum === undefined || (apyNum === 0 && !hasAprEntry);
+
   return (
     <motion.div
       layout
       {...defaultTransition}
       className={clsx(
-        "grid origin-top grid-cols-subgrid items-center justify-center",
+        "grid origin-top grid-cols-subgrid items-center min-h-[71px] justify-center",
         "border-t border-default-400 dark:border-default-900",
         "[&:nth-child(2)]:dark:border-default-400",
         "md:col-span-6 md:px-6",
@@ -127,7 +207,11 @@ export default function FarmListRowSummary({
                   : stakeToken.input.symbol}
               </div>
               <div className="flex flex-row gap-2 text-xs font-medium text-default-600">
-                {poolDescription}
+                {poolDescription ? (
+                  <>{poolDescription}</>
+                ) : (
+                  <LoadingPulse w="w-36" />
+                )}
               </div>
               {/* <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
                 <Icons.BirdRate
@@ -151,13 +235,13 @@ export default function FarmListRowSummary({
           <span className="pt-px text-[11px] font-medium text-default-600 md:hidden">
             APY(%)
           </span>
-          <Components.Apy isLoading={!apy} value={apy} />
+          <Components.Apy isLoading={apyIsLoading} value={apy} />
         </motion.div>
         <motion.div layout className="flex flex-row items-center gap-2">
           <span className="pt-px text-[11px] font-medium text-default-600 md:hidden">
             TVL($)
           </span>
-          <Components.Tvl isLoading={!tvl} tvl={tvl ? tvl : null} />
+          <Components.Tvl isLoading={tvl == null} tvl={tvl ? tvl : null} />
         </motion.div>
         <motion.div
           layout
@@ -173,7 +257,9 @@ export default function FarmListRowSummary({
             <span className="text-sm font-semibold max-md:font-medium">
               <p>
                 {!account.isConnected && "Connect Wallet"}
-                {account.isConnected && !isBalanceAvailable && "Loading..."}
+                {account.isConnected && !isBalanceAvailable && (
+                  <LoadingPulse w="w-16" />
+                )}
                 {account.isConnected &&
                   isBalanceAvailable &&
                   balance
@@ -188,20 +274,21 @@ export default function FarmListRowSummary({
           </motion.div>
           <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
             {!account.isConnected && "Connect Wallet"}
-            {account.isConnected && !isBalanceAvailable && "Loading..."}
-            {
-              account.isConnected &&
-                isBalanceAvailable &&
-                price &&
+            {account.isConnected &&
+              (!isBalanceAvailable ? (
+                <LoadingPulse w="w-20" />
+              ) : price ? (
                 "$" +
-                  suffixNumbers(
-                    balance.mul(price).roundToDecimals(2),
-                    0,
-                    2,
-                    false,
-                    false
-                  ) //balance.mul(price).roundToDecimals(2).toString()
-            }
+                suffixNumbers(
+                  balance.mul(price).roundToDecimals(2),
+                  0,
+                  2,
+                  false,
+                  false
+                )
+              ) : (
+                <LoadingPulse w="w-20" />
+              ))}
           </p>
         </motion.div>
       </motion.div>
