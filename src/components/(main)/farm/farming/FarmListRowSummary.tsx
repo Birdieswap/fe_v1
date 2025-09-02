@@ -171,7 +171,7 @@ export default function FarmListRowSummary({
       layout
       {...defaultTransition}
       className={clsx(
-        "grid origin-top grid-cols-subgrid items-center min-h-[71px] justify-center",
+        "grid origin-top grid-cols-subgrid items-center min-h-[120px] sm:min-h-[72px] justify-center",
         "border-t border-default-400 dark:border-default-900",
         "[&:nth-child(2)]:dark:border-default-400",
         "md:col-span-6 md:px-6",
