@@ -25,14 +25,14 @@ export function PairStartPanel({ item }: { item: FarmPair }) {
         <div className="flex grow flex-row items-center gap-1">
           <SectionHeader>Start with</SectionHeader>
           <div className="flex flex-row items-center text-sm font-normal">
-            (
+            {/* (
             <div className="flex flex-row items-center gap-1.5">
               <span className="text-xs font-normal">Fee tier</span>
               <span className="text-base font-bold">
                 {item.feeTier.toFixed(2)}%
               </span>
             </div>
-            )
+            ) */}
           </div>
         </div>
         {/* <PairSlider isDisabled={false} item={item} state={state} /> */}
