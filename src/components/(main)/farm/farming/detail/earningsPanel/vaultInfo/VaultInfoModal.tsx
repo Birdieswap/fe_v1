@@ -84,10 +84,10 @@ export default function VaultInfoModal({
               <div className="flex flex-col gap-1 pl-1">
                 <h1 className="text-sm font-semibold text-foreground">
                   {src.type === "single"
-                    ? "Single token vault information"
+                    ? "Farming information"
                     : src.type === "dual"
                     ? "Pair token vault information"
-                    : "Reward token vault information"}
+                    : "Farming information"}
                 </h1>
                 <p className="text-sm font-normal text-default-800">
                   {src.name}
@@ -132,7 +132,7 @@ export default function VaultInfoModal({
                 <div>
                   <div className="flex flex-col gap-2.5 pb-2">
                     <h2 className="text-sm font-medium text-foreground">
-                      Single token vault contract :
+                      Vault contract :
                     </h2>
                     <Link
                       className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
@@ -145,7 +145,7 @@ export default function VaultInfoModal({
 
                   <div className="flex flex-col gap-2.5 pb-2">
                     <h2 className="text-sm font-medium text-foreground">
-                      Single token strategy contract :
+                      Strategy contract :
                     </h2>
                     <Link
                       className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
@@ -161,7 +161,7 @@ export default function VaultInfoModal({
                 <div>
                   <div className="flex flex-col gap-2.5 pb-2">
                     <h2 className="text-sm font-medium text-foreground">
-                      Pair token vault contract :
+                      Vault contract :
                     </h2>
                     <Link
                       className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
@@ -174,7 +174,7 @@ export default function VaultInfoModal({
 
                   <div className="flex flex-col gap-2.5 pb-2">
                     <h2 className="text-sm font-medium text-foreground">
-                      Pair token strategy contract :
+                      Strategy contract :
                     </h2>
                     <Link
                       className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"

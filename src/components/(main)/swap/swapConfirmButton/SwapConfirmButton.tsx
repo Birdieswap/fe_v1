@@ -52,7 +52,7 @@ export function CommonDisabledButtons(props: {
   ]);
   const isDisabled = props.isPending;
   const buttonText = useMemo(() => {
-    if (props.isPending) return "Pending...";
+    if (props.isPending) return "Start Farming";
     if (!props.isConnected) return "Connect Wallet";
     if (props.isWrongNetwork) return "Wrong Network";
 
@@ -65,6 +65,9 @@ export function CommonDisabledButtons(props: {
     return undefined;
   }, [props.isConnected, props.isWrongNetwork]);
 
+  const ariaBusy: true | undefined =
+    props.isPending && !buttonVariant ? true : undefined;
+
   return (
     <Fragment>
       <ButtonWithPresence
@@ -72,6 +75,7 @@ export function CommonDisabledButtons(props: {
         isDisabled={isDisabled}
         variant={buttonVariant}
         onPress={onPress}
+        aria-busy={ariaBusy}
       >
         {buttonText}
       </ButtonWithPresence>
