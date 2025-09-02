@@ -82,58 +82,6 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
       // ⭐ 하단 슬라이드 애니메이션
       onClose={onClose}
     >
-      {/* ⭐ props.onClose 대신 destructured onClose 사용 */}
-      {/* 원본 코드
-      <ModalContent>
-        <ModalBody className="gap-0 px-0 pb-6 pt-14">
-          <div className="flex flex-col px-6">
-            <NavbarLink />
-          </div>
-          <Divider className="bg-default-300 dark:bg-default-900" />
-          <div className="flex flex-col gap-5 p-6">
-            <div className="flex flex-row gap-4">
-              <Link className="text-sm text-foreground" href="/terms">
-                Terms and Conditions
-              </Link>
-              <Link className="text-sm text-foreground" href="/privacy">
-                Privacy Policy
-              </Link>
-            </div>
-            <div className="flex flex-row gap-4">
-              <a
-                className="text-sm text-foreground"
-                href="https://discord.com"
-                rel="noreferrer"
-                target="_blank"
-              >
-                <Button isIconOnly size="sm" variant="light">
-                  <Icons.SocialDiscord />
-                </Button>
-              </a>
-              <a
-                className="text-sm text-foreground"
-                href="https://twitter.com"
-                rel="noreferrer"
-                target="_blank"
-              >
-                <Button isIconOnly size="sm" variant="light">
-                  <Icons.SocialTwitter />
-                </Button>
-              </a>
-              <a
-                className="text-sm text-foreground"
-                href="https://medium.com"
-                rel="noreferrer"
-                target="_blank"
-              >
-                <Button isIconOnly size="sm" variant="light">
-                  <Icons.SocialMedium />
-                </Button>
-              </a>
-            </div>
-          </div>
-        </ModalBody>
-      </ModalContent> */}
       <ModalContent>
         <ModalBody className="p-0">
           {/* ⭐ 모바일 메뉴 아이템들 - onClick으로 모달 닫기 */}
@@ -147,7 +95,7 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
             </MobileNavLink>
 
             <MobileNavLink
-              href="https://crypttempo.gitbook.io/birdie"
+              href="https://docs.birdieswap.com"
               target="_blank"
               onClick={onClose}
             >
@@ -161,12 +109,11 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
 
           <Divider className="bg-default-300 dark:bg-default-100" />
 
-          {/* ⭐ 푸터 섹션 */}
           <div className="flex flex-col gap-5 py-4">
             <div className="flex flex-row gap-4 px-10">
               <Link
                 className="text-sm text-foreground transition-colors hover:text-default-800"
-                href="https://crypttempo.gitbook.io/birdie/legal/terms-of-service"
+                href="https://https://docs.birdieswap.com/legal/terms-of-service"
                 target="_blank"
                 onClick={onClose}
               >
@@ -174,7 +121,7 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
               </Link>
               <Link
                 className="text-sm text-foreground transition-colors hover:text-default-800"
-                href="https://crypttempo.gitbook.io/birdie/legal/privacy-policy"
+                href="https://docs.birdieswap.com/legal/privacy-policy"
                 target="_blank"
                 onClick={onClose}
               >
