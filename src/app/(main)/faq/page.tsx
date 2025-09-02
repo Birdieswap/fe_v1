@@ -57,7 +57,7 @@ export default function FaqPage() {
 
   return (
     <div className="container flex h-full grow flex-col items-center px-3 py-2 sm:py-8">
-      <div className="flex w-full flex-row items-center max-lg:flex-wrap-reverse max-md:gap-2 max-md:px-4 max-md:py-2 md:gap-4">
+      <div className="flex w-full flex-row items-center max-lg:flex-wrap-reverse max-md:gap-2 max-md:px-1 max-md:py-2 md:gap-4">
         <div className="flex grow flex-row items-center max-md:gap-2 max-md:overflow-x-scroll max-md:py-0.5 md:gap-4">
           <FilterButton
             selected={filter}

@@ -199,18 +199,18 @@ export default function FarmListRowSummary({
         <motion.div layout className="md:py-4">
           <div className="flex flex-col gap-1">
             <div className="flex flex-col gap-0.5 text-sm">
-              <div className="flex flex-row font-semibold text-foreground">
+              <div className="flex flex-row font-semibold min-w-[140px] text-foreground">
                 {isBirdieLPFarm(stakeToken)
                   ? stakeToken.swap.input
                       .map((token) => token.input.symbol)
                       .join(" - ")
                   : stakeToken.input.symbol}
               </div>
-              <div className="flex flex-row gap-2 text-xs font-medium text-default-600">
+              <div className="bleak flex flex-row gap-2 text-xs font-medium text-default-600">
                 {poolDescription ? (
                   <>{poolDescription}</>
                 ) : (
-                  <LoadingPulse w="w-36" />
+                  <LoadingPulse w="w-20" />
                 )}
               </div>
               {/* <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
