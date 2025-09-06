@@ -20,7 +20,8 @@ export default function ApproveButton({
     <Fragment>
       {!isApproved && token && (isActive === undefined || isActive) && (
         <ThemedButton isDisabled={isPending} variant="MINT" onPress={onClick}>
-          {isPending ? "Pending..." : `Approve ${token?.symbol}`}
+          {/* {isPending ? "Pending..." : `Approve ${token?.symbol}`} */}
+          {`Approve ${token?.symbol}`}
         </ThemedButton>
       )}
     </Fragment>

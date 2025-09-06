@@ -51,7 +51,7 @@ export default function FarmListTableRow({
         price={price}
         onClick={onClick}
       />
-      <FarmDetail item={item} selectedRow={selectedRow} />
+      <FarmDetail item={item} selectedRow={selectedRow} price={price} />
     </Fragment>
   );
 }

@@ -136,9 +136,24 @@ export default function useSwapTokens({
 
   // 15초 값 갱신을 위한 state/Ref 추가
   const pulseRef = useRef<ReturnType<typeof setInterval> | null>(null); // 15초 주기 타이머
-  type LastInput = { amount: string; side: "in" | "out"; withToToken?: ICurrency | undefined };
+  type LastInput = {
+  amount: string;
+  side: "in" | "out";
+  withToToken?: ICurrency | undefined;
+  withFromToken?: ICurrency | undefined; // 
+};
   const lastInputRef = useRef<LastInput | null>(null); // 마지막 입력 스냅샷
+  const swapStartRef = useRef<{ fromAddr: string; toAddr: string; fromAmount: string; toAmount: string } | null>(null);
+  // [MINIMAL] 최신 토큰을 참조하기 위한 Ref
+  const curFromTokenRef = useRef<ICurrency | undefined>(fromToken);
+  const curToTokenRef   = useRef<ICurrency | undefined>(toToken);
+  const curFromAmountRef = useRef<string>(fromAmount);
+  const curToAmountRef   = useRef<string>(toAmount);
 
+  useEffect(() => { curFromTokenRef.current  = fromToken;  }, [fromToken]);
+  useEffect(() => { curToTokenRef.current    = toToken;    }, [toToken]);
+  useEffect(() => { curFromAmountRef.current = fromAmount; }, [fromAmount]);
+  useEffect(() => { curToAmountRef.current   = toAmount;   }, [toAmount]);
 
   const [poolAddress, zeroForOne, outBToken, outBpool, token0Decimals, token1Decimals] = useMemo<zeroForOneResult>(() => {
     const poolAddress = swapPool?.addresses[chainId] ?? null;
@@ -224,6 +239,11 @@ export default function useSwapTokens({
   // CHANGE: 마지막 설정값 저장해 동일하면 setState 생략
   const lastPIRef = useRef<string>("");
   useEffect(() => {
+    if (midOwnerRef.current !== pairKey) {
+      setPriceImpact?.(new BigDecimal(0, 18));
+      return;
+    }
+    
     if (!setPriceImpact) return;
 
     if (!midPoolPrice || midPoolPrice.isZero() || !exchangeRateBD) {
@@ -244,14 +264,39 @@ export default function useSwapTokens({
     }
   }, [exchangeRateBD, midPoolPrice, setPriceImpact]);
 
+  const addrLower = (t?: ICurrency) => {
+    const a = t ? getTokenAddress({token:t, chainId}) : "";
+    return (a ?? "").toLowerCase();
+  };
+
+  // 현재 화면의 페어 키 (from/to 주소 기준)
+  const pairKey = useMemo(() => {
+    return `${addrLower(fromToken)}_${addrLower(toToken)}`;
+  }, [fromToken, toToken, chainId]);
+
+  // midPoolPrice가 어느 페어로 계산된 것인지 기억
+  const midOwnerRef = useRef<string>("");
+
+  useEffect(() => {
+    midOwnerRef.current = "";
+    setMidPoolPrice(null);
+  }, [pairKey]);
+
   const getOtherAmount = useCallback(
   async (
     thisAmount: string,
     thisSide: "in" | "out",
+    overrideFromToken?: ICurrency, 
+    overrideToToken?: ICurrency
   ) => {
+
     try {
+
+      const curFromToken = overrideFromToken ?? fromToken;
+      const curToToken = overrideToToken ?? toToken;
       
-      if (!thisAmount || !chainId || !assetValues || !fromToken || !toToken) {
+      
+      if (!thisAmount || !chainId || !assetValues || !curFromToken || !curToToken) {
         return "";
       }
       if (!swapPool || !poolAddress || !outBpool) {
@@ -259,8 +304,8 @@ export default function useSwapTokens({
       }
 
       // --- 2) normalize eth -> WETH underlying
-      const fromErc20 = fromToken.symbol === "ETH" ? tokens.WETH : fromToken;
-      const toErc20 = toToken.symbol === "ETH" ? tokens.WETH : toToken;
+      const fromErc20 = curFromToken.symbol === "ETH" ? tokens.WETH : curFromToken;
+      const toErc20   = curToToken.symbol   === "ETH" ? tokens.WETH : curToToken;
 
       const inputUnderlying = fromErc20;
       const outputUnderlying = toErc20;
@@ -308,9 +353,15 @@ export default function useSwapTokens({
         return "";
       }
 
-      // 상태 저장(전역 midPoolPrice state 사용중이면 덮어쓰기)
-      setMidPoolPrice(midPoolPrice);
-
+    // [추가] 여기! 계산에 사용한 페어와 '현재 화면 페어'가 같은지 확인
+      const producedPair = `${addrLower(curFromToken)}_${addrLower(curToToken)}`;
+      if (producedPair !== pairKey) {
+        // 스왑 도중 Setting이 바뀌어 현재 화면 페어가 달라졌으면, 이 mid는 폐기
+        console.debug("[PI-guard] discard stale mid", { producedPair, current: pairKey });
+      } else {
+        setMidPoolPrice(midPoolPrice);
+        midOwnerRef.current = producedPair; // mid의 소유 페어 기록
+      }
 
       const pickTokenMeta = (entry: any) => {
         const bAddr = entry?.addresses?.[chainId] as `0x${string}` | undefined; // bToken 주소(풀 토큰)
@@ -357,7 +408,7 @@ export default function useSwapTokens({
         // 6) from 입력값을 from.decimals로 파싱
         const latestBD = new BigDecimal(
           thisAmount,
-          inputUnderlying.decimals ?? 18
+          inputUnderlying?.decimals ?? 18
         );
        
         if (latestBD.isZero()) return "";
@@ -422,7 +473,7 @@ export default function useSwapTokens({
 
       const latestBD = new BigDecimal(
         thisAmount,
-        outputUnderlying.decimals ?? 18
+        outputUnderlying?.decimals ?? 18
       );
       // console.warn("[getOtherAmount] latestBD (out)", {
       //   value: latestBD.value.toString(),
@@ -497,7 +548,10 @@ export default function useSwapTokens({
     publicClient, 
     token0Decimals, 
     token1Decimals, 
-    zeroForOne
+    zeroForOne,
+    fromAmount, 
+    toAmount, 
+    allowanceFromToken,
   ]
 );
 
@@ -578,20 +632,19 @@ export default function useSwapTokens({
   }, [quoteReceive, maxSlippage]);
 
   const updateAmountCommon = useCallback(
-    async (newAmount: string, side: "in" | "out", withToToken?: ICurrency) => {
+    async (newAmount: string, side: "in" | "out", withToToken?: ICurrency, withFromToken?:ICurrency) => {
       // const newToToken = withToToken ?? toToken;
-      const newToToken = withToToken ?? toToken;
+      const useToToken   = withToToken   ?? toToken;
+      const useFromToken = withFromToken ?? fromToken;
+      if (!useFromToken || !useToToken || !publicClient) return;
 
-      // 15초 후 가격 업데이트를 위한 마지막 입력 스냅샷 갱신
-      if (!fromToken || !newToToken || !publicClient) return;
-
-      lastInputRef.current = { amount: newAmount, side, withToToken };
+      lastInputRef.current = { amount: newAmount, side, withToToken: useToToken, withFromToken: useFromToken };
 
       const newAmountBD = new BigDecimal(newAmount);
       const setAmount = side === "in" ? setToAmount : setFromAmount;
 
-      const fromTokenERC20 = fromToken.symbol === "ETH" ? tokens.WETH : fromToken;
-      const toTokenERC20 = newToToken.symbol === "ETH" ? tokens.WETH : newToToken;
+      const fromTokenERC20 = useFromToken.symbol === "ETH" ? tokens.WETH : useFromToken;
+      const toTokenERC20   = useToToken.symbol   === "ETH" ? tokens.WETH : useToToken;
 
       // 기존 타이머 취소
       if (timerRef.current) {
@@ -611,7 +664,7 @@ export default function useSwapTokens({
         setIsLoading(true);
 
         try {
-          const val = await getOtherAmount(newAmount, side); 
+          const val = await getOtherAmount(newAmount, side, useFromToken, useToToken); 
 
           setAmount(val);
 
@@ -621,12 +674,13 @@ export default function useSwapTokens({
 
           if (side === "in") {
             // 사용자가 fromAmount를 입력(newAmount), toAmount는 방금 산출(val)
-            latestFromBD = new BigDecimal(newAmount || "0", fromToken?.decimals || 18);
-            latestToBD = new BigDecimal(val || "0", toToken?.decimals ?? 18);
+            latestFromBD = new BigDecimal(newAmount || "0", (useFromToken?.decimals ?? fromToken?.decimals) || 18);
+            latestToBD = new BigDecimal(val || "0", (useToToken?.decimals ?? toToken?.decimals) ?? 18);
           } else {
             // 사용자가 toAmount를 입력(newAmount), fromAmount는 방금 산출(val)
-            latestFromBD = new BigDecimal(val || "0", fromToken?.decimals || 18);
-            latestToBD = new BigDecimal(newAmount || "0", toToken?.decimals ?? 18);
+            latestFromBD = new BigDecimal(val || "0", (useFromToken?.decimals ?? fromToken?.decimals) || 18);
+            latestToBD   = new BigDecimal(newAmount || "0", (useToToken?.decimals   ?? toToken?.decimals)   ?? 18);
+
           }
 
           // 4) 환율 계산 및 저장
@@ -639,9 +693,9 @@ export default function useSwapTokens({
             const ratio = latestToBD.div(latestFromBD);
             const Rratio = latestFromBD.div(latestToBD);
             setExchangeRateBD(ratio);
-            setExchangeRateStr(ratio.toFixed(toToken?.displayDecimals ?? 8));
+            setExchangeRateStr(ratio.toFixed((useToToken?.displayDecimals ?? toToken?.displayDecimals) ?? 8));
             setRExchangeRateBD(Rratio);
-            setRExchangeRateStr(Rratio.toFixed(fromToken?.displayDecimals ?? 8));
+            setRExchangeRateStr(Rratio.toFixed((useFromToken?.displayDecimals ?? fromToken?.displayDecimals) ?? 8));
             console.log("setExchangeRateStr", ratio, ratio.toFixed(toToken?.displayDecimals ?? 8));
           }
         } catch (err) {
@@ -657,8 +711,15 @@ export default function useSwapTokens({
       }, 750);
     },
     [
+      chainId,
+      assetValues,
       toToken,
       fromToken,
+      poolAddress, 
+      outBpool, 
+      zeroForOne, 
+      token0Decimals, 
+      token1Decimals,
       publicClient,
       getOtherAmount,
       setFromAmount,
@@ -671,6 +732,7 @@ export default function useSwapTokens({
       fromAmount,
       toToken?.decimals,
       fromToken?.decimals,
+      allowanceFromToken,
     ],
   );
 
@@ -688,15 +750,32 @@ useEffect(() => {
   if (!canPulse) return;
 
   pulseRef.current = setInterval(() => {
-  // 마지막 입력 스냅샷이 있어야만 재계산
   const snap = lastInputRef.current;
   if (!snap) return;
 
-  const { amount, side, withToToken } = snap;
+  const curFromToken = curFromTokenRef.current;
+  const curToToken   = curToTokenRef.current;
+  const nowFromAmount = (curFromAmountRef.current || "").trim();
+  const nowToAmount   = (curToAmountRef.current   || "").trim();
 
-  // 현재 토큰 구성이 마지막 입력 당시와 달라졌다면(옵션) withToToken를 우선 사용
-  updateAmountCommon(amount, side, withToToken);
-  }, 15000); // 15초
+  const curFromAddr  = addrLower(curFromToken);
+  const curToAddr    = addrLower(curToToken);
+  const snapFromAddr = addrLower(snap?.withFromToken);
+  const snapToAddr   = addrLower(snap?.withToToken);
+  const tokenMismatch = (curFromAddr !== snapFromAddr) || (curToAddr !== snapToAddr);
+
+  if (tokenMismatch) {
+    const curSide = nowFromAmount ? "in" : (nowToAmount ? "out" : null);
+    if (curSide) {
+      const curValue = curSide === "in" ? nowFromAmount : nowToAmount;
+      updateAmountCommon(curValue, curSide as "in" | "out",
+                         curToToken ?? undefined, curFromToken ?? undefined);
+    }
+  } else {
+    const { amount, side, withToToken, withFromToken } = snap as LastInput;
+    updateAmountCommon(amount, side, withToToken, withFromToken);
+  }
+}, 15000);
 
   return () => {
   if (pulseRef.current) {
@@ -865,6 +944,16 @@ useEffect(() => {
 
     if (!fromToken) return; // fromToken이 undefined인 경우 early return
 
+    // [MINIMAL] capture swap start snapshot for later comparison
+    try {
+      swapStartRef.current = {
+        fromAddr: (getTokenAddress({token:fromToken, chainId}) || "").toLowerCase(),
+        toAddr: (getTokenAddress({token:toToken, chainId}) || "").toLowerCase(),
+        fromAmount: (fromAmount || "").trim(),
+        toAmount: (toAmount || "").trim(),
+      };
+    } catch {}
+
     // TODO: handle other networks
     const isFromNativeToken = fromToken.symbol === "ETH";
 
@@ -966,12 +1055,30 @@ useEffect(() => {
 
   // 2) 영수증 대기
   const receipt = await publicClient?.waitForTransactionReceipt({ hash });
+  
   if (receipt?.status === "success") {
-    // 3) 마지막 입력 스냅샷으로 후처리
     const snap = lastInputRef.current;
-    console.debug("[swap] snap at mined:", snap);
-    if (snap?.amount && Number(snap.amount) > 0) {
-      await updateAmountCommon(snap.amount, snap.side, snap.withToToken);
+
+    const curFromToken = curFromTokenRef.current;
+    const curToToken   = curToTokenRef.current;
+    const nowFromAmount = (curFromAmountRef.current || "").trim();
+    const nowToAmount   = (curToAmountRef.current   || "").trim();
+
+    const curFromAddr  = addrLower(curFromToken);
+    const curToAddr    = addrLower(curToToken);
+    const snapFromAddr = addrLower(snap?.withFromToken);
+    const snapToAddr   = addrLower(snap?.withToToken);
+    const tokenMismatch = (curFromAddr !== snapFromAddr) || (curToAddr !== snapToAddr);
+
+    if (tokenMismatch) {
+      const curSide = nowFromAmount ? "in" : (nowToAmount ? "out" : null);
+      if (curSide) {
+        const curValue = curSide === "in" ? nowFromAmount : nowToAmount;
+        await updateAmountCommon(curValue, curSide as "in" | "out",
+                                curToToken ?? undefined, curFromToken ?? undefined);
+      }
+    } else if (snap?.amount && Number(snap.amount) > 0) {
+      await updateAmountCommon(snap.amount, snap.side, snap.withToToken, snap.withFromToken);
     }
   }
 } catch (e) {
