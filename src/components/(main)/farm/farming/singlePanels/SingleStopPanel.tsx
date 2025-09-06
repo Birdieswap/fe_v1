@@ -17,10 +17,10 @@ import ReceiveAmountBox from "../common/ReceiveAmountBox";
 
 export function SingleStopPanel({
   item,
-  tokenPrice,
+  price,
 }: {
   item: FarmSingle;
-  tokenPrice?: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const state = useSingleStopPanel(item);
 
@@ -35,7 +35,7 @@ export function SingleStopPanel({
         {...defaultTransition}
         className="flex w-full flex-col gap-0"
       >
-        <PairStopAmountInput state={state} tokenPrice={tokenPrice} />
+        <PairStopAmountInput state={state} price={price} />
       </motion.div>
       <ReceiveAmountBox
         amount={state.amount ?? BigDecimal.ZERO()}

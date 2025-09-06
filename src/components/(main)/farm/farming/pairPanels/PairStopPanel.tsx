@@ -20,12 +20,21 @@ import PairStopSummary from "./pairStop/PairStopSummary";
 
 export function PairStopPanel({
   item,
-  tokenPrice,
+  price,
 }: {
   item: FarmPair;
-  tokenPrice?: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const state = usePairStopPanel(item);
+  console.log(
+    "pairStopPanel state",
+    state,
+    "item",
+    item,
+
+    "price",
+    price
+  );
 
   return (
     <PanelContainer layoutId="detail-pair">
@@ -39,7 +48,7 @@ export function PairStopPanel({
         {...defaultTransition}
         className="flex w-full flex-col gap-0"
       >
-        <PairStopAmountInput state={state} tokenPrice={tokenPrice} />
+        <PairStopAmountInput state={state} price={price} />
         <PairStopSummary item={item} state={state} />
       </motion.div>
       <PairStopReceiveAmountBox

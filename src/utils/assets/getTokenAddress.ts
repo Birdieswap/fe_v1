@@ -1,7 +1,7 @@
-import { IContractBase } from "@/const/contracts/types/tokenTypes";
+import { IContractBase} from "@/const/contracts/types/tokenTypes";
 
 export default function getTokenAddress(props: {
-  token?: IContractBase;
+  token?: IContractBase ;
   chainId: number;
 }): `0x${string}` | null {
   const { token, chainId } = props;

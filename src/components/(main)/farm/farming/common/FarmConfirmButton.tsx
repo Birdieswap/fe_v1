@@ -43,6 +43,7 @@ export default function FarmConfirmButton({
             isConnected={isConnected}
             isPending={isPending}
             isWrongNetwork={isWrongNetwork}
+            excuteText={text}
           />
         ) : (
           <ThemedButton

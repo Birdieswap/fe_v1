@@ -21,11 +21,11 @@ import PanelButtons from "./detail/PanelButtons";
 export default function FarmDetail({
   item,
   selectedRow,
-  tokenPrice,
+  price,
 }: {
   item: Farm;
   selectedRow: string | null;
-  tokenPrice?: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const [selectedPanel, setSelectedPanel] = useState<"START" | "STOP">("START");
   const isActive = selectedRow === item.wip_stakeToken.fullName;
@@ -70,13 +70,13 @@ export default function FarmDetail({
                 (selectedPanel === "START" ? (
                   <PairStartPanel item={item} />
                 ) : (
-                  <PairStopPanel item={item} tokenPrice={tokenPrice} />
+                  <PairStopPanel item={item} price={price} />
                 ))}
               {item.type === FarmType.SINGLE &&
                 (selectedPanel === "START" ? (
                   <SingleStartPanel item={item} />
                 ) : (
-                  <SingleStopPanel item={item} tokenPrice={tokenPrice} />
+                  <SingleStopPanel item={item} price={price} />
                 ))}
             </AnimatePresence>
           </motion.div>

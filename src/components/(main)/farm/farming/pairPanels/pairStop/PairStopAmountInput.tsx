@@ -7,7 +7,7 @@ import AmountInput from "../../common/AmountInput";
 
 export default function PairStopAmountInput({
   state,
-  tokenPrice,
+  price,
 }: {
   state: Pick<
     UsePairStopPanelReturn,
@@ -20,7 +20,7 @@ export default function PairStopAmountInput({
     | "isAmountEditable"
     | "isImpermanentInsolvency"
   >;
-  tokenPrice?: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const {
     amount,
@@ -44,7 +44,7 @@ export default function PairStopAmountInput({
         setAmount={setAmount}
         setMaxAmount={setMaxAmount}
         token={tokenStatus.input}
-        tokenPrice={tokenPrice}
+        price={price}
       />
     </>
   );

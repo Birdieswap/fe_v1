@@ -32,6 +32,7 @@ export function CommonDisabledButtons(props: {
   isConnected: boolean;
   isWrongNetwork: boolean;
   isPending: boolean;
+  excuteText: string;
 }) {
   const { setIsConnectModalOpen, setIsNetworkModalOpen } =
     useContext(WalletContext);
@@ -50,9 +51,10 @@ export function CommonDisabledButtons(props: {
     setIsConnectModalOpen,
     setIsNetworkModalOpen,
   ]);
+
   const isDisabled = props.isPending;
   const buttonText = useMemo(() => {
-    if (props.isPending) return "Start Farming";
+    if (props.isPending) return props.excuteText;
     if (!props.isConnected) return "Connect Wallet";
     if (props.isWrongNetwork) return "Wrong Network";
 

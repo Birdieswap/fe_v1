@@ -30,7 +30,7 @@ export default function PairStopSummary({
   const activePrice = useMemo(() => {
     if (activeToken?.input.symbol && assetValues?.chainLinkPriceMap) {
       return assetValues.chainLinkPriceMap.get(
-        `LINK:${activeToken.input.symbol}_USD`,
+        `LINK:${activeToken.input.symbol}_USD`
       )?.price;
     }
 
@@ -40,7 +40,7 @@ export default function PairStopSummary({
   const otherPrice = useMemo(() => {
     if (otherToken?.input.symbol && assetValues?.chainLinkPriceMap) {
       return assetValues.chainLinkPriceMap.get(
-        `LINK:${otherToken.input.symbol}_USD`,
+        `LINK:${otherToken.input.symbol}_USD`
       )?.price;
     }
 
@@ -78,7 +78,7 @@ export default function PairStopSummary({
         .roundToDecimals(
           activeToken?.input?.displayDecimals ??
             activeToken?.input?.decimals ??
-            8,
+            8
         )
         .toPrecisionString(true),
       dollarAmount: activeAmount
@@ -86,7 +86,7 @@ export default function PairStopSummary({
         .roundToDecimals(2)
         .toPrecisionString(true, true),
     }),
-    [activeToken, activeAmount, activePrice],
+    [activeToken, activeAmount, activePrice]
   );
 
   const swapFrom = useMemo(
@@ -96,16 +96,16 @@ export default function PairStopSummary({
       amount: setPrecisionString(
         otherAmount,
         otherToken?.input?.decimals || 8,
-        true,
+        true
       ),
       dollarAmount: setPrecisionString(
         otherAmount.mul(otherPrice ?? 0),
         2,
         true,
-        true,
+        true
       ),
     }),
-    [otherToken, otherAmount, otherPrice],
+    [otherToken, otherAmount, otherPrice]
   );
 
   const swapTo = useMemo(() => {
@@ -121,9 +121,7 @@ export default function PairStopSummary({
       iconSrc: activeToken?.input?.iconSrc,
       amount: swapToAmount
         .roundToDecimals(
-          activeToken?.input.displayDecimals ??
-            activeToken?.input.decimals ??
-            4,
+          activeToken?.input.displayDecimals ?? activeToken?.input.decimals ?? 4
         )
         .toPrecisionString(true),
       dollarAmount: swapToAmount

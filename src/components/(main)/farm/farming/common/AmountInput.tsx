@@ -23,7 +23,7 @@ function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
       classNames={{
         inputWrapper: clsx(
           "h-11 min-h-11 bg-transparent p-1 shadow-none",
-          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent"
         ),
         input:
           "text-[30px] font-bold leading-[36px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
@@ -44,7 +44,7 @@ export default function AmountInput({
   isApproved,
   isActive,
   token,
-  tokenPrice: _price,
+  price: price,
 }: {
   amount: BigDecimal | null;
   balance: BigDecimal | null;
@@ -56,7 +56,7 @@ export default function AmountInput({
   token?: IToken;
   isActive?: boolean;
   layoutId?: string;
-  tokenPrice?: BigDecimal | null;
+  price: BigDecimal | null;
 }) {
   const { assetValues } = useContext(AssetsContext);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
@@ -71,11 +71,11 @@ export default function AmountInput({
     }
   }, [amount, amountStr, token?.decimals]);
 
-  const tokenPrice =
-    _price ??
-    (assetValues &&
-      token &&
-      assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
+  // const tokenPrice =
+  //   price ??
+  //   (assetValues &&
+  //     token &&
+  //     assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
 
   const balanceStr =
     balance &&
@@ -84,16 +84,16 @@ export default function AmountInput({
       100_000,
       token?.displayDecimals ?? token?.decimals ?? 8,
       true,
-      true,
+      true
     );
   const dollarAmount =
     amount &&
-    tokenPrice &&
-    suffixNumbers(amount.mul(tokenPrice), 100_000, 2, false, true);
+    price &&
+    suffixNumbers(amount.mul(price), 100_000, 2, false, true);
   const dollarBalance =
     balance &&
-    tokenPrice &&
-    suffixNumbers(balance.mul(tokenPrice), 100_000, 2, false, true);
+    price &&
+    suffixNumbers(balance.mul(price), 100_000, 2, false, true);
 
   return (
     <AnimatePresence initial={false}>
@@ -104,7 +104,7 @@ export default function AmountInput({
             "mb-6 flex max-h-32 w-full flex-col gap-4 rounded-2xl px-3 py-4",
             "bg-default-100 dark:bg-dark_swap_bg",
             "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
-            "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5",
+            "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5"
           )}
           {...presenceTransition}
         >
@@ -177,7 +177,7 @@ export default function AmountInput({
                 className={clsx(
                   "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background",
+                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {

@@ -154,7 +154,7 @@ function BaseTransactionItem(props: TransactionProps) {
               )}
               {title}
             </h2>
-            <span className="text-[12px] leading-[15px] text-default-800 dark:text-default-700">
+            <span className="truncate text-[12px] leading-[15px] text-default-800 dark:text-default-700">
               {props.hash.slice(0, 40)}...
             </span>
           </div>
