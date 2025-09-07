@@ -45,6 +45,7 @@ export default function PairStopAmountInput({
         setMaxAmount={setMaxAmount}
         token={tokenStatus.input}
         price={price}
+        panel="stop"
       />
     </>
   );
