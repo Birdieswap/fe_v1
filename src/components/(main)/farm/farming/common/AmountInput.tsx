@@ -44,8 +44,9 @@ export default function AmountInput({
   isApproved,
   isActive,
   token,
-  tokenPrice: _price,
+  tokenPrice: tokenPriceProp,
   price: price,
+  panel,
 }: {
   amount: BigDecimal | null;
   balance: BigDecimal | null;
@@ -59,6 +60,7 @@ export default function AmountInput({
   layoutId?: string;
   tokenPrice?: BigDecimal | null;
   price: BigDecimal | null;
+  panel?: "start" | "stop";
 }) {
   const { assetValues } = useContext(AssetsContext);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
@@ -84,19 +86,21 @@ export default function AmountInput({
     );
 
   const tokenPrice =
-    _price ??
+    tokenPriceProp ??
     (assetValues &&
       token &&
       assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
 
+  const chosenPrice = panel === "stop" ? price : tokenPrice;
+
   const dollarAmount =
     amount &&
-    tokenPrice &&
-    suffixNumbers(amount.mul(tokenPrice), 100_000, 2, false, true);
+    chosenPrice &&
+    suffixNumbers(amount.mul(chosenPrice), 100_000, 2, false, true);
   const dollarBalance =
     balance &&
-    tokenPrice &&
-    suffixNumbers(balance.mul(tokenPrice), 100_000, 2, false, true);
+    chosenPrice &&
+    suffixNumbers(balance.mul(chosenPrice), 100_000, 2, false, true);
 
   return (
     <AnimatePresence initial={false}>

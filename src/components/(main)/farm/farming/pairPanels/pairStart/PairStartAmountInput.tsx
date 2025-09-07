@@ -40,6 +40,7 @@ export default function PairStartAmountInput({
         setMaxAmount={setMaxAmount}
         token={input}
         price={price}
+        panel="start"
       />
     </>
   );
