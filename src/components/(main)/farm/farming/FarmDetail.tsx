@@ -68,7 +68,7 @@ export default function FarmDetail({
             <AnimatePresence initial={false}>
               {item.type === FarmType.PAIR &&
                 (selectedPanel === "START" ? (
-                  <PairStartPanel item={item} />
+                  <PairStartPanel item={item} price={price} />
                 ) : (
                   <PairStopPanel item={item} price={price} />
                 ))}

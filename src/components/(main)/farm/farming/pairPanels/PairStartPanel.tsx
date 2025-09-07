@@ -15,8 +15,15 @@ import { ExecuteButtons } from "../common/ExecuteButtons";
 import PairStartAmountInput from "./pairStart/PairStartAmountInput";
 import PairSlider from "./PairSlider";
 import PairStartSummary from "./pairStart/PairStartSummary";
+import { BigDecimal } from "@/types/BigDecimal";
 
-export function PairStartPanel({ item }: { item: FarmPair }) {
+export function PairStartPanel({
+  item,
+  price,
+}: {
+  item: FarmPair;
+  price: BigDecimal | null;
+}) {
   const state = usePairStartPanel(item);
 
   return (
@@ -42,8 +49,8 @@ export function PairStartPanel({ item }: { item: FarmPair }) {
         {...defaultTransition}
         className="flex w-full flex-col"
       >
-        <PairStartAmountInput index={0} state={state} />
-        <PairStartAmountInput index={1} state={state} />
+        <PairStartAmountInput index={0} state={state} price={price} />
+        <PairStartAmountInput index={1} state={state} price={price} />
         <PairStartSummary item={item} state={state} />
       </motion.div>
       <Filler />

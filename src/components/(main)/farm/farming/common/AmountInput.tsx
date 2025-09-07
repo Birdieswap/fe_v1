@@ -44,6 +44,7 @@ export default function AmountInput({
   isApproved,
   isActive,
   token,
+  tokenPrice: _price,
   price: price,
 }: {
   amount: BigDecimal | null;
@@ -56,6 +57,7 @@ export default function AmountInput({
   token?: IToken;
   isActive?: boolean;
   layoutId?: string;
+  tokenPrice?: BigDecimal | null;
   price: BigDecimal | null;
 }) {
   const { assetValues } = useContext(AssetsContext);
@@ -71,12 +73,6 @@ export default function AmountInput({
     }
   }, [amount, amountStr, token?.decimals]);
 
-  // const tokenPrice =
-  //   price ??
-  //   (assetValues &&
-  //     token &&
-  //     assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
-
   const balanceStr =
     balance &&
     suffixNumbers(
@@ -86,14 +82,21 @@ export default function AmountInput({
       true,
       true
     );
+
+  const tokenPrice =
+    _price ??
+    (assetValues &&
+      token &&
+      assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
+
   const dollarAmount =
     amount &&
-    price &&
-    suffixNumbers(amount.mul(price), 100_000, 2, false, true);
+    tokenPrice &&
+    suffixNumbers(amount.mul(tokenPrice), 100_000, 2, false, true);
   const dollarBalance =
     balance &&
-    price &&
-    suffixNumbers(balance.mul(price), 100_000, 2, false, true);
+    tokenPrice &&
+    suffixNumbers(balance.mul(tokenPrice), 100_000, 2, false, true);
 
   return (
     <AnimatePresence initial={false}>
