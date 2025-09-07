@@ -22,6 +22,8 @@ export default function SingleStartAmountInput({
       setAmount={setAmount}
       setMaxAmount={setMaxAmount}
       token={input}
+      panel="start"
+      price={null}
     />
   );
 }
