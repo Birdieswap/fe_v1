@@ -174,7 +174,7 @@ export default function FarmListRowSummary({
         "grid origin-top grid-cols-subgrid items-center min-h-[120px] sm:min-h-[72px] justify-center",
         "border-t border-default-400 dark:border-default-900",
         "[&:nth-child(2)]:dark:border-default-400",
-        "md:col-span-6 md:px-6",
+        "md:col-span-6 md:px-6 cursor-pointer",
         "max-md:col-span-3 max-md:row-span-2 max-md:px-4",
         "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
       )}

@@ -5,9 +5,6 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import { cn } from "@heroui/react";
 
-import { UsePairStartPanelReturn } from "@/hooks/usePairStartPanel";
-import { Farm, FarmType } from "@/types/FarmListTableRowProps";
-
 function Container({
   children,
   col,
@@ -22,7 +19,7 @@ function Container({
     <div
       className={clsx(
         "group relative col-span-1 row-span-2 grid grid-rows-subgrid items-center justify-center place-self-stretch",
-        "data-[col=1]:col-start-1 data-[col=2]:col-start-2 data-[col=3]:col-start-3",
+        "data-[col=1]:col-start-1 data-[col=2]:col-start-2",
         "data-[row=1]:row-start-1 data-[row=2]:row-start-2"
       )}
       data-col={col}
@@ -35,115 +32,122 @@ function Container({
   );
 }
 
-function TokenName(props: PropsWithChildren<{ isActive: boolean }>) {
+// ✅ 글자도 클릭 가능하도록 button으로 변경 (키보드 접근성 포함)
+function TokenName(
+  props: PropsWithChildren<{
+    isActive: boolean;
+    onClick?: () => void;
+    isDisabled?: boolean;
+  }>
+) {
   return (
-    <p
-      className="text-default-500 transition-colors group-hover:text-default-700 data-[selected=true]:text-primary data-[selected=true]:group-hover:text-light_primary_hover dark:text-default-700 dark:group-hover:text-default-300 data-[selected=true]:dark:text-dark_primary data-[selected=true]:dark:group-hover:text-dark_primary_hover"
+    <button
+      type="button"
+      onClick={props.onClick}
+      disabled={props.isDisabled}
+      className={clsx(
+        "px-1 py-0.5 rounded-md",
+        "text-default-500 transition-colors",
+        "group-hover:text-default-700",
+        "data-[selected=true]:text-primary data-[selected=true]:group-hover:text-light_primary_hover",
+        "dark:text-default-700 dark:group-hover:text-default-300",
+        "data-[selected=true]:dark:text-dark_primary data-[selected=true]:dark:group-hover:text-dark_primary_hover",
+        "disabled:opacity-60 disabled:pointer-events-none",
+        "cursor-pointer"
+      )}
       data-selected={props.isActive}
     >
       {props.children}
-    </p>
+    </button>
   );
 }
 
-function SliderButon(props: { onClick: () => void; isDisabled?: boolean }) {
+function SliderButton(props: { onClick: () => void; isDisabled?: boolean }) {
   return (
     <button
       className="box-border size-3 place-self-center rounded-full border-1 border-default-400 bg-background transition-colors group-hover:border-default-700 dark:border-default-700 dark:group-hover:border-default-300"
       disabled={props.isDisabled}
       onClick={props.onClick}
+      type="button"
     />
   );
 }
 
-export default function PairSlider({
-  item,
-  state,
+/**
+ * PairSlider 룩앤필의 2-스텝 슬라이더 (ETH/WETH).
+ * - 폭을 3/5 수준(6.6rem)으로 축소, 트랙은 60%로 촘촘
+ * - 오른쪽 정렬은 부모에서 ml-auto로 처리
+ */
+export default function ETHSlider({
+  value,
+  onChange,
   isDisabled,
 }: {
-  item: Farm & { type: FarmType.PAIR };
-  state: Pick<UsePairStartPanelReturn, "isActive" | "setIsActive">;
+  value: "ETH" | "WETH";
+  onChange: (v: "ETH" | "WETH") => void;
   isDisabled?: boolean;
 }) {
-  const { isActive, setIsActive } = state;
-  const token0 = item.wip_stakeToken.swap.input[0].input;
-  const token1 = item.wip_stakeToken.swap.input[1].input;
-  const [hover, setHover] = useState<[boolean, boolean, boolean]>([
-    false,
-    false,
-    false,
-  ]);
-  const pos = isActive[0] ? (isActive[1] ? 1 : 0) : 2;
+  const pos = value === "WETH" ? 1 : 0; // 0=ETH, 1=WETH
+  const [hover, setHover] = useState<[boolean, boolean]>([false, false]);
 
   return (
     <div
-      className="grid w-60 grid-cols-3 grid-rows-2 text-sm font-semibold opacity-100 transition-opacity data-[disabled=true]:opacity-50 max-lg:grow"
+      className="grid w-[6.6rem] grid-cols-2 grid-rows-2 text-sm font-semibold opacity-100 transition-opacity data-[disabled=true]:opacity-50"
       data-disabled={isDisabled}
     >
-      <div className="col-span-3 col-start-1 row-span-1 row-start-1 h-1 w-[67%] place-self-center bg-default-400 dark:bg-default-700" />
+      {/* 상단 트랙 (50% → 60%) */}
+      <div className="col-span-2 col-start-1 row-span-1 row-start-1 h-1 w-[60%] place-self-center bg-default-400 dark:bg-default-700" />
+
+      {/* 좌측: ETH */}
       <Container
         col={1}
         row={1}
         setHover={(val) =>
           setHover((prev) => {
-            return [val, prev[1], prev[2]];
+            return [val, prev[1]];
           })
         }
       >
-        <SliderButon
+        <SliderButton isDisabled={isDisabled} onClick={() => onChange("ETH")} />
+        <TokenName
+          isActive={value === "ETH"}
           isDisabled={isDisabled}
-          onClick={() => setIsActive([true, false])}
-        />
-        <TokenName isActive={isActive[0] && !isActive[1]}>
-          {token0.symbol}
+          onClick={() => onChange("ETH")} // ✅ 글자 클릭도 토글
+        >
+          <span className="text-[10px]">ETH</span>
         </TokenName>
       </Container>
+
+      {/* 우측: WETH */}
       <Container
         col={2}
         row={1}
         setHover={(val) =>
           setHover((prev) => {
-            return [prev[0], val, prev[2]];
+            return [prev[0], val];
           })
         }
       >
-        <SliderButon
+        <SliderButton
           isDisabled={isDisabled}
-          onClick={() => setIsActive([true, true])}
+          onClick={() => onChange("WETH")}
         />
-        <TokenName isActive={isActive[0] && isActive[1]}>
-          {token0.symbol}+{token1.symbol}
+        <TokenName
+          isActive={value === "WETH"}
+          isDisabled={isDisabled}
+          onClick={() => onChange("WETH")} // ✅ 글자 클릭도 토글
+        >
+          <span className="text-[10px]">WETH</span>
         </TokenName>
       </Container>
-      <Container
-        col={3}
-        row={1}
-        setHover={(val) =>
-          setHover((prev) => {
-            return [prev[0], prev[1], val];
-          })
-        }
-      >
-        <SliderButon
-          isDisabled={isDisabled}
-          onClick={() => setIsActive([false, true])}
-        />
-        <TokenName isActive={!isActive[0] && isActive[1]}>
-          {token1.symbol || "UNKNOWN"}
-        </TokenName>
-      </Container>
-      {/* <Container col={1} row={2}>
-      </Container>
-      <Container col={2} row={2}>
-      </Container>
-      <Container col={3} row={2}>
-      </Container> */}
+
+      {/* 이동하는 노브 */}
       <motion.div
         layout
         className={cn(
           "group pointer-events-none relative z-10 col-span-1 row-span-1 row-start-1 flex size-4 items-center",
           "justify-center place-self-center rounded-full bg-primary shadow-[0_2px_2px] shadow-black/25",
-          "data-[pos=0]:col-start-1 data-[pos=1]:col-start-2 data-[pos=2]:col-start-3 data-[pos=0]:col-end-1 data-[pos=1]:col-end-2 data-[pos=2]:col-end-3"
+          "data-[pos=0]:col-start-1 data-[pos=1]:col-start-2 data-[pos=0]:col-end-1 data-[pos=1]:col-end-2"
         )}
         data-hover={hover[pos]}
         data-pos={pos}

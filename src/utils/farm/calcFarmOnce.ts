@@ -30,6 +30,10 @@ export async function calcFarmOnce(
   const data = await getLiquidity(client, farm, assetValues);
   const supply = await getTotalSupply(client, farm);
 
+  // console.log("calcFarmOnce", farm, data, supply)
+
+
+
   let tvl: BigDecimal | null = null;
 
   if (data !== null && data !== undefined) {

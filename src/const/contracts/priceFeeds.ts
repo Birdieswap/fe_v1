@@ -2,14 +2,25 @@ import networks from "./networks";
 import tokens from "./tokens/tokens";
 import { PriceFeedGuard } from "./types/typeGuards";
 
-const CBBTC_USD = PriceFeedGuard({
-  symbol: "LINK:cbBTC_USD",
-  fullName: "Chainlink CBBTC/USD Price Feed", //sepolia BTC/USD로 대체
+// const CBBTC_USD = PriceFeedGuard({
+//   symbol: "LINK:cbBTC_USD",
+//   fullName: "Chainlink CBBTC/USD Price Feed", //sepolia BTC/USD로 대체
+//   addresses: {
+//     [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+//     [networks.base.id]: "0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D",
+//   },
+//   base: tokens.CBBTC,
+//   quote: "USD",
+//   decimals: 8,
+// });
+const WBTC_USD = PriceFeedGuard({
+  symbol: "LINK:WBTC_USD",
+  fullName: "Chainlink WBTC/USD Price Feed", //sepolia BTC/USD로 대체
   addresses: {
     [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
-    [networks.base.id]: "0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D",
+    [networks.arbitrum.id]: "0xd0C7101eACbB49F3deCcCc166d238410D6D46d57",
   },
-  base: tokens.CBBTC,
+  base: tokens.WBTC,
   quote: "USD",
   decimals: 8,
 });
@@ -53,18 +64,18 @@ const USDC_USD = PriceFeedGuard({
   decimals: 8,
 });
 
-const EURC_USD = PriceFeedGuard({
-  symbol: "LINK:EURC_USD",
-  fullName: "Chainlink EURC/USD Price Feed",
-  addresses: {
-    [networks.sepolia.id]: "0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910", //EUR/USD
-    [networks.base.id]: "0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250",
-    [networks.arbitrum.id]: "0xCF9752295D0ac9215461fA095faFEC1B854b849B",
-  },
-  base: tokens.EURC,
-  quote: "USD",
-  decimals: 8,
-});
+// const EURC_USD = PriceFeedGuard({
+//   symbol: "LINK:EURC_USD",
+//   fullName: "Chainlink EURC/USD Price Feed",
+//   addresses: {
+//     [networks.sepolia.id]: "0x1a81afB8146aeFfCFc5E50e8479e826E7D55b910", //EUR/USD
+//     [networks.base.id]: "0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250",
+//     [networks.arbitrum.id]: "0xCF9752295D0ac9215461fA095faFEC1B854b849B",
+//   },
+//   base: tokens.EURC,
+//   quote: "USD",
+//   decimals: 8,
+// });
 
 /*
 const USDT_USD = PriceFeedGuard({
@@ -94,11 +105,12 @@ const AAVE_USD = PriceFeedGuard({
 
 
 const priceFeeds = {
-  CBBTC_USD,
+  // CBBTC_USD,
+  WBTC_USD,
   ETH_USD,
   WETH_USD,
   USDC_USD,
-  EURC_USD,
+  // EURC_USD,
 };
 
 export default priceFeeds;

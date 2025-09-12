@@ -47,6 +47,16 @@ export default function useApprove(props: {
         refetch: props.refetch,
       });
 
+      console.log(
+        "[approve]",
+        { 
+          token,
+          chainId,
+          tokenSymbol: token?.symbol,
+          tokenAddress,
+        }
+      );
+
       props.writeContract(
         {
           address: tokenAddress as `0x${string}`,

@@ -70,30 +70,30 @@ if (
 }
 
 // 2) 로깅 가능한 http 트랜스포트 래퍼 (Transport 타입 의존 X)
-function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
-  const baseFactory = http(url, opts);
-  return ((config: Parameters<typeof baseFactory>[0]) => {
-    const baseT = baseFactory(config);
-    return {
-      ...baseT,
-      async request(args: any) {
-        const start = Date.now();
-        const method = args?.method ?? "unknown_method";
-        try {
-          console.info(`[RPC ->] ${url} ${method}`);
-          const res = await baseT.request(args);
-          const ms = Date.now() - start;
-          console.info(`[RPC <-] ${url} ${method} (${ms}ms)`);
-          return res;
-        } catch (e) {
-          const ms = Date.now() - start;
-          console.warn(`[RPC xx] ${url} ${method} failed in ${ms}ms`, e);
-          throw e;
-        }
-      },
-    };
-  }) as typeof baseFactory;
-}
+// function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
+//   const baseFactory = http(url, opts);
+//   return ((config: Parameters<typeof baseFactory>[0]) => {
+//     const baseT = baseFactory(config);
+//     return {
+//       ...baseT,
+//       async request(args: any) {
+//         const start = Date.now();
+//         const method = args?.method ?? "unknown_method";
+//         try {
+//           console.info(`[RPC ->] ${url} ${method}`);
+//           const res = await baseT.request(args);
+//           const ms = Date.now() - start;
+//           console.info(`[RPC <-] ${url} ${method} (${ms}ms)`);
+//           return res;
+//         } catch (e) {
+//           const ms = Date.now() - start;
+//           console.warn(`[RPC xx] ${url} ${method} failed in ${ms}ms`, e);
+//           throw e;
+//         }
+//       },
+//     };
+//   }) as typeof baseFactory;
+// }
 // ──────────────────────────────────────────────────────────────
 
 const chains = [
@@ -107,22 +107,22 @@ const chains = [
   baseFork,
 ];
 
-const transports: Record<number, any> = {};
-for (const ch of chains) transports[ch.id] = http(); // 체인 정의의 rpcUrls.default 사용
+// const transports: Record<number, any> = {};
+// for (const ch of chains) transports[ch.id] = http(); // 체인 정의의 rpcUrls.default 사용
 
-transports[sepolia.id] = fallback(
-  (sepoliaUrls.length ? sepoliaUrls : ["https://sepolia.drpc.org"]).map((url) =>
-    httpWithLog(url, { timeout: 15_000 })
-  ),
-  { rank: false, retryCount: 3, retryDelay: 3000 }
-);
+// transports[sepolia.id] = fallback(
+//   (sepoliaUrls.length ? sepoliaUrls : ["https://sepolia.drpc.org"]).map((url) =>
+//     httpWithLog(url, { timeout: 15_000 })
+//   ),
+//   { rank: false, retryCount: 3, retryDelay: 3000 }
+// );
 
-transports[base_custom.id] = fallback(
-  (baseUrls.length ? baseUrls : ["https://mainnet.base.org"]).map((url) =>
-    httpWithLog(url, { timeout: 15_000 })
-  ),
-  { rank: false, retryCount: 3, retryDelay: 3000 }
-);
+// transports[base_custom.id] = fallback(
+//   (baseUrls.length ? baseUrls : ["https://mainnet.base.org"]).map((url) =>
+//     httpWithLog(url, { timeout: 15_000 })
+//   ),
+//   { rank: false, retryCount: 3, retryDelay: 3000 }
+// );
 
 export const wagmiConfig = getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
@@ -139,7 +139,7 @@ export const wagmiConfig = getDefaultConfig({
     baseFork,
   ],
 
-  transports,
+  // transports,
   ssr: true,
   //multiInjectedProviderDiscovery: false,
 

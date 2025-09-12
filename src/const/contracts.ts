@@ -25,11 +25,11 @@ export const contracts = {
         lpVaults.blpHarvestAutopilotWETHUSDC.addresses[networks.baseFork.id],
       abi: birdieLpVaults_abi,
     },
-    CBBTC_USDC_HARVEST: {
-      address:
-        lpVaults.blpHarvestAutopilotCBBTCUSDC.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
+    // CBBTC_USDC_HARVEST: {
+    //   address:
+    //     lpVaults.blpHarvestAutopilotCBBTCUSDC.addresses[networks.baseFork.id],
+    //   abi: birdieLpVaults_abi,
+    // },
     WETH_DAI_HARVEST: {
       address: "0x0000000000000000000000000000000000000000",
       abi: birdieLpVaults_abi,
@@ -39,11 +39,11 @@ export const contracts = {
         singleVaults.bHarvestAutopilotWETH.addresses[networks.baseFork.id],
       abi: birdieLpVaults_abi,
     },
-    CBBTC_harvest_autopilot: {
-      address:
-        singleVaults.bHarvestAutopilotCBBTC.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
+    // CBBTC_harvest_autopilot: {
+    //   address:
+    //     singleVaults.bHarvestAutopilotCBBTC.addresses[networks.baseFork.id],
+    //   abi: birdieLpVaults_abi,
+    // },
     USDC_harvest_autopilot: {
       address:
         singleVaults.bHarvestAutopilotUSDC.addresses[networks.baseFork.id],
@@ -84,12 +84,12 @@ export const contracts = {
           networks.baseFork.id
         ],
     },
-    blpCBBTC_USDC_harvest_autopilot: {
-      address:
-        swapPools.blpUniswapHarvestAutopilotCBBTCUSDC.addresses[
-          networks.baseFork.id
-        ],
-    },
+    // blpCBBTC_USDC_harvest_autopilot: {
+    //   address:
+    //     swapPools.blpUniswapHarvestAutopilotCBBTCUSDC.addresses[
+    //       networks.baseFork.id
+    //     ],
+    // },
   },
   harvestVaults: {},
   WETH: {
@@ -112,10 +112,10 @@ export const contracts = {
     address: "0x0000000000000000000000000000000000000000",
     abi: erc20_abi,
   },
-  CBBTC: {
-    address: tokens.CBBTC.addresses[networks.baseFork.id],
-    abi: erc20_abi,
-  },
+  // CBBTC: {
+  //   address: tokens.CBBTC.addresses[networks.baseFork.id],
+  //   abi: erc20_abi,
+  // },
 };
 
 /**

@@ -270,6 +270,18 @@ export default function FarmListTable({
 
         const balance = getFarmBalance(address) ?? undefined;
 
+        // console.log(
+        //   "farmListTable address",
+        //   item,
+        //   address,
+        //   "apy",
+        //   apy,
+        //   "tvl",
+        //   tvl,
+        //   "price",
+        //   price
+        // );
+
         return (
           <FarmListTableRow
             key={address}

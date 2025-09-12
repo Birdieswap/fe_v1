@@ -14,6 +14,7 @@ import SwapError from "./SwapError";
 import { RiTokenSwapLine } from "react-icons/ri";
 import { useReferral } from "@/app/ReferralContextProvider";
 import { useAccount } from "wagmi";
+import { isEthOnlyOneSide, isWrapPair } from "@/utils/swap/swapMode";
 
 export default function SwapFeeInfo() {
   const [open, setOpen] = useState(false);
@@ -59,8 +60,15 @@ export default function SwapFeeInfo() {
     // stripZero = true, useComma = false
     return bd.roundToDecimals(decimals).toPrecisionString(true, false);
   };
+  const isWrap = isWrapPair(fromToken, toToken);
+  const isWrapper = isEthOnlyOneSide(fromToken, toToken);
 
   const exchangeRateInfo = useMemo(() => {
+    if (isWrap && fromToken && toToken && fromPrice) {
+      const val = fromPrice.roundToDecimals(2).toPrecisionString(false, false);
+      return `1 ${fromToken.symbol} = 1 ${toToken.symbol} ($ ${val})`;
+    }
+
     if (!exchangeRate || !toPrice || !toToken || !fromToken) return "";
     const exchangeRateValue = new BigDecimal(exchangeRate || "0");
     const toValueString = toPrice
@@ -75,6 +83,11 @@ export default function SwapFeeInfo() {
   }, [exchangeRate, fromToken, toPrice, toToken]);
 
   const rExchangeRateInfo = useMemo(() => {
+    if (isWrap && fromToken && toToken && toPrice) {
+      const val = toPrice.roundToDecimals(2).toPrecisionString(false, false);
+      return `1 ${toToken.symbol} = 1 ${fromToken.symbol} ($ ${val})`;
+    }
+
     if (!rExchangeRate || !fromPrice || !toToken || !fromToken) return "";
     const rExchangeRateValue = new BigDecimal(rExchangeRate || "0");
     const fromValueString = fromPrice
@@ -127,7 +140,7 @@ export default function SwapFeeInfo() {
         </Button>
       </div>
       <AnimatePresence>
-        {priceImpact && priceImpact.abs().gt(0.05) && (
+        {!isWrap && priceImpact && priceImpact.abs().gt(0.05) && (
           <SwapError>
             <Icons.Error />
             <span>
@@ -160,10 +173,16 @@ export default function SwapFeeInfo() {
             >
               <span>Max slippage</span>
               <span>
-                {maxSlippage === "auto" ? `Auto(0.5%)` : `${maxSlippage}%`}
+                {isWrap
+                  ? `0%`
+                  : maxSlippage === "auto"
+                  ? `Auto(0.5%)`
+                  : `${maxSlippage}%`}
               </span>
               <span>Price Impact</span>
-              <span>-{priceImpact?.abs().mul(100).toFixed(2)}%</span>
+              <span>
+                {isWrap ? `0%` : `-${priceImpact?.abs().mul(100).toFixed(2)}%`}
+              </span>
               <span>Fee ({feeTier}%)</span>
               <span>
                 {fromAmount && fromPrice

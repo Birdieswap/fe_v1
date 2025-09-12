@@ -166,11 +166,11 @@ export default function EarningsPanel({ item }: { item: Farm }) {
             />
           ))
         ) : (
-          <p className="text-default-500">
+          <div className="text-default-500">
             <div className="flex gap-4 justify-center">
               <Spinner color="default" />
             </div>
-          </p>
+          </div>
         )}
       </div>
       <SectionHeader>Extra Rewards</SectionHeader>

@@ -54,6 +54,9 @@ export default function SwapFormAmount({
 }) {
   const chainId = useChainId();
   const { setIsTyping, fromToken, toToken } = useSwapContext();
+  const isEthToken = token?.symbol?.toUpperCase() === "ETH";
+  const approved = isApproved || isEthToken; // ETH는 승인 면제
+
   const disclosure = useDisclosure();
   const inputRef = useRef<HTMLInputElement>(null);
   const step = token?.decimals ? `0.${"0".repeat(token.decimals - 1)}1` : "1";
@@ -140,7 +143,7 @@ export default function SwapFormAmount({
               if (e.key === "-") e.preventDefault();
             }}
           />
-          {type === "sell" && token && !isApproved ? (
+          {type === "sell" && token && !approved ? (
             <Icons.Lock
               className="fill-default-800 dark:fill-default-700 w-12"
               fillRule="evenodd"

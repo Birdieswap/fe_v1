@@ -21,7 +21,7 @@ export default function ReceiveAmountBox({
   const activePrice = useMemo(() => {
     if (bToken?.input.symbol && assetValues?.chainLinkPriceMap) {
       return assetValues.chainLinkPriceMap.get(
-        `LINK:${bToken?.input.symbol}_USD`,
+        `LINK:${bToken?.input.symbol}_USD`
       )?.price;
     }
 

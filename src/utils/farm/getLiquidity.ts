@@ -1,23 +1,17 @@
-import { Chain, erc20Abi, PublicClient, ReadContractParameters } from "viem";
+import { Chain, Address, PublicClient, ReadContractParameters } from "viem";
 import { readContract } from "viem/actions";
 
 import {
-  EProvider,
   IBirdieLPFarm,
   IBirdieSingleFarm,
   isBirdieSingleFarm,
-  IToken,
 } from "@/const/contracts/types/tokenTypes";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { BigDecimal } from "@/types/BigDecimal";
 import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 
 import getTokenAddress from "../assets/getTokenAddress";
-import getLPPoolBalances from "../assets/getLPPoolBalances";
-
-import previewRedeem from "./previewRedeem";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
-import { aave_pool_abi } from "@/const/contracts/abis/aave_pool_abi";
 import totalDualUnderlyingTokens from "./totalDualUnderlyingTokens";
 
 
@@ -85,13 +79,15 @@ async function getLPLiquidity(
     token: farm,
     chainId,
   });
-
+  // console.log("getLiquidity farmAddress!!!!!!!",farm)
   if (!farmAddress) return null;
 
   const result = await totalDualUnderlyingTokens(
     client,
     farm,
   ) as [`0x${string}`,BigDecimal, `0x${string}`, BigDecimal] | null;
+
+  // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",result)
 
   let balance0: BigDecimal | null = null;
   let token0Address: `0x${string}` | null = null;
