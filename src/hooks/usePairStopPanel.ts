@@ -12,6 +12,7 @@ import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
 import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
 import { getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
+import tokens from "@/const/contracts/tokens/tokens";
 
 
 export enum InvalidStatuses {
@@ -82,17 +83,19 @@ export function usePairStopPanel(item: FarmPair) {
       } as any),
     [chainId, ETH_ZERO_ADDRESS]
   );
-  const wethDisplayMeta = useMemo(
-    () =>
-      ({
-        symbol: "WETH",
-        name: "Wrapped Ether",
-        decimals: 18,
-        addresses: { [chainId]: WETH_ADDRESS },
-        iconSrc: "/tokens/weth.svg",
-      } as any),
-    [chainId, WETH_ADDRESS]
-  );
+
+  const wethDisplayMeta = tokens.WETH;
+  // const wethDisplayMeta = useMemo(
+  //   () =>
+  //     ({
+  //       symbol: "WETH",
+  //       name: "Wrapped Ether",
+  //       decimals: 18,
+  //       addresses: { [chainId]: WETH_ADDRESS },
+  //       iconSrc: "/tokens/weth.svg",
+  //     } as any),
+  //   [chainId, WETH_ADDRESS]
+  // );
 
   const displayTokens = useMemo(() => {
     const t0 = hasWethLike[0]

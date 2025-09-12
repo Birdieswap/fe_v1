@@ -255,7 +255,8 @@ export function useSingleStartPanel(item: FarmSingle) {
       // 3) 예시 C: singleDepositWithETH(address stakingToken, uint256 minShares)
       // const args: any[] = [stakeTokenAddress, 0n];
 
-      const args: any[] = [stakeTokenAddress]; // ← 기본 예시(A). 실제 프로젝트에 맞춰 수정.
+  
+      console.log("useSingleStartPanel wrapper nativeValue", nativeValue);
 
       // writeContract: wrapper 호출 + value 첨부
       writeContract(
@@ -263,7 +264,6 @@ export function useSingleStartPanel(item: FarmSingle) {
           address: WRAPPER_ADDRESS,
           abi: birdieswap_wrapper_abi,
           functionName: "singleDepositWithETH",
-          args: args as any,
           value: nativeValue, // ✅ 중요: payable
         },
         {

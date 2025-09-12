@@ -100,7 +100,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
         }
         // wrapper: singleRedeemToETH(bToken, bAmount)
 
-        console.log("useFarmStopPanelCommon WrapperSingleCall",WRAPPER_ADDRESS,stakeTokenAddress)
+        console.log("useFarmStopPanelCommon WrapperSingleCall",WRAPPER_ADDRESS, stakeTokenAddress ,blpAmount)
 
         writeContract(
           {
@@ -126,7 +126,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
           return;
         }
         // wrapper: dualRedeemToETH(blpToken, blpAmount)
-        console.log("useFarmStopPanelCommon WrapperPairCall",WRAPPER_ADDRESS,stakeTokenAddress)
+        console.log("useFarmStopPanelCommon WrapperPairCall",WRAPPER_ADDRESS,stakeTokenAddress,blpAmount)
 
         writeContract(
           {
