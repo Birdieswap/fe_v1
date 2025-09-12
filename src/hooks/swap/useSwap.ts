@@ -10,7 +10,7 @@ import getTokenAddress from "@/utils/assets/getTokenAddress";
 import tokens from "@/const/contracts/tokens/tokens";
 
 import useBalance from "../useBalance";
-import useTokenAddress from "../useTokenAddress";
+import useTokenAddress from "../useTokenAddress"
 import useChainLinkPrice from "../useChainLinkPrice";
 
 import useSwapTokens from "./useSwap/useSwapTokens";
@@ -18,7 +18,7 @@ import useSwapTokens from "./useSwap/useSwapTokens";
 export default function useSwap() {
   const chainId = useChainId();
   const [fromToken, setFromToken] = useState<ICurrency | undefined>(
-    tokens.WETH,
+    tokens.ETH,
   );
   const [toToken, setToToken] = useState<ICurrency | undefined>(undefined);
   const [fromAmount, setFromAmount] = useState("");
@@ -44,7 +44,6 @@ export default function useSwap() {
 
   const transactionContext = useContext(TransactionContext);
 
-    // 입력 중 디바운스 제어
   const [isTyping, setIsTyping] = useState(false);
 
   const [priceImpact, setPriceImpact] = useState<BigDecimal | undefined>(
@@ -72,13 +71,7 @@ export default function useSwap() {
     isTyping,              // 추가: 입력중 여부
     stopTyping: () => setIsTyping(false), // 디바운스 완료시 호출'
   });
-//=====================================================================================
-// ADD: 토큰 변경 시 fromAmount/toAmount 일괄 초기화(useEffect 방식)
-// - 어디서 토큰이 바뀌든 항상 초기화 규칙을 강제
-// - 실제 값이 바뀐 경우에만 초기화하도록 이전 값(ref)과 비교
-// =====================================================================================
 
-// CHANGE(필수): 이전 토큰을 추적하기 위한 ref
 const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
 const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
 

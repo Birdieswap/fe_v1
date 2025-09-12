@@ -1,7 +1,7 @@
 import { Abi } from "viem";
 
 export const birdieswap_router_abi = [
-  {
+{
     "type": "constructor",
     "inputs": [],
     "stateMutability": "nonpayable"
@@ -77,6 +77,16 @@ export const birdieswap_router_abi = [
       }
     ],
     "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
       {
         "name": "",
         "type": "uint256",
@@ -285,22 +295,22 @@ export const birdieswap_router_abi = [
     "name": "initialize",
     "inputs": [
       {
-        "name": "defaultAdmin",
+        "name": "defaultAdmin_",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "pauser",
+        "name": "pauser_",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "upgrader",
+        "name": "upgrader_",
         "type": "address",
         "internalType": "address"
       },
       {
-        "name": "swapRouterAddress",
+        "name": "swapRouterAddress_",
         "type": "address",
         "internalType": "address"
       }

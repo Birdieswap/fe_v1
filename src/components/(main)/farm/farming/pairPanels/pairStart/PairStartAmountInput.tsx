@@ -14,18 +14,31 @@ export default function PairStartAmountInput({
   index: 0 | 1;
   price: BigDecimal | null;
 }) {
+  // [MOD] 표시용 파생값 사용(ETH/WETH 토글 반영)
+  const input = state.displayTokens[index];
+  const balance = state.displayBalances[index];
+  const isApproved =
+    state.displayApproved?.[index] ??
+    state.tokenStatuses[index]?.isApproved ??
+    false;
+
+  const isActive = state.tokenStatuses[index]?.isActive;
+  const isImpermanentInsolvency =
+    state.tokenStatuses[index]?.isImpermanentInsolvency;
+  const amount = state.tokenStatuses[index].amount;
+
   const setAmount = (v: BigDecimal) => {
     state.setAmount(v, index);
   };
   const setMaxAmount = state.setMaxAmount;
-  const {
-    input,
-    balance,
-    amount,
-    isApproved,
-    isActive,
-    isImpermanentInsolvency,
-  } = state.tokenStatuses[index];
+  // const {
+  //   input,
+  //   balance,
+  //   amount,
+  //   isApproved,
+  //   isActive,
+  //   isImpermanentInsolvency,
+  // } = state.tokenStatuses[index];
 
   return (
     <>

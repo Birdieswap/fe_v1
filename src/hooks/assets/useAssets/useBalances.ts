@@ -98,5 +98,26 @@ export default function useBalances(
     }
   }, [nativeToken, nativeTokenBalance.data, chainId]);
 
-  return { query, balanceMap: tokenAddrToBalanceMap };
+  const queryWithNative = useMemo(() => {
+  const refetchErc20   = (query as any)?.refetch;
+  const refetchNative  = (nativeTokenBalance as any)?.refetch;
+  const isFetchingAny  =
+    Boolean((query as any)?.isFetching) || Boolean((nativeTokenBalance as any)?.isFetching);
+
+  // refetch를 오버라이드해서 두 쿼리를 동시에 갱신
+  const mergedRefetch = async () => {
+    await Promise.all([
+      typeof refetchErc20  === "function" ? refetchErc20()  : Promise.resolve(),
+      typeof refetchNative === "function" ? refetchNative() : Promise.resolve(),
+    ]);
+  };
+
+  return {
+    ...(query as any),
+    refetch: mergedRefetch,
+    isFetching: isFetchingAny,
+  };
+}, [query, nativeTokenBalance]);
+
+  return { query: queryWithNative, balanceMap: tokenAddrToBalanceMap };
 }

@@ -43,7 +43,6 @@ const TokenDisplay = ({
 }) => {
   return (
     <button
-      key={token.symbol}
       className={clsx(
         "relative flex flex-row items-center gap-2 rounded-md px-2 py-2.5",
         "transition-background hover:bg-default/10 focus:bg-default/30 active:bg-default/30"
@@ -90,9 +89,17 @@ export default function SwapFormSelectTokenModal(props: {
   const { balances } = useContext(AssetsContext);
   const chainId = useChainId();
 
+  const safeTokens = useMemo(
+    () =>
+      (props.tokens ?? []).filter(
+        (t): t is ICurrency => !!t && typeof (t as any).symbol === "string"
+      ),
+    [props.tokens]
+  );
+
   const balanceData = useMemo(
     () =>
-      props.tokens.map((v) => {
+      safeTokens.map((v) => {
         const address = getTokenAddress({
           token: v,
           chainId,
@@ -107,7 +114,7 @@ export default function SwapFormSelectTokenModal(props: {
           balance: balance ?? BigDecimal.ZERO(),
         };
       }),
-    [balances?.tokenBalances?.balanceMap, chainId, props.tokens]
+    [balances?.tokenBalances?.balanceMap, chainId, safeTokens]
   );
   const withBalance = useMemo(
     () => balanceData.filter((v) => v.balance.gt(BigDecimal.ZERO())),
@@ -132,11 +139,15 @@ export default function SwapFormSelectTokenModal(props: {
           <Container>
             <Header>Your Tokens</Header>
             <ListContainer>
-              {withBalance.map((v) => (
+              {withBalance.map((v, idx) => (
                 <TokenDisplay
-                  key={v.token.symbol}
+                  key={v.address ?? v.token.symbol ?? String(idx)}
                   balanceValue={v.balance}
-                  isSelected={v.token.symbol === props.selectedToken?.symbol}
+                  isSelected={
+                    !!v.token?.symbol && !!props.selectedToken?.symbol
+                      ? v.token.symbol === props.selectedToken.symbol
+                      : false
+                  }
                   setToken={() => {
                     props.setToken(v.token);
                     props.onClose();
@@ -148,11 +159,15 @@ export default function SwapFormSelectTokenModal(props: {
             <Divider className="my-2" />
             <Header>Other Tokens</Header>
             <ListContainer>
-              {withoutBalance.map((v) => (
+              {withoutBalance.map((v, idx) => (
                 <TokenDisplay
-                  key={v.token.symbol}
+                  key={v.address ?? v.token.symbol ?? String(idx)}
                   balanceValue={v.balance}
-                  isSelected={v.token.symbol === props.selectedToken?.symbol}
+                  isSelected={
+                    !!v.token?.symbol && !!props.selectedToken?.symbol
+                      ? v.token.symbol === props.selectedToken.symbol
+                      : false
+                  }
                   setToken={() => {
                     props.setToken(v.token);
                     props.onClose();

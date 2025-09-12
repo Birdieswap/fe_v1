@@ -9,7 +9,22 @@ import {
 
 import getTokenAddress from "../assets/getTokenAddress";
 import getProviderAddress from "../assets/getProviderAddress";
+import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
+import { getFromContracts, ZERO_ADDRESS, toLower, isHexAddress } from "@/utils/farm/getAddressHelpers";
 
+function isNativeLike(addr: string) {
+  const low = addr.toLowerCase();
+  return (
+    low === ZERO_ADDRESS.toLowerCase() ||
+    low === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" // 일부 SDK 네이티브 표기
+  );
+}
+
+function mapNativeToWeth(address: `0x${string}`, chainId: number): `0x${string}` {
+  if (!isNativeLike(address)) return address; // Native 가 아니면 그대로
+  const weth = getFromContracts(ADDRESS.WETH, chainId);
+  return (weth ?? address) as `0x${string}`;
+}
 
 export default async function totalDualUnderlyingTokens(
   client: PublicClient,
@@ -29,8 +44,9 @@ export default async function totalDualUnderlyingTokens(
     chainId,
   });
   
-  if (!farmAddress) return null;
-  
+  if (!farmAddress || !providerAddress) return null;
+
+  // console.log("totalDualUnderlyingTokens!!!!!!", farm, farmAddress, providerAddress)
   const args: ReadContractParameters<
     Abi,//(typeof farm)["abi"],
     "totalDualUnderlyingTokens",
@@ -46,19 +62,50 @@ export default async function totalDualUnderlyingTokens(
 
   const data = await readContract(client, args) as [string, string, bigint, bigint];;
   
-  if (!data) return null;
-  if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[0].input.addresses[chainId]) {
-    const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[0].input.decimals);
-    const token0Address = farm.swap.input[0].input.addresses[chainId];
-    const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[1].input.decimals);
-    const token1Address = farm.swap.input[1].input.addresses[chainId];
-    return [token0Address, poolBalance0, token1Address, poolBalance1 ];
-  } else if ('swap' in farm && farm.swap && data[0] === farm.swap?.input[1].input.addresses[chainId]) {
-    const poolBalance0 = new BigDecimal(data[2] as bigint, farm.swap.input[1].input.decimals);
-    const token0Address = farm.swap.input[1].input.addresses[chainId];
-    const poolBalance1 = new BigDecimal(data[3] as bigint, farm.swap.input[0].input.decimals);
-    const token1Address = farm.swap.input[0].input.addresses[chainId];
-    return [token0Address, poolBalance0, token1Address, poolBalance1 ];
-  }
   
+  if (!data) return null;
+  
+  const [UnderlyingTokenA, UnderlyingTokenB, amountTokenA, amountTokenB] = data;
+
+  const token0 = (farm as IBirdieLPFarm).swap?.input?.[0]?.input;
+  const token1 = (farm as IBirdieLPFarm).swap?.input?.[1]?.input;
+  if (!token0 || !token1) return null; // LP 가드
+
+  const WETH_ADDRESS = getFromContracts(ADDRESS.WETH, chainId);
+    
+
+  const token0AddrRaw = getTokenAddress({ token: token0, chainId });
+  const token1AddrRaw = getTokenAddress({ token: token1, chainId });
+
+  const token0Addr = toLower(
+    token0?.symbol === "ETH" ? WETH_ADDRESS : token0AddrRaw
+  );
+  const token1Addr = toLower(
+    token1?.symbol === "ETH" ? WETH_ADDRESS : token1AddrRaw
+  );
+
+  const UnderlyingToken0 = toLower(UnderlyingTokenA);
+  const UnderlyingToken1 = toLower(UnderlyingTokenB);
+
+  // console.log("totalDualUnderlyingTokens WETH Address", WETH_ADDRESS,"Underlying",UnderlyingToken0,UnderlyingToken1,"tokenAddrRaw",token0AddrRaw,token1AddrRaw,"tokenAddr주소매칭소문자",token0Addr,token1Addr)
+
+  if (UnderlyingToken0 && token0Addr && UnderlyingToken0 === token0Addr) {
+    const poolBalance0 = new BigDecimal(amountTokenA, token0.decimals);
+    const token0Address = UnderlyingTokenA as `0x${string}`;
+    const poolBalance1 = new BigDecimal(amountTokenB, token1.decimals);
+    const token1Address = UnderlyingTokenB as `0x${string}`;
+    // console.log("totalDualUnderlyingTokens data!!!!!!!11111",farm, data,token0Address, poolBalance0, token1Address, poolBalance1)
+    return [token0Address, poolBalance0, token1Address, poolBalance1];
+  }
+
+  if (UnderlyingToken0 && token1Addr && UnderlyingToken0 === token1Addr) {
+    const poolBalance0 = new BigDecimal(amountTokenB, token0.decimals);
+    const token0Address = UnderlyingTokenB as `0x${string}`;
+    const poolBalance1 = new BigDecimal(amountTokenA, token1.decimals);
+    const token1Address = UnderlyingTokenA as `0x${string}`;
+    // console.log("totalDualUnderlyingTokens data!!!!!!!22222",farm, data,token0Address, poolBalance0, token1Address, poolBalance1)
+    return [token0Address, poolBalance0, token1Address, poolBalance1];
+  }  
+
 }
+

@@ -14,6 +14,7 @@ import PairStopAmountInput from "../pairPanels/pairStop/PairStopAmountInput";
 import { SectionHeader } from "../common/SectionHeader";
 import { ExecuteButtons } from "../common/ExecuteButtons";
 import ReceiveAmountBox from "../common/ReceiveAmountBox";
+import ETHSlider from "../pairPanels/ETHSlider";
 
 export function SingleStopPanel({
   item,
@@ -24,11 +25,22 @@ export function SingleStopPanel({
 }) {
   const state = useSingleStopPanel(item);
 
+  const showETHSlider = !!state.nativeToggleCanShow;
+  const selected = (state.nativeMode ?? "ETH") as "ETH" | "WETH";
+
   return (
     <PanelContainer layoutId="detail-pair">
       <PanelHeader>
         <SectionHeader>Receives</SectionHeader>
         <div className="grow" />
+        {showETHSlider && (
+          <div className="ml-auto">
+            <ETHSlider
+              value={selected}
+              onChange={(v) => state.setNativeMode?.(v)}
+            />
+          </div>
+        )}
       </PanelHeader>
       <motion.div
         layout
@@ -39,7 +51,7 @@ export function SingleStopPanel({
       </motion.div>
       <ReceiveAmountBox
         amount={state.amount ?? BigDecimal.ZERO()}
-        bToken={item.wip_stakeToken}
+        bToken={{ ...item.wip_stakeToken, input: state.displayToken }}
       />
       <Filler />
       <div className="h-6 w-full" />

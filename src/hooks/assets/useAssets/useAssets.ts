@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추가
+import { useAccount, useBalance, useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추가
 
 import useAccountBalances from "./useAccountBalances";
 import { useAssetValues } from "./useAssetValues";
@@ -8,6 +8,7 @@ import { useAssetValues } from "./useAssetValues";
 import { FarmList } from "@/const/farmInfo";
 import { calcFarmOnce, FarmCalc } from "@/utils/farm/calcFarmOnce";
 import { BigDecimal } from "@/types/BigDecimal";
+import { formatUnits } from "viem";
 
 type FarmValuesRecord = Record<
   string,
@@ -51,13 +52,14 @@ const SCALE_DECIMALS = 1e18;
 
 export default function useAssets() {
   // 1) 여기서만 훅 호출 (고정 순서)
+
   const chainId = useChainId();
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
   const balances = useAccountBalances();
 
-    // 2) FarmList에서 현재 체인 주소 확정
+  // 2) FarmList에서 현재 체인 주소 확정
   const farms = useMemo(() => {
     return FarmList
       .map((f) => {
@@ -262,7 +264,7 @@ export default function useAssets() {
             apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
           }
 
-          console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
+          // console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
 
 
           apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);

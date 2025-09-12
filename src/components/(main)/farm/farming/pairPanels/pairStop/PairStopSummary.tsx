@@ -18,8 +18,10 @@ export default function PairStopSummary({
   state: UsePairStopPanelReturn;
 }) {
   const { assetValues } = useContext(AssetsContext);
+
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
   const otherIndex: 0 | 1 = activeIndex === 0 ? 1 : 0;
+
   const activeAmount = state.receiveAmount[activeIndex];
   const otherAmount = state.receiveAmount[otherIndex];
   const activeToken = item.wip_stakeToken.swap.input[activeIndex];
@@ -49,18 +51,13 @@ export default function PairStopSummary({
 
   const chainId = state.chainId;
   const sellPoolBalance = useMemo(() => {
-    if (activeIndex === 1) {
-      return state.poolBalance0; // Sell other token for active token
-    } else {
-      return state.poolBalance1;
-    }
+    const v = activeIndex === 1 ? state.poolBalance0 : state.poolBalance1;
+    return v ?? BigDecimal.ZERO();
   }, [activeIndex, state.poolBalance0, state.poolBalance1]);
+
   const buyPoolBalance = useMemo(() => {
-    if (activeIndex === 1) {
-      return state.poolBalance1;
-    } else {
-      return state.poolBalance0;
-    }
+    const v = activeIndex === 1 ? state.poolBalance1 : state.poolBalance0;
+    return v ?? BigDecimal.ZERO();
   }, [activeIndex, state.poolBalance0, state.poolBalance1]);
 
   const priceImpact = usePriceImpact({

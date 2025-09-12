@@ -1,28 +1,36 @@
-import { useCallback, useMemo, useState } from "react";
-import { parseUnits } from "viem";
+import { useCallback } from "react";
+
 
 import {
   StopFarmingTransactionProps,
   TransactionStatusProps,
 } from "@/app/TransactionContextProvider";
-import { Farm } from "@/types/FarmListTableRowProps";
-import { birdieLpVaults_abi } from "@/const/abis";
+import { FarmPair, FarmSingle, Farm } from "@/types/FarmListTableRowProps";
 import { TransactionType } from "@/types/TransactionTypes";
 import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
-import { BigDecimal } from "@/types/BigDecimal";
-import TransactionStatus from "@/types/TransactionStatus";
-import getInsolvencyAmount from "@/utils/assets/getImpermanentInsolvency";
 
-import useApprove from "./useApprove";
-import { FarmTokenStatus } from "./FarmTokenStatus";
 import useFarmPanelCommon from "./useFarmPanelCommon";
-import useBalance from "./useBalance";
-import useAllowance from "./useAllowance";
-import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
-import getTokenAddress from "@/utils/assets/getTokenAddress";
 
+import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
+
+import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
+import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
+
+import useAllowance from "./useAllowance";
+import useApprove from "./useApprove";
+import { getFromContracts } from "@/utils/farm/getAddressHelpers";
+
+type AnyFarm = FarmPair | FarmSingle;
+
+/** 단일/페어 공통 stop 실행 라우트 */
+export type StopRoute =
+  | "ROUTER_SINGLE"
+  | "WRAPPER_SINGLE"
+  | "ROUTER_PAIR"
+  | "WRAPPER_PAIR";
 
 export default function useFarmStopPanelCommon(item: Farm) {
+  const base = useFarmPanelCommon(item);
   const {
     client,
     transactionContext,
@@ -36,39 +44,14 @@ export default function useFarmStopPanelCommon(item: Farm) {
     stakeToken,
     stakeTokenAddress,
     routerAddress,
-  } = useFarmPanelCommon(item);
-
-  const balance = useBalance(stakeToken);
-  const [amount, setAmount] = useState<BigDecimal | null>(null);
-      console.log("stopFarming", stakeToken);
+  } = base;
 
   const { allowance, query: allowanceQuery } = useAllowance({
     token: stakeToken,
     spender: stakeToken.provider,
   });
-  const isApproved = useMemo(() => {
-    return allowance.gt(amount ?? 0);
-  }, [amount, allowance]);
 
-  const isInsufficientBalance = useMemo(() => {
-    return balance.lt(amount || 0);
-  }, [balance, amount]);
-
-  const isImpermanentInsolvency = useMemo(() => {
-    // ADD IMPERMANENT INSOLVENCY CHECK
-    const impermanentInsolvency = getInsolvencyAmount({
-      contract: stakeToken,
-      token: stakeToken,
-      chainId,
-    });
-
-    if (!impermanentInsolvency) {
-      return false;
-    }
-
-    return new BigDecimal(impermanentInsolvency).lt(amount || 0);
-  }, [amount, chainId, stakeToken]);
-
+  // 공통: Approve 핸들러 복구 (refetch는 allowanceQuery.refetch 사용)
   const approve = useApprove({
     client,
     pool: stakeToken,
@@ -79,167 +62,162 @@ export default function useFarmStopPanelCommon(item: Farm) {
     writeContract,
   });
 
-  const stopFarming = useCallback(() => {
-    if (!address) return;
+  // 실제 트랜잭션 실행은 여기서만!
+  const performStop = useCallback(
+    (args: {
+      route: StopRoute;
+      blpAmount: bigint; // decimals 반영된 BLP 수량
+      onSuccess?: () => void;
+      txLabel?: string;
+    }) => {
+      const { route, blpAmount, onSuccess } = args;
 
-      const transactionProps: TransactionStatusProps &
-      StopFarmingTransactionProps = {
-      transactionType: TransactionType.STOP_FARMING,
-      chainId,
-      input: {
-        token: stakeToken,
-        amount: amount || BigDecimal.ZERO(),
-      },
-      output: ("input" in stakeToken
-        ? [stakeToken.input]
-        : stakeToken.swap.input.map((v) => v.input)
-      ).map((token) => ({
-        token,
-      })),
+      const transactionProps =
+        ({
+          chainId,
+          transactionType: TransactionType.STOP_FARMING,
+          input: [], // Stop에서는 표시용 토큰 배열이 필요하면 상위 UI에서 처리 (여긴 최소화)
+          output: [],
+          address,
+        } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
+
+      const handlers = getWriteTransactionHandlers({
+        client,
+        transactionContext,
+        transactionProps,
+        refetch: async () => {
+          await Promise.all([assetsContext.refetchAll()]);
+        },
+      });
+
+      const WRAPPER_ADDRESS =
+        getFromContracts(ADDRESS.WRAPPER, chainId) as `0x${string}` | null;
+
+      if (route === "WRAPPER_SINGLE") {
+        if (!WRAPPER_ADDRESS) {
+          console.error("[performStop] Missing WRAPPER_ADDRESS for chain:", chainId);
+          return;
+        }
+        // wrapper: singleRedeemToETH(bToken, bAmount)
+
+        console.log("useFarmStopPanelCommon WrapperSingleCall",WRAPPER_ADDRESS,stakeTokenAddress)
+
+        writeContract(
+          {
+            address: WRAPPER_ADDRESS,
+            abi: birdieswap_wrapper_abi,
+            functionName: "singleRedeemToETH",
+            args: [stakeTokenAddress as `0x${string}`, blpAmount],
+          },
+          {
+            onError: handlers.onError,
+            onSuccess: async (v) => {
+              handlers.onSuccess(v);
+              onSuccess?.();
+            },
+          }
+        );
+        return;
+      }
+
+      if (route === "WRAPPER_PAIR") {
+        if (!WRAPPER_ADDRESS) {
+          console.error("[performStop] Missing WRAPPER_ADDRESS for chain:", chainId);
+          return;
+        }
+        // wrapper: dualRedeemToETH(blpToken, blpAmount)
+        console.log("useFarmStopPanelCommon WrapperPairCall",WRAPPER_ADDRESS,stakeTokenAddress)
+
+        writeContract(
+          {
+            address: WRAPPER_ADDRESS,
+            abi: birdieswap_wrapper_abi,
+            functionName: "dualRedeemToETH",
+            args: [stakeTokenAddress as `0x${string}`, blpAmount],
+          },
+          {
+            onError: handlers.onError,
+            onSuccess: async (v) => {
+              handlers.onSuccess(v);
+              onSuccess?.();
+            },
+          }
+        );
+        return;
+      }
+
+      if (route === "ROUTER_SINGLE") {
+        console.log("useFarmStopPanelCommon routerSingleCall",routerAddress,stakeTokenAddress)
+
+        writeContract(
+          {
+            address: routerAddress as `0x${string}`,
+            abi: birdieswap_router_abi,
+            functionName: "singleRedeem" as any,
+            args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
+          },
+          {
+            onError: handlers.onError,
+            onSuccess: async (v) => {
+              handlers.onSuccess(v);
+              onSuccess?.();
+            },
+          }
+        );
+        return;
+      }
+
+      if (route === "ROUTER_PAIR") {
+        console.log("useFarmStopPanelCommon routerPairCall",routerAddress,stakeTokenAddress)
+        writeContract(
+          {
+            address: routerAddress as `0x${string}`,
+            abi: birdieswap_router_abi,
+            functionName: "dualRedeem" as any,
+            args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
+          },
+          {
+            onError: handlers.onError,
+            onSuccess: async (v) => {
+              handlers.onSuccess(v);
+              onSuccess?.();
+            },
+          }
+        );
+        return;
+      }
+    },
+    [
       address,
-    };
-    const handlers = getWriteTransactionHandlers({
+      chainId,
       client,
       transactionContext,
-      transactionProps,
-      refetch: async () => {
-        await Promise.all([assetsContext.refetchAll()]);
-      },
-    });
-
-    if (stakeToken.type === "BirdieSingle") {
-
-    writeContract(
-      {
-        address: routerAddress as `0x${string}`,
-        abi: birdieswap_router_abi,
-        functionName: "singleRedeem",
-        args: [
-          stakeTokenAddress as `0x${string}`,
-          parseUnits(amount?.toString() || "0", stakeToken.decimals || 18),
-        ],
-      },
-      {
-        onError: handlers.onError,
-        onSuccess: async (v) => {
-          handlers.onSuccess(v);
-          setAmount(BigDecimal.ZERO());
-          try {
-           await assetsContext.forceRefresh?.();
-          } catch (e) {
-            console.error("forceRefresh failed", e);
-          }
-        },
-      },
-    );} else if (stakeToken.type === "BirdieLP"){
-      writeContract(
-      {
-        address: routerAddress as `0x${string}`,
-        abi: birdieswap_router_abi,
-        functionName: "dualRedeem",
-        args: [
-          stakeTokenAddress as `0x${string}`,
-          parseUnits(amount?.toString() || "0", stakeToken.decimals || 18),
-        ],
-      },
-      {
-        onError: handlers.onError,
-        onSuccess: async (v) => {
-          handlers.onSuccess(v);
-          setAmount(BigDecimal.ZERO());
-          try {
-           await assetsContext.forceRefresh?.();
-          } catch (e) {
-           console.error("forceRefresh failed", e);
-          }
-        },
-      },
-    );
-    }
-  }, [
-    client,
-    transactionContext,
-    writeContract,
-    stakeToken,
-    stakeTokenAddress,
-    amount,
-    address,
-    chainId,
-    assetsContext,
-  ]);
-
-
-  const isInvalid = useMemo(
-    () => isImpermanentInsolvency || isInsufficientBalance,
-    [isImpermanentInsolvency, isInsufficientBalance],
+      assetsContext,
+      writeContract,
+      routerAddress,
+      stakeToken,
+      stakeTokenAddress,
+    ]
   );
 
-  const isPending =
-    allowanceQuery.isFetching ||
-    isPendingWriteContract ||
-    transactionContext.transactionProps?.transactionStatus ===
-      TransactionStatus.PENDING;
-
-  const isAmountEditable = !isApproved;
-
-  const isStoppable = isApproved && !isInvalid && !!amount && amount.gt(0);
-
-  const insolvency = useMemo(() => {
-    return getInsolvencyAmount({
-      contract: stakeToken,
-      token: stakeToken,
-      chainId,
-    });
-  }, [chainId, stakeToken]);
-
-  const setMaxAmount = useCallback(() => {
-    setAmount(BigDecimal.min(balance || 0, insolvency));
-  }, [balance, insolvency]);
-
-  const tokenStatus: FarmTokenStatus = useMemo(() => {
-    const ret: FarmTokenStatus = {
-      index: 0,
-      isActive: true,
-      input: stakeToken,
-      balance: balance ?? null,
-      amount,
-      isApproved,
-      isImpermanentInsolvency,
-      impermanentInsolvency: insolvency,
-      isInsufficientBalance,
-      isApprovable: isConnected && !isApproved,
-      approve: () => approve(stakeToken),
-    };
-
-    return ret;
-  }, [
-    amount,
-    approve,
-    balance,
-    insolvency,
-    isApproved,
-    isConnected,
-    isImpermanentInsolvency,
-    isInsufficientBalance,
-    stakeToken,
-  ]);
-
+  // 공통으로 내려주는 것들: 싱글/페어 훅이 그대로 사용
   return {
+    ...base,
+    performStop,
+    client,
+    approve,
+    allowance,
+    allowanceQuery,
+    writeContract,
+    isPendingWriteContract,
+    address,
     isConnected,
     chainId,
-    amount,
-    setAmount,
-    balance,
-    isApproved,
-    tokenStatus,
-    stopFarming,
-    isInsufficientBalance,
-    isImpermanentInsolvency,
-    isPending,
-    isInvalid,
-    isAmountEditable,
     isWrongNetwork,
-    isStoppable,
-    setMaxAmount,
+    assetsContext,
+    stakeToken,
+    stakeTokenAddress,
+    routerAddress,
   };
 }
+

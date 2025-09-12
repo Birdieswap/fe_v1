@@ -1,5 +1,5 @@
 import { AnimatePresence } from "framer-motion";
-import { useContext, useMemo } from "react";
+import { useCallback, useContext, useMemo } from "react";
 
 import { UsePairStartPanelReturn } from "@/hooks/usePairStartPanel";
 import { setPrecisionString } from "@/utils/setPrecision";
@@ -19,81 +19,196 @@ export default function PairStartSummary({
 }) {
   const { assetValues } = useContext(AssetsContext);
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
-  // const otherIndex: 0 | 1 = activeIndex === 0 ? 1 : 0;
-  const activeTokenStatus = state.tokenStatuses.find((v) => v.isActive);
-  const otherTokenStatus = state.tokenStatuses.find((v) => !v.isActive);
-  const activeToken = activeTokenStatus?.input;
-  const otherToken = otherTokenStatus?.input;
-  const activePrice = useMemo(() => {
-    if (activeToken?.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(`LINK:${activeToken.symbol}_USD`)
-        ?.price;
-    }
+  const otherIndex: 0 | 1 = activeIndex === 0 ? 1 : 0;
 
-    return undefined;
-  }, [activeToken?.symbol, assetValues?.chainLinkPriceMap]);
-  const otherPrice = useMemo(() => {
-    if (otherToken?.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(`LINK:${otherToken.symbol}_USD`)
-        ?.price;
-    }
+  // [MOD] 표시/계산에 모두 토글 반영된 표시용 토큰 사용
+  const activeToken = state.displayTokens?.[activeIndex];
+  const otherToken = state.displayTokens?.[otherIndex];
 
-    return undefined;
-  }, [otherToken?.symbol, assetValues?.chainLinkPriceMap]);
+  // const activeTokenStatus = state.tokenStatuses.find((v) => v.isActive);
+  // const otherTokenStatus = state.tokenStatuses.find((v) => !v.isActive);
+  // const activeToken = activeTokenStatus?.input;
+  // const otherToken = otherTokenStatus?.input;
+
+  // [ADDED] ETH/WETH 가격 fallback
+  const priceOf = useCallback(
+    (sym?: string) => {
+      if (!sym || !assetValues?.chainLinkPriceMap) return undefined;
+      const map = assetValues.chainLinkPriceMap;
+      // 우선 해당 심볼
+      const p = map.get(`LINK:${sym}_USD`)?.price;
+      if (p !== undefined) return p;
+      // ETH/WETH 상호 fallback
+      if (sym === "ETH") return map.get("LINK:WETH_USD")?.price;
+      if (sym === "WETH") return map.get("LINK:ETH_USD")?.price;
+      return undefined;
+    },
+    [assetValues?.chainLinkPriceMap]
+  );
+
+  const activePrice = useMemo(
+    () => priceOf(activeToken?.symbol),
+    [priceOf, activeToken?.symbol]
+  );
+  const otherPrice = useMemo(
+    () => priceOf(otherToken?.symbol),
+    [priceOf, otherToken?.symbol]
+  );
+
+  // const activePrice = useMemo(() => {
+  //   if (activeToken?.symbol && assetValues?.chainLinkPriceMap) {
+  //     return assetValues.chainLinkPriceMap.get(`LINK:${activeToken.symbol}_USD`)
+  //       ?.price;
+  //   }
+
+  //   return undefined;
+  // }, [activeToken?.symbol, assetValues?.chainLinkPriceMap]);
+
+  // const otherPrice = useMemo(() => {
+  //   if (otherToken?.symbol && assetValues?.chainLinkPriceMap) {
+  //     return assetValues.chainLinkPriceMap.get(`LINK:${otherToken.symbol}_USD`)
+  //       ?.price;
+  //   }
+
+  //   return undefined;
+  // }, [otherToken?.symbol, assetValues?.chainLinkPriceMap]);
+
   const chainId = state.chainId;
-  const basePoolBalance = useMemo(() => {
-    if (activeIndex === 0) {
-      return state.poolBalance0;
-    } else {
-      return state.poolBalance1;
-    }
-  }, [activeIndex, state.poolBalance0, state.poolBalance1]);
-  const quotePoolBalance = useMemo(() => {
-    if (activeIndex === 0) {
-      return state.poolBalance1;
-    } else {
-      return state.poolBalance0;
-    }
-  }, [activeIndex, state.poolBalance0, state.poolBalance1]);
 
-  const priceImpact = usePriceImpact({
-    pool: item?.wip_stakeToken.swap,
-    token: item?.wip_stakeToken.swap.input[activeIndex],
-    inputAmount: activeTokenStatus?.amount || BigDecimal.ZERO(),
-    chainId,
-  });
+  // const basePoolBalance = useMemo(() => {
+  //   if (activeIndex === 0) {
+  //     return state.poolBalance0;
+  //   } else {
+  //     return state.poolBalance1;
+  //   }
+  // }, [activeIndex, state.poolBalance0, state.poolBalance1]);
 
+  // const quotePoolBalance = useMemo(() => {
+  //   if (activeIndex === 0) {
+  //     return state.poolBalance1;
+  //   } else {
+  //     return state.poolBalance0;
+  //   }
+  // }, [activeIndex, state.poolBalance0, state.poolBalance1]);
+
+  // [MOD] 풀 잔고 선택 규칙은 기존 유지
+  const basePoolBalance = useMemo(
+    () => (activeIndex === 0 ? state.poolBalance0 : state.poolBalance1),
+    [activeIndex, state.poolBalance0, state.poolBalance1]
+  );
+  const quotePoolBalance = useMemo(
+    () => (activeIndex === 0 ? state.poolBalance1 : state.poolBalance0),
+    [activeIndex, state.poolBalance0, state.poolBalance1]
+  );
+
+  // const priceImpact = usePriceImpact({
+  //   pool: item?.wip_stakeToken.swap,
+  //   token: item?.wip_stakeToken.swap.input[activeIndex],
+  //   inputAmount: activeTokenStatus?.amount || BigDecimal.ZERO(),
+  //   chainId,
+  // });
+
+  // const swapAmount = useMemo<{
+  //   swapAmount: BigDecimal;
+  //   swappedAmount: BigDecimal;
+  //   activeAmount: BigDecimal;
+  // }>(() => {
+  //   if (activeTokenStatus && otherTokenStatus && activeToken && otherToken) {
+  //     const swapAmount = new BigDecimal(activeTokenStatus.amount || 0)
+  //       .div(2)
+  //       .roundToDecimals(activeToken.decimals || 8);
+  //     const swappedAmount = swapAmount
+  //       .mul(quotePoolBalance)
+  //       .div(basePoolBalance)
+  //       .roundToDecimals(otherToken.decimals || 8);
+
+  //     return {
+  //       swapAmount,
+  //       swappedAmount,
+  //       activeAmount: new BigDecimal(activeTokenStatus.amount || 0).sub(
+  //         swapAmount,
+  //       ),
+  //     };
+  //   } else {
+  //     return {
+  //       swapAmount: BigDecimal.ZERO(),
+  //       activeAmount: BigDecimal.ZERO(),
+  //       swappedAmount: BigDecimal.ZERO(),
+  //     };
+  //   }
+  // }, [
+  //   activeTokenStatus,
+  //   otherTokenStatus,
+  //   activeToken,
+  //   otherToken,
+  //   quotePoolBalance,
+  //   basePoolBalance,
+  // ]);
+
+  // const active = useMemo(
+  //   () => ({
+  //     symbol: activeToken?.symbol,
+  //     iconSrc: activeToken?.iconSrc,
+  //     amount: setPrecisionString(
+  //       swapAmount.activeAmount,
+  //       activeToken?.decimals || 8,
+  //       true,
+  //     ),
+  //     dollarAmount: setPrecisionString(
+  //       swapAmount.activeAmount.mul(activePrice ?? 0),
+  //       2,
+  //       true,
+  //       true,
+  //     ),
+  //   }),
+  //   [
+  //     activeToken?.symbol,
+  //     activeToken?.iconSrc,
+  //     activeToken?.decimals,
+  //     swapAmount.activeAmount,
+  //     activePrice,
+  //   ],
+  // );
+
+  // [MOD] price impact 계산 시 토큰은 주소 기준(수학은 기존대로), 단 토글 반영된 표시 토큰 전달
+  const activeTokenStatus = state.tokenStatuses?.[activeIndex];
+  const priceImpact = activeToken
+    ? usePriceImpact({
+        pool: item?.wip_stakeToken?.swap,
+        token: activeToken as any, // ⬅️ 주소 맵 포함된 전체 객체를 그대로 넘김
+        inputAmount: activeTokenStatus?.amount || BigDecimal.ZERO(),
+        chainId,
+      })
+    : 0;
+
+  // [MOD] 스왑 반영량(표시)은 토글된 토큰 기준. (1:1로 수치 영향 없음)
   const swapAmount = useMemo<{
     swapAmount: BigDecimal;
     swappedAmount: BigDecimal;
     activeAmount: BigDecimal;
   }>(() => {
-    if (activeTokenStatus && otherTokenStatus && activeToken && otherToken) {
-      const swapAmount = new BigDecimal(activeTokenStatus.amount || 0)
+    if (activeTokenStatus && activeToken && otherToken) {
+      const half = new BigDecimal(activeTokenStatus.amount || 0)
         .div(2)
         .roundToDecimals(activeToken.decimals || 8);
-      const swappedAmount = swapAmount
+      const swapped = half
         .mul(quotePoolBalance)
         .div(basePoolBalance)
         .roundToDecimals(otherToken.decimals || 8);
 
       return {
-        swapAmount,
-        swappedAmount,
-        activeAmount: new BigDecimal(activeTokenStatus.amount || 0).sub(
-          swapAmount,
-        ),
-      };
-    } else {
-      return {
-        swapAmount: BigDecimal.ZERO(),
-        activeAmount: BigDecimal.ZERO(),
-        swappedAmount: BigDecimal.ZERO(),
+        swapAmount: half,
+        swappedAmount: swapped,
+        activeAmount: new BigDecimal(activeTokenStatus.amount || 0).sub(half),
       };
     }
+    return {
+      swapAmount: BigDecimal.ZERO(),
+      swappedAmount: BigDecimal.ZERO(),
+      activeAmount: BigDecimal.ZERO(),
+    };
   }, [
     activeTokenStatus,
-    otherTokenStatus,
     activeToken,
     otherToken,
     quotePoolBalance,
@@ -103,26 +218,26 @@ export default function PairStartSummary({
   const active = useMemo(
     () => ({
       symbol: activeToken?.symbol,
-      iconSrc: activeToken?.iconSrc,
+      iconSrc: (activeToken as any)?.iconSrc,
       amount: setPrecisionString(
-        swapAmount.activeAmount,
+        new BigDecimal(activeTokenStatus?.amount || 0),
         activeToken?.decimals || 8,
-        true,
+        true
       ),
       dollarAmount: setPrecisionString(
-        swapAmount.activeAmount.mul(activePrice ?? 0),
+        new BigDecimal(activeTokenStatus?.amount || 0).mul(activePrice ?? 0),
         2,
         true,
-        true,
+        true
       ),
     }),
     [
       activeToken?.symbol,
-      activeToken?.iconSrc,
+      (activeToken as any)?.iconSrc,
       activeToken?.decimals,
-      swapAmount.activeAmount,
+      activeTokenStatus?.amount,
       activePrice,
-    ],
+    ]
   );
 
   const swapFrom = useMemo(
@@ -132,13 +247,13 @@ export default function PairStartSummary({
       amount: setPrecisionString(
         swapAmount.swapAmount,
         activeToken?.decimals || 8,
-        true,
+        true
       ),
       dollarAmount: setPrecisionString(
         swapAmount.swapAmount.mul(activePrice ?? 0),
         2,
         true,
-        true,
+        true
       ),
     }),
     [
@@ -147,7 +262,7 @@ export default function PairStartSummary({
       activeToken?.decimals,
       swapAmount.swapAmount,
       activePrice,
-    ],
+    ]
   );
 
   const swapTo = useMemo(
@@ -157,13 +272,13 @@ export default function PairStartSummary({
       amount: setPrecisionString(
         swapAmount.swappedAmount,
         otherToken?.decimals || 8,
-        true,
+        true
       ),
       dollarAmount: setPrecisionString(
         swapAmount.swappedAmount.mul(otherPrice ?? 0),
         2,
         true,
-        true,
+        true
       ),
     }),
     [
@@ -172,28 +287,53 @@ export default function PairStartSummary({
       otherToken?.decimals,
       swapAmount.swappedAmount,
       otherPrice,
-    ],
+    ]
+  );
+
+  const start = useMemo(
+    () => ({
+      symbol: activeToken?.symbol,
+      iconSrc: (activeToken as any)?.iconSrc,
+      amount: setPrecisionString(
+        swapAmount.activeAmount,
+        activeToken?.decimals || 8,
+        true
+      ),
+      dollarAmount: setPrecisionString(
+        swapAmount.activeAmount.mul(activePrice ?? 0),
+        2,
+        true,
+        true
+      ),
+    }),
+    [
+      activeToken?.symbol,
+      (activeToken as any)?.iconSrc,
+      activeToken?.decimals,
+      swapAmount.activeAmount,
+      activePrice,
+    ]
   );
 
   return (
     <AnimatePresence initial={false}>
-      {activeTokenStatus && activeToken && otherTokenStatus && otherToken && (
-        <Components.Container>
-          <Components.Header />
-          <Components.InnerGrid>
-            <Components.Swap
-              priceImpact={priceImpact}
-              swapFrom={swapFrom}
-              swapTo={swapTo}
-            />
-            <Components.StartOrStop
-              active={active}
-              other={swapTo}
-              type={"Start"}
-            />
-          </Components.InnerGrid>
-        </Components.Container>
-      )}
+      {/* {activeTokenStatus && activeToken && otherTokenStatus && otherToken && ( */}
+      <Components.Container>
+        <Components.Header />
+        <Components.InnerGrid>
+          <Components.Swap
+            priceImpact={priceImpact as BigDecimal}
+            swapFrom={swapFrom}
+            swapTo={swapTo}
+          />
+          <Components.StartOrStop
+            active={active}
+            other={swapTo}
+            type={"Start"}
+          />
+        </Components.InnerGrid>
+      </Components.Container>
+      {/* )} */}
     </AnimatePresence>
   );
 }
