@@ -4,11 +4,8 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(
-  _req: Request,
-  { params }: { params: { chainId: string } } // ← 인라인 객체 타입으로!
-) {
-  const chainIdStr = params.chainId;
+export async function GET(_req: Request, context: any) {
+  const chainIdStr = String(context?.params?.chainId ?? "");
   const id = Number(chainIdStr);
 
   // 기본 유효성 체크
