@@ -1,5 +1,6 @@
 import { aave_pool_abi } from "../abis/aave_pool_abi";
 import { birdieswap_router_abi } from "../abis/birdieswap_router_abi";
+import { birdieswap_wrapper_abi } from "../abis/birdieswap_wrapper_abi";
 import { uniswap_factory_v3_abi } from "../abis/uniswap_factory_v3_abi";
 import { contractAddresses } from "../contractAddresses";
 import networks from "../networks";
@@ -29,9 +30,9 @@ const HARVEST = StakingProviderGuard({
   abi: [],
 } as const);
 
-const BIRDIE = StakingProviderGuard({
-  name: "AutoPilot", //"Birdie",
-  provider: EProvider.BIRDIE,
+const BIRDIESWAP_Router = StakingProviderGuard({
+  name: "Birdieswap Router",
+  provider: EProvider.BIRDIESWAP,
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.ROUTER as `0x${string}`,
     [networks.base.id]: contractAddresses.base.ROUTER as `0x${string}`,
@@ -40,10 +41,22 @@ const BIRDIE = StakingProviderGuard({
   abi: birdieswap_router_abi,
 } as const);
 
+const BIRDIESWAP_Wrapper = StakingProviderGuard({
+  name: "Birdieswap Wrapper",
+  provider: EProvider.BIRDIESWAP,
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.WRAPPER as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.WRAPPER as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.WRAPPER as `0x${string}`,
+  },
+  abi: birdieswap_wrapper_abi,
+} as const);
+
 const stakingProviders = {
   UNISWAP,
   HARVEST,
-  BIRDIE,
+  BIRDIESWAP_Router,
+  BIRDIESWAP_Wrapper,
 };
 
 export default stakingProviders;

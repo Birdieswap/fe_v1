@@ -23,7 +23,7 @@ export enum EProvider {
   UNISWAP = "Uniswap",
   AAVE = "AAVE",
   AUTOPILOT = "Autopilot",
-  BIRDIE = "Birdie",
+  BIRDIESWAP = "Birdieswap",
 }
 
 export type IBaseNetwork<T extends chains.Chain = chains.Chain> = {

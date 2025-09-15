@@ -38,7 +38,7 @@ async function getSingleLiquidity(
   });
 
   if (!tokenAddress) return null;
-  const routerAddress = stakingProviders.BIRDIE.addresses[chainId];
+  const routerAddress = stakingProviders.BIRDIESWAP_Router.addresses[chainId];
 
   if (!routerAddress) return null;
 
@@ -48,7 +48,7 @@ async function getSingleLiquidity(
     [`0x${string}`]
   > = {
     address: routerAddress,
-    abi: stakingProviders.BIRDIE.abi,
+    abi: stakingProviders.BIRDIESWAP_Router.abi,
     functionName: "totalUnderlyingTokens",
     args: [farmAddress as `0x${string}`],
   };
@@ -87,7 +87,7 @@ async function getLPLiquidity(
     farm,
   ) as [`0x${string}`,BigDecimal, `0x${string}`, BigDecimal] | null;
 
-  // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",result)
+  // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",farm, result)
 
   let balance0: BigDecimal | null = null;
   let token0Address: `0x${string}` | null = null;
@@ -97,6 +97,7 @@ async function getLPLiquidity(
   if (result) {
     [token0Address, balance0, token1Address, balance1] = result;
   }
+  // console.log("getLiquidity result!!!!!!!",result)
   return Promise.all([token0Address, balance0, token1Address, balance1]);
 }
 

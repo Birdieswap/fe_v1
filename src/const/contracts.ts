@@ -16,7 +16,7 @@ import tokens from "./contracts/tokens/tokens";
 
 export const contracts = {
   birdieRouter: {
-    address: stakingProviders.BIRDIE.addresses[networks.sepolia.id],
+    address: stakingProviders.BIRDIESWAP_Router.addresses[networks.sepolia.id],
     abi: birdieswap_router_abi,
   },
   birdieVaults: {

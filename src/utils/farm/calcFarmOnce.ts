@@ -23,6 +23,7 @@ export async function calcFarmOnce(
   farm: IBirdieSingleFarm | IBirdieLPFarm,
   assetValues: useAssetValuesReturnType
 ): Promise<FarmCalc> {
+  // console.log("calcFarmOnce called", farm.fullName, farm);
   const chainId = client.chain?.id;
 
   const apy = BigDecimal.ZERO();
