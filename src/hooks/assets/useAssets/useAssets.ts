@@ -207,14 +207,13 @@ export default function useAssets() {
       const nextTvlNorm = normalizeBDMapFromMap(nextTvl as any);
       const tvlChanged = !shallowEqualNormalized(lastTvlNorm, nextTvlNorm);
 
-      // c) /apr 필요 시 fetch (최초 or TVL 변경)
-      //    - /apr 실패 → 기존 aprDataRef 유지(화면은 유지)
-      //    - 우선 /apr 시도, 실패 시 /apr_data.json 폴백
+      const chainNum : number = chainId;
+
       if (aprDataRef.current === null || tvlChanged) {
         try {
           let data: any | null = null;
           try {
-            const res = await fetch("/apr", { cache: "no-store" });
+            const res = await fetch(`/apr/${chainNum}`, { cache: "no-store" });
             data = await res.json();
           } catch {
             // fallback
@@ -226,9 +225,7 @@ export default function useAssets() {
           aprDataRef.current = data;
           setAprDataState(data);
         } catch (err) {
-          // 실패해도 멈추지 않음: 기존 Data 유지
-          // aprDataRef.current 그대로 두기 (처음부터 실패라면 null 유지)
-          // console.warn("fetch /apr failed", err);
+
         }
       }
 
