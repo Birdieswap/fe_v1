@@ -29,6 +29,8 @@ export default function useAllowance(props: {
     return new BigDecimal(query.data || 0, props.token.decimals);
   }, [query.data, props.token.decimals]);
 
+  console.log("useAllowance", props.token, props.spender, query, allowance);
+
   return {
     query,
     allowance,

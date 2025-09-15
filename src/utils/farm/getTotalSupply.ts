@@ -36,7 +36,7 @@ export default async function getTotalSupply(
     chainId,
   });
 
-  const routerAddress = stakingProviders.BIRDIE.addresses[chainId];
+  const routerAddress = stakingProviders.BIRDIESWAP_Router.addresses[chainId];
 
   if (!routerAddress || !farmAddress) return null;
 

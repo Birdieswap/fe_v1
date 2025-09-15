@@ -51,6 +51,7 @@ export default function useFarmStopPanelCommon(item: Farm) {
     spender: stakeToken.provider,
   });
 
+ 
   // 공통: Approve 핸들러 복구 (refetch는 allowanceQuery.refetch 사용)
   const approve = useApprove({
     client,
@@ -220,4 +221,3 @@ export default function useFarmStopPanelCommon(item: Farm) {
     routerAddress,
   };
 }
-

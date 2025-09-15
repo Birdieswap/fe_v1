@@ -212,11 +212,12 @@ export default function useAssets() {
       // c) /apr 필요 시 fetch (최초 or TVL 변경)
       //    - /apr 실패 → 기존 aprDataRef 유지(화면은 유지)
       //    - 우선 /apr 시도, 실패 시 /apr_data.json 폴백
+      const chainNum = 0;
       if (aprDataRef.current === null || tvlChanged) {
         try {
           let data: any | null = null;
           try {
-            const res = await fetch("/apr", { cache: "no-store" });
+            const res = await fetch(`/apr/${chainNum}`, { cache: "no-store" });
             data = await res.json();
           } catch {
             // fallback

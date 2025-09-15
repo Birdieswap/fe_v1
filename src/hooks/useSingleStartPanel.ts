@@ -100,17 +100,18 @@ export function useSingleStartPanel(item: FarmSingle) {
   }, [stakeToken, baseInput, chainId]);
 
   // 표시용 토큰 메타
-  const ethDisplayMeta = useMemo(
-    () =>
-      ({
-        symbol: "ETH",
-        name: "Ether",
-        decimals: 18,
-        addresses: { [chainId]: ETH_ZERO_ADDRESS },
-        iconSrc: "/tokens/eth.svg",
-      } as any),
-    [chainId, ETH_ZERO_ADDRESS]
-  );
+  const ethDisplayMeta = tokens.ETH;
+  // const ethDisplayMeta = useMemo(
+  //   () =>
+  //     ({
+  //       symbol: "ETH",
+  //       name: "Ether",
+  //       decimals: 18,
+  //       addresses: { [chainId]: ETH_ZERO_ADDRESS },
+  //       iconSrc: "/tokens/eth.svg",
+  //     } as any),
+  //   [chainId, ETH_ZERO_ADDRESS]
+  // );
 
   const wethDisplayMeta = tokens.WETH;
   // const wethDisplayMeta = useMemo(

@@ -10,6 +10,7 @@ export async function fetchAprDataOnce(params: {
   // 필요 시 추가 파라미터
 }): Promise<AprData> {
   const endpoint = buildUrl("/api/apr", { chainId: params.chainId });
+  console.log("Fetching APR data from:", endpoint);
   const res = await fetch(endpoint, { method: "GET", cache: "no-store" });
   if (!res.ok) {
     const e: any = new Error(`APR fetch failed: ${res.status}`);
