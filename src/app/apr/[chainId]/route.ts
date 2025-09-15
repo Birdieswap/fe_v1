@@ -4,9 +4,10 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-type Ctx = { params: { chainId: string } };
-
-export async function GET(_req: NextRequest, { params }: Ctx) {
+export async function GET(
+  _req: Request,
+  { params }: { params: { chainId: string } } // ← 인라인 객체 타입으로!
+) {
   const chainIdStr = params.chainId;
   const id = Number(chainIdStr);
 
