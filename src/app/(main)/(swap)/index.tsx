@@ -26,6 +26,7 @@ export default function SwapIndex() {
     setToTokenAmountWithGuard,
     setFromTokenAmountWithGuard,
     isPending,
+    isApprovePending,
     isLoadingFrom,
     isLoadingTo,
     isApproved,
@@ -40,7 +41,7 @@ export default function SwapIndex() {
           amount={fromAmount}
           balance={fromBalance}
           isDisabled={isLoadingFrom}
-          isPending={isPending}
+          isPending={isPending || isApprovePending}
           price={fromPrice}
           setAmount={setFromTokenAmountWithGuard}
           setToken={setFromTokenWithGuard}
@@ -86,7 +87,7 @@ export default function SwapIndex() {
           amount={toAmount}
           balance={toBalance}
           isDisabled={isLoadingTo}
-          isPending={isPending}
+          isPending={isPending || isApprovePending}
           price={toPrice}
           setAmount={setToTokenAmountWithGuard}
           setToken={setToTokenWithGuard}

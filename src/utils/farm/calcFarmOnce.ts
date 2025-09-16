@@ -11,6 +11,7 @@ import getLiquidity from "@/utils/farm/getLiquidity";
 import getTotalSupply from "@/utils/farm/getTotalSupply";
 import type { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 import { findSymbolByAddress } from "../assets/getTokenSymbol";
+import { getLiquidityCached, getTotalSupplyCached } from "@/utils/farm/farmDataCache";
 
 export type FarmCalc = {
   apy: BigDecimal;
@@ -28,8 +29,10 @@ export async function calcFarmOnce(
 
   const apy = BigDecimal.ZERO();
 
-  const data = await getLiquidity(client, farm, assetValues);
-  const supply = await getTotalSupply(client, farm);
+  const data = await getLiquidityCached(client, farm);
+  const supply = await getTotalSupplyCached(client, farm);
+  // const data = await getLiquidity(client, farm, assetValues);
+  // const supply = await getTotalSupply(client, farm);
 
   // console.log("calcFarmOnce", farm, data, supply)
 

@@ -1,17 +1,17 @@
-import { useCallback, useMemo, useState, useContext } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { parseUnits } from "viem";
 
 import { FarmSingle } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
 
-import { AssetsContext } from "@/app/AssetsContextProvider";
-
 import useFarmStopPanelCommon, { StopRoute }  from "./useFarmStopPanelCommon";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
+
 import { ADDRESS, } from "@/const/contracts/contractAddresses";
 import {  getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -22,19 +22,49 @@ export enum InvalidStatuses {
 type NativeMode = "ETH" | "WETH" | null;
 
 export function useSingleStopPanel(item: FarmSingle) {
+  const receiveToken = item?.wip_stakeToken?.input;
+
+  // 기본 ETH 여부(체인 의존 X: 심볼 우선)
+  const defaultIsETH = receiveToken?.symbol === "ETH";
+
+  // ETH/WETH 토글 (기본: ETH면 ETH)
+  const [nativeMode, setNativeMode] = useState<NativeMode>(
+    defaultIsETH ? "ETH" : null
+  );
+
+  // 표기용 메타
+  const ethDisplayMeta = tokens.ETH;
+  const wethDisplayMeta = tokens.WETH;
+
+  // displayToken: 기본이 ETH일 때만 토글 적용
+  const displayToken = useMemo(() => {
+    if (!defaultIsETH) return receiveToken as any;
+    return nativeMode === "WETH" ? (wethDisplayMeta as any) : (ethDisplayMeta as any);
+  }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, receiveToken]);
+
+  // 경로 판정: displayToken으로 ETH 경로 여부 (주소가 없거나 0x00.. 이면 ETH로 취급)
+  const isETHPath = (displayToken as any)?.symbol === "ETH" ||
+                    isZeroAddress((displayToken as any)?.addresses?.[/* chainId will be checked in common */ ""] as any);
+
+  // 공통 훅 호출: ETH 경로면 Wrapper, 아니면 Router로 승인/allowance 스펜더 지정
   const {
     address,
     isPendingWriteContract,
     isConnected,
     isWrongNetwork,
     chainId,
-    routerAddress,
     stakeToken,
     performStop,
     approve,
     allowance,
     allowanceQuery,
-  } = useFarmStopPanelCommon(item);
+  } = useFarmStopPanelCommon(item, {
+    stopSpenderProvider: isETHPath
+      ? (stakingProviders as any).BIRDIESWAP_Wrapper
+      : (stakingProviders as any).BIRDIESWAP_Router,
+  });
+
+  
 
   // BLP 잔액/승인
   const balance = useBalance(stakeToken);
@@ -43,59 +73,15 @@ export function useSingleStopPanel(item: FarmSingle) {
   const setMaxAmount = useCallback(() => {
     setAmount(balance ?? BigDecimal.ZERO());
   }, [balance]);
-  // 싱글: 받는 토큰
-  
-  const receiveToken = item?.wip_stakeToken?.input;
-
-  // 체인별 주소
-  const ETH_ZERO_ADDRESS: `0x${string}` =
-    getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
-  const WETH_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.WETH, chainId);
-
-  // 기본 ETH 판정 → Single은 ETH일 때만 슬라이더 노출
-  const defaultIsETH =
-    receiveToken?.symbol === "ETH" ||
-    isZeroAddress((receiveToken as any)?.addresses?.[chainId]);
-
-  // ETH/WETH 토글
-  const [nativeMode, setNativeMode] = useState<NativeMode>(
-    defaultIsETH ? "ETH" : null
-  );
-
-  // 표기용 메타
-  const ethDisplayMeta = tokens.ETH
-  // const ethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "ETH",
-  //       name: "Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: ETH_ZERO_ADDRESS },
-  //       iconSrc: "/tokens/eth.svg",
-  //     } as any),
-  //   [chainId, ETH_ZERO_ADDRESS]
-  // );
-
-  const wethDisplayMeta = tokens.WETH;
-  // const wethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "WETH",
-  //       name: "Wrapped Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: WETH_ADDRESS },
-  //       iconSrc: "/tokens/weth.svg",
-  //     } as any),
-  //   [chainId, WETH_ADDRESS]
-  // );
-
-  const displayToken = useMemo(() => {
-    if (!defaultIsETH) return receiveToken as any;
-    return nativeMode === "WETH" ? wethDisplayMeta : ethDisplayMeta;
-  }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, receiveToken]);
 
 
+  const [isApprovePending, setIsApprovePending] = useState(false);
+
+  const approveWithPending = useCallback(async (token: any) => {
+    setIsApprovePending(true);
+    try { await approve(token); }
+    finally { setIsApprovePending(false); }
+  }, [approve]);
 
   // AmountInput 상태
   const tokenStatus: FarmStopTokenStatus = useMemo(
@@ -109,10 +95,10 @@ export function useSingleStopPanel(item: FarmSingle) {
       isImpermanentInsolvency: false,
       impermanentInsolvency: undefined,
       isInsufficientBalance: balance.lt(amount || 0),
-      isApprovable: isConnected && !allowance.gte(amount || 0),
-      approve: () => approve(stakeToken), // 필요 시 교체
+      isApprovable: isConnected && !allowance.gte(amount || 0) && !isApprovePending,
+      approve: () => approveWithPending(stakeToken),  
     }),
-    [stakeToken, balance, amount, allowance, isConnected]
+    [stakeToken, balance, amount, allowance, isConnected, approve]
   );
 
   // 실행: 경로 결정만 여기서 → 공통 performStop 호출
@@ -125,7 +111,6 @@ export function useSingleStopPanel(item: FarmSingle) {
       blpDecimals
     );
 
-    const isETHPath = defaultIsETH && nativeMode === "ETH";
     const route: StopRoute = isETHPath ? "WRAPPER_SINGLE" : "ROUTER_SINGLE";
 
     performStop({
@@ -136,8 +121,7 @@ export function useSingleStopPanel(item: FarmSingle) {
   }, [
     address,
     amount,
-    defaultIsETH,
-    nativeMode,
+    isETHPath,
     stakeToken,
     performStop,
   ]);
@@ -153,9 +137,8 @@ export function useSingleStopPanel(item: FarmSingle) {
   );
 
   const isPending =
-    allowanceQuery.isFetching || isPendingWriteContract || false;
+    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending; ;
 
-  // Single은 한 칸
   const isActive = useMemo<[boolean]>(() => [true], []);
 
   return {

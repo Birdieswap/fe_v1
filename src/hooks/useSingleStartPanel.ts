@@ -24,6 +24,7 @@ import useAccountBalances from "./assets/useAssets/useAccountBalances";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi"; 
 import {  getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 /** ETH/WETH 토글 */
 type NativeMode = "ETH" | "WETH" | null;
@@ -53,7 +54,7 @@ export function useSingleStartPanel(item: FarmSingle) {
     );
   }, [accountBalances]);
 
-  // 🔹 단일 입력 토큰 (프로젝트 구조별 안전 접근)
+  // 단일 입력 토큰 (프로젝트 구조별 안전 접근)
   const baseInput =
     (item as any)?.wip_stakeToken?.swap?.input?.[0]?.input ??
     (item as any)?.wip_stakeToken?.swap?.input?.input ??
@@ -64,8 +65,24 @@ export function useSingleStartPanel(item: FarmSingle) {
     getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
   const WETH_ADDRESS: `0x${string}` | null =
     getFromContracts(ADDRESS.WETH, chainId);
+
+  const WRAPPER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
+  const ROUTER_PROVIDER_FALLBACK = useMemo(() => {
+    // stakingProviders에 Router 메타가 없을 때 대비
+    const meta = (stakingProviders as any)?.BIRDIESWAP_Router;
+    return (
+      meta ?? {
+        name: "BIRDIESWAP_Router",
+        addresses: { [chainId]: routerAddress },
+      }
+    );
+  }, [chainId, routerAddress]);
+
+  // 기본 spender (provider) 주소
+  const ROUTER_ADDRESS: `0x${string}` | null =
+    getFromContracts(ADDRESS.ROUTER, chainId) ?? ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; //NEW: router 주소
   const WRAPPER_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.WRAPPER, chainId); // ✅ NEW: wrapper 주소
+    getFromContracts(ADDRESS.WRAPPER, chainId); //NEW: wrapper 주소
 
   // 기본 ETH 판정
     const defaultIsETH =
@@ -80,13 +97,41 @@ export function useSingleStartPanel(item: FarmSingle) {
   // 노출 조건: 기본 토큰이 ETH일 때만
   const nativeToggleCanShow = defaultIsETH;
 
+  // 표시용 토큰 메타
+  const ethDisplayMeta = tokens.ETH;
+
+  const wethDisplayMeta = tokens.WETH;
+
+  // ETH/WETH 반영된 표시 토큰
+  const displayToken = useMemo(() => {
+    if (!defaultIsETH) return baseInput as any;
+    return nativeMode === "WETH" ? (wethDisplayMeta as any) : (ethDisplayMeta as any);
+  }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, baseInput]);
+
+  const isETHDisplay = displayToken?.symbol === "ETH";
+  const isWETHDisplay =
+    !!WETH_ADDRESS &&
+    (displayToken as any)?.addresses?.[chainId]?.toLowerCase?.() ===
+      WETH_ADDRESS.toLowerCase?.();
+
+  // 맵에서 주소 기반 잔액 조회
+  const getBal = (addr?: `0x${string}` | string | null) => {
+    if (!addr) return null;
+    const lower = (addr as string).toLowerCase() as `0x${string}`;
+    return balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null;
+  };
+
   // 잔액/승인 베이스
   const inputAddress = getTokenAddress({ token: baseInput, chainId });
   const balanceBase = useBalance(baseInput);
-  const { allowance: allowanceBase, query: allowanceQueryBase } = useAllowance({
-    token: baseInput,
-    spender: stakeToken.provider,
-  });
+
+    // 표시 잔액: ETH 모드면 네이티브, WETH 모드면 WETH, 일반 ERC20이면 기존 balance
+  const displayBalance = defaultIsETH
+    ? nativeMode === "WETH"
+      ? getBal(WETH_ADDRESS)
+      : getBal(ETH_ZERO_ADDRESS)
+    : balanceBase;
+
 
   const [amount, setAmount] = useState<BigDecimal | null>(null);
 
@@ -99,88 +144,63 @@ export function useSingleStartPanel(item: FarmSingle) {
     });
   }, [stakeToken, baseInput, chainId]);
 
-  // 표시용 토큰 메타
-  const ethDisplayMeta = tokens.ETH;
-  // const ethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "ETH",
-  //       name: "Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: ETH_ZERO_ADDRESS },
-  //       iconSrc: "/tokens/eth.svg",
-  //     } as any),
-  //   [chainId, ETH_ZERO_ADDRESS]
-  // );
+  const approveTargetToken = useMemo(
+    () => (isETHDisplay ? null : (displayToken as any)),
+    [isETHDisplay, displayToken]
+  );
 
-  const wethDisplayMeta = tokens.WETH;
-  // const wethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "WETH",
-  //       name: "Wrapped Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: WETH_ADDRESS },
-  //       iconSrc: "/tokens/weth.svg",
-  //     } as any),
-  //   [chainId, WETH_ADDRESS]
-  // );
+  const spenderProvider = useMemo(
+    () => (isETHDisplay ? WRAPPER_PROVIDER : ROUTER_PROVIDER_FALLBACK),
+    [isETHDisplay, WRAPPER_PROVIDER, ROUTER_PROVIDER_FALLBACK]
+  );
 
-  // ETH/WETH 반영된 표시 토큰
-  const displayToken = useMemo(() => {
-    if (!defaultIsETH) return baseInput as any;
-    return nativeMode === "WETH" ? (wethDisplayMeta as any) : (ethDisplayMeta as any);
-  }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, baseInput]);
+  console.log("useSingleStartPanel", spenderProvider, approveTargetToken, isETHDisplay, WRAPPER_PROVIDER, ROUTER_PROVIDER_FALLBACK, ROUTER_ADDRESS, WRAPPER_ADDRESS, routerAddress, displayToken)
 
-  // 맵에서 주소 기반 잔액 조회
-  const getBal = (addr?: `0x${string}` | string | null) => {
-    if (!addr) return null;
-    const lower = (addr as string).toLowerCase() as `0x${string}`;
-    return balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null;
-  };
-
-  // 표시 잔액: ETH 모드면 네이티브, WETH 모드면 WETH, 일반 ERC20이면 기존 balance
-  const displayBalance = defaultIsETH
-    ? nativeMode === "WETH"
-      ? getBal(WETH_ADDRESS)
-      : getBal(ETH_ZERO_ADDRESS)
-    : balanceBase;
-
-  //  승인: ETH=true(자물쇠 숨김), WETH=WETH allowance, ERC20=기존 allowance
-  const { allowance: allowanceWETH, query: allowanceQueryWETH } = useAllowance({
-    token: wethDisplayMeta as any,
-    spender: stakeToken.provider,
+  // 훅은 조건부 호출이 불가하므로 항상 호출하되, ETH일 때 결과는 UI에서 무시
+  const { allowance, query: allowanceQuery } = useAllowance({
+    token: (approveTargetToken ?? wethDisplayMeta) as any, // ETH일 때도 호출 유지를 위해 더미 WETH
+    spender: spenderProvider,
   });
+  
 
   const isApproved = useMemo<boolean>(() => {
+    if (isETHDisplay) return true;
     const amt = amount || BigDecimal.ZERO();
-    if (defaultIsETH) {
-      return nativeMode === "ETH" ? true : allowanceWETH.gte(amt);
-    }
-    return allowanceBase.gte(amt);
-  }, [defaultIsETH, nativeMode, allowanceBase, allowanceWETH, amount]);
+    return allowance.gte(amt);
+  }, [isETHDisplay,allowance, amount]);
 
   // Approve 훅 (refetch 추가)
   const approve = useApprove({
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
-    routerAddress: routerAddress as `0x${string}`,
+    routerAddress: (isETHDisplay
+      ? (WRAPPER_ADDRESS as `0x${string}` | undefined)
+      : (ROUTER_ADDRESS as `0x${string}`)) ?? (ROUTER_ADDRESS as `0x${string}`),
     transactionContext,
     refetch: () =>
       Promise.all([
-        allowanceQueryBase.refetch(),
-        allowanceQueryWETH.refetch(),
+        allowanceQuery.refetch(),
         assetsContext.refetchAll?.(),
       ]),
     writeContract,
   });
 
+  const [isApprovePending, setIsApprovePending] = useState(false);
+
+  const approveWithPending = useCallback(async (token: any) => {
+    setIsApprovePending(true);
+    try {
+      await approve(token);         // useApprove가 Promise를 반환하지 않는다면 그대로 호출만 해도 OK
+    } finally {
+      setIsApprovePending(false);   // 성공/실패 모두 off
+    }
+  }, [approve]);
   // tokenStatus: 싱글 항목
   const tokenStatus: FarmStartTokenStatus = useMemo(
     () => ({
       index: 0 as 0,
-      input: displayToken,         // ✅ ETH/WETH 반영된 메타
+      input: displayToken,         // ETH/WETH 반영된 메타
       balance: displayBalance as any,
       amount: amount,
       isApproved,
@@ -189,8 +209,11 @@ export function useSingleStartPanel(item: FarmSingle) {
         insolvency !== undefined && new BigDecimal(insolvency).lt(amount || 0),
       impermanentInsolvency: insolvency,
       isInsufficientBalance: displayBalance?.lt(amount || 0) ?? false,
-      isApprovable: isConnected && !isApproved,
-      approve: () => approve(displayToken as any),
+      isApprovable: isConnected && !isApproved && !isETHDisplay && !isApprovePending,
+      approve: () => {
+        if (isETHDisplay) return;
+        return approveWithPending(displayToken as any);
+      },
     }),
     [
       displayToken,
@@ -200,6 +223,7 @@ export function useSingleStartPanel(item: FarmSingle) {
       insolvency,
       isConnected,
       approve,
+      isETHDisplay,
     ]
   );
 
@@ -226,15 +250,14 @@ export function useSingleStartPanel(item: FarmSingle) {
       transactionProps,
       refetch: async () => {
         await Promise.all([
-          allowanceQueryBase.refetch(),
-          allowanceQueryWETH.refetch(),
+          allowanceQuery.refetch(),
           assetsContext.refetchAll(),
         ]);
       },
     });
 
     // === (A) ETH 모드: wrapper + payable(value) ===
-    if (defaultIsETH && nativeMode === "ETH") {
+    if (isETHDisplay) {
       if (!WRAPPER_ADDRESS) {
         console.error("[startFarming] Missing WRAPPER_ADDRESS for chain:", chainId);
         return;
@@ -245,17 +268,6 @@ export function useSingleStartPanel(item: FarmSingle) {
         (amount ?? BigDecimal.ZERO()).toString(),
         18 // ETH decimals
       );
-
-      // ⚠️ 함수 시그니처는 프로젝트마다 다름 — 실제 ABI 확인하여 "args" 한 줄만 선택하세요.
-      // 1) 예시 A: singleDepositWithETH(address stakingToken)
-      // const args: any[] = [stakeTokenAddress];
-
-      // 2) 예시 B: singleDepositWithETH(address stakingToken, address receiver)
-      // const args: any[] = [stakeTokenAddress, address];
-
-      // 3) 예시 C: singleDepositWithETH(address stakingToken, uint256 minShares)
-      // const args: any[] = [stakeTokenAddress, 0n];
-
   
       console.log("useSingleStartPanel wrapper nativeValue", nativeValue);
 
@@ -265,7 +277,7 @@ export function useSingleStartPanel(item: FarmSingle) {
           address: WRAPPER_ADDRESS,
           abi: birdieswap_wrapper_abi,
           functionName: "singleDepositWithETH",
-          value: nativeValue, // ✅ 중요: payable
+          value: nativeValue, //  중요: payable
         },
         {
           onError: handlers.onError,
@@ -285,14 +297,17 @@ export function useSingleStartPanel(item: FarmSingle) {
 
     console.log("useSingleStartPanel routerAddress", routerAddress, inputAddress, "Amount",parseUnits((amount ?? BigDecimal.ZERO()).toString(), displayToken.decimals), "displayedToken", displayToken.addresses[chainId])
     // === (B) WETH 또는 일반 ERC20: 기존 router 경로 ===
+    const tokenAddr = (displayToken as any)?.addresses?.[chainId] as `0x${string}`;
+    const parsed = parseUnits((amount ?? BigDecimal.ZERO()).toString(), (displayToken as any).decimals);
+
     writeContract(
       {
-        address: routerAddress as `0x${string}`,
+        address: ROUTER_ADDRESS as `0x${string}`,
         abi: birdieswap_router_abi,
         functionName: "singleDeposit", // ← 기존 단일 예시. 실제 함수명과 시그니처에 맞게 조정.
         args: [
-          displayToken.addresses[chainId] as `0x${string}`,
-          parseUnits((amount ?? BigDecimal.ZERO()).toString(), displayToken.decimals),
+          tokenAddr,
+          parsed,
         ] as any,
       },
       {
@@ -318,14 +333,10 @@ export function useSingleStartPanel(item: FarmSingle) {
     transactionContext,
     writeContract,
     routerAddress,
-    allowanceQueryBase,
-    allowanceQueryWETH,
+    allowanceQuery,
     assetsContext,
-    nativeMode,
-    defaultIsETH,
     WRAPPER_ADDRESS,
-    inputAddress,
-    stakeTokenAddress,
+    isETHDisplay,
   ]);
 
   const isStartable = useMemo(
@@ -339,11 +350,12 @@ export function useSingleStartPanel(item: FarmSingle) {
   );
 
   const isPending =
-    allowanceQueryBase.isFetching ||
-    allowanceQueryWETH.isFetching ||
+    allowanceQuery.isFetching ||
     isPendingWriteContract ||
     transactionContext.transactionProps?.transactionStatus ===
-      TransactionStatus.PENDING;
+      TransactionStatus.PENDING ||
+    isApprovePending;
+    
 
   return {
     // === 기존 API 유지 ===
@@ -361,6 +373,8 @@ export function useSingleStartPanel(item: FarmSingle) {
     nativeMode,
     setNativeMode,
     nativeToggleCanShow,
+
+    isApprovePending,
   };
 }
 

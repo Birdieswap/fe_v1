@@ -124,6 +124,12 @@ export default function FarmListRowSummary({
     return;
   }, [aprDataState, chainId, stakeToken]);
 
+  // console.log(
+  //   "FarmListRowSummary poolDescription:",
+  //   stakeToken,
+  //   poolDescription
+  // );
+
   const hasAprEntry = useMemo(() => {
     const targetAddr = stakeToken?.addresses?.[chainId];
     if (!targetAddr) return false;

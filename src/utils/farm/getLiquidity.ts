@@ -69,9 +69,9 @@ async function getSingleLiquidity(
 async function getLPLiquidity(
   client: PublicClient,
   farm: IBirdieLPFarm,
-  assetValues: useAssetValuesReturnType,
 ): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | null> {
   const chainId = client.chain?.id;
+  // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",farm)
 
   if (!chainId) return null;
 
@@ -114,7 +114,6 @@ export async function getLiquidity(
 export default async function getLiquidity(
   client: PublicClient,
   farm: IBirdieSingleFarm | IBirdieLPFarm,
-  assetValues?: useAssetValuesReturnType,
 ): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | BigDecimal | null> {
   if (!client || !farm) return null;
   
@@ -123,8 +122,7 @@ export default async function getLiquidity(
 
     return liq;
   } else {
-    if (!assetValues) return null;
     
-    return await getLPLiquidity(client, farm, assetValues);
+    return await getLPLiquidity(client, farm);
   }
 }

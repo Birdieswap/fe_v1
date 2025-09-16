@@ -15,6 +15,12 @@ import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrappe
 import { getFromContracts } from "@/utils/farm/getAddressHelpers";
 import { finalizeAfterTxSuccess } from "./finalizeAfterTxSuccess";
 
+function isUserRejected(e: any) {
+  if (e?.code === 4001 || e?.cause?.code === 4001) return true;
+  const msg = (e?.shortMessage || e?.message || "").toLowerCase?.() || "";
+  return msg.includes("user rejected") || msg.includes("user denied");
+}
+
 
 export function approve(
   params: {
@@ -25,9 +31,9 @@ export function approve(
     client?: any;
     transactionContext: TransactionContextType;
     refetchAllowance: () => Promise<unknown>;
-  }
-) {
-  const { chainId, fromToken, fromTokenAddress, writeContract, client, transactionContext, refetchAllowance } = params;
+    spenderAddress?: `0x${string}`;
+  }):Promise<void> {
+  const { chainId, fromToken, fromTokenAddress, writeContract, client, transactionContext, refetchAllowance, spenderAddress } = params;
   const transactionProps = {
     transactionType: TransactionType.APPROVE,
     input: fromToken,
@@ -41,18 +47,29 @@ export function approve(
     refetch: refetchAllowance,
   });
 
-  writeContract(
-    {
-      address: fromTokenAddress as `0x${string}`,
-      abi: erc20Abi,
-      functionName: "approve",
-      args: [
-        contracts.birdieRouter.address as `0x${string}`,
-        BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
-      ],
-    },
-    handlers,
-  );
+  const spender = (spenderAddress ?? (contracts.birdieRouter.address as `0x${string}`));
+
+  return new Promise<void>((resolve, reject) => {
+    writeContract(
+      {
+        address: fromTokenAddress as `0x${string}`,
+        abi: erc20Abi,
+        functionName: "approve",
+        args: [
+          spender,
+          BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935"),
+        ],
+      },
+      {
+        onError: (e: any) => {
+          try { (handlers as any)?.onError?.(e); } finally { reject(e); }
+        },
+        onSuccess: async (h: any) => {
+          try { await (handlers as any)?.onSuccess?.(h); } finally { resolve(); }
+        },
+      },
+    );
+  });
 }
 
 export async function swap(
@@ -121,6 +138,27 @@ export async function swap(
 
   const handlers = getWriteTransactionHandlers({ client, transactionContext, transactionProps, refetch: async () => {} });
 
+  const writeWithHandlers = (cfg: any): Promise<`0x${string}`> =>
+  new Promise((resolve, reject) => {
+    writeContract(
+      cfg,
+      {
+        onError: (e: any) => {
+          try {
+            // ✅ swap도 approve처럼 실패로 전환
+            (handlers as any)?.onError?.(e);
+          } finally {
+            reject(e);
+          }
+        },
+        onSuccess: (h: any) => {
+          // 성공은 finalizeAfterTxSuccess가 처리하므로 여기선 hash만 전달
+          resolve(h as `0x${string}`);
+        },
+      }
+    );
+  });
+
   // WETH 입출금 케이스 처리
   const isDeposit = fromToken?.symbol === "ETH" && toToken?.symbol === "WETH";
   const isWithdraw = fromToken?.symbol === "WETH" && toToken?.symbol === "ETH";
@@ -129,21 +167,28 @@ export async function swap(
     const amount = new BigDecimal(fromAmount);
     const tokenAddress = tokens.WETH.addresses?.[chainId] as `0x${string}`;
 
-    const hash: `0x${string}` = await new Promise((resolve, reject) => {
-      writeContract(
-        {
-          address: tokenAddress,
-          abi: weth_abi,
-          functionName: "deposit",
-          // deposit() payable
-          value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
-        } as any,
-        {
-          onError: (e: any) => reject(e),
-          onSuccess: (h: any) => resolve(h as `0x${string}`),
-        },
-      );
-    });
+    const hash = await writeWithHandlers({
+      address: tokenAddress,
+      abi: weth_abi,
+      functionName: "deposit",
+      value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
+    } as any);
+
+    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
+    //   writeContract(
+    //     {
+    //       address: tokenAddress,
+    //       abi: weth_abi,
+    //       functionName: "deposit",
+    //       // deposit() payable
+    //       value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
+    //     } as any,
+    //     {
+    //       onError: (e: any) => reject(e),
+    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
+    //     },
+    //   );
+    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -164,20 +209,27 @@ export async function swap(
     const amount = new BigDecimal(toAmount);
     const tokenAddress = tokens.WETH.addresses?.[chainId] as `0x${string}`;
 
-    const hash: `0x${string}` = await new Promise((resolve, reject) => {
-      writeContract(
-        {
-          address: tokenAddress,
-          abi: weth_abi,
-          functionName: "withdraw",
-          args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
-        } as any,
-        {
-          onError: (e: any) => reject(e),
-      onSuccess: (h: any) => resolve(h as `0x${string}`),
-        },
-      );
-    });
+    const hash = await writeWithHandlers({
+      address: tokenAddress,
+      abi: weth_abi,
+      functionName: "withdraw",
+      args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
+    } as any);
+    
+    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
+    //   writeContract(
+    //     {
+    //       address: tokenAddress,
+    //       abi: weth_abi,
+    //       functionName: "withdraw",
+    //       args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
+    //     } as any,
+    //     {
+    //       onError: (e: any) => reject(e),
+    //   onSuccess: (h: any) => resolve(h as `0x${string}`),
+    //     },
+    //   );
+    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -209,27 +261,34 @@ export async function swap(
     const value = parseUnits(new BigDecimal(fromAmount).toString(), tokens.WETH.decimals ?? 18);
 
     // 동일한 모달 핸들러 사용
-    const hash: `0x${string}` = await new Promise((resolve, reject) => {
-      writeContract(
-        {
-          address: wrapperAddress,
-          abi: birdieswap_wrapper_abi,
-          functionName: "swapWithETH", // (payable)
-          args: [
-            feeTier as number,
-            outputTokenAddress,
-            minReceive,
-            sqrtPriceLimit,
-            referralAddress as `0x${string}`,
-          ],
-          value,
-        } as any,
-        {
-          onError: (e: any) => reject(e),
-          onSuccess: (h: any) => resolve(h as `0x${string}`),
-        },
-      );
-    });
+    const hash = await writeWithHandlers({
+      address: wrapperAddress,
+      abi: birdieswap_wrapper_abi,
+      functionName: "swapWithETH",
+      args: [feeTier, outputTokenAddress, minReceive, sqrtPriceLimit, referralAddress as `0x${string}`],
+      value,
+    } as any);
+    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
+    //   writeContract(
+    //     {
+    //       address: wrapperAddress,
+    //       abi: birdieswap_wrapper_abi,
+    //       functionName: "swapWithETH", // (payable)
+    //       args: [
+    //         feeTier as number,
+    //         outputTokenAddress,
+    //         minReceive,
+    //         sqrtPriceLimit,
+    //         referralAddress as `0x${string}`,
+    //       ],
+    //       value,
+    //     } as any,
+    //     {
+    //       onError: (e: any) => reject(e),
+    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
+    //     },
+    //   );
+    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -261,27 +320,34 @@ export async function swap(
 
     console.log("wrapper-swapToETH args", sqrtPriceLimitX96);
 
-    const hash: `0x${string}` = await new Promise((resolve, reject) => {
-      writeContract(
-        {
-          address: wrapperAddress,
-          abi: birdieswap_wrapper_abi,
-          functionName: "swapToETH", // (nonpayable)
-          args: [
-            inputTokenAddress,
-            feeTier as number,
-            amountBD.value,
-            minReceive,
-            sqrtPriceLimit,
-            referralAddress as `0x${string}`,
-          ],
-        } as any,
-        {
-          onError: (e: any) => reject(e),
-          onSuccess: (h: any) => resolve(h as `0x${string}`),
-        },
-      );
-    });
+    const hash = await writeWithHandlers({
+      address: wrapperAddress,
+      abi: birdieswap_wrapper_abi,
+      functionName: "swapToETH",
+      args: [inputTokenAddress, feeTier, amountBD.value, minReceive, sqrtPriceLimit, referralAddress as `0x${string}`],
+    } as any);
+
+    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
+    //   writeContract(
+    //     {
+    //       address: wrapperAddress,
+    //       abi: birdieswap_wrapper_abi,
+    //       functionName: "swapToETH", // (nonpayable)
+    //       args: [
+    //         inputTokenAddress,
+    //         feeTier as number,
+    //         amountBD.value,
+    //         minReceive,
+    //         sqrtPriceLimit,
+    //         referralAddress as `0x${string}`,
+    //       ],
+    //     } as any,
+    //     {
+    //       onError: (e: any) => reject(e),
+    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
+    //     },
+    //   );
+    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -305,28 +371,43 @@ export async function swap(
   const minReceive = receiveAtLeast;
   const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0); // 기존 코드 그대로 보존
 
-  const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    writeContract(
-      {
-        address: contracts.birdieRouter.address as `0x${string}`,
-        abi: contracts.birdieRouter.abi,
-        functionName: "swap",
-        args: [
-          inputTokenAddress as `0x${string}`,
-          feeTier as number,
-          outputTokenAddress as `0x${string}`,
-          amountBD.value,
-          minReceive,
-          sqrtPriceLimit,
-          referralAddress as `0x${string}`,
-        ],
-      },
-      {
-        onError: (e: any) => reject(e),
-        onSuccess: (h: any) => resolve(h as `0x${string}`),
-      },
-    );
+  const hash = await writeWithHandlers({
+    address: contracts.birdieRouter.address as `0x${string}`,
+    abi: contracts.birdieRouter.abi,
+    functionName: "swap",
+    args: [
+      inputTokenAddress as `0x${string}`,
+      feeTier as number,
+      outputTokenAddress as `0x${string}`,
+      amountBD.value,
+      minReceive,
+      sqrtPriceLimit,
+      referralAddress as `0x${string}`,
+    ],
   });
+
+  // const hash: `0x${string}` = await new Promise((resolve, reject) => {
+  //   writeContract(
+  //     {
+  //       address: contracts.birdieRouter.address as `0x${string}`,
+  //       abi: contracts.birdieRouter.abi,
+  //       functionName: "swap",
+  //       args: [
+  //         inputTokenAddress as `0x${string}`,
+  //         feeTier as number,
+  //         outputTokenAddress as `0x${string}`,
+  //         amountBD.value,
+  //         minReceive,
+  //         sqrtPriceLimit,
+  //         referralAddress as `0x${string}`,
+  //       ],
+  //     },
+  //     {
+  //       onError: (e: any) => reject(e),
+  //       onSuccess: (h: any) => resolve(h as `0x${string}`),
+  //     },
+  //   );
+  // });
 
   await finalizeAfterTxSuccess({
     hash,

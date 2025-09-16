@@ -27,6 +27,8 @@ import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses"
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
 import { getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+
 
 type NativeMode = 'ETH' | 'WETH' | null;
 
@@ -35,6 +37,7 @@ export enum InvalidStatuses {
   INSUFFICIENT_BALANCE = "INSUFFICIENT_BALANCE",
   IMPERMANENT_INSOLVENCY = "IMPERMANENT_INSOLVENCY",
 }
+
 export function usePairStartPanel(item: FarmPair) {
   const {
     client,
@@ -48,7 +51,6 @@ export function usePairStartPanel(item: FarmPair) {
     assetsContext,
     stakeToken,
     stakeTokenAddress,
-    routerAddress,
   } = useFarmPanelCommon(item);
 
   const accountBalances = useAccountBalances();
@@ -71,7 +73,7 @@ export function usePairStartPanel(item: FarmPair) {
 const ETH_ZERO_ADDRESS: `0x${string}` = getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
 const WETH_ADDRESS: `0x${string}` | null = getFromContracts(ADDRESS.WETH, chainId);
 const WRAPPER_ADDRESS: `0x${string}` | null = getFromContracts(ADDRESS.WRAPPER, chainId);
-
+const ROUTER_ADDRESS: `0x${string}` | null = getFromContracts(ADDRESS.ROUTER, chainId); 
 // 기본 토큰이 ETH인지 판정: symbol === 'ETH' 또는 0x000... 주소 컨벤션
 const defaultIsETH: [boolean, boolean] = [
   inputToken0?.symbol === "ETH" || isZeroAddress((inputToken0 as any)?.addresses?.[chainId]),
@@ -82,6 +84,16 @@ const [nativeMode, setNativeMode] = useState<[NativeMode, NativeMode]>([
   defaultIsETH[0] ? "ETH" : null,
   defaultIsETH[1] ? "ETH" : null,
 ]);
+
+// UI에서 쓰기 쉬운 세터
+const setNativeMode0 = useCallback((m: any) => {
+  const s = (m ?? "").toString().trim().toUpperCase();
+  setNativeMode((prev) => [s === "WETH" ? "WETH" : "ETH", prev[1]]);
+}, []);
+const setNativeMode1 = useCallback((m: any) => {
+  const s = (m ?? "").toString().trim().toUpperCase();
+  setNativeMode((prev) => [prev[0], s === "WETH" ? "WETH" : "ETH"]);
+}, []);
 
 // [ADDED] 노출 조건: 기본이 ETH일 때만
 const nativeToggleCanShow: [boolean, boolean] = [defaultIsETH[0], defaultIsETH[1]];
@@ -116,14 +128,60 @@ const nativeToggleCanShow: [boolean, boolean] = [defaultIsETH[0], defaultIsETH[1
   const balance0 = useBalance(inputToken0);
   const balance1 = useBalance(inputToken1);
 
-  const { allowance: allowance0, query: allowanceQuery0 } = useAllowance({
-    token: inputToken0,
-    spender: stakeToken.provider,
-  });
-  const { allowance: allowance1, query: allowanceQuery1 } = useAllowance({
-    token: inputToken1,
-    spender: stakeToken.provider,
-  });
+  const ethDisplayMeta = tokens.ETH
+  const wethDisplayMeta = tokens.WETH;
+
+  // 표시용 토큰: 기본이 ETH인 경우에만 nativeMode를 적용해 ETH/WETH 선택
+  const displayTokens = useMemo(() => {
+    const t0 = defaultIsETH[0]
+      ? (nativeMode[0] === "WETH" ? wethDisplayMeta : ethDisplayMeta)
+      : (inputToken0 as any);
+    const t1 = defaultIsETH[1]
+      ? (nativeMode[1] === "WETH" ? wethDisplayMeta : ethDisplayMeta)
+      : (inputToken1 as any);
+    return [t0, t1] as const;
+  }, [defaultIsETH, nativeMode, wethDisplayMeta, ethDisplayMeta, inputToken0, inputToken1]);
+
+  // ── 여기부터는 sideMode 없이 displayTokens로만 판별 ──
+  const sideAddr0 = (displayTokens[0] as any)?.addresses?.[chainId] as `0x${string}` | undefined;
+  const sideAddr1 = (displayTokens[1] as any)?.addresses?.[chainId] as `0x${string}` | undefined;
+
+  const isETH0 = (displayTokens[0] as any)?.symbol === "ETH" || isZeroAddress(sideAddr0);
+  const isETH1 = (displayTokens[1] as any)?.symbol === "ETH" || isZeroAddress(sideAddr1);
+
+  const isWETH0 = !!WETH_ADDRESS && sideAddr0?.toLowerCase?.() === WETH_ADDRESS.toLowerCase?.();
+  const isWETH1 = !!WETH_ADDRESS && sideAddr1?.toLowerCase?.() === WETH_ADDRESS.toLowerCase?.();
+
+  const anyETH = isETH0 || isETH1;
+  // 잔액(ETH면 네이티브/WETH 맵에서, 아니면 기존 balance)
+  const getBal = (addr?: `0x${string}` | string | null) => {
+    if (!addr) return null;
+    const lower = (addr as string).toLowerCase() as `0x${string}`;
+    return balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null;
+  };
+  const displayBalances: [any, any] = [
+    defaultIsETH[0] ? (isWETH0 ? getBal(WETH_ADDRESS) : getBal(ETH_ZERO_ADDRESS)) : balance0,
+    defaultIsETH[1] ? (isWETH1 ? getBal(WETH_ADDRESS) : getBal(ETH_ZERO_ADDRESS)) : balance1,
+  ];
+
+  // ===== 승인 로직 (ETH는 승인 불필요) =====
+  // allowance 대상 토큰: ETH → 더미 WETH, WETH/기타 → 해당 표시 토큰
+  const token0ForAllowance = isETH0 ? (wethDisplayMeta as any) : (displayTokens[0] as any);
+  const token1ForAllowance = isETH1 ? (wethDisplayMeta as any) : (displayTokens[1] as any);
+
+  const spender0Provider =
+  anyETH ? (stakingProviders as any)?.BIRDIESWAP_Wrapper : (stakingProviders as any)?.BIRDIESWAP_Router;
+const spender1Provider =
+  anyETH ? (stakingProviders as any)?.BIRDIESWAP_Wrapper : (stakingProviders as any)?.BIRDIESWAP_Router;
+
+const { allowance: allowance0, query: allowanceQuery0 } = useAllowance({
+  token: token0ForAllowance,
+  spender: spender0Provider,
+});
+const { allowance: allowance1, query: allowanceQuery1 } = useAllowance({
+  token: token1ForAllowance,
+  spender: spender1Provider,
+});
 
   const [amounts, setAmounts] = useState<
     [BigDecimal | null, BigDecimal | null]
@@ -132,6 +190,7 @@ const nativeToggleCanShow: [boolean, boolean] = [defaultIsETH[0], defaultIsETH[1
   const { assetValues } = useContext(AssetsContext);
   const { poolBalance0, poolBalance1 } = useFarmLPBalances(item, assetValues);
 
+  
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
 
   const [underlyingBalance0, setUnderlyingBalance0] = useState<BigDecimal | null>(null);
@@ -174,77 +233,37 @@ const nativeToggleCanShow: [boolean, boolean] = [defaultIsETH[0], defaultIsETH[1
     };
   }, [client, bToken0, bToken1, poolBalance0, poolBalance1]);
 
-  const ethDisplayMeta = tokens.ETH
-  // const ethDisplayMeta = useMemo(() => ({
-  //   symbol: "ETH",
-  //   name: "Ether",
-  //   decimals: 18,
-  //   addresses: { [chainId]: ETH_ZERO_ADDRESS },
-  //   iconSrc: "/tokens/eth.svg",
-  // } as any), [chainId, ETH_ZERO_ADDRESS]);
+  // console.log("getOtherAmount", stakeToken, { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0": poolBalance0, "poolBalance1.value": poolBalance1, "underlyingBalance0": underlyingBalance0, "underlyingBalance1": underlyingBalance1 });
+  const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([false, false]);
 
-   const wethDisplayMeta = tokens.WETH;
-  // const wethDisplayMeta = useMemo(() => ({
-  //   symbol: "WETH",
-  //   name: "Wrapped Ether",
-  //   decimals: 18,
-  //   addresses: { [chainId]: WETH_ADDRESS },
-  //   iconSrc: "/tokens/weth.svg",
-  // } as any), [chainId, WETH_ADDRESS]);
-
-  const displayTokens = useMemo(() => {
-    const mode0 = (nativeMode?.[0] ?? (defaultIsETH[0] ? "ETH" : null)) as "ETH" | "WETH" | null;
-    const mode1 = (nativeMode?.[1] ?? (defaultIsETH[1] ? "ETH" : null)) as "ETH" | "WETH" | null;
-
-    return [
-      defaultIsETH[0] ? (mode0 === "WETH" ? wethDisplayMeta : ethDisplayMeta) : (inputToken0 as any),
-      defaultIsETH[1] ? (mode1 === "WETH" ? wethDisplayMeta : ethDisplayMeta) : (inputToken1 as any),
-    ] as const;
-  }, [defaultIsETH[0], defaultIsETH[1], nativeMode, wethDisplayMeta, ethDisplayMeta, inputToken0, inputToken1]);
-
-  // (선택) 표시용 잔액(네이티브/WETH)
-  const getBal = (addr?: `0x${string}` | string | null) => {
-    if (!addr) return null;
-    const lower = (addr as string).toLowerCase() as `0x${string}`;
-    return balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null;
-  };
-
-  const displayBalances: [any, any] = [
-    defaultIsETH[0] ? (nativeMode?.[0] === "WETH" ? getBal(WETH_ADDRESS) : getBal(ETH_ZERO_ADDRESS)) : balance0,
-    defaultIsETH[1] ? (nativeMode?.[1] === "WETH" ? getBal(WETH_ADDRESS) : getBal(ETH_ZERO_ADDRESS)) : balance1,
-  ];
-
-    // ====== WETH allowance (ETH 모드에선 사용 X, WETH 모드에서 사용) ======
-  const { allowance: allowanceWETH, query: allowanceQueryWETH } = useAllowance({
-    token: wethDisplayMeta as any,
-    spender: stakeToken.provider,
-  });
-
+  const approveWithPending = useCallback(
+  (i: 0 | 1, fn: (t: any) => any) => async (token: any) => {
+    setIsApprovePending((p) => {
+      const next = [...p] as [boolean, boolean];
+      next[i] = true;
+      return next;
+    });
+    try {
+      await Promise.resolve(fn(token)); // ✅ 항상 await 가능
+    } finally {
+      setIsApprovePending((p) => {
+        const next = [...p] as [boolean, boolean];
+        next[i] = false;
+        return next;
+      });
+    }
+  },
+  []
+);
   // ====== 승인 상태 (ETH=항상 true, WETH=WETH allowance) ======
   const isApproved = useMemo<[boolean, boolean]>(() => {
     const amt0 = amounts[0] || BigDecimal.ZERO();
     const amt1 = amounts[1] || BigDecimal.ZERO();
-    const mode0 = nativeMode?.[0];
-    const mode1 = nativeMode?.[1];
-
-    const approved0 =
-      defaultIsETH[0]
-        ? (mode0 === "ETH" ? true : allowanceWETH.gte(amt0))
-        : allowance0.gte(amt0);
-
-    const approved1 =
-      defaultIsETH[1]
-        ? (mode1 === "ETH" ? true : allowanceWETH.gte(amt1))
-        : allowance1.gte(amt1);
-
+    const approved0 = isETH0 ? true : allowance0.gte(amt0);
+    const approved1 = isETH1 ? true : allowance1.gte(amt1);
     return [approved0, approved1];
-  }, [amounts, nativeMode, defaultIsETH, allowance0, allowance1, allowanceWETH]);
-
-  const displayApproved: [boolean, boolean] = useMemo(() => {
-    const a0 = defaultIsETH[0] && nativeMode?.[0] === "ETH" ? true : isApproved[0];
-    const a1 = defaultIsETH[1] && nativeMode?.[1] === "ETH" ? true : isApproved[1];
-    return [a0, a1];
-  }, [defaultIsETH, nativeMode, isApproved]);
+  }, [amounts, allowance0, allowance1, isETH0, isETH1]);
+  const displayApproved: [boolean, boolean] = useMemo(() => isApproved, [isApproved]);
 
   const isInsufficientBalance: [boolean, boolean] = useMemo(() => {
     return [balance0.lt(amounts[0] || 0), balance1.lt(amounts[1] || 0)];
@@ -268,7 +287,7 @@ const nativeToggleCanShow: [boolean, boolean] = [defaultIsETH[0], defaultIsETH[1
       if (thisUnderlying.eq(0)) {
         return BigDecimal.ZERO();
       }
-      console.log("getOtherAmount", { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0.value": poolBalance0.value, "poolBalance1.value": poolBalance1.value, "value": value, "thisUnderlying": thisUnderlying, "otherUnderlying": otherUnderlying });
+      // console.log("getOtherAmount", { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0.value": poolBalance0.value, "poolBalance1.value": poolBalance1.value, "value": value, "thisUnderlying": thisUnderlying, "otherUnderlying": otherUnderlying });
       return value
         .mul(otherUnderlying)
         .div(thisUnderlying)
@@ -434,21 +453,43 @@ useEffect(() => {
   };
 }, []);
 
-const approve = useApprove({
-  client,
-  pool: stakeToken,
-  poolAddress: stakeTokenAddress as `0x${string}`,
-  routerAddress: routerAddress as `0x${string}`,
-  transactionContext,
-  refetch: () =>
-    Promise.all([
-      allowanceQuery0.refetch(), 
-      allowanceQuery1.refetch(),
-      allowanceQueryWETH.refetch(),
-      assetsContext.refetchAll(),
-    ]),
-  writeContract,
-});
+// 사이드별 approve: spender 주소는 위에서 분기(WETH/기타=Router, ETH=Wrapper)
+  const spender0Addr =
+  (spender0Provider?.addresses?.[chainId] as `0x${string}` | undefined) ??
+  (stakeToken?.provider?.addresses?.[chainId] as `0x${string}` | undefined);
+  const spender1Addr =
+    (spender1Provider?.addresses?.[chainId] as `0x${string}` | undefined) ??
+    (stakeToken?.provider?.addresses?.[chainId] as `0x${string}` | undefined);
+
+  const approve0 = useApprove({
+    client,
+    pool: stakeToken,
+    poolAddress: stakeTokenAddress as `0x${string}`,
+    routerAddress: spender0Addr as `0x${string}`,
+    transactionContext,
+    refetch: () =>
+      Promise.all([
+        allowanceQuery0.refetch(),
+        allowanceQuery1.refetch(),
+        assetsContext.refetchAll(),
+      ]),
+    writeContract,
+  });
+
+  const approve1 = useApprove({
+    client,
+    pool: stakeToken,
+    poolAddress: stakeTokenAddress as `0x${string}`,
+    routerAddress: spender1Addr as `0x${string}`,
+    transactionContext,
+    refetch: () =>
+      Promise.all([
+        allowanceQuery0.refetch(),
+        allowanceQuery1.refetch(),
+        assetsContext.refetchAll(),
+      ]),
+    writeContract,
+  });
 
 const tokenStatuses = useMemo(
     () =>
@@ -467,34 +508,17 @@ const tokenStatuses = useMemo(
               : (insolvency1 !== undefined && new BigDecimal(insolvency1).lt(amounts[1] || 0)),
           impermanentInsolvency: i === 0 ? insolvency0 : insolvency1,
           isInsufficientBalance: i === 0 ? balance0.lt(amounts[0] || 0) : balance1.lt(amounts[1] || 0),
-          isApprovable: isConnected && !isApproved[i],
-          approve: () => approve(input), // ETH 모드라면 버튼이 안 보이므로 호출되지 않음
+          isApprovable: isConnected && !isApproved[i] && !isApprovePending[i],
+          approve: () =>
+            (i === 0
+              ? approveWithPending(0, approve0)(input)
+              : approveWithPending(1, approve1)(input)
+            ),// ETH 모드라면 버튼이 안 보이므로 호출되지 않음
         } as FarmStartTokenStatus;
       }) as [FarmStartTokenStatus, FarmStartTokenStatus],
-  [displayTokens, balance0, balance1, amounts, isApproved, isActive, insolvency0, insolvency1, isConnected, approve]);
+  [displayTokens, balance0, balance1, amounts, isApproved, isActive, insolvency0, insolvency1, isConnected, approve0, approve1],);
 
-  // ====== Start Farming: 선택 결과에 따른 실제 주소 매핑 ======
-  const effectiveAddr = (i: 0 | 1): `0x${string}` => {
-    const mode = nativeMode?.[i];
-    const isDefETH = defaultIsETH[i];
-    if (isDefETH) {
-      if (mode === "ETH") return ETH_ZERO_ADDRESS;                            // 네이티브
-      if (mode === "WETH") return (WETH_ADDRESS ?? ETH_ZERO_ADDRESS);         // WETH
-    }
-    // 일반 ERC20
-    return (i === 0 ? inputToken0Address : inputToken1Address) as `0x${string}`;
-  };
-
-// [ADDED] --- 최신 값 ref로 보관 (state 참조 없이 내부 계산에 사용) ---
-const poolBalance0Ref = useRef(poolBalance0);
-const poolBalance1Ref = useRef(poolBalance1);
-const tokenStatusesRef = useRef(tokenStatuses);
-
-useEffect(() => { poolBalance0Ref.current = poolBalance0; }, [poolBalance0]);
-useEffect(() => { poolBalance1Ref.current = poolBalance1; }, [poolBalance1]);
-useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
-
-
+  // === Router/Wrapper 호출 ===
   const startFarming = useCallback(() => {
     if (!address) return;
     const transactionProps: TransactionStatusProps &
@@ -521,41 +545,42 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
         await Promise.all([
           allowanceQuery0.refetch(),
           allowanceQuery1.refetch(),
-          allowanceQueryWETH.refetch(),
           assetsContext.refetchAll(),
         ]);
       },
     });
 
-    // 한쪽이라도 네이티브 ETH인가?
-    const side0IsNativeETH = defaultIsETH[0] && nativeMode?.[0] === "ETH";
-    const side1IsNativeETH = defaultIsETH[1] && nativeMode?.[1] === "ETH";
+    const anyETH = isETH0 || isETH1;
+    if (isETH0 && isETH1) {
+      console.error("[startFarming] both sides are ETH — unsupported combination");
+      return;
+    }
 
-    // === (A) 한쪽이라도 ETH면: wrapper.dualDepositWithETH(payable) ===
-    if (side0IsNativeETH || side1IsNativeETH) {
+    // (A) 한쪽이라도 ETH
+    if (anyETH) {
       if (!WRAPPER_ADDRESS) {
         console.error("[startFarming] Missing WRAPPER_ADDRESS for chain:", chainId);
         return;
       }
 
-      const ethIndex: 0 | 1 = side0IsNativeETH ? 0 : 1;
-      const otherIndex: 0 | 1 = side0IsNativeETH ? 1 : 0;
+      const ethIndex: 0 | 1 = isETH0 ? 0 : 1;
+      const otherIndex: 0 | 1 = isETH0 ? 1 : 0;
 
       // ETH value
       const ethAmountBD = tokenStatuses[ethIndex].amount ?? BigDecimal.ZERO();
       const ethValue = parseUnits(ethAmountBD.toFixed(18), 18);
       
-      // other token address (WETH 모드면 WETH, 그 외엔 ERC20 원주소)
-      let otherTokenAddress: `0x${string}` = effectiveAddr(otherIndex);
-      if (defaultIsETH[otherIndex] && nativeMode?.[otherIndex] === "WETH") {
-        otherTokenAddress = (WETH_ADDRESS ?? ETH_ZERO_ADDRESS) as `0x${string}`;
-      }
+      const otherTokenAddr =
+        ( (otherIndex === 0 ? isWETH0 : isWETH1)
+            ? (WETH_ADDRESS ?? ETH_ZERO_ADDRESS)
+            : (displayTokens[otherIndex] as any).addresses[chainId]
+        ) as `0x${string}`;
 
-      // other token amount (해당 토큰 decimals)
       const otherDecimals =
-        (displayTokens?.[otherIndex]?.decimals ??
-         (otherIndex === 0 ? inputToken0?.decimals : inputToken1?.decimals) ??
-         18);
+        displayTokens?.[otherIndex]?.decimals ??
+        (otherIndex === 0 ? inputToken0?.decimals : inputToken1?.decimals) ??
+        18;
+
       const otherAmountBD = tokenStatuses[otherIndex].amount ?? BigDecimal.ZERO();
       const otherAmount = parseUnits(otherAmountBD.toString(), otherDecimals);
 
@@ -566,7 +591,7 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
           address: WRAPPER_ADDRESS,
           abi: birdieswap_wrapper_abi,
           functionName: "dualDepositWithETH",
-          args: [otherTokenAddress, otherAmount],
+          args: [otherTokenAddr, otherAmount],
           value: ethValue, // payable
         },
         {
@@ -585,31 +610,24 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
       return;
     }
 
-    // === (B) 둘 다 ETH가 아닌 경우: 기존 router.dualDeposit ===
-    console.log("usePairStartPanel routerPairDepositCall", inputToken0Address,parseUnits(
-            tokenStatuses[0].amount?.toString() || "0",
-            tokenStatuses[0].input.decimals,
-          ),inputToken1Address,parseUnits(
-            tokenStatuses[1].amount?.toString() || "0",
-            tokenStatuses[1].input.decimals,
-          ),displayTokens,displayTokens[0].addresses[chainId],displayTokens[1].addresses[chainId]);
+        // 둘 다 비-ETH → Router.dualDeposit
+    if (!ROUTER_ADDRESS) {
+      console.error("[startFarming] Missing ROUTER_ADDRESS for chain:", chainId);
+      return;
+    }
+    const addr0 = displayTokens[0].addresses[chainId] as `0x${string}`;
+    const addr1 = displayTokens[1].addresses[chainId] as `0x${string}`;
 
     writeContract(
       {
-        address: routerAddress as `0x${string}`,
+        address: ROUTER_ADDRESS as `0x${string}`,
         abi: birdieswap_router_abi,
         functionName: "dualDeposit",
         args: [
-          displayTokens[0].addresses[chainId] as `0x${string}`,
-          parseUnits(
-            tokenStatuses[0].amount?.toString() || "0",
-            tokenStatuses[0].input.decimals,
-          ),
-          displayTokens[1].addresses[chainId] as `0x${string}`,
-          parseUnits(
-            tokenStatuses[1].amount?.toString() || "0",
-            tokenStatuses[1].input.decimals,
-          ),
+          addr0,
+          parseUnits(tokenStatuses[0].amount?.toString() || "0", tokenStatuses[0].input.decimals),
+          addr1,
+          parseUnits(tokenStatuses[1].amount?.toString() || "0", tokenStatuses[1].input.decimals),
         ],
       },
       {
@@ -631,7 +649,6 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
     defaultIsETH,
     nativeMode,
     stakeToken,
-    routerAddress,
     address,
     client,
     transactionContext,
@@ -639,10 +656,17 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
     stakeTokenAddress,
     allowanceQuery0,
     allowanceQuery1,
-    allowanceQueryWETH,
     assetsContext,
+    displayTokens,
+    inputToken0?.decimals,
+    inputToken1?.decimals,
     WETH_ADDRESS,
     WRAPPER_ADDRESS,
+    ROUTER_ADDRESS,
+    isETH0,
+    isETH1,
+    isWETH0,
+    isWETH1,
   ]);
 
   const isStartable = useMemo(
@@ -663,10 +687,10 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
   const isPending =
     allowanceQuery0.isFetching ||
     allowanceQuery1.isFetching ||
-    allowanceQueryWETH.isFetching ||
     isPendingWriteContract ||
     transactionContext.transactionProps?.transactionStatus ===
-      TransactionStatus.PENDING;
+      TransactionStatus.PENDING ||
+    isApprovePending[0] || isApprovePending[1];
 
   return {
     setAmount,
@@ -675,7 +699,6 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
     setIsActive,
     tokenStatuses,
     isStartable,
-    approve,
     startFarming,
     isPending,
     isConnected,
@@ -685,10 +708,9 @@ useEffect(() => { tokenStatusesRef.current = tokenStatuses; }, [tokenStatuses]);
     poolBalance1,
     nativeMode,
     setNativeMode,
-    nativeToggleCanShow: [
-    displayTokens[0]?.symbol === "ETH",
-    displayTokens[1]?.symbol === "ETH",
-  ] as [boolean, boolean],
+    setNativeMode0,
+    setNativeMode1,
+    nativeToggleCanShow,
     displayTokens,
     displayBalances,
     displayApproved,

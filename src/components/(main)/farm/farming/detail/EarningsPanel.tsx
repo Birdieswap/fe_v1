@@ -72,12 +72,19 @@ export default function EarningsPanel({ item }: { item: Farm }) {
     return "apr30d";
   }, [tab]);
 
-  console.log("EarningsPanel", item.details.rewards);
+  // console.log("EarningsPanel", item.details.rewards);
 
   const stakeAddr = item?.wip_stakeToken?.addresses?.[chainId];
 
   const stakeAddrLower = (stakeAddr ?? "").toLowerCase();
-  const chainIdStr = String(chainId);
+  const chainIdStr = (() => {
+    const mode = (process?.env?.NEXT_PUBLIC_OPERATION_MODE ?? "")
+      .toString()
+      .trim()
+      .toLowerCase();
+
+    return mode === "dev" ? "0" : String(chainId);
+  })();
 
   // APR 엔트리 매칭
   const matched = useMemo(
@@ -89,6 +96,21 @@ export default function EarningsPanel({ item }: { item: Farm }) {
       ),
     [aprList, chainIdStr, stakeAddr]
   );
+
+  // console.log(
+  //   "EarningsPanel aprList",
+  //   aprList,
+  //   "chainId",
+  //   chainId,
+  //   "stakeAddrLower",
+  //   stakeAddrLower,
+  //   "addr1",
+  //   aprList[0].contractAddress.toLowerCase(),
+  //   aprList[1].contractAddress.toLowerCase(),
+  //   aprList[2].contractAddress.toLowerCase(),
+  //   matched,
+  //   stakeAddrLower
+  // );
 
   const toRowItem = (src: AprVault, kind: "vault" | "reward"): VaultRowItem => {
     const raw = src?.[periodKey];

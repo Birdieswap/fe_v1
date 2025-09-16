@@ -44,8 +44,9 @@ export interface UseSwapTokensReturn {
   setToTokenAmountWithGuard: (n: SetStateAction<string>) => void;
   setFromTokenAmountWithGuard: (n: SetStateAction<string>) => void;
   swap: () => Promise<void>;
-  approve: () => void;
+  approve: () => Promise<void>;
   isApproved: boolean;
+  isApprovePending: boolean;
   isPending: boolean;
   isZeroAmount: boolean;
   updateAmount: (newAmount: string, side: "in" | "out", withToToken?: ICurrency, withFromToken?: ICurrency) => Promise<void>;
