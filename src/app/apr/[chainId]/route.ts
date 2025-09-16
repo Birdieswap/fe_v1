@@ -3,8 +3,11 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request, { params }: { params: { chainId: string } }) {
-  const id = Number(params.chainId);
+export async function GET(_req: Request,) {
+  const { pathname } = new URL(_req.url);
+  const segments = pathname.replace(/\/$/, "").split("/");
+  const chainIdStr = segments[segments.length - 1] || "";
+  const id = Number(chainIdStr);
 
   // // 기본 유효성 체크
   // if (!Number.isInteger(id) || id <= 0) {
