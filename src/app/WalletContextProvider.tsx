@@ -106,6 +106,13 @@ export default function WalletContextProvider({
     (account?.address as `0x${string}`) || undefined
   );
 
+  console.log(
+    "[WalletContext] account changed",
+    account,
+    referralAddress,
+    walletData
+  );
+
   useEffect(() => {
     if (account.isConnected && account.address && referralAddress === "") {
       setReferralAddress(account.address);
