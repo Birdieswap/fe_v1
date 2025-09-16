@@ -100,6 +100,7 @@ export default function SwapConfirmButton() {
     isApproved,
     isLoadingFrom,
     isLoadingTo,
+    isApprovePending,
   } = useSwapContext();
   const { setIsConnectModalOpen, setIsNetworkModalOpen } =
     useContext(WalletContext);
@@ -111,7 +112,8 @@ export default function SwapConfirmButton() {
   }, [fromAmount, fromToken, fromBalance]);
   const isWrongNetwork = chainId !== 11155111; // && chainId !== 9998453;
   const { onPress, isDisabled, buttonText, buttonVariant } = useMemo(() => {
-    const isLoading = isLoadingFrom || isLoadingTo || isPending;
+    const isLoading =
+      isLoadingFrom || isLoadingTo || isPending || isApprovePending;
 
     if (!isConnected) {
       return {
@@ -171,6 +173,7 @@ export default function SwapConfirmButton() {
     isLoadingFrom,
     isLoadingTo,
     isPending,
+    isApprovePending,
     isWrongNetwork,
     isZeroAmount,
     setIsConnectModalOpen,
@@ -188,8 +191,16 @@ export default function SwapConfirmButton() {
       <AnimatePresence initial={false}>
         {isConnected && !isWrongNetwork && !isZeroAmount && !isApproved && (
           <Fragment key={"approve-button"}>
-            <ButtonWithPresence fullWidth variant="MINT" onPress={approve}>
-              Approve {fromToken?.symbol}
+            <ButtonWithPresence
+              fullWidth
+              variant="MINT"
+              onPress={isApprovePending ? () => {} : approve}
+              isDisabled={isApprovePending}
+              aria-busy={isApprovePending ? true : undefined}
+            >
+              {isApprovePending
+                ? `Approving ${fromToken?.symbol}…`
+                : `Approve ${fromToken?.symbol}`}
             </ButtonWithPresence>
             <motion.div className="h-6 w-full" {...presenceTransition} />
           </Fragment>

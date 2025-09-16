@@ -24,6 +24,9 @@ import { approve as approveAction, swap as swapAction } from "./useSwapToken/act
 import useTokenAddress from "@/hooks/useTokenAddress";
 import { weth_abi } from "@/const/contracts/abis/weth_abi";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
+import { getFromContracts, isZeroAddress } from "@/utils/farm/getAddressHelpers";
 
 type Token = { symbol?: string; decimals?: number; address?: `0x${string}` | null };
 
@@ -45,6 +48,13 @@ function oneToOne(raw: string, from?: Token | null, to?: Token | null): string {
   }
 }
 
+function isUserRejected(e: any) {
+  // 표준 EIP-1193 코드
+  if (e?.code === 4001 || e?.cause?.code === 4001) return true;
+  // viem/wagmi의 메시지 패턴
+  const msg = (e?.shortMessage || e?.message || "").toLowerCase();
+  return msg.includes("user rejected") || msg.includes("user denied");
+}
 
 export default function useSwapTokens({
   chainId,
@@ -71,7 +81,34 @@ export default function useSwapTokens({
   const publicClient = usePublicClient();
   const fromTokenAddress = useTokenAddress(fromToken);
 
-  // allowance 조회
+  const ETH_ZERO_ADDRESS = getFromContracts(ADDRESS.ETH, chainId);
+  const ROUTER_ADDRESS   = getFromContracts(ADDRESS.ROUTER, chainId);
+  const WRAPPER_ADDRESS  = getFromContracts(ADDRESS.WRAPPER, chainId);
+
+// provider 메타 (stakingProviders에 Router 메타가 없을 때 대비)
+  const ROUTER_PROVIDER =
+    (stakingProviders as any)?.BIRDIESWAP_Router ?? { addresses: { [chainId]: ROUTER_ADDRESS } };
+  const WRAPPER_PROVIDER =
+    (stakingProviders as any)?.BIRDIESWAP_Wrapper ?? { addresses: { [chainId]: WRAPPER_ADDRESS } };
+  
+  // toToken의 체인 주소
+  const toTokenAddr = useMemo(
+    () => getTokenAddress({ token: toToken as any, chainId }),
+    [toToken, chainId]
+  );
+
+  // toToken이 네이티브 ETH인지 여부
+  const isToETH = useMemo(() => {
+    const sym = (toToken as any)?.symbol;
+    return sym === "ETH" || isZeroAddress?.(toTokenAddr as `0x${string}`);
+  }, [toToken, toTokenAddr]);
+
+  const spenderAddress = useMemo(() => {
+    const w = (WRAPPER_PROVIDER?.addresses?.[chainId] as `0x${string}` | undefined) ?? (WRAPPER_ADDRESS as `0x${string}` | undefined);
+    const r = (ROUTER_PROVIDER?.addresses?.[chainId]  as `0x${string}` | undefined) ?? (contracts.birdieRouter.address as `0x${string}`);
+    return (isToETH ? w : r) as `0x${string}`;
+  }, [WRAPPER_PROVIDER, ROUTER_PROVIDER, WRAPPER_ADDRESS, chainId, isToETH]);
+    // allowance 조회
   const {
     data: allowanceFromToken,
     isFetching: isFetchingAllowanceFromToken,
@@ -80,7 +117,10 @@ export default function useSwapTokens({
     address: fromTokenAddress || undefined,
     abi: fromToken?.abi,
     functionName: "allowance",
-    args: [address as `0x${string}`, contracts.birdieRouter.address as `0x${string}`],
+    args: [address as `0x${string}`, spenderAddress],
+    query: {
+      enabled: !!fromTokenAddress && fromToken?.symbol !== "ETH" && !!spenderAddress,
+    } as any,
   });
 
   // 풀 메타
@@ -101,6 +141,8 @@ export default function useSwapTokens({
   const [rExchangeRateStr, setRExchangeRateStr] = useState<string>("");
   const [rExchangeRateBD, setRExchangeRateBD] = useState<BigDecimal | null>(null);
   const [quoteReceive, setQuoteReceive] = useState<bigint | null>(null);
+
+  const [isApprovePending, setIsApprovePending] = useState(false);
 
   // 타이핑 디바운스
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -349,7 +391,7 @@ if (isWrapPair(aFrom, aTo)) {
     }
   }, [allowanceFromToken, fromAmount, fromToken]);
 
-  const isPending = isPendingWriteContract || (fromToken?.symbol !== "ETH" && isFetchingAllowanceFromToken) || isFetchingAssets;
+  const isPending = isApprovePending || isPendingWriteContract || (fromToken?.symbol !== "ETH" && isFetchingAllowanceFromToken) || isFetchingAssets;
 
   const isZeroAmount = useMemo(() => {
     if (!fromAmount || !toAmount) return true;
@@ -362,45 +404,78 @@ if (isWrapPair(aFrom, aTo)) {
   const rExchangeRate = rExchangeRateStr;
 
   // 액션
-  const approve = useCallback(() => approveAction({
-    chainId,
-    fromToken,
-    fromTokenAddress: fromTokenAddress as any,
-    writeContract,
-    client,
-    transactionContext,
-    refetchAllowance: async () => { try { return await refetchAllowanceFromToken?.(); } catch { return undefined as unknown as Promise<unknown>; } },
-  }), [chainId, fromToken, fromTokenAddress, writeContract, client, transactionContext]);
+  const approve = useCallback(async () => {
+    // 네이티브 ETH는 approve 없음
+    if (fromToken?.symbol === "ETH") return;
+
+    setIsApprovePending(true);
+    try {
+      await approveAction({
+        chainId,
+        fromToken,
+        fromTokenAddress: fromTokenAddress as any,
+        writeContract,
+        client,
+        transactionContext,
+        refetchAllowance: async () => {
+          try { return await refetchAllowanceFromToken?.(); }
+          catch { return undefined as unknown as Promise<unknown>; }
+        },
+        // 분기된 spenderAddress 전달(ETH로 받는 경우 Wrapper)
+        spenderAddress,
+      });
+    } catch (e) {
+    // 지갑 취소는 조용히 무시 (원하면 토스트만 띄우세요)
+    if (isUserRejected(e)) {
+      // toast.info("서명이 취소되었습니다");
+      return;
+    }
+    // 그 외 에러는 그대로 전파(또는 여기서 처리)
+    throw e;
+  }finally {
+      setIsApprovePending(false);
+    }
+  }, [chainId, fromToken, fromTokenAddress, writeContract, client, transactionContext, refetchAllowanceFromToken, spenderAddress]);
+
 
   const swap = useCallback(async () => {
     setPriceImpact?.(new BigDecimal(0, 18));
     if (!fromToken) return;
 
-    await swapAction({
-      chainId,
-      userAddress: address as `0x${string}`,
-      fromToken,
-      toToken,
-      fromAmount,
-      toAmount,
-      writeContract,
-      client,
-      publicClient,
-      transactionContext,
-      referralAddress: referralAddress as any,
-      swapPool,
-      sqrtPriceLimitX96,
-      receiveAtLeast,
-      addrLower,
-      lastInputRef,
-      curFromTokenRef,
-      curToTokenRef,
-      curFromAmountRef,
-      curToAmountRef,
-      updateAmountCommon,
-      setToAmount,
-      balances,
-    });
+    try {
+      await swapAction({
+        chainId,
+        userAddress: address as `0x${string}`,
+        fromToken,
+        toToken,
+        fromAmount,
+        toAmount,
+        writeContract,
+        client,
+        publicClient,
+        transactionContext,
+        referralAddress: referralAddress as any,
+        swapPool,
+        sqrtPriceLimitX96,
+        receiveAtLeast,
+        addrLower,
+        lastInputRef,
+        curFromTokenRef,
+        curToTokenRef,
+        curFromAmountRef,
+        curToAmountRef,
+        updateAmountCommon,
+        setToAmount,
+        balances,
+      });
+      } catch (e: any) {
+    // 👇 사용자 취소는 조용히 반환 (모달은 onError로 FAIL 전환됨)
+    if (e?.code === 4001 || e?.cause?.code === 4001 ||
+        /user (rejected|denied)/i.test(e?.message || e?.shortMessage || "")) {
+      return;
+    }
+      throw e;
+    }
   }, [chainId, address, fromToken, toToken, fromAmount, toAmount, writeContract, client, publicClient, transactionContext, referralAddress, swapPool, sqrtPriceLimitX96, receiveAtLeast, balances, updateAmountCommon, setPriceImpact]);
 
   if (!fromToken && !toToken) {
@@ -414,8 +489,9 @@ if (isWrapPair(aFrom, aTo)) {
       setToTokenAmountWithGuard: () => {},
       setFromTokenAmountWithGuard: () => {},
       swap: async () => {},
-      approve: () => {},
+      approve: async() => {},
       isApproved: false,
+      isApprovePending: false,
       isPending: false,
       isZeroAmount: true,
       updateAmount: async () => {},
@@ -435,6 +511,7 @@ if (isWrapPair(aFrom, aTo)) {
     approve,
     isApproved,
     isPending,
+    isApprovePending,
     isZeroAmount,
     updateAmount: updateAmountCommon,
   };

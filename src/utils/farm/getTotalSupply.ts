@@ -42,7 +42,7 @@ export default async function getTotalSupply(
 
   const args: ReadContractParameters = {
     address: routerAddress as `0x${string}`,
-    abi: farm.provider.abi as Abi,
+    abi: stakingProviders.BIRDIESWAP_Router.abi as Abi,
     functionName: "totalSupply",
     args: [farmAddress],
     blockTag: "latest" // 강제 최신 블록

@@ -64,7 +64,7 @@ export default function FarmListTable({
   const chainId = useChainId();
 
   const total = useContext(AssetsContext);
-
+  // console.log("FarmListTable total:", total);
   const balances = total?.balances;
 
   const [farmStatusMap, setFarmStatusMap] = useState<

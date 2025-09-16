@@ -9,6 +9,8 @@ import {
 
 import getTokenAddress from "../assets/getTokenAddress";
 import getProviderAddress from "../assets/getProviderAddress";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+
 
 
 export default async function previewRedeem(
@@ -24,10 +26,7 @@ export default async function previewRedeem(
     chainId,
   });
 
-  const providerAddress = getProviderAddress({
-    provider : farm.provider,
-    chainId,
-  });
+  const providerAddress = stakingProviders.BIRDIESWAP_Router.addresses?.[chainId];
   
   if (!farmAddress) return null;
   
@@ -37,7 +36,7 @@ export default async function previewRedeem(
     [`0x${string}`,bigint]
   > = {
     address: providerAddress as `0x${string}`,
-    abi: farm.provider.abi as Abi,
+    abi: stakingProviders.BIRDIESWAP_Router.abi as Abi,
     functionName: "previewFullRedeem",
     args: [
       farmAddress,

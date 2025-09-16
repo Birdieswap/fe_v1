@@ -9,11 +9,10 @@ import useFarmLPBalances from "./useFarmLPBalances";
 import { parseUnits, PublicClient } from "viem";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
-import useAllowance from "./useAllowance";
 import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
 import { getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
-
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -24,80 +23,34 @@ export enum InvalidStatuses {
 type NativeMode = "ETH" | "WETH" | null;
 
 export function usePairStopPanel(item: FarmPair) {
-  const {
-    address,
-    isPendingWriteContract,
-    isConnected,
-    isWrongNetwork,
-    chainId,
-    routerAddress,
-    stakeToken,
-    performStop, 
-    approve,
-    allowance,
-    allowanceQuery,
-  } = useFarmStopPanelCommon(item);
-
   const { assetValues } = useContext(AssetsContext);
-
   const { poolBalance0, poolBalance1 } = useFarmLPBalances(item, assetValues);
 
   const [bToken0, bToken1] = item.wip_stakeToken.swap.input;
   const inputToken0 = bToken0.input;
   const inputToken1 = bToken1.input;
 
-  // 기본 ETH 판정
+  // 기본 ETH/WETH 여부(심볼 기반)
   const defaultIsETH: [boolean, boolean] = [
-    inputToken0?.symbol === "ETH" ||
-      isZeroAddress((inputToken0 as any)?.addresses?.[chainId]),
-    inputToken1?.symbol === "ETH" ||
-      isZeroAddress((inputToken1 as any)?.addresses?.[chainId]),
+    inputToken0?.symbol === "ETH",
+    inputToken1?.symbol === "ETH",
   ];
-  // ETH/WETH가 하나라도 있으면 토글 가능
   const hasWethLike: [boolean, boolean] = [
     defaultIsETH[0] || inputToken0?.symbol === "WETH",
     defaultIsETH[1] || inputToken1?.symbol === "WETH",
   ];
 
-  // 체인별 주소 (표기용)
-  const ETH_ZERO_ADDRESS: `0x${string}` =
-    getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
-  const WETH_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.WETH, chainId);
-
-  // ETH/WETH 토글 상태(기본 ETH)
+  // ETH/WETH 토글 상태(ETH/WETH가 있을 때만)
   const [nativeMode, setNativeMode] = useState<[NativeMode, NativeMode]>([
     hasWethLike[0] ? (defaultIsETH[0] ? "ETH" : "WETH") : null,
     hasWethLike[1] ? (defaultIsETH[1] ? "ETH" : "WETH") : null,
   ]);
 
   // 표기용 메타
-  const ethDisplayMeta = tokens.ETH
-  // const ethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "ETH",
-  //       name: "Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: ETH_ZERO_ADDRESS },
-  //       iconSrc: "/tokens/eth.svg",
-  //     } as any),
-  //   [chainId, ETH_ZERO_ADDRESS]
-  // );
-
+  const ethDisplayMeta = tokens.ETH;
   const wethDisplayMeta = tokens.WETH;
-  // const wethDisplayMeta = useMemo(
-  //   () =>
-  //     ({
-  //       symbol: "WETH",
-  //       name: "Wrapped Ether",
-  //       decimals: 18,
-  //       addresses: { [chainId]: WETH_ADDRESS },
-  //       iconSrc: "/tokens/weth.svg",
-  //     } as any),
-  //   [chainId, WETH_ADDRESS]
-  // );
 
+  // 표시 토큰 (토글 반영)
   const displayTokens = useMemo(() => {
     const t0 = hasWethLike[0]
       ? (nativeMode?.[0] === "ETH" ? ethDisplayMeta : wethDisplayMeta)
@@ -108,8 +61,31 @@ export function usePairStopPanel(item: FarmPair) {
     return [t0, t1] as const;
   }, [hasWethLike, nativeMode, ethDisplayMeta, wethDisplayMeta, inputToken0, inputToken1]);
 
-  console.log("usePairStopPanel", displayTokens)
-  // BLP 잔액/승인
+  // ETH 경로 포함 여부: displayToken으로 판별
+  const isETH0 = (displayTokens[0] as any)?.symbol === "ETH" ||
+                 isZeroAddress((displayTokens[0] as any)?.addresses?.["" as any]);
+  const isETH1 = (displayTokens[1] as any)?.symbol === "ETH" ||
+                 isZeroAddress((displayTokens[1] as any)?.addresses?.["" as any]);
+  const anyETH = isETH0 || isETH1;
+
+  // 공통 훅: anyETH면 Wrapper, 아니면 Router로 BLP allowance/approve 스펜더 지정
+  const {
+    address,
+    isPendingWriteContract,
+    isConnected,
+    isWrongNetwork,
+    chainId,
+    stakeToken,
+    performStop,
+    approve,
+    allowance,
+    allowanceQuery,
+  } = useFarmStopPanelCommon(item, {
+    stopSpenderProvider: anyETH
+      ? (stakingProviders as any).BIRDIESWAP_Wrapper
+      : (stakingProviders as any).BIRDIESWAP_Router,
+  });
+
   const balance = useBalance(stakeToken);
 
   // 청산 BLP 금액
@@ -117,6 +93,14 @@ export function usePairStopPanel(item: FarmPair) {
   const setMaxAmount = useCallback(() => {
     setAmount(balance ?? BigDecimal.ZERO());
   }, [balance]);
+
+  const [isApprovePending, setIsApprovePending] = useState(false);
+
+  const approveWithPending = useCallback(async (token: any) => {
+    setIsApprovePending(true);
+    try { await approve(token); }
+    finally { setIsApprovePending(false); }
+  }, [approve]);
 
   // AmountInput 상태
   const tokenStatus: FarmStopTokenStatus = useMemo(
@@ -130,8 +114,8 @@ export function usePairStopPanel(item: FarmPair) {
       isImpermanentInsolvency: false,
       impermanentInsolvency: undefined,
       isInsufficientBalance: balance.lt(amount || 0),
-      isApprovable: isConnected && !allowance.gte(amount || 0),
-      approve: () => approve(stakeToken),
+      isApprovable: isConnected && !allowance.gte(amount || 0) && !isApprovePending,
+      approve: () => approveWithPending(stakeToken),
     }),
     [stakeToken, balance, amount, allowance, isConnected, approve]
   );
@@ -203,11 +187,7 @@ export function usePairStopPanel(item: FarmPair) {
       blpDecimals
     );
 
-    const side0IsETH = hasWethLike[0] && nativeMode?.[0] === "ETH";
-    const side1IsETH = hasWethLike[1] && nativeMode?.[1] === "ETH";
-    const route: StopRoute = (side0IsETH || side1IsETH)
-      ? "WRAPPER_PAIR"
-      : "ROUTER_PAIR";
+    const route: StopRoute = anyETH ? "WRAPPER_PAIR" : "ROUTER_PAIR";
 
     performStop({
       route,
@@ -234,7 +214,7 @@ export function usePairStopPanel(item: FarmPair) {
   );
 
   const isPending =
-    allowanceQuery.isFetching || isPendingWriteContract || false;
+    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending; 
 
   // 두 칸 모두 렌더
   const isActive = useMemo<[boolean, boolean]>(() => [true, true], []);

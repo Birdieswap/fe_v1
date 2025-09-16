@@ -1,6 +1,4 @@
-import { useCallback } from "react";
-
-
+import { useCallback, useMemo } from "react";
 import {
   StopFarmingTransactionProps,
   TransactionStatusProps,
@@ -13,12 +11,13 @@ import useFarmPanelCommon from "./useFarmPanelCommon";
 
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 
-import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
 
 import useAllowance from "./useAllowance";
 import useApprove from "./useApprove";
 import { getFromContracts } from "@/utils/farm/getAddressHelpers";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 type AnyFarm = FarmPair | FarmSingle;
 
@@ -29,7 +28,13 @@ export type StopRoute =
   | "ROUTER_PAIR"
   | "WRAPPER_PAIR";
 
-export default function useFarmStopPanelCommon(item: Farm) {
+// [NEW] override 타입: 슬라이더에 따라 spender(Provider)와 주소를 주입
+type StopSpenderOverride = {
+  stopSpenderProvider?: any;            // stakingProviders.* 객체 (addresses[chainId]를 가짐)
+  stopSpenderAddress?: `0x${string}`;   // 위 provider에서 뽑은 체인별 주소
+};
+
+export default function useFarmStopPanelCommon(item: Farm, override?: StopSpenderOverride) {
   const base = useFarmPanelCommon(item);
   const {
     client,
@@ -46,18 +51,39 @@ export default function useFarmStopPanelCommon(item: Farm) {
     routerAddress,
   } = base;
 
+  const ROUTER_PROVIDER_FALLBACK = useMemo(() => {
+          // stakingProviders에 Router 메타가 없을 때 대비
+          const meta = (stakingProviders as any)?.BIRDIESWAP_Router;
+          return (
+            meta ?? {
+              name: "BIRDIESWAP_Router",
+              addresses: { [chainId]: routerAddress },
+            }
+          );
+        }, [chainId, routerAddress]);
+      
+        // 기본 spender (provider) 주소
+  const ROUTER_ADDRESS: `0x${string}` | null =
+    getFromContracts(ADDRESS.ROUTER, chainId) ?? ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; 
+
+  const WRAPPER_ADDRESS =
+    getFromContracts(ADDRESS.WRAPPER, chainId) as `0x${string}` | null;
+
   const { allowance, query: allowanceQuery } = useAllowance({
     token: stakeToken,
-    spender: stakeToken.provider,
+    spender: override?.stopSpenderProvider ?? stakeToken.provider, // 🔁 분기 반영
   });
 
- 
-  // 공통: Approve 핸들러 복구 (refetch는 allowanceQuery.refetch 사용)
+  // [CHANGED] approve 대상 주소도 override->routerAddress 순으로 사용
   const approve = useApprove({
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
-    routerAddress: routerAddress as `0x${string}`,
+    routerAddress: (
+    override?.stopSpenderAddress ??
+    (override?.stopSpenderProvider?.addresses?.[chainId] as `0x${string}` | undefined) ??
+    routerAddress
+  ) as `0x${string}`,
     transactionContext,
     refetch: allowanceQuery.refetch,
     writeContract,
@@ -91,9 +117,6 @@ export default function useFarmStopPanelCommon(item: Farm) {
         },
       });
 
-      const WRAPPER_ADDRESS =
-        getFromContracts(ADDRESS.WRAPPER, chainId) as `0x${string}` | null;
-
       if (route === "WRAPPER_SINGLE") {
         if (!WRAPPER_ADDRESS) {
           console.error("[performStop] Missing WRAPPER_ADDRESS for chain:", chainId);
@@ -103,17 +126,23 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
         console.log("useFarmStopPanelCommon WrapperSingleCall",WRAPPER_ADDRESS, stakeTokenAddress ,blpAmount)
 
+
         writeContract(
           {
             address: WRAPPER_ADDRESS,
             abi: birdieswap_wrapper_abi,
             functionName: "singleRedeemToETH",
-            args: [stakeTokenAddress as `0x${string}`, blpAmount],
+            args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
           },
           {
             onError: handlers.onError,
             onSuccess: async (v) => {
               handlers.onSuccess(v);
+              try {
+                await assetsContext.forceRefresh?.();
+              } catch (e) {
+                console.error("forceRefresh failed", e);
+              }
               onSuccess?.();
             },
           }
@@ -129,17 +158,23 @@ export default function useFarmStopPanelCommon(item: Farm) {
         // wrapper: dualRedeemToETH(blpToken, blpAmount)
         console.log("useFarmStopPanelCommon WrapperPairCall",WRAPPER_ADDRESS,stakeTokenAddress,blpAmount)
 
+
         writeContract(
           {
             address: WRAPPER_ADDRESS,
             abi: birdieswap_wrapper_abi,
             functionName: "dualRedeemToETH",
-            args: [stakeTokenAddress as `0x${string}`, blpAmount],
+            args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
           },
           {
             onError: handlers.onError,
             onSuccess: async (v) => {
               handlers.onSuccess(v);
+              try {
+                await assetsContext.forceRefresh?.();
+              } catch (e) {
+                console.error("forceRefresh failed", e);
+              }
               onSuccess?.();
             },
           }
@@ -152,15 +187,20 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
         writeContract(
           {
-            address: routerAddress as `0x${string}`,
+            address: ROUTER_ADDRESS as `0x${string}`,
             abi: birdieswap_router_abi,
-            functionName: "singleRedeem" as any,
+            functionName: "singleRedeem",
             args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
           },
           {
             onError: handlers.onError,
             onSuccess: async (v) => {
               handlers.onSuccess(v);
+              try {
+                await assetsContext.forceRefresh?.();
+              } catch (e) {
+                console.error("forceRefresh failed", e);
+              }
               onSuccess?.();
             },
           }
@@ -170,17 +210,23 @@ export default function useFarmStopPanelCommon(item: Farm) {
 
       if (route === "ROUTER_PAIR") {
         console.log("useFarmStopPanelCommon routerPairCall",routerAddress,stakeTokenAddress)
+
         writeContract(
           {
-            address: routerAddress as `0x${string}`,
+            address: ROUTER_ADDRESS as `0x${string}`,
             abi: birdieswap_router_abi,
-            functionName: "dualRedeem" as any,
+            functionName: "dualRedeem",
             args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
           },
           {
             onError: handlers.onError,
             onSuccess: async (v) => {
               handlers.onSuccess(v);
+              try {
+                await assetsContext.forceRefresh?.();
+              } catch (e) {
+                console.error("forceRefresh failed", e);
+              }
               onSuccess?.();
             },
           }

@@ -262,6 +262,7 @@ useEffect(() => {
     toBalance,
     isConnected,
     isPending: tempStuff.isPending,
+    isApprovePending: tempStuff.isApprovePending,
     swap: tempStuff.swap,
     swapPool : tempStuff.swapPool,
     approve: tempStuff.approve,
