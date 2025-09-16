@@ -33,7 +33,7 @@ export function useAccountWalletData(address?: Address, blockHeight?: string | n
     queries: [
       {
         queryKey: [...baseKey, "txs"],
-        queryFn: () => getMyTransactionData(address as Address, blockHeight),
+        queryFn: () => getMyTransactionData(address as Address, { blockHeight, chainId }),
         enabled,
         staleTime: 60_000,
         refetchOnWindowFocus: false,
@@ -42,7 +42,7 @@ export function useAccountWalletData(address?: Address, blockHeight?: string | n
       } satisfies UseQueryOptions,
       {
         queryKey: [...baseKey, "current-user-reward"],
-        queryFn: () => getMyCurrentUserReward(address as Address),
+        queryFn: () => getMyCurrentUserReward(address as Address, { chainId }),
         enabled,
         staleTime: 60_000,
         refetchOnWindowFocus: false,
@@ -51,7 +51,7 @@ export function useAccountWalletData(address?: Address, blockHeight?: string | n
       } satisfies UseQueryOptions,
       {
         queryKey: [...baseKey, "swap-reward"],
-        queryFn: () => getMySwapReward(address as Address, blockHeight),
+        queryFn: () => getMySwapReward(address as Address, { blockHeight, chainId }),
         enabled,
         staleTime: 60_000,
         refetchOnWindowFocus: false,
@@ -60,7 +60,7 @@ export function useAccountWalletData(address?: Address, blockHeight?: string | n
       } satisfies UseQueryOptions,
       {
         queryKey: [...baseKey, "referral-reward"],
-        queryFn: () => getMyReferralReward(address as Address, blockHeight),
+        queryFn: () => getMyReferralReward(address as Address, { blockHeight, chainId }),
         enabled,
         staleTime: 60_000,
         refetchOnWindowFocus: false,
