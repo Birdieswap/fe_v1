@@ -1,3 +1,4 @@
+import { useChainId } from "wagmi";
 import { buildUrl } from "./buildUrl";
 
 type Address = `0x${string}`;
@@ -24,7 +25,15 @@ export async function getMyTransactionData(
   blockHeight?: string | number,
   signal?: AbortSignal
 ): Promise<TransactionsResponse> {
-  const url = buildUrl("Transactions", { address, blockHeight });
+  const chainId= useChainId(); 
+  const chainIdStr = (() => {
+        const mode = (process?.env?.NEXT_PUBLIC_OPERATION_MODE ?? "")
+          .toString()
+          .trim()
+          .toLowerCase();
+        return mode === "dev" ? "0" : String(chainId);
+      })();
+  const url = buildUrl("Transactions", { address, chainId: chainIdStr, blockHeight });
   const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
   if (!res.ok) throw new Error(`Transactions fetch failed: ${res.status}`);
   return res.json();
