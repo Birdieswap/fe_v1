@@ -1,14 +1,10 @@
-// app/apr/[chainId]/route.ts
-import type { NextRequest } from "next/server";
+
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-type Ctx = { params: { chainId: string } };
-
-export async function GET(_req: NextRequest, { params }: Ctx) {
-  const chainIdStr = params.chainId;
-  const id = Number(chainIdStr);
+export async function GET(_req: Request, { params }: { params: { chainId: string } }) {
+  const id = Number(params.chainId);
 
   // // 기본 유효성 체크
   // if (!Number.isInteger(id) || id <= 0) {
