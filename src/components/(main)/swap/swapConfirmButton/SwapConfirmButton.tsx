@@ -147,7 +147,7 @@ export default function SwapConfirmButton() {
       return {
         onPress: () => {},
         isDisabled: true,
-        buttonText: "Enter an mount",
+        buttonText: "Enter an amount",
         buttonVariant: "MINT" as const,
       };
     } else if (isInsufficientBalance) {

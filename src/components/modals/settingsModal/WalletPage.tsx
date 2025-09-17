@@ -1,6 +1,13 @@
 "use client";
 
-import { ModalHeader, Button, ModalBody, cn, ButtonGroup } from "@heroui/react";
+import {
+  ModalHeader,
+  Button,
+  ModalBody,
+  cn,
+  ButtonGroup,
+  Divider,
+} from "@heroui/react";
 import { Fragment, useContext, useMemo, useState } from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains } from "wagmi";
@@ -15,11 +22,12 @@ import { WalletIcon } from "../selectNetworkAndWallet/SelectWalletMenu";
 import WalletRewards from "./walletPage/WalletRewards";
 import WalletTransactions from "./walletPage/WalletTransactions";
 import WalletTokens from "./walletPage/WalletTokens";
+import { useReferral } from "@/app/ReferralContextProvider";
 
 function TabSelector(props: {
-  selected: "rewards" | "tokens" | "transaction";
-  value: "rewards" | "tokens" | "transaction";
-  setTab: (value: "rewards" | "tokens" | "transaction") => void;
+  selected: "History" | "Assets";
+  value: "History" | "Assets";
+  setTab: (value: "History" | "Assets") => void;
   name: string;
 }) {
   return (
@@ -47,6 +55,48 @@ function TabSelector(props: {
   );
 }
 
+function SwapDisplay({
+  address,
+}: Pick<UseAccountReturnType<Config>, "address">) {
+  const { referralAddress, setReferralAddress } = useReferral();
+
+  const isSelfReferral = address === referralAddress;
+
+  return (
+    <div>
+      <Divider></Divider>
+      <div className="my-2 px-2">
+        <div className="text-[11px] font-light text-foreground">
+          Your Referrer Address
+        </div>
+        <div className="flex flex-row w-full justify-between items-center gap-4">
+          <div className="text-[13px] font-semibold break-all flex items-center flex-1 min-w-0">
+            {isSelfReferral ? "No Referrer" : referralAddress}
+          </div>
+          <div className="shrink-0">
+            <Button
+              isIconOnly
+              className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+              variant="light"
+              isDisabled={isSelfReferral}
+              onPress={() => {
+                if (address) {
+                  setReferralAddress(address);
+                }
+              }}
+            >
+              <Icons.Subtract className="fill-foreground" />
+            </Button>
+          </div>
+        </div>
+        <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+          Prefer not to share rewards with a referrer? Opt out anytime.
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function WalletDisplay({
   wallet,
   provider,
@@ -65,56 +115,90 @@ function WalletDisplay({
     return `${wallet.address.slice(0, 6)}...${wallet.address.slice(-7)}`;
   }, [wallet]);
 
+  const ReferralLink = `https://birdieswap.vercel.app/?ref=${wallet?.address}`;
+
+  const { referralAddress, setReferralAddress } = useReferral();
+  const isSelfReferral = wallet?.address === referralAddress;
+
   return (
     <div
       className={cn(
-        "flex h-[61px] w-full rounded-xl bg-primary/10 px-4 dark:bg-dark_mid_mint max-sm:h-[104px]",
-        "flex-row items-center gap-2",
-        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
+        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark_mid_mint max-sm:h-[104px]",
+        "flex-col items-stretch gap-0",
+        "max-sm:flex-col max-sm:gap-1 max-sm:py-2 max-sm:items-start"
       )}
     >
-      <div className="flex flex-row items-center gap-2 sm:grow">
-        <WalletIcon provider={provider} size="lg" />
-        <div className="flex grow flex-col gap-1">
-          <span className="text-[12px] font-semibold leading-[15px]">
-            {provider?.name ?? "unknown"}
-          </span>
-          <div className="flex flex-row items-center gap-[7px]">
-            <span className="text-[15px] font-semibold leading-[18px]">
-              {address}
+      <div className="flex-row flex justify-between items-center sm:grow mt-1 py-1">
+        <div className="flex flex-row items-center gap-2 sm:grow">
+          <WalletIcon provider={provider} size="lg" />
+          <div className="flex grow flex-col gap-0">
+            <span className="text-[12px] font-semibold leading-[15px]">
+              {provider?.name ?? "unknown"}
             </span>
+            <div className="flex flex-row items-center gap-[5px]">
+              <span className="text-[15px] font-semibold leading-[18px]">
+                {address}
+              </span>
+              <Button
+                isIconOnly
+                className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+                variant="light"
+                onPress={() => {
+                  navigator.clipboard.writeText(wallet?.address ?? "");
+                }}
+              >
+                <Icons.WalletCopy className="fill-foreground" />
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Link
+          className="flex flex-row items-center gap-0.5 text-[12px] font-medium leading-[15px] max-sm:w-full max-sm:justify-end pr-2"
+          href={
+            (network?.blockExplorer?.url ?? "https://etherscan.io/") +
+            (wallet?.address ? `address/${wallet.address}` : "")
+          }
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <span className="whitespace-nowrap max-[360px]:whitespace-normal">
+            View on
+          </span>
+          <span className="inline-flex items-center gap-0.5 whitespace-nowrap max-[360px]:whitespace-normal break-words">
+            {network?.blockExplorer?.name ?? "Etherscan"}
+            {/* <Icons.WalletArrowRU className="ml-0.5 max-[360px]:hidden fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" /> */}
+          </span>
+          {/* View on {network?.blockExplorer?.name ?? "Etherscan"} */}
+          <Icons.WalletArrowRU className="fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" />
+        </Link>
+      </div>
+      <Divider></Divider>
+      <div className="mt-0 py-2 px-2 flex-grow">
+        <div className="text-[11px] font-light text-foreground">
+          Your Referral link to share
+        </div>
+        <div className="flex flex-row justify-between items-center gap-4">
+          <div className="text-[13px] font-semibold break-all">
+            {ReferralLink}
+          </div>
+          <div className="shrink-0">
             <Button
               isIconOnly
               className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
               variant="light"
               onPress={() => {
-                navigator.clipboard.writeText(wallet?.address ?? "");
+                navigator.clipboard.writeText(ReferralLink ?? "");
               }}
             >
               <Icons.WalletCopy className="fill-foreground" />
             </Button>
           </div>
         </div>
+        <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+          Join our referral program : share, invite, and be rewarded.
+        </div>
       </div>
-      <Link
-        className="flex flex-row items-center gap-0.5 text-[12px] font-medium leading-[15px] max-sm:w-full max-sm:justify-end"
-        href={
-          (network?.blockExplorer?.url ?? "https://etherscan.io/") +
-          (wallet?.address ? `address/${wallet.address}` : "")
-        }
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        <span className="whitespace-nowrap max-[360px]:whitespace-normal">
-          View on
-        </span>
-        <span className="inline-flex items-center gap-0.5 whitespace-nowrap max-[360px]:whitespace-normal break-words">
-          {network?.blockExplorer?.name ?? "Etherscan"}
-          {/* <Icons.WalletArrowRU className="ml-0.5 max-[360px]:hidden fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" /> */}
-        </span>
-        {/* View on {network?.blockExplorer?.name ?? "Etherscan"} */}
-        <Icons.WalletArrowRU className="fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" />
-      </Link>
+      {!isSelfReferral ? <SwapDisplay address={wallet?.address} /> : null}
     </div>
   );
 }
@@ -123,9 +207,7 @@ export default function WalletPage(props: {
   toSettings: () => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"rewards" | "tokens" | "transaction">(
-    "rewards"
-  );
+  const [tab, setTab] = useState<"History" | "Assets">("History");
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
   const {
@@ -195,30 +277,23 @@ export default function WalletPage(props: {
                 )}
               >
                 <TabSelector
-                  name="Rewards"
+                  name="History"
                   selected={tab}
                   setTab={setTab}
-                  value="rewards"
+                  value="History"
                 />
                 <TabSelector
-                  name="Tokens"
+                  name="Assets"
                   selected={tab}
                   setTab={setTab}
-                  value="tokens"
-                />
-                <TabSelector
-                  name="Transaction"
-                  selected={tab}
-                  setTab={setTab}
-                  value="transaction"
+                  value="Assets"
                 />
               </ButtonGroup>
             </div>
           </div>
           <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">
-            {tab === "rewards" && <WalletRewards />}
-            {tab === "transaction" && <WalletTransactions />}
-            {tab === "tokens" && <WalletTokens />}
+            {tab === "History" && <WalletTransactions />}
+            {tab === "Assets" && <WalletTokens />}
           </div>
         </div>
       </ModalBody>
