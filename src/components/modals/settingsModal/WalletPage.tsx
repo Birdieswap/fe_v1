@@ -63,9 +63,14 @@ function SwapDisplay({
   const isSelfReferral = address === referralAddress;
 
   return (
-    <div>
-      <Divider></Divider>
-      <div className="my-2 px-2">
+    <div
+      className={cn(
+        "flex h-auto min-h-[48px] w-full mt-2 px-4 py-2 rounded-lg bg-light_pink/10 dark:bg-dark_pink/50 sm:h-[100px]",
+        "flex-col items-start justify-between",
+        "max-sm:flex-col max-sm:gap-4 max-sm:py-4 max-sm:items-start"
+      )}
+    >
+      <div className="pt-2 px-2">
         <div className="text-[11px] font-light text-foreground">
           Your Referrer Address
         </div>
@@ -89,7 +94,7 @@ function SwapDisplay({
             </Button>
           </div>
         </div>
-        <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+        <div className="text-[11px] text-light_pink dark:text-dark_pink">
           Prefer not to share rewards with a referrer? Opt out anytime.
         </div>
       </div>
@@ -123,7 +128,7 @@ function WalletDisplay({
   return (
     <div
       className={cn(
-        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark_mid_mint max-sm:h-[104px]",
+        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark_mid_mint max-sm:h-auto max-sm:min-h-[104px]",
         "flex-col items-stretch gap-0",
         "max-sm:flex-col max-sm:gap-1 max-sm:py-2 max-sm:items-start"
       )}
@@ -198,7 +203,6 @@ function WalletDisplay({
           Join our referral program : share, invite, and be rewarded.
         </div>
       </div>
-      {!isSelfReferral ? <SwapDisplay address={wallet?.address} /> : null}
     </div>
   );
 }
@@ -218,8 +222,9 @@ export default function WalletPage(props: {
     walletData,
   } = useContext(WalletContext);
 
-  console.log("WalletPage walletData", walletData);
-
+  console.log("WalletPage walletData", account, walletData);
+  const { referralAddress } = useReferral();
+  const isSelfReferral = account?.address === referralAddress;
   return (
     <Fragment>
       <ModalHeader className="max-sm:px-6">
@@ -262,6 +267,9 @@ export default function WalletPage(props: {
               provider={selectedProvider}
               wallet={account}
             />
+            {!isSelfReferral ? (
+              <SwapDisplay address={account?.address} />
+            ) : null}
             <div className="flex w-full rounded-t-xl flex-row justify-start pt-4">
               <ButtonGroup
                 fullWidth={true}
