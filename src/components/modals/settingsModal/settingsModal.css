@@ -17,7 +17,7 @@
   }
   .drawer-base-max-sm {
     @apply border-none m-0 w-full max-w-full shadow-none;
-    @apply min-h-[100vh] max-h-[100vh];
+    @apply min-h-[90vh] max-h-[90vh];
     @apply rounded-b-none rounded-t-xl;
   }
   section.drawer-base {
