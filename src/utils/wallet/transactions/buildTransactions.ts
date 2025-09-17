@@ -290,6 +290,7 @@ export function buildTransactions(
 
     // 알려지지 않은 타입은 스킵 (필요 시 로깅)
   }
+  console.log("[wallet] buildTransaction useAccountWalletData", { chainId, txs });
 
   return txs;
 }
