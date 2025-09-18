@@ -85,7 +85,7 @@ export default function FarmDetail({
             {...defaultTransition}
             className="flex h-full grow basis-0 flex-col"
           >
-            <h1 className=" text-base font-semibold">Information</h1>
+            <h2 className=" text-base font-semibold pl-2">Information</h2>
             <EarningsPanel item={item} />
           </motion.div>
         </motion.div>

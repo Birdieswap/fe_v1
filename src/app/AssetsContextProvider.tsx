@@ -28,7 +28,7 @@ export type AprEntry = {
   underlyingProtocolText: string;
   underlyingProtocolUrl: string;
   vaults: AprVault[];
-  extraRewards?: AprVault[];
+  staking?: StakeVault;
 };
 
 export type AprVault = {
@@ -46,6 +46,24 @@ export type AprVault = {
   apr30d: string;
   timeStamp: string;
   lastHarvest?: string;
+};
+
+export type StakeVault = {
+  notice?: string;
+  stakingToken: string;
+  dailyPointRate: string;
+  contractAddress: `0x${string}`;
+  extraRewards?: ExtraRewards[];
+};
+
+export type ExtraRewards = {
+  symbol: string;
+  name: string;
+  displayName: string;
+  contractAddress: `0x${string}`;
+  decimals: number;
+  dailyRewardPerTokenX18: string;
+  priceUSD: number;
 };
 
 export const AssetsContext = createContext<{
