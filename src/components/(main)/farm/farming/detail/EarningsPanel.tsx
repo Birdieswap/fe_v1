@@ -1,4 +1,4 @@
-import { Button, cn, Spinner } from "@heroui/react";
+import { Button, cn, Spinner, useDisclosure } from "@heroui/react";
 
 import { Farm } from "@/types/FarmListTableRowProps";
 
@@ -6,29 +6,30 @@ import { SectionHeader } from "../common/SectionHeader";
 
 import VaultInfo from "./earningsPanel/VaultInfo";
 import RewardInfoRow from "./earningsPanel/RewardInfoRow";
-import { useState, useMemo, use, useContext } from "react";
+import { useState, useMemo, useContext, useCallback } from "react";
 import { useChainId } from "wagmi";
 import { AssetsContext } from "@/app/AssetsContextProvider";
-import { aprDataState, AprVault } from "@/app/AssetsContextProvider";
+import {
+  AprEntry,
+  aprDataState,
+  AprVault,
+  StakeVault,
+  ExtraRewards,
+} from "@/app/AssetsContextProvider";
 import Icons from "@/assets/icons/icons";
+import clsx from "clsx";
+import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
+import { BigDecimal } from "@/types/BigDecimal";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
 
-type AprEntry = {
-  chainId: string;
-  contractAddress: string;
-  name: string;
-  vaults: AprVault[];
-  extraRewards?: AprVault[];
-};
-
 export type VaultRowItem = {
-  kind: "vault" | "reward";
-  name: string; // reward는 "Reward - xxx" 로 렌더용 이름
-  rawName: string; // 원래 이름
-  apy: number; // 10^16으로 나눈 값(%) — 우측 라벨에 사용
-  aprSource: AprVault; // 1d/7d/30d 원본 값들
+  kind: "vault" | "staking";
+  name: string;
+  rawName: string;
+  apy: number;
+  aprSource: AprVault | StakeVault;
 };
 
 function ButtonSelector(props: {
@@ -51,7 +52,7 @@ function ButtonSelector(props: {
       <h2
         className={cn(
           "text-[12px] font-semibold leading-[17px]",
-          "group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
+          "group-data-[selected=true]:text-primary group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
         )}
       >
         {props.name}
@@ -63,9 +64,11 @@ function ButtonSelector(props: {
 export default function EarningsPanel({ item }: { item: Farm }) {
   const [tab, setTab] = useState<Period>("7d");
   const chainId = useChainId();
-  const { aprDataState } = useContext(AssetsContext);
+  const { aprDataState, farmValues } = useContext(AssetsContext);
   const aprList: AprEntry[] = aprDataState?.apr ?? [];
-
+  const disclosure = useDisclosure();
+  const [selectedRow, setSelectedRow] = useState<VaultRowItem | null>(null);
+  const priceMap = farmValues?.priceMap;
   const periodKey: PeriodKey = useMemo(() => {
     if (tab === "1d") return "apr1d";
     if (tab === "7d") return "apr7d";
@@ -97,101 +100,194 @@ export default function EarningsPanel({ item }: { item: Farm }) {
     [aprList, chainIdStr, stakeAddr]
   );
 
-  // console.log(
-  //   "EarningsPanel aprList",
-  //   aprList,
-  //   "chainId",
-  //   chainId,
-  //   "stakeAddrLower",
-  //   stakeAddrLower,
-  //   "addr1",
-  //   aprList[0].contractAddress.toLowerCase(),
-  //   aprList[1].contractAddress.toLowerCase(),
-  //   aprList[2].contractAddress.toLowerCase(),
-  //   matched,
-  //   stakeAddrLower
-  // );
+  const stakeTokenAddress: `0x${string}` =
+    matched?.contractAddress as `0x${string}`;
+  const price: number = priceMap?.get(stakeTokenAddress)?.toNumber() as number;
 
-  const toRowItem = (src: AprVault, kind: "vault" | "reward"): VaultRowItem => {
+  const toRowItem = (
+    src: AprVault,
+    kind: "vault" | "staking"
+  ): VaultRowItem => {
     const raw = src?.[periodKey];
     const aprNum = raw ? Number(raw) : 0;
-    const pct = aprNum / 1e16; // ← 요구사항: 10^16으로 나눔
+    const pct = aprNum / 1e16;
     return {
       kind,
-      name: kind === "reward" ? `Reward - ${src.name}` : src.name,
+      name: kind === "staking" ? `Staking - ${src.name}` : src.name,
       rawName: src.name,
       apy: pct,
       aprSource: src,
     };
   };
 
-  // Vaults 영역에 vaults → extra_rewards 순서로 하나의 리스트로 합치기
   const combinedRows: VaultRowItem[] = useMemo(() => {
-    const vaultRows = (matched?.vaults ?? []).map((v) => toRowItem(v, "vault"));
-    const rewardRows = (matched?.extraRewards ?? []).map((r) =>
-      toRowItem(r, "reward")
-    );
-    return [...vaultRows, ...rewardRows];
+    return (matched?.vaults ?? []).map((v) => toRowItem(v, "vault"));
   }, [matched, periodKey]);
 
-  // 모달로 넘길 item 확정: 클릭된 행 + 전체 컨텍스트
-  const [modalItem, setModalItem] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  console.log(
+    "EarningsPanel item",
+    matched,
+    stakeTokenAddress,
+    priceMap?.get(stakeTokenAddress),
+    price
+  );
 
-  const handleOpenModal = (rowItem: VaultRowItem) => {
-    // 모달 payload: 선택된 행 + 전체 목록 + 현재 기간키 + 컨텍스트
-    const allAprArray = [
-      ...(matched?.vaults ?? []).map((v) => ({ kind: "vault" as const, ...v })),
-      ...(matched?.extraRewards ?? []).map((r) => ({
-        kind: "reward" as const,
-        ...r,
-      })),
-    ];
+  // const [modalItem, setModalItem] = useState<any | null>(null);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
 
-    const payload = {
-      selected: rowItem, // 현재 클릭한 행(이게 그대로 VaultInfoModal의 item으로 전달)
-      periodKey, // 현재 선택된 기간키
-      chainId,
-      contractAddress: stakeAddrLower,
-      poolName: matched?.name ?? (item as any)?.name ?? "",
-      allAprArray, // vaults + extra_rewards(원본 apr_1d/7d/30d 값 들어있음)
+  const handleOpenModal = useCallback(
+    (rowItem: VaultRowItem) => {
+      setSelectedRow(rowItem);
+      disclosure.onOpen();
+    },
+    [disclosure]
+  );
+
+  const openStakingModal = useCallback(() => {
+    if (!matched?.staking) return;
+
+    const stakingRow: VaultRowItem = {
+      kind: "staking",
+      name: "Staking",
+      rawName: "Staking",
+      apy: 0,
+      aprSource: matched.staking,
     };
 
-    setModalItem(payload);
-    setIsModalOpen(true);
-  };
+    setSelectedRow(stakingRow);
+    disclosure.onOpen();
+  }, [matched?.staking, disclosure]);
+
+  const dprRaw = matched?.staking?.dailyPointRate as unknown;
+  const dailyPointRateNum = Number(
+    typeof dprRaw === "string" || typeof dprRaw === "number" ? dprRaw : 0
+  );
+  const hasPointRate =
+    Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0;
+
+  const extra = matched?.staking?.extraRewards;
+  const hasAnyExtra = Array.isArray(extra) && extra.length > 0;
+
+  const showStakingBlock =
+    Boolean(matched?.staking) && (hasAnyExtra || hasPointRate);
 
   return (
-    <div className="mt-5 flex grow basis-0 flex-col">
-      <div className="flex flex-row justify-between items-center">
-        <SectionHeader>Vaults</SectionHeader>
+    <div className="mt-2 flex grow basis-0 flex-col">
+      <div className="mb-3 mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-row justify-between items-center">
+            <SectionHeader>Vaults</SectionHeader>
 
-        <div className="flex justify-end gap-3 pr-4">
-          <ButtonSelector name="1d" selected={tab} setTab={setTab} value="1d" />
-          <ButtonSelector name="7d" selected={tab} setTab={setTab} value="7d" />
-          <ButtonSelector
-            name="30d"
-            selected={tab}
-            setTab={setTab}
-            value="30d"
-          />
-        </div>
-      </div>
-      <div className="mb-6 mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
-        {combinedRows.length > 0 ? (
-          combinedRows.map((row, i) => (
-            <VaultInfo
-              key={i}
-              item={row}
-              periodKey={periodKey}
-              onOpenModal={handleOpenModal} // 여기서 넘긴 item이 그대로 Modal에 전달될 준비 완료
-            />
-          ))
-        ) : (
-          <div className="text-default-500">
-            <div className="flex gap-4 justify-center">
-              <Spinner color="default" />
+            <div className="flex justify-end gap-3">
+              <ButtonSelector
+                name="1d"
+                selected={tab}
+                setTab={setTab}
+                value="1d"
+              />
+              <ButtonSelector
+                name="7d"
+                selected={tab}
+                setTab={setTab}
+                value="7d"
+              />
+              <ButtonSelector
+                name="30d"
+                selected={tab}
+                setTab={setTab}
+                value="30d"
+              />
             </div>
+          </div>
+          {combinedRows.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              {combinedRows.map((row, i) => (
+                <VaultInfo
+                  key={i}
+                  item={row}
+                  periodKey={periodKey}
+                  onOpenModal={handleOpenModal}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-default-500">
+              <div className="flex gap-4 justify-center">
+                <Spinner color="default" />
+              </div>
+            </div>
+          )}
+        </div>
+        {showStakingBlock && (
+          <div className="flex flex-col gap-2 rounded-2xl bg-background text-sm">
+            <div
+              className="flex items-center cursor-pointer select-none
+                 transition-colors"
+              role="button"
+              tabIndex={0}
+              onClick={openStakingModal}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  openStakingModal();
+                }
+              }}
+            >
+              <div className="flex items-center gap-1.5">
+                <p className="font-bold text-default-800 dark:text-default-700">
+                  Staking
+                </p>
+                <Icons.Info
+                  className={clsx(
+                    "fill-default-500 group-hover:fill-default-700",
+                    "dark:fill-default-800 dark:group-hover:fill-default-600",
+                    "transition-[fill]"
+                  )}
+                  fillRule="evenodd"
+                />
+              </div>
+              <div className="grow" />
+              <span className="whitespace-nowrap font-semibold text-primary">
+                Live
+              </span>
+            </div>
+
+            {hasAnyExtra &&
+              (matched!.staking!.extraRewards ?? []).map((er) => {
+                const daily =
+                  Number(er.dailyRewardPerTokenX18) /
+                  1e18 /
+                  Math.pow(10, er.decimals) /
+                  price;
+                const aprPct = daily * 365 * 100;
+                return (
+                  <div
+                    key={er.symbol}
+                    className="flex w-full flex-row items-center gap-1.5"
+                  >
+                    <p className="font-medium text-default-800 dark:text-default-700">
+                      {er.displayName}
+                    </p>
+                    <div className="grow" />
+                    <p className="whitespace-nowrap font-normal">
+                      {aprPct.toFixed(2)}% APR
+                    </p>
+                  </div>
+                );
+              })}
+
+            {hasPointRate && (
+              <div className="flex w-full flex-row items-center gap-1.5">
+                <p className="font-medium text-default-800 dark:text-default-700">
+                  Birdieswap Point
+                </p>
+                <div className="grow" />
+                <p className="whitespace-nowrap font-normal">
+                  Daily {(dailyPointRateNum / 1e18).toFixed(4)} point/
+                  {matched!.staking!.stakingToken}
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -239,6 +335,13 @@ export default function EarningsPanel({ item }: { item: Farm }) {
             </Button>
           </div>
         </div>
+      )}
+      {selectedRow && (
+        <VaultInfoModal
+          item={selectedRow}
+          disclosure={disclosure}
+          onJustClosed={() => setSelectedRow(null)}
+        />
       )}
     </div>
   );
