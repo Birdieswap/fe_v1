@@ -20,6 +20,7 @@ import Icons from "@/assets/icons/icons";
 import clsx from "clsx";
 import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
 import { BigDecimal } from "@/types/BigDecimal";
+import StakeDetail from "./earningsPanel/StakeDetail";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -61,13 +62,21 @@ function ButtonSelector(props: {
   );
 }
 
-export default function EarningsPanel({ item }: { item: Farm }) {
+export default function EarningsPanel({
+  item,
+  selectedRow,
+}: {
+  item: Farm;
+  selectedRow: string | null;
+}) {
   const [tab, setTab] = useState<Period>("7d");
   const chainId = useChainId();
   const { aprDataState, farmValues } = useContext(AssetsContext);
   const aprList: AprEntry[] = aprDataState?.apr ?? [];
   const disclosure = useDisclosure();
-  const [selectedRow, setSelectedRow] = useState<VaultRowItem | null>(null);
+  const [selectedStakeRow, setSelectedStakeRow] = useState<VaultRowItem | null>(
+    null
+  );
   const priceMap = farmValues?.priceMap;
   const periodKey: PeriodKey = useMemo(() => {
     if (tab === "1d") return "apr1d";
@@ -137,7 +146,7 @@ export default function EarningsPanel({ item }: { item: Farm }) {
 
   const handleOpenModal = useCallback(
     (rowItem: VaultRowItem) => {
-      setSelectedRow(rowItem);
+      setSelectedStakeRow(rowItem);
       disclosure.onOpen();
     },
     [disclosure]
@@ -154,7 +163,7 @@ export default function EarningsPanel({ item }: { item: Farm }) {
       aprSource: matched.staking,
     };
 
-    setSelectedRow(stakingRow);
+    setSelectedStakeRow(stakingRow);
     disclosure.onOpen();
   }, [matched?.staking, disclosure]);
 
@@ -291,8 +300,11 @@ export default function EarningsPanel({ item }: { item: Farm }) {
           </div>
         )}
       </div>
-      <SectionHeader>Extra Rewards</SectionHeader>
-      {item.details.rewards.length === 0 ? (
+      <div className="mb-3">
+        <SectionHeader>Start with a stake. Unlock more benefits</SectionHeader>
+      </div>
+      <StakeDetail item={item} selectedRow={selectedRow} />
+      {/* {item.details.rewards.length === 0 ? (
         <div className="mt-[14px] flex grow flex-col items-center justify-center gap-4 rounded-2xl bg-background p-4">
           <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
           <span className="text-[12px] leading-[17px] text-default-700 max-sm:dark:text-default-600 text-center pb-2">
@@ -335,12 +347,12 @@ export default function EarningsPanel({ item }: { item: Farm }) {
             </Button>
           </div>
         </div>
-      )}
-      {selectedRow && (
+      )} */}
+      {selectedStakeRow && (
         <VaultInfoModal
-          item={selectedRow}
+          item={selectedStakeRow}
           disclosure={disclosure}
-          onJustClosed={() => setSelectedRow(null)}
+          onJustClosed={() => setSelectedStakeRow(null)}
         />
       )}
     </div>

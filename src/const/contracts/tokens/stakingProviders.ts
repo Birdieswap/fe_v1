@@ -52,6 +52,17 @@ const BIRDIESWAP_Wrapper = StakingProviderGuard({
   abi: birdieswap_wrapper_abi,
 } as const);
 
+const BIRDIESWAP_Staking = StakingProviderGuard({
+  name: "Birdieswap Staking",
+  provider: EProvider.BIRDIESWAP,
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.WRAPPER as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.WRAPPER as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.WRAPPER as `0x${string}`,
+  },
+  abi: birdieswap_wrapper_abi,
+} as const);
+
 const stakingProviders = {
   UNISWAP,
   HARVEST,

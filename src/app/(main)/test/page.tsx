@@ -91,6 +91,7 @@ export default function Page() {
         value={amount1 ?? undefined}
         onValueChange={setAmount1}
       />
+
       <p>isLoading0 {isLoading0}</p>
       <p>isLoading1 {isLoading1}</p>
       {data0 ?? "No data"}

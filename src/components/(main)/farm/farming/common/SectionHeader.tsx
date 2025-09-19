@@ -4,5 +4,5 @@ export function SectionHeader(
     HTMLHeadingElement
   >
 ) {
-  return <h1 className="text-sm font-bold text-default-800" {...props} />;
+  return <h1 className="text-sm font-bold text-default-800 pl-2" {...props} />;
 }
