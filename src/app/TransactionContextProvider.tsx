@@ -43,6 +43,14 @@ export type StopFarmingTransactionProps = {
   address?: `0x${string}`;
 };
 
+export type stakeTransactionProps = {
+  chainId: number;
+  transactionType: TransactionType.STAKING;
+  input: TransactionTokenDisplayProps;
+  output?: TransactionTokenDisplayProps[];
+  address?: `0x${string}`;
+};
+
 export type TransactionStatusProps = {
   chainId: number;
   transactionStatus?: TransactionStatus;
@@ -56,6 +64,7 @@ export type TransactionStatusProps = {
   | SwapTransactionProps
   | StartFarmingTransactionProps
   | StopFarmingTransactionProps
+  | stakeTransactionProps
 );
 
 export type TransactionContextType = {

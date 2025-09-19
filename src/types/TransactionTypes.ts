@@ -3,4 +3,6 @@ export enum TransactionType {
   SWAP = "SWAP",
   START_FARMING = "START_FARMING",
   STOP_FARMING = "STOP_FARMING",
+  STAKING = "STAKING",
+  UNSTAKING = "UNSTAKING"
 }

@@ -29,6 +29,7 @@ export default function FarmDetail({
 }) {
   const [selectedPanel, setSelectedPanel] = useState<"START" | "STOP">("START");
   const isActive = selectedRow === item.wip_stakeToken.fullName;
+  console.log("FarmDetail item", item);
 
   return (
     <AnimatePresence initial={false}>
@@ -86,7 +87,7 @@ export default function FarmDetail({
             className="flex h-full grow basis-0 flex-col"
           >
             <h2 className=" text-base font-semibold pl-2">Information</h2>
-            <EarningsPanel item={item} />
+            <EarningsPanel item={item} selectedRow={selectedRow} />
           </motion.div>
         </motion.div>
       )}
