@@ -12,13 +12,16 @@ import StakePanel from "./stakingPanels/StakePanel";
 import UnStakePanel from "./stakingPanels/UnStakePanel";
 import StakePanelButton from "./stakingPanels/StakePanelButtons";
 import type { Farm } from "@/types/FarmListTableRowProps";
+import { AprEntry } from "@/app/AssetsContextProvider";
 
 export default function StakeDetail({
   item,
   selectedRow,
+  matched,
 }: {
   item: Farm; // 필요 시 Farm 타입으로 바꾸세요
   selectedRow: string | null;
+  matched: AprEntry | undefined;
 }) {
   const [selectedPanel, setSelectedPanel] = useState<"STAKE" | "UNSTAKE">(
     "STAKE"
@@ -60,9 +63,9 @@ export default function StakeDetail({
             >
               <AnimatePresence initial={false}>
                 {selectedPanel === "STAKE" ? (
-                  <StakePanel item={item} />
+                  <StakePanel item={item} matched={matched} />
                 ) : (
-                  <UnStakePanel item={item} />
+                  <UnStakePanel item={item} matched={matched} />
                 )}
               </AnimatePresence>
             </motion.div>

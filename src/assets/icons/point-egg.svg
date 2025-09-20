@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Shiny Golden Eggs hugged by a Dense Twig Nest</title>
+  <desc id="desc">Three golden eggs with twinkling sparkles; compact nest with dense twigs. Transparent background.</desc>
+
+  <defs>
+    <!-- Gold -->
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#FFF7C8"/>
+      <stop offset="18%" stop-color="#F7DE81"/>
+      <stop offset="38%" stop-color="#E4B651"/>
+      <stop offset="62%" stop-color="#C9932A"/>
+      <stop offset="85%" stop-color="#F2CF65"/>
+      <stop offset="100%" stop-color="#9A6F18"/>
+    </linearGradient>
+    <radialGradient id="goldGlow" cx="38%" cy="30%" r="70%">
+      <stop offset="0%"  stop-color="rgba(255,255,255,.9)"/>
+      <stop offset="35%" stop-color="rgba(255,255,255,.25)"/>
+      <stop offset="70%" stop-color="rgba(255,240,200,.12)"/>
+      <stop offset="100%" stop-color="rgba(0,0,0,.06)"/>
+    </radialGradient>
+
+    <!-- Nest fill for rims -->
+    <linearGradient id="nestFill" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%"  stop-color="#9c7149"/>
+      <stop offset="50%" stop-color="#805b36"/>
+      <stop offset="100%" stop-color="#644427"/>
+    </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="rgba(0,0,0,.35)"/>
+    </filter>
+    <filter id="eggDepth" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="b"/>
+      <feOffset dy="2" result="o"/>
+      <feComposite in="o" in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" result="inner"/>
+      <feMerge><feMergeNode in="SourceGraphic"/><feMergeNode in="inner"/></feMerge>
+    </filter>
+
+    <!-- Sparkle -->
+    <g id="sparkle" fill="white" opacity="0.95">
+      <rect x="-1.2" y="-7" width="2.4" height="14" rx="1.2"/>
+      <rect x="-7" y="-1.2" width="14" height="2.4" rx="1.2"/>
+    </g>
+
+    <style>
+      .twig1{stroke:#5e3c1f; stroke-width:3;   stroke-linecap:round; fill:none}
+      .twig2{stroke:#7a4d28; stroke-width:2.2; stroke-linecap:round; fill:none}
+      .twig3{stroke:#8d5a31; stroke-width:1.6; stroke-linecap:round; fill:none}
+      @keyframes twinkle {
+        0%, 100% { transform: scale(0.9); opacity: 0.6; }
+        50%      { transform: scale(1.15); opacity: 1; }
+      }
+    </style>
+  </defs>
+  
+  <!-- EGGS (static highlight + twinkle only) -->
+  <g>
+
+    <!-- center -->
+    <g transform="translate(360,244) rotate(2)" filter="url(#eggDepth)">
+      <ellipse rx="68" ry="90" fill="url(#goldGrad)"/>
+      <ellipse rx="68" ry="90" fill="url(#goldGlow)"/>
+      <ellipse cx="-16" cy="-38" rx="22" ry="14" fill="rgba(255,255,255,.58)"/>
+      <ellipse cx="14"  cy="-58" rx="10" ry="7"  fill="rgba(255,255,255,.82)"/>
+      <use href="#sparkle" x="14"  y="-54" style="animation: twinkle 2.0s ease-in-out infinite;"/>
+      <use href="#sparkle" x="-26" y="-12" style="animation: twinkle 2.6s ease-in-out .2s infinite;"/>
+    </g>
+
+    
+  </g>
+</svg>

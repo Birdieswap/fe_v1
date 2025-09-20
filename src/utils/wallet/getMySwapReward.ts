@@ -22,7 +22,7 @@ export async function getMySwapReward(
   ): Promise<SwapRewardsResponse> {
   const { blockHeight, signal, chainId } = opts;
   const url = buildUrl("SwapRewards", { address, blockHeight , chainId: toChainIdParam(chainId) });
-  console.log("SwapRewards URL:", url);
+  // console.log("SwapRewards URL:", url);
   const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
   if (!res.ok) throw new Error(`SwapRewards fetch failed: ${res.status}`);
   return res.json();

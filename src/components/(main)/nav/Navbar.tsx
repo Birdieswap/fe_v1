@@ -16,6 +16,7 @@ import Icons from "@/assets/icons/icons";
 import { NavbarLink } from "./NavbarLink";
 import NavMenu from "./NavMenu";
 import NavbarConnect from "./NavbarConnect";
+import NavPoints from "./NavPoints";
 
 export default function NavbarImpl() {
   const menuDisclosure = useDisclosure();
@@ -61,6 +62,7 @@ export default function NavbarImpl() {
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}
+        <NavPoints />
         <NavbarConnect />
       </NavbarContent>
 

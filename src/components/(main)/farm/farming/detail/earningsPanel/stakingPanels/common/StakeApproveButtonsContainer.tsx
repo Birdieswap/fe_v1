@@ -12,7 +12,7 @@ export default function StakeApproveButtonsContainer(
         <motion.div
           layout
           {...presenceTransition}
-          className="mb-2 flex h-[36px] w-full flex-row gap-3"
+          className="mb1 flex h-[32px] w-full flex-row gap-1"
         >
           {props.children}
         </motion.div>

@@ -9,11 +9,20 @@ import StakingAmountInput from "./StakingAmountInput";
 import useUnStakePanel from "@/hooks/useUnStakePanel";
 import type { Farm } from "@/types/FarmListTableRowProps";
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
+import { AprEntry } from "@/app/AssetsContextProvider";
+import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
+
 /**
  * Unstake 시에는 Approve가 필요 없으므로
  * tokenStatuses를 모두 승인된 상태로 '오버라이드'하여 ExecuteButtons로 전달합니다.
  */
-export default function UnStakePanel({ item }: { item: Farm }) {
+export default function UnStakePanel({
+  item,
+  matched,
+}: {
+  item: Farm;
+  matched: AprEntry | undefined;
+}) {
   const state = useUnStakePanel(item);
 
   const inputToken = state.token;
@@ -63,6 +72,15 @@ export default function UnStakePanel({ item }: { item: Farm }) {
         tokenStatuses={tokenStatusesApproved}
         variant="PINK"
       />
+      {matched?.staking?.contractAddress && (
+        <ExtraRewardsInfo
+          staking={{
+            contractAddress: matched.staking.contractAddress as `0x${string}`,
+            extraRewards: matched.staking.extraRewards ?? [],
+          }}
+          className="mt-3"
+        />
+      )}
     </div>
   );
 }
