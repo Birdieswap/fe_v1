@@ -7,6 +7,7 @@ import { useAssetValues } from "@/hooks/assets/useAssets/useAssetValues";
 import useAccountBalances from "@/hooks/assets/useAssets/useAccountBalances";
 import { BigDecimal } from "@/types/BigDecimal";
 import { Farm } from "@/types/FarmListTableRowProps";
+import { UserPoints } from "@/hooks/assets/useAssets/useAccountPoints";
 
 export type FarmValues = {
   apyMap: Map<string, BigDecimal>;
@@ -59,6 +60,7 @@ export type StakeVault = {
 export type ExtraRewards = {
   symbol: string;
   name: string;
+  indexNumber: number;
   displayName: string;
   contractAddress: `0x${string}`;
   decimals: number;
@@ -71,6 +73,11 @@ export const AssetsContext = createContext<{
   balances?: ReturnType<typeof useAccountBalances>;
   farmValues?: FarmValues;
   aprDataState?: aprDataState;
+
+  userPoints?: UserPoints | null; // 정확한 타입 있으면 교체
+  isPointsLoading?: boolean;
+  refetchPoints?: () => Promise<any> | void;
+
   forceRefresh: () => Promise<void>; // [수정] 추가
   refetchAll: () => Promise<void>;
   isFetching: boolean;
@@ -78,6 +85,10 @@ export const AssetsContext = createContext<{
   forceRefresh: async () => {}, // [수정] 추가
   refetchAll: async () => {},
   isFetching: true,
+
+  userPoints: undefined,
+  isPointsLoading: true,
+  refetchPoints: async () => {},
 });
 
 export default function AssetsContextProvider({
@@ -93,6 +104,11 @@ export default function AssetsContextProvider({
       balances: assets.balances,
       farmValues: assets.farmValues,
       aprDataState: assets.aprDataState,
+
+      userPoints: assets.userPoints,
+      isPointsLoading: assets.isPointsLoading,
+      refetchPoints: assets.refetchPoints,
+
       refetchAll: assets.refetchAll,
       forceRefresh: assets.forceRefresh, // [수정] 추가
       isFetching: assets.isFetching,
@@ -102,6 +118,11 @@ export default function AssetsContextProvider({
       assets.balances,
       assets.farmValues,
       assets.aprDataState,
+
+      assets.userPoints,
+      assets.isPointsLoading,
+      assets.refetchPoints,
+
       assets.refetchAll,
       assets.forceRefresh,
       assets.isFetching,

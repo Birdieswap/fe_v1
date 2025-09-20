@@ -29,7 +29,6 @@ export default function FarmDetail({
 }) {
   const [selectedPanel, setSelectedPanel] = useState<"START" | "STOP">("START");
   const isActive = selectedRow === item.wip_stakeToken.fullName;
-  console.log("FarmDetail item", item);
 
   return (
     <AnimatePresence initial={false}>

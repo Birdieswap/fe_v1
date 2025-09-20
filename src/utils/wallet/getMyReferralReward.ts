@@ -23,7 +23,7 @@ export async function getMyReferralReward(
 ): Promise<ReferralRewardsResponse> {
   const { blockHeight, signal, chainId } = opts;
   const url = buildUrl("ReferralRewards", { address, blockHeight, chainId: toChainIdParam(chainId) });
-  console.log("ReferralRewards URL:", url);
+  // console.log("ReferralRewards URL:", url);
   const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
   if (!res.ok) throw new Error(`ReferralRewards fetch failed: ${res.status}`);
   return res.json();

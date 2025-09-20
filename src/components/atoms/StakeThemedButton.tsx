@@ -18,7 +18,7 @@ function StakeThemedButtonComponent(
     <Button
       {...{ ...props, className: undefined, variant: undefined, ref }}
       className={clsx(
-        "!data-[hover=true]:opacity-100 h-[36px] grow rounded-lg text-md font-semibold",
+        "!data-[hover=true]:opacity-100 h-[32px] grow rounded-lg text-md font-semibold",
         "disabled:bg-default-300 disabled:text-default-600",
         "dark:disabled:bg-dark_popup_bg dark:disabled:text-default-400",
         "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",

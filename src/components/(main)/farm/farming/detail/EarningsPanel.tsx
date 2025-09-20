@@ -180,6 +180,8 @@ export default function EarningsPanel({
   const showStakingBlock =
     Boolean(matched?.staking) && (hasAnyExtra || hasPointRate);
 
+  const canRenderStakeDetail = (matched?.staking?.contractAddress ?? "") !== "";
+
   return (
     <div className="mt-2 flex grow basis-0 flex-col">
       <div className="mb-3 mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
@@ -279,7 +281,7 @@ export default function EarningsPanel({
                     </p>
                     <div className="grow" />
                     <p className="whitespace-nowrap font-normal">
-                      {aprPct.toFixed(2)}% APR
+                      {aprPct.toFixed(4)}% APR
                     </p>
                   </div>
                 );
@@ -292,7 +294,7 @@ export default function EarningsPanel({
                 </p>
                 <div className="grow" />
                 <p className="whitespace-nowrap font-normal">
-                  Daily {(dailyPointRateNum / 1e18).toFixed(4)} point/
+                  Daily {(dailyPointRateNum / 1e18).toFixed(8)} point/
                   {matched!.staking!.stakingToken}
                 </p>
               </div>
@@ -300,54 +302,21 @@ export default function EarningsPanel({
           </div>
         )}
       </div>
-      <div className="mb-3">
-        <SectionHeader>Start with a stake. Unlock more benefits</SectionHeader>
-      </div>
-      <StakeDetail item={item} selectedRow={selectedRow} />
-      {/* {item.details.rewards.length === 0 ? (
-        <div className="mt-[14px] flex grow flex-col items-center justify-center gap-4 rounded-2xl bg-background p-4">
-          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
-          <span className="text-[12px] leading-[17px] text-default-700 max-sm:dark:text-default-600 text-center pb-2">
-            <p>There are no extra rewards for this pool at the moment.</p>
-            <p>
-              But you are still enjoying the double growth rate of Birdieswap!{" "}
-            </p>
-          </span>
-        </div>
-      ) : (
-        <div className="mt-[14px] flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
-          {item.details.rewards.map((v) => {
-            const amount = 0; // TODO calculate the balance
-            const price = 0; // TODO calculate the price
-            // const amount = v.amount.toFixed(v.token.balance?.decimals || 0);
-            const dollarAmount = (amount * price).toFixed(2);
-            const stakeAt = v.token.symbol;
-            const stakeAtSrc = v.token.iconSrc;
-
-            return (
-              <RewardInfoRow
-                key={stakeAt}
-                amount={amount.toFixed(
-                  v.token.displayDecimals ?? v.token.decimals ?? 3
-                )}
-                dollarAmount={dollarAmount}
-                rewardToken={stakeAt}
-                rewardTokenSrc={stakeAtSrc}
-              />
-            );
-          })}
-
-          <div className="flex grow flex-row items-center gap-2 text-foreground">
-            <p className="grow text-sm">Claim all rewards into your wallet.</p>
-            <Button
-              className="btn-mint h-[43px] w-40 rounded-2xl text-base font-semibold"
-              size="sm"
-            >
-              Claim
-            </Button>
+      {canRenderStakeDetail && (
+        <>
+          <div className="mb-3">
+            <SectionHeader>
+              Start with a stake. Unlock more benefits
+            </SectionHeader>
           </div>
-        </div>
-      )} */}
+          <StakeDetail
+            item={item}
+            selectedRow={selectedRow}
+            matched={matched}
+          />
+        </>
+      )}
+
       {selectedStakeRow && (
         <VaultInfoModal
           item={selectedStakeRow}

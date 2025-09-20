@@ -211,7 +211,7 @@ export default function WalletPage(props: {
   toSettings: () => void;
   onClose: () => void;
 }) {
-  const [tab, setTab] = useState<"History" | "Assets">("History");
+  const [tab, setTab] = useState<"History" | "Assets">("Assets");
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
   const {
@@ -285,23 +285,23 @@ export default function WalletPage(props: {
                 )}
               >
                 <TabSelector
-                  name="History"
-                  selected={tab}
-                  setTab={setTab}
-                  value="History"
-                />
-                <TabSelector
                   name="Assets"
                   selected={tab}
                   setTab={setTab}
                   value="Assets"
                 />
+                <TabSelector
+                  name="History"
+                  selected={tab}
+                  setTab={setTab}
+                  value="History"
+                />
               </ButtonGroup>
             </div>
           </div>
           <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">
-            {tab === "History" && <WalletTransactions />}
             {tab === "Assets" && <WalletTokens />}
+            {tab === "History" && <WalletTransactions />}
           </div>
         </div>
       </ModalBody>

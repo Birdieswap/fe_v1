@@ -22,7 +22,7 @@ export async function getMyCurrentUserReward(
 ): Promise<CurrentUserRewardsResponse> {
   const { signal, chainId } = opts;
   const url = buildUrl("CurrentUserRewards", { address, chainId: toChainIdParam(chainId) });
-  console.log("CurrentUserRewards URL:", url);
+  // console.log("CurrentUserRewards URL:", url);
   const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
   if (!res.ok) throw new Error(`CurrentUserRewards fetch failed: ${res.status}`);
   return res.json();

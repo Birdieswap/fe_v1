@@ -8,7 +8,6 @@ import { useAssetValues } from "./useAssetValues";
 import { FarmList } from "@/const/farmInfo";
 import { calcFarmOnce, FarmCalc } from "@/utils/farm/calcFarmOnce";
 import { BigDecimal } from "@/types/BigDecimal";
-import { formatUnits } from "viem";
 import {
   prefetchFarmData,
 } from "@/utils/farm/farmDataCache";
@@ -16,6 +15,7 @@ import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
 } from "@/const/contracts/types/tokenTypes";
+import useAccountPoints from "./useAccountPoints";
 
 type FarmValuesRecord = Record<
   string,
@@ -91,12 +91,14 @@ const SCALE_DECIMALS = 1e18;
 
 export default function useAssets() {
   // 1) 여기서만 훅 호출 (고정 순서)
+  const {address} = useAccount();
 
   const chainId = useChainId();
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
   const balances = useAccountBalances();
+  const pointsQ =useAccountPoints(address);
 
   // 2) FarmList에서 현재 체인 주소 확정
   const farms = useMemo(() => {
@@ -304,7 +306,7 @@ export default function useAssets() {
             try { sum += BigInt(s); } catch {}
           }
 
-          console.log("useAssets vault apr7d", vaults.map(v=>v.apr7d), "sum", sum.toString(), "addr", addr) 
+          // console.log("useAssets vault apr7d", vaults.map(v=>v.apr7d), "sum", sum.toString(), "addr", addr)
 
           let apyNumber: number;
           if (sum > SUM_LIMIT) {
@@ -380,16 +382,16 @@ export default function useAssets() {
       const next = new Map<string, FarmRaw>();
 
       // --- 디버그: 들어온 farms 요약 (주소/타입/심볼)
-      try {
-        console.debug(
-          "[farmRaw] farms",
-          farms.map(({ farm, address }) => ({
-            address,
-            type: farm?.type,
-            symbol: farm?.symbol
-          }))
-        );
-      } catch {}
+      // try {
+      //   console.debug(
+      //     "[farmRaw] farms",
+      //     farms.map(({ farm, address }) => ({
+      //       address,
+      //       type: farm?.type,
+      //       symbol: farm?.symbol
+      //     }))
+      //   );
+      // } catch {}
 
       // 개별 타임아웃 유틸 (멈춤 탐지)
       const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
@@ -514,11 +516,17 @@ export default function useAssets() {
       farmValues,
       farmRaw: farmRawMap,
       aprDataState,
+
+      userPoints: pointsQ.data,
+      isPointsLoading: pointsQ.isLoading,
+      refetchPoints: pointsQ.refetch,
+
       refetchAll,
       forceRefresh, //추가
-      isFetching: assetValues.isFetching || balances.isFetching,
+      isFetching: assetValues.isFetching || balances.isFetching || pointsQ.isLoading,
     }),
-    [assetValues, balances, farmValues, aprDataState, farmRawMap, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching],
+    [assetValues, balances, farmValues, aprDataState, farmRawMap, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching, pointsQ.data,
+    pointsQ.isLoading,],
   );
   console.log("useAssets assets", assets);
 

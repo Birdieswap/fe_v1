@@ -70,11 +70,11 @@ export function useAccountWalletData(address?: Address, blockHeight?: string | n
     ],
   });
 
-  console.log("[wallet] useAccountWalletData", { address, chainId, blockHeight, enabled }, "result", results); 
+  // console.log("[wallet] useAccountWalletData", { address, chainId, blockHeight, enabled }, "result", results); 
 
 
   useEffect(() => {
-  console.debug("[wallet] enabled:", enabled, "address:", address, "chainId:", chainId, "blockHeight:", blockHeight);
+  // console.debug("[wallet] enabled:", enabled, "address:", address, "chainId:", chainId, "blockHeight:", blockHeight);
   if (enabled) {
     console.debug("[wallet] URLs:",
       buildUrl("CurrentUserRewards", { address: address! }),

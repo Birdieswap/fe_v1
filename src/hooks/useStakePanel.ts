@@ -116,7 +116,7 @@ export default function useStakePanel(item: any): StakePanelState {
       return allowance.gte(amt);
     }, [allowance, amount]);
 
-    console.log("useStakePanel",stakingInfo, stakeToken, stakeTokenAddress, stakingAddress, allowance)
+    // console.log("useStakePanel",stakingInfo, stakeToken, stakeTokenAddress, stakingAddress, allowance)
   
     // Approve 훅 (refetch 추가)
     const approve = useApprove({

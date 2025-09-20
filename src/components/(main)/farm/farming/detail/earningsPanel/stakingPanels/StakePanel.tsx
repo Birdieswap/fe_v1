@@ -8,15 +8,23 @@ import { StakeExecuteButtons } from "./common/StakeExecuteButtons";
 import useStakePanel from "@/hooks/useStakePanel";
 import type { Farm } from "@/types/FarmListTableRowProps";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
+import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
+import { AprEntry } from "@/app/AssetsContextProvider";
 
-export default function StakePanel({ item }: { item: Farm }) {
+export default function StakePanel({
+  item,
+  matched,
+}: {
+  item: Farm;
+  matched: AprEntry | undefined;
+}) {
   const state = useStakePanel(item);
   const balance = state.tokenStatuses[0].balance;
   const symbol = state.token?.symbol;
 
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
-  console.log("stakePanel", item, state);
+  // console.log("stakePanel", item, state);
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -56,6 +64,15 @@ export default function StakePanel({ item }: { item: Farm }) {
         tokenStatuses={state.tokenStatuses}
         variant="MINT"
       />
+      {matched?.staking?.contractAddress && (
+        <ExtraRewardsInfo
+          staking={{
+            contractAddress: matched.staking.contractAddress as `0x${string}`,
+            extraRewards: matched.staking.extraRewards ?? [],
+          }}
+          className="mt-3"
+        />
+      )}
     </div>
   );
 }

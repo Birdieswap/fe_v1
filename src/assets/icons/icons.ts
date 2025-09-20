@@ -55,6 +55,7 @@ import Wallet from "./wallet.svg";
 import WalletEmptyReferralRewards from "./Wallet-empty-ReferralRewards.svg";
 import WalletEmptySwapRewards from "./Wallet-empty-SwapRewards.svg";
 import Subtract from "./Subtract.svg";
+import PointEgg from "./point-egg.svg"
 
 export const Icons = {
   Arrow,
@@ -114,6 +115,7 @@ export const Icons = {
   WalletTxError,
   WalletTxOk,
   Wallet,
+  PointEgg,
 };
 
 export default Icons;
