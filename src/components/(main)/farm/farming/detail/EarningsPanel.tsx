@@ -21,6 +21,7 @@ import clsx from "clsx";
 import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
 import { BigDecimal } from "@/types/BigDecimal";
 import StakeDetail from "./earningsPanel/StakeDetail";
+import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -167,10 +168,11 @@ export default function EarningsPanel({
     disclosure.onOpen();
   }, [matched?.staking, disclosure]);
 
-  const dprRaw = matched?.staking?.dailyPointRate as unknown;
+  const dprRaw = matched?.staking?.dailyPointRate as string;
   const dailyPointRateNum = Number(
     typeof dprRaw === "string" || typeof dprRaw === "number" ? dprRaw : 0
   );
+  console.log("EarningsPanel dprRaw", dprRaw, dailyPointRateNum, price);
   const hasPointRate =
     Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0;
 
@@ -281,7 +283,7 @@ export default function EarningsPanel({
                     </p>
                     <div className="grow" />
                     <p className="whitespace-nowrap font-normal">
-                      {aprPct.toFixed(4)}% APR
+                      {aprPct.toFixed(2)}% APR
                     </p>
                   </div>
                 );
@@ -294,8 +296,7 @@ export default function EarningsPanel({
                 </p>
                 <div className="grow" />
                 <p className="whitespace-nowrap font-normal">
-                  Daily {(dailyPointRateNum / 1e18).toFixed(8)} point/
-                  {matched!.staking!.stakingToken}
+                  {format2(dailyPointRateNum / price / 1e18, 2)} point/$
                 </p>
               </div>
             )}

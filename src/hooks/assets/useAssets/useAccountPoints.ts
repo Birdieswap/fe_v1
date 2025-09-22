@@ -13,6 +13,12 @@ export type CurrentUserPointsResponse = {
   result: boolean;
   chainId: string | number | null;
   totalPoints: string;
+  totalPointsDetail?:{
+    staking?: string;
+    swapWithReferrals?: string;
+    swapWithoutReferrals?: string;
+    referrals?: string;
+  }
   pointsDetail?: {
     staking?: Record<string, string>;
     swapWithReferrals?: Record<Address, string>;
@@ -23,6 +29,12 @@ export type CurrentUserPointsResponse = {
 
 export type UserPoints = {
   totalPoints: string;
+  totalPointsDetail?:{
+    staking?: string;
+    swapWithReferrals?: string;
+    swapWithoutReferrals?: string;
+    referrals?: string;
+  }
   staking: Record<string, string>;
   swapWithReferrals: Record<Address, string>;
   swapWithoutReferrals?: Record<Address, string>;
@@ -34,6 +46,12 @@ function normalize(resp?: CurrentUserPointsResponse | null): UserPoints | null {
   const detail = resp.pointsDetail ?? {};
   return {
     totalPoints: resp.totalPoints ?? "0",
+    totalPointsDetail:{
+      staking: resp.totalPointsDetail?.staking ?? "0",
+      swapWithReferrals: resp.totalPointsDetail?.swapWithReferrals ?? "0",
+      swapWithoutReferrals: resp.totalPointsDetail?.swapWithoutReferrals ?? "0",
+      referrals : resp.totalPointsDetail?.referrals ?? "0",
+  },
     staking: (detail.staking as Record<string, string>) ?? {},
     swapWithReferrals: (detail.swapWithReferrals as Record<Address, string>) ?? {},
     referrals: (detail.referrals as Record<Address, string>) ?? {},

@@ -42,9 +42,7 @@ export function ExtraRewardsInfo(props: {
   if (!props.staking?.contractAddress || list.length === 0) return null;
 
   return (
-    <div
-      className={cn("mt-2 rounded-sm bg-background text-sm", props.className)}
-    >
+    <div className={cn("rounded-sm bg-background text-sm", props.className)}>
       <p className="mb-2 font-bold text-default-800 dark:text-default-700">
         Extra Rewards
       </p>

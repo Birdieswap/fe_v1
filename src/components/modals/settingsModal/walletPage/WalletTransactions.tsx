@@ -16,11 +16,17 @@ import { buildTransactions } from "@/utils/wallet/transactions/buildTransactions
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { WalletContext } from "@/app/WalletContextProvider";
+import { FaRegArrowAltCircleUp } from "react-icons/fa";
+import { FaRegArrowAltCircleDown } from "react-icons/fa";
+import { PiHandWithdraw } from "react-icons/pi";
 
 export enum TransactionType {
   SWAP = "swap",
   START_FARM = "start_farm",
   STOP_FARM = "stop_farm",
+  STAKING = "StakingDeposit",
+  UNSTAKING = "StakingWithdraw",
+  CLAIM = "StakingClaim",
 }
 
 export type TransactionTokenInfo = {
@@ -49,6 +55,20 @@ export type TransactionProps = {
       type: TransactionType.STOP_FARM;
       from: TransactionTokenInfo;
       to: TransactionTokenInfo[];
+    }
+  | {
+      type: TransactionType.CLAIM;
+      token: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.STAKING;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.UNSTAKING;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
     }
 );
 
@@ -122,8 +142,16 @@ function BaseTransactionItem(props: TransactionProps) {
         return "Start Farming";
       case TransactionType.STOP_FARM:
         return "Stop Farming";
+      case TransactionType.STAKING:
+        return "Staking";
+      case TransactionType.UNSTAKING:
+        return "Unstaking";
+      case TransactionType.CLAIM:
+        return "Reward Claim";
     }
   }, [props.type]);
+
+  console.log("Wallet Transactions, BaseTransactionItem Props", props);
 
   return (
     <Link
@@ -152,6 +180,13 @@ function BaseTransactionItem(props: TransactionProps) {
               {props.type === TransactionType.STOP_FARM && (
                 <Icons.WalletTitleStopFarm className="fill-foreground stroke-foreground stroke-[0.3px]" />
               )}
+              {props.type === TransactionType.STAKING && (
+                <FaRegArrowAltCircleUp />
+              )}
+              {props.type === TransactionType.UNSTAKING && (
+                <FaRegArrowAltCircleDown />
+              )}
+              {props.type === TransactionType.CLAIM && <PiHandWithdraw />}
               {title}
             </h2>
             <span className="truncate text-[12px] leading-[15px] text-default-800 dark:text-default-700">
@@ -176,6 +211,11 @@ function BaseTransactionItem(props: TransactionProps) {
         {props.type === TransactionType.STOP_FARM && (
           <StopFarmItem {...props} />
         )}
+        {props.type === TransactionType.STAKING && <StakingItem {...props} />}
+        {props.type === TransactionType.UNSTAKING && (
+          <UnStakingItem {...props} />
+        )}
+        {props.type === TransactionType.CLAIM && <ClaimItem {...props} />}
       </div>
     </Link>
   );
@@ -225,6 +265,32 @@ function StopFarmItem(
           <TokenListDisplay tokens={props.to} />
         </div>
       </div>
+    </div>
+  );
+}
+function StakingItem(
+  props: TransactionProps & { type: TransactionType.STAKING }
+) {
+  return (
+    <div className="wallet-tx-details-container">
+      <SwapDisplay from={props.from} to={props.to} />
+    </div>
+  );
+}
+function UnStakingItem(
+  props: TransactionProps & { type: TransactionType.UNSTAKING }
+) {
+  return (
+    <div className="wallet-tx-details-container">
+      <SwapDisplay from={props.from} to={props.to} />
+    </div>
+  );
+}
+
+function ClaimItem(props: TransactionProps & { type: TransactionType.CLAIM }) {
+  return (
+    <div className="wallet-tx-details-container">
+      <TransactionTokenDisplay token={props.token} />
     </div>
   );
 }

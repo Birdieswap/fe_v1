@@ -45,14 +45,12 @@ export default function NavbarImpl() {
         </Link>
       </NavbarBrand>
 
-      {/* ⭐ 모바일 메뉴 버튼 */}
       <NavbarContent className="flex items-center sm:hidden" justify="start">
         <Button isIconOnly variant="light" onPress={menuDisclosure.onOpen}>
           <Icons.Menu className="stroke-foreground stroke-2" />
         </Button>
       </NavbarContent>
 
-      {/* ⭐ 데스크탑 메뉴 버튼 */}
       <NavbarContent className="hidden grow sm:flex" justify="start">
         <NavbarLink />
       </NavbarContent>

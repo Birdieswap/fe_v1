@@ -1,11 +1,29 @@
 "use client";
 
+import { AssetsContext } from "@/app/AssetsContextProvider";
+import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
+import { useContext } from "react";
+
 export default function PointsPanel({
   variant = "popover",
 }: {
   variant?: "popover" | "modal";
 }) {
   const isPopover = variant === "popover";
+  const { userPoints } = useContext(AssetsContext);
+  const totalSwapPoint: number =
+    Number(userPoints?.totalPointsDetail?.swapWithReferrals as string) +
+    Number(userPoints?.totalPointsDetail?.swapWithoutReferrals as string);
+
+  const swapPoint = format2(totalSwapPoint, 2);
+  const referralPoint = format2(
+    Number(userPoints?.totalPointsDetail?.referrals),
+    2
+  );
+  const stakingPoint = format2(
+    Number(userPoints?.totalPointsDetail?.staking),
+    2
+  );
 
   return (
     <div
@@ -22,15 +40,21 @@ export default function PointsPanel({
         <div className="flex flex-col gap-2 text-[15px] text-foreground">
           <div className="flex items-center justify-between">
             <span>Swap</span>
-            <span className="font-semibold tabular-nums">1,000,000 point</span>
+            <span className="font-semibold tabular-nums">
+              {swapPoint} point
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span>Referral</span>
-            <span className="font-semibold tabular-nums">340,000 point</span>
+            <span className="font-semibold tabular-nums">
+              {referralPoint} point
+            </span>
           </div>
           <div className="flex items-center justify-between">
             <span>LP</span>
-            <span className="font-semibold tabular-nums">6,987 point</span>
+            <span className="font-semibold tabular-nums">
+              {stakingPoint} point
+            </span>
           </div>
         </div>
       </div>

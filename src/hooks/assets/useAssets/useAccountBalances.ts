@@ -6,6 +6,7 @@ import singleVaults from "@/const/contracts/tokens/singleVaults";
 import tokens from "@/const/contracts/tokens/tokens";
 
 import useBalances from "./useBalances";
+import useStakedBalances from "./useStakedBalances";
 
 /**
  * List of all tokens for which we should fetch the user's balances.
@@ -21,11 +22,13 @@ export default function useAccountBalances() {
   const singleVaultBalances = useBalances(singleVaultsList, chainId, address);
   const lpVaultBalances = useBalances(lpVaultsList, chainId, address);
 
+
   return useMemo(
     () => ({
       tokenBalances,
       singleVaultBalances,
       lpVaultBalances,
+
       isFetching:
         tokenBalances.query.isFetching ||
         singleVaultBalances.query.isFetching ||

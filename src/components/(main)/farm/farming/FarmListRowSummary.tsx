@@ -270,9 +270,10 @@ export default function FarmListRowSummary({
                   isBalanceAvailable &&
                   balance
                     .roundToDecimals(
-                      item.wip_stakeToken?.displayDecimals ??
-                        item.wip_stakeToken?.decimals ??
-                        3
+                      5
+                      // item.wip_stakeToken?.displayDecimals ??
+                      //   item.wip_stakeToken?.decimals ??
+                      //   3
                     )
                     .toPrecisionString(true, true)}
               </p>

@@ -16,6 +16,7 @@ import {
   IBirdieSingleFarm,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
+import useStakedBalances from "./useStakedBalances";
 
 type FarmValuesRecord = Record<
   string,
@@ -97,7 +98,7 @@ export default function useAssets() {
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
-  const balances = useAccountBalances();
+  const baseBalances = useAccountBalances();
   const pointsQ =useAccountPoints(address);
 
   // 2) FarmList에서 현재 체인 주소 확정
@@ -166,35 +167,65 @@ export default function useAssets() {
   // [수정] balances의 버전 키 (토큰 주소별 balance 총합의 해시 유사 문자열)
   const balancesVersion = useMemo(() => {
     const arr: string[] = [];
-    balances.tokenBalances.balanceMap.forEach((v, k) => {
+    baseBalances.tokenBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
-    balances.singleVaultBalances.balanceMap.forEach((v, k) => {
+    baseBalances.singleVaultBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
-    balances.lpVaultBalances.balanceMap.forEach((v, k) => {
+    baseBalances.lpVaultBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
     return arr.sort().join("|");
-  }, [balances.tokenBalances.balanceMap, balances.singleVaultBalances.balanceMap, balances.lpVaultBalances.balanceMap]);
+  }, [baseBalances.tokenBalances.balanceMap, baseBalances.singleVaultBalances.balanceMap, baseBalances.lpVaultBalances.balanceMap]);
 
+  const aprList = useMemo(() => (aprDataState?.apr ?? []), [aprDataState]);
+  const stakedBalances = useStakedBalances({ aprList, address });
   
+  const balances = useMemo(() => {
+    const mergedIsFetching =
+      baseBalances.isFetching || Boolean((stakedBalances as any)?.query?.isFetching);
+
+    const mergedRefetch = async () => {
+      const calls: Array<Promise<any>> = [];
+      calls.push(baseBalances.tokenBalances.query.refetch?.() ?? Promise.resolve());
+      calls.push(baseBalances.singleVaultBalances.query.refetch?.() ?? Promise.resolve());
+      calls.push(baseBalances.lpVaultBalances.query.refetch?.() ?? Promise.resolve());
+      if ((stakedBalances as any)?.query?.refetch) {
+        calls.push((stakedBalances as any).query.refetch());
+      }
+      await Promise.all(calls);
+    };
+
+    return {
+      ...baseBalances,
+      stakedBalances,           
+      isFetching: mergedIsFetching,
+      query: {
+        refetch: mergedRefetch, 
+        isFetching: mergedIsFetching,
+      },
+    };
+  }, [baseBalances, stakedBalances]);
+
   const refetchAll = useCallback(async () => {
     await Promise.all([
       assetValues?.uniswapBaseTokenData?.refetch(),
       assetValues?.uniswapQuoteTokenData?.refetch(),
       assetValues?.chainLinkData?.refetch(),
-      balances?.lpVaultBalances.query.refetch(),
-      balances?.singleVaultBalances.query.refetch(),
-      balances?.tokenBalances.query.refetch(),
+      baseBalances?.lpVaultBalances.query.refetch(),
+      baseBalances?.singleVaultBalances.query.refetch(),
+      baseBalances?.tokenBalances.query.refetch(),
+      (stakedBalances as any)?.query?.refetch?.(),
     ]);
   }, [
     assetValues?.uniswapBaseTokenData?.refetch,
     assetValues?.uniswapQuoteTokenData?.refetch,
     assetValues?.chainLinkData?.refetch,
-    balances?.lpVaultBalances.query.refetch,
-    balances?.singleVaultBalances.query.refetch,
-    balances?.tokenBalances.query.refetch,
+    baseBalances?.lpVaultBalances.query.refetch,
+    baseBalances?.singleVaultBalances.query.refetch,
+    baseBalances?.tokenBalances.query.refetch,
+    stakedBalances,
   ]);
 
   // [수정] 강제 재계산 도우미 (refetch 후 refreshIndex bump)

@@ -47,7 +47,6 @@ export default function StakingAmountInput(props: LegacyProps | FlatProps) {
         setAmount={setAmount}
         setMaxAmount={setMaxAmount}
         token={input}
-        // panel은 기존 파일엔 없었지만, 필요하면 내려주세요
       />
     );
   }
@@ -79,29 +78,3 @@ export default function StakingAmountInput(props: LegacyProps | FlatProps) {
     />
   );
 }
-
-// import { UseSingleStartPanelReturn } from "@/hooks/useSingleStartPanel";
-// import StakeInput from "./common/StakeInput";
-
-// export default function StakingAmountInput({
-//   state,
-// }: {
-//   state: UseSingleStartPanelReturn;
-// }) {
-//   const { setAmount, tokenStatus, setMaxAmount } = state;
-//   const { input, amount, balance, isApproved, isImpermanentInsolvency } =
-//     tokenStatus;
-
-//   return (
-//     <StakeInput
-//       amount={amount}
-//       isActive={true}
-//       isApproved={isApproved}
-//       isDisabled={false}
-//       isInsolvency={isImpermanentInsolvency}
-//       setAmount={setAmount}
-//       setMaxAmount={setMaxAmount}
-//       token={input}
-//     />
-//   );
-// }
