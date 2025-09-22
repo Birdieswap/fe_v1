@@ -33,7 +33,11 @@ export function StakeExecuteButtons({
     isConnected && tokenStatuses.some((v) => v.isApproved == false);
 
   return (
-    <motion.div layout {...defaultTransition} className="flex w-full flex-col">
+    <motion.div
+      layout
+      {...defaultTransition}
+      className="flex w-full flex-col gap-2"
+    >
       <StakeApproveButtonsContainer isVisible={isApproveVisible}>
         {isApproveVisible &&
           tokenStatuses

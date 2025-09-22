@@ -15,6 +15,8 @@ import { GiCosmicEgg } from "react-icons/gi";
 import PointsMenu from "@/components/modals/points/PointsMenu";
 import PointsPanel from "@/components/modals/points/PointsPanel";
 import { LoadingPulse } from "../farm/farming/FarmListRowSummary";
+import ModalBase from "@/components/atoms/ModalBase";
+import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 
 export default function NavPoints() {
   const disclosure = useDisclosure(); // 공용 오픈 상태
@@ -75,17 +77,40 @@ export default function NavPoints() {
         </Button>
       </NavbarItem>
 
-      <Modal
-        className="sm:hidden"
+      <ModalBase
+        className="mt-2 pt-6 sm:hidden"
+        classNames={{
+          wrapper: "items-end justify-center",
+          base: "m-0 max-h-[80vh]",
+          body: "p-0",
+          closeButton: "absolute top-3 right-4",
+        }}
+        closeButton={<ModalCloseButton onClose={disclosure.onClose} />}
+        isDismissable
+        isKeyboardDismissDisabled={false}
         isOpen={disclosure.isOpen}
-        onClose={disclosure.onClose}
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.3, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.3, ease: "easeIn" },
+            },
+          },
+        }}
         placement="bottom"
-        scrollBehavior="inside"
-        size="md"
+        size="lg"
+        onClose={disclosure.onClose}
       >
         <ModalContent>
-          <ModalHeader className="px-6 py-5">
-            <div className="w-full">
+          <ModalBody className="p-0">
+            {/* 헤더 */}
+            <div className="px-6 py-5">
               <p className="text-[14px] font-semibold leading-5 text-default-700">
                 Birdieswap Point
               </p>
@@ -93,13 +118,15 @@ export default function NavPoints() {
                 {isPointsLoading || total == null ? "—" : totalFormatted}
               </p>
             </div>
-          </ModalHeader>
-          <ModalBody className="p-0">
-            {/* 모달에선 가득/반응형으로 */}
+
+            {/* 본문 패널: 모달에서는 가득/반응형 */}
             <PointsPanel variant="modal" />
+
+            {/* 하단 안전 영역 */}
+            <div className="h-4" />
           </ModalBody>
         </ModalContent>
-      </Modal>
+      </ModalBase>
     </>
   );
 }

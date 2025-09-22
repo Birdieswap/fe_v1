@@ -10,6 +10,7 @@ import type { Farm } from "@/types/FarmListTableRowProps";
 import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { AprEntry } from "@/app/AssetsContextProvider";
+import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 
 export default function StakePanel({
   item,
@@ -21,6 +22,7 @@ export default function StakePanel({
   const state = useStakePanel(item);
   const balance = state.tokenStatuses[0].balance;
   const symbol = state.token?.symbol;
+  const balanceNum = format2(balance.toNumber(), 5);
 
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
@@ -33,7 +35,7 @@ export default function StakePanel({
           <FaRegArrowAltCircleUp />
           <div>Amount to Stake</div>
         </div>
-        <div>{`Balance ${balance} ${symbol}`}</div>
+        <div>{`Balance ${balanceNum} ${symbol}`}</div>
       </div>
 
       <StakingAmountInput

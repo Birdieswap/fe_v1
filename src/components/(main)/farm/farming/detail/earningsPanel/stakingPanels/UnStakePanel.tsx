@@ -11,6 +11,7 @@ import type { Farm } from "@/types/FarmListTableRowProps";
 import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { AprEntry } from "@/app/AssetsContextProvider";
 import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
+import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 
 /**
  * Unstake 시에는 Approve가 필요 없으므로
@@ -38,6 +39,7 @@ export default function UnStakePanel({
   );
 
   const balance = state.tokenStatuses[0].balance;
+  const balanceNum = format2(balance.toNumber(), 5);
 
   return (
     <div className="flex w-full flex-col gap-2">
@@ -46,7 +48,7 @@ export default function UnStakePanel({
           <FaRegArrowAltCircleDown />
           <div>Amount to Unstake</div>
         </div>
-        <div>{`Staked Balance ${balance}`}</div>
+        <div>{`Staked Balance ${balanceNum}`}</div>
       </div>
       <StakingAmountInput
         amount={state.amount}

@@ -67,7 +67,7 @@ export default function VaultInfo({
       </div>
       <div className="grow" />
       <p className="whitespace-nowrap font-normal">
-        {item.apy.toFixed(4)}% APR
+        {item.apy.toFixed(2)}% APR
       </p>
     </div>
   );

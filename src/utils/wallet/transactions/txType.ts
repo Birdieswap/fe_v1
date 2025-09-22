@@ -3,6 +3,9 @@ export enum TransactionType {
   SWAP = "swap",
   START_FARM = "start_farm",
   STOP_FARM = "stop_farm",
+  STAKING = "StakingDeposit",
+  UNSTAKING = "StakingWithdraw",
+  CLAIM = "StakingClaim",
 }
 
 export type TransactionTokenInfo = {
@@ -33,4 +36,24 @@ export type TransactionProps =
       timestamp: string;
       from: TransactionTokenInfo; // LP
       to: TransactionTokenInfo[];
+    }
+  | {
+      type: TransactionType.CLAIM;
+      hash: string;
+      timestamp: string;
+      token: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.STAKING;
+      hash: string;
+      timestamp: string;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.UNSTAKING;
+      hash: string;
+      timestamp: string;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
     };

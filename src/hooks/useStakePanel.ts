@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useContext, useMemo, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { BigDecimal } from "@/types/BigDecimal";
 import type { IStakingProvider, IToken } from "@/const/contracts/types/tokenTypes";
 import type { FarmTokenStatus } from "@/hooks/FarmTokenStatus";
@@ -73,8 +73,12 @@ export default function useStakePanel(item: any): StakePanelState {
   };
   const token: IToken | undefined = (item?.wip_stakeToken as IToken) 
   const lpBalance : BigDecimal = getBal(stakeTokenAddress);
-   const [amount, setAmount] = useState<BigDecimal | null>(lpBalance);
+  const [amount, setAmount] = useState<BigDecimal | null>(lpBalance);
   // const [isPending, setIsPending] = useState(false);
+  useEffect(() => {
+    if (lpBalance != null) setAmount(lpBalance);
+  }, [lpBalance]);
+
 
   const stakingInfo = useMemo(() => {
     // total.aprDataState.apr 배열에서 contractAddress === stakeTokenAddress

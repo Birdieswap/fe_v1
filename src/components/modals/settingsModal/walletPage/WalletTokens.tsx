@@ -57,12 +57,14 @@ export default function WalletTokens() {
       total,
       {
         tokens: tokensList as any,
-        //singleVaults: singleVaultsList as any,
         lpVaults: lpVaultsList as any,
+        //singleVaults: singleVaultsList as any,
       },
       chainId
     );
   }, [total, chainId]);
+
+  console.log("walletTokens. tokens", tokens);
 
   return (
     <div
