@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { StakeExecuteButtons } from "./common/StakeExecuteButtons";
 
 import { BigDecimal } from "@/types/BigDecimal";
@@ -13,10 +13,8 @@ import { AprEntry } from "@/app/AssetsContextProvider";
 import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 
-/**
- * Unstake 시에는 Approve가 필요 없으므로
- * tokenStatuses를 모두 승인된 상태로 '오버라이드'하여 ExecuteButtons로 전달합니다.
- */
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+
 export default function UnStakePanel({
   item,
   matched,
@@ -40,6 +38,71 @@ export default function UnStakePanel({
 
   const balance = state.tokenStatuses[0].balance;
   const balanceNum = format2(balance.toNumber(), 5);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const unstakeParam = useMemo(
+    () => searchParams.get("unstakeAmount"),
+    // pathname을 포함하면 다른 farm로 이동했을 때도 새로 읽힘
+    [searchParams, pathname]
+  );
+
+  const balanceKey = useMemo(() => {
+    try {
+      return state?.tokenStatuses?.[0]?.balance?.toString?.() ?? "";
+    } catch {
+      return "";
+    }
+  }, [state.tokenStatuses]);
+
+  useEffect(() => {
+    const val = searchParams.get("unstakeAmount");
+    if (!val) return;
+
+    const isReady =
+      state.isConnected &&
+      !state.isWrongNetwork &&
+      !state.isPending &&
+      typeof state.tokenStatuses?.[0]?.balance?.toString === "function" &&
+      state.tokenStatuses?.[0]?.balance?.toString() !== "";
+
+    if (!isReady) return;
+
+    const lower = val.toLowerCase();
+    const id = setTimeout(() => {
+      try {
+        if (lower === "max") {
+          state.setMaxAmount();
+        } else {
+          const num = Number(val);
+          if (!Number.isNaN(num) && Number.isFinite(num) && num >= 0) {
+            state.setAmount(new BigDecimal(String(num)));
+          }
+        }
+        // 적용 후에는 항상 URL에서 제거
+        const sp = new URLSearchParams(searchParams.toString());
+        sp.delete("unstakeAmount");
+        // stakePanel은 남겨도 되고(UNSTAKE 유지), 바로 지울 거면 StakeDetail 방법 A가 잡아줌
+        const q = sp.toString();
+        router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+      } catch (e) {
+        console.error("apply unstakeAmount failed:", e);
+      }
+    }, 0);
+    return () => clearTimeout(id);
+  }, [
+    searchParams,
+    pathname,
+    router,
+    state.isConnected,
+    state.isWrongNetwork,
+    state.isPending,
+    state.tokenStatuses,
+    state.setMaxAmount,
+    state.setAmount,
+  ]);
 
   return (
     <div className="flex w-full flex-col gap-2">
