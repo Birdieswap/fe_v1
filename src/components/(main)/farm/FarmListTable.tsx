@@ -1,7 +1,14 @@
 "use client";
 
 import { Image, Skeleton } from "@heroui/react";
-import { useContext, useMemo, useState, useCallback, useEffect } from "react";
+import {
+  useContext,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useChainId } from "wagmi";
@@ -15,6 +22,7 @@ import { IToken } from "@/const/contracts/types/tokenTypes";
 import FarmListTableRow from "./farming/FarmListTableRow";
 import { FarmListTableHeader } from "./farming/FarmListTableHeader";
 import { Filter } from "./page/FilterButtons";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 type FarmStatus = {
   apy: BigDecimal;
@@ -58,7 +66,7 @@ export default function FarmListTable({
   sortColumn: keyof Farm | null;
   sortDirection: "asc" | "desc" | null;
   searchTerm?: string;
-  overrideQuery?: string; // ★ 추가
+  overrideQuery?: string;
 }) {
   const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
@@ -247,6 +255,90 @@ export default function FarmListTable({
     sortDirection,
   ]);
 
+  // ★ next/navigation 훅들
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  //주소 정규식 체크 (0x + 40 hex)
+  const isHexAddress = useCallback(
+    (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v),
+    []
+  );
+
+  //주소/이름 → fullName 변환 (updatedFarmList를 사용)
+  const resolveFullName = useCallback(
+    (key: string | null): string | null => {
+      if (!key) return null;
+
+      if (isHexAddress(key)) {
+        const lower = key.toLowerCase();
+        const found = updatedFarmList.find((f) => {
+          const addr = f.wip_stakeToken.addresses?.[chainId] as
+            | `0x${string}`
+            | undefined;
+          return addr?.toLowerCase() === lower;
+        });
+        return found?.wip_stakeToken.fullName ?? null;
+      }
+
+      // 주소가 아니면 fullName 으로 간주
+      try {
+        return decodeURIComponent(key);
+      } catch {
+        return key;
+      }
+    },
+    [chainId, updatedFarmList, isHexAddress]
+  );
+
+  useEffect(() => {
+    const openParam = searchParams.get("open");
+    const fullName = resolveFullName(openParam);
+    if (fullName) {
+      let addr: `0x${string}` | undefined;
+      if (openParam && isHexAddress(openParam)) {
+        addr = openParam as `0x${string}`;
+      } else {
+        const found = updatedFarmList.find(
+          (f) => f.wip_stakeToken.fullName === fullName
+        );
+        addr = found?.wip_stakeToken.addresses?.[chainId] as
+          | `0x${string}`
+          | undefined;
+      }
+      if (addr) {
+        requestAnimationFrame(() => setSelectedRow(fullName));
+      } else {
+        setSelectedRow(fullName);
+      }
+    } else if (openParam == null && selectedRow !== null) {
+      setSelectedRow(null);
+    }
+  }, [
+    searchParams,
+    resolveFullName,
+    updatedFarmList,
+    chainId,
+    isHexAddress,
+    selectedRow,
+  ]);
+
+  // selectedRow → URL(open) 동기화
+  const setOpenAddressInUrl = useCallback(
+    (address: `0x${string}` | null) => {
+      const sp = new URLSearchParams(searchParams.toString());
+      if (address) {
+        sp.set("open", address.toLowerCase());
+      } else {
+        sp.delete("open");
+        sp.delete("stakePanel");
+      }
+      router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+    },
+    [router, pathname, searchParams]
+  );
+
   return (
     <motion.div
       className={clsx(
@@ -255,6 +347,7 @@ export default function FarmListTable({
         "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}
       layout="size"
+      layoutScroll
       transition={{ delay: -0.2 }}
     >
       <FarmListTableHeader />
@@ -291,7 +384,18 @@ export default function FarmListTable({
             tvl={tvl}
             price={price}
             selectedRow={selectedRow}
-            setSelectedRow={setSelectedRow}
+            setSelectedRow={(next) => {
+              const nextValue =
+                typeof next === "function" ? next(selectedRow) : next;
+              if (nextValue) {
+                // 먼저 스냅
+                requestAnimationFrame(() => setSelectedRow(nextValue));
+                setOpenAddressInUrl(address ?? null);
+              } else {
+                setSelectedRow(null);
+                setOpenAddressInUrl(null);
+              }
+            }}
             chainId={chainId}
           />
         );

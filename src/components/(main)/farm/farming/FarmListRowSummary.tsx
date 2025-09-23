@@ -15,7 +15,7 @@ import { CryptoTokenIcons } from "../FarmListTable";
 
 import Components from "./listRowSummary/components";
 import suffixNumbers from "@/utils/suffixNumbers";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useRef } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import { Spacer } from "@heroui/react";

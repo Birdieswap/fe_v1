@@ -4,12 +4,14 @@ import { bdToNumber, format2, isZeroBD } from "./calcBigdecimal";
 import { buildAddressToMetaMap, AddressedMeta } from "./buildAddressMetaMaps";
 import { getUsdPriceFromChainlink } from "./calcWithChainLink";
 
+
 export type WalletTokenInfo = {
   type? : string; 
+  address?: string;
   name: string;
-  amount: string;   // 2자리 반올림 문자열
+  amount: string;  
   src?: string;
-  usdAmount: string; // 2자리 반올림 문자열
+  usdAmount: string; 
 };
 
 type Registries = {
@@ -76,6 +78,7 @@ export function buildWalletTokens(
 
       out.push({
         type: "LP",
+        address : addr,
         name: fullName ?? "LP Vault",
         amount: format2(amountNum, 5),
         src: iconSrc,
@@ -121,6 +124,7 @@ export function buildWalletTokens(
 
       out.push({
         type : "staked",
+        address : addrRaw,
         name: displayName as string,
         amount: format2(amountNum, 5),
         src: iconSrc,
@@ -148,6 +152,7 @@ export function buildWalletTokens(
 
       out.push({
         type: "token",
+        address : addr,
         name: fullName ?? symbol,
         amount: format2(amountNum, 5),
         src: iconSrc,

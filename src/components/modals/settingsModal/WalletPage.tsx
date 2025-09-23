@@ -300,7 +300,7 @@ export default function WalletPage(props: {
             </div>
           </div>
           <div className="flex max-h-full w-full grow flex-col gap-0 overflow-auto">
-            {tab === "Assets" && <WalletTokens />}
+            {tab === "Assets" && <WalletTokens onClose={props.onClose} />}
             {tab === "History" && <WalletTransactions />}
           </div>
         </div>
