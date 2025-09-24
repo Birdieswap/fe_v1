@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import FarmListTable from "@/components/(main)/farm/FarmListTable";
 import { Farm } from "@/types/FarmListTableRowProps";
@@ -90,14 +90,16 @@ export default function FarmIndex() {
         </div>
       </div>
       <div className="w-full">
-        <FarmListTable
-          filter={selected}
-          items={items}
-          sortColumn={sortColumn}
-          sortDirection={sortDirection}
-          searchTerm={searchTerm} // <-- 검색어 전달 (돋보기 혹은 Enter로 설정된 값)
-          overrideQuery={overrideQuery}
-        />
+        <Suspense fallback={null}>
+          <FarmListTable
+            filter={selected}
+            items={items}
+            sortColumn={sortColumn}
+            sortDirection={sortDirection}
+            searchTerm={searchTerm} // <-- 검색어 전달 (돋보기 혹은 Enter로 설정된 값)
+            overrideQuery={overrideQuery}
+          />
+        </Suspense>
       </div>
     </section>
   );
