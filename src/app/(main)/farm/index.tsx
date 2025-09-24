@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 
 import FarmListTable from "@/components/(main)/farm/FarmListTable";
 import { Farm } from "@/types/FarmListTableRowProps";
