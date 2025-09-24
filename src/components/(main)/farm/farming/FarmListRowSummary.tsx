@@ -174,7 +174,7 @@ export default function FarmListRowSummary({
 
   return (
     <motion.div
-      layout
+      layout="position"
       {...defaultTransition}
       className={clsx(
         "grid origin-top grid-cols-subgrid items-center min-h-[120px] sm:min-h-[72px] justify-center",

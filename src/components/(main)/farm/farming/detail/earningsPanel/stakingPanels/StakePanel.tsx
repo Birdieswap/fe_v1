@@ -11,6 +11,7 @@ import { FaRegArrowAltCircleUp } from "react-icons/fa";
 import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { AprEntry } from "@/app/AssetsContextProvider";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
+import { LoadingPulse } from "./common/LoadingPulse";
 
 export default function StakePanel({
   item,
@@ -20,10 +21,19 @@ export default function StakePanel({
   matched: AprEntry | undefined;
 }) {
   const state = useStakePanel(item);
-  const balance = state.tokenStatuses[0].balance;
-  const symbol = state.token?.symbol;
-  const balanceNum = format2(balance.toNumber(), 5);
+  const firstStatus = state.tokenStatuses?.[0];
+  const balanceBD = firstStatus?.balance ?? null; // null이면 로딩 중으로 간주
+  const symbol = state.token?.symbol ?? "";
 
+  const isBalanceReady = balanceBD !== null;
+  const balanceNumber = isBalanceReady
+    ? (balanceBD as any)?.toNumber?.() ??
+      Number.parseFloat((balanceBD as any)?.toString?.() ?? "0")
+    : NaN;
+  const balanceText =
+    isBalanceReady && Number.isFinite(balanceNumber)
+      ? format2(balanceNumber, 5)
+      : "";
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
   // console.log("stakePanel", item, state);
@@ -35,7 +45,15 @@ export default function StakePanel({
           <FaRegArrowAltCircleUp />
           <div>Amount to Stake</div>
         </div>
-        <div>{`Balance ${balanceNum} ${symbol}`}</div>
+        <div className="flex items-center">
+          {isBalanceReady ? (
+            <>
+              Balance&nbsp;{balanceText} {symbol}
+            </>
+          ) : (
+            <LoadingPulse w="w-20" />
+          )}
+        </div>
       </div>
 
       <StakingAmountInput

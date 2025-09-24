@@ -46,7 +46,7 @@ function WalletTokenItem(props: WalletTokenInfo & { onClick?: () => void }) {
           />
         )}
       </div>
-      <span className="text-[14px] font-bold leading-[15px] text-foreground">
+      <span className="text-[14px] font-bold leading-[15px] text-foreground text-left">
         {props.name}
       </span>
       <div className="flex grow flex-col items-end gap-0.5">

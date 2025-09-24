@@ -13,6 +13,11 @@ type TransactionTokenDisplayProps = {
   amount?: BigDecimal;
 };
 
+type TransactionClaimDisplayProps = {
+  symbol?: string;
+  amount?: number;
+};
+
 export type ApproveTransactionProps = {
   chainId: number;
   transactionType: TransactionType.APPROVE;
@@ -51,6 +56,13 @@ export type stakeTransactionProps = {
   address?: `0x${string}`;
 };
 
+export type claimTransactionProps = {
+  chainId: number;
+  transactionType: TransactionType.CLAIM;
+  output?: TransactionClaimDisplayProps;
+  address?: `0x${string}`;
+};
+
 export type TransactionStatusProps = {
   chainId: number;
   transactionStatus?: TransactionStatus;
@@ -65,6 +77,7 @@ export type TransactionStatusProps = {
   | StartFarmingTransactionProps
   | StopFarmingTransactionProps
   | stakeTransactionProps
+  | claimTransactionProps
 );
 
 export type TransactionContextType = {
