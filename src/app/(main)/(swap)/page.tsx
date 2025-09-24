@@ -5,6 +5,7 @@ import SwapFeeInfo from "@/components/(main)/swap/SwapFeeInfo";
 import { SwapProvider } from "@/components/(main)/swap/SwapProvider";
 
 import SwapIndex from ".";
+import { Suspense } from "react";
 
 export default function SwapPage() {
   return (
@@ -16,7 +17,7 @@ export default function SwapPage() {
           "max-sm:max-w-full max-sm:px-4",
           "[@media(max-height:640px)]:pt-4",
           // "[@media(min-height:240px)]:pt-16",
-          "[@media(min-height:640px)]:pt-16",
+          "[@media(min-height:640px)]:pt-16"
         )}
       >
         <section className="flex w-full flex-row items-center gap-1">
@@ -25,7 +26,10 @@ export default function SwapPage() {
           </h1>
           <MaxSlippageSection />
         </section>
-        <SwapIndex />
+
+        <Suspense fallback={null}>
+          <SwapIndex />
+        </Suspense>
         <SwapFeeInfo />
       </div>
     </SwapProvider>
