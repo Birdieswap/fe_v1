@@ -42,7 +42,7 @@ export default function PointsModal({
       }}
     >
       <ModalContent>
-        <ModalHeader className="px-6 py-5">
+        <ModalHeader className="px-6 pt-5 pb-0">
           <div className="w-full">
             <p className="text-[14px] font-semibold leading-5 text-default-500">
               Birdieswap Point

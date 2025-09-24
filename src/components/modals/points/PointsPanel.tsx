@@ -34,26 +34,31 @@ export default function PointsPanel({
       }
     >
       {/* 상단 요약 */}
+      <div className="mb-3 px-1 text-left text-xl font-bold text-foreground">
+        <h2>🎉 Earn Your Points</h2>
+      </div>
       <div className="rounded-2xl border border-default-200/70 p-4 dark:border-default-100/60">
-        <p className="mb-2 text-sm font-medium text-default-500">Your</p>
+        <p className="mb-2 text-base font-medium text-primary">
+          Your have earned
+        </p>
 
         <div className="flex flex-col gap-2 text-[15px] text-foreground">
           <div className="flex items-center justify-between">
+            <span>Farm</span>
+            <span className="font-semibold tabular-nums">
+              {stakingPoint} points
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
             <span>Swap</span>
             <span className="font-semibold tabular-nums">
-              {swapPoint} point
+              {swapPoint} points
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span>Referral</span>
             <span className="font-semibold tabular-nums">
-              {referralPoint} point
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>LP</span>
-            <span className="font-semibold tabular-nums">
-              {stakingPoint} point
+              {referralPoint} points
             </span>
           </div>
         </div>
@@ -62,24 +67,14 @@ export default function PointsPanel({
       {/* 카피 */}
       <div className="mt-6 space-y-1 text-center">
         <p className="text-[15px] text-default-700">
-          Provide liquidity. Stake. Swap. Refer.
+          Supply, swap, and invite friends
         </p>
-        <p className="text-[15px] text-default-700">
-          Earn <b>Birdieswap Points</b> with every action.
-        </p>
-        <p className="pt-1 text-[22px] font-bold tracking-tight text-light_pink dark:text-dark_pink">
-          Start earning now.
-        </p>
+        <p className="text-[15px] text-default-700">to get points.</p>
       </div>
 
-      <div className="mt-3 text-center text-foreground">
-        <p className="text-[15px]">More points, more power.</p>
-      </div>
-
-      <div className="mt-2 text-center">
-        <p className="text-[32px] font-bold text-light_primary dark:text-dark_primary">
-          “Coming Soon”
-        </p>
+      <div className="mt-5 text-center text-foreground">
+        <p className="text-[15px]">The full details of our Points Program</p>
+        <p className="text-[15px]">are coming soon. Stay tuned! 🚀</p>
       </div>
     </div>
   );
