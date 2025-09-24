@@ -68,7 +68,7 @@ export default function FarmListTable({
   searchTerm?: string;
   overrideQuery?: string;
 }) {
-  const [selectedRow, setSelectedRow] = useState<string | null>(null);
+  // const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
 
   const total = useContext(AssetsContext);
@@ -270,7 +270,6 @@ export default function FarmListTable({
   const resolveFullName = useCallback(
     (key: string | null): string | null => {
       if (!key) return null;
-
       if (isHexAddress(key)) {
         const lower = key.toLowerCase();
         const found = updatedFarmList.find((f) => {
@@ -281,8 +280,6 @@ export default function FarmListTable({
         });
         return found?.wip_stakeToken.fullName ?? null;
       }
-
-      // 주소가 아니면 fullName 으로 간주
       try {
         return decodeURIComponent(key);
       } catch {
@@ -292,45 +289,150 @@ export default function FarmListTable({
     [chainId, updatedFarmList, isHexAddress]
   );
 
+  const [activeFullName, setActiveFullName] = useState<string | null>(null);
+
+  // // URL 진입/뒤로가기 변화 → 로컬에 반영 (라우터 호출 없음)
+  // useEffect(() => {
+  //   const openParam = searchParams.get("open");
+  //   const full = resolveFullName(openParam);
+  //   setActiveFullName(full ?? null);
+  // }, [searchParams, resolveFullName]);
+  const ANIM = {
+    exitMs: 360, // FarmDetail의 EXIT.duration에 준하는 값
+    enterMs: 500, // FarmDetail의 ENTER.duration
+    gapMs: 75, // 닫힘 후 열기까지 숨 고르는 간격
+  };
+
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animatingRef = useRef(false);
+
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const rowRefs = useRef(new Map<string, HTMLElement>());
+  const registerRowRef = useCallback(
+    (fullName: string) => (el: HTMLElement | null) => {
+      if (el) rowRefs.current.set(fullName, el);
+      else rowRefs.current.delete(fullName);
+    },
+    []
+  );
+
+  // ▼ 닫힘/정렬로 레이아웃이 바뀌어도 화면이 '그대로' 보이게 역보정
+  const stabilizeAround = useCallback(
+    (fullName: string | null) => {
+      if (!fullName) return;
+      const el = rowRefs.current.get(fullName);
+      if (!el) return;
+
+      const preTop = el.getBoundingClientRect().top;
+
+      const fix = () => {
+        const postTop = el.getBoundingClientRect().top;
+        const diff = postTop - preTop;
+        if (Math.abs(diff) > 0.5) {
+          window.scrollBy({ top: diff, left: 0 }); // 즉시 보정
+        }
+      };
+
+      requestAnimationFrame(fix); // 레이아웃 변화 시작 직후
+      setTimeout(fix, ANIM.exitMs); // EXIT 끝 무렵 한 번 더
+    },
+    [ANIM.exitMs]
+  );
+
+  // 클릭 시퀀스 (닫기 전 stabilizeAround 호출)
+
+  // URL 변화도 클릭과 동일한 시퀀스로 처리 (닫기 전 stabilizeAround 호출)
   useEffect(() => {
     const openParam = searchParams.get("open");
-    const fullName = resolveFullName(openParam);
-    if (fullName) {
-      let addr: `0x${string}` | undefined;
-      if (openParam && isHexAddress(openParam)) {
-        addr = openParam as `0x${string}`;
-      } else {
-        const found = updatedFarmList.find(
-          (f) => f.wip_stakeToken.fullName === fullName
-        );
-        addr = found?.wip_stakeToken.addresses?.[chainId] as
-          | `0x${string}`
-          | undefined;
-      }
-      if (addr) {
-        requestAnimationFrame(() => setSelectedRow(fullName));
-      } else {
-        setSelectedRow(fullName);
-      }
-    } else if (openParam == null && selectedRow !== null) {
-      setSelectedRow(null);
+    const desiredFull = resolveFullName(openParam);
+    const currentFull = activeFullName;
+
+    if (desiredFull === currentFull) return;
+    if (animatingRef.current) {
+      const t = setTimeout(() => {}, 0);
+      return () => clearTimeout(t);
+    }
+
+    clearTimer();
+
+    if (!desiredFull && currentFull) {
+      animatingRef.current = true;
+      stabilizeAround(currentFull); // ★ 화면 고정
+      setActiveFullName(null);
+      timerRef.current = setTimeout(() => {
+        animatingRef.current = false;
+      }, ANIM.exitMs + ANIM.gapMs);
+      return;
+    }
+
+    if (desiredFull && !currentFull) {
+      animatingRef.current = true;
+      setActiveFullName(desiredFull);
+      timerRef.current = setTimeout(() => {
+        animatingRef.current = false;
+      }, ANIM.enterMs);
+      return;
+    }
+
+    if (desiredFull && currentFull && desiredFull !== currentFull) {
+      animatingRef.current = true;
+      stabilizeAround(currentFull); // ★ 화면 고정
+      setActiveFullName(null);
+      timerRef.current = setTimeout(() => {
+        setActiveFullName(desiredFull);
+        timerRef.current = setTimeout(() => {
+          animatingRef.current = false;
+        }, ANIM.enterMs);
+      }, ANIM.exitMs + ANIM.gapMs);
+      return;
     }
   }, [
     searchParams,
     resolveFullName,
-    updatedFarmList,
-    chainId,
-    isHexAddress,
-    selectedRow,
+    activeFullName,
+    ANIM.enterMs,
+    ANIM.exitMs,
+    ANIM.gapMs,
+    stabilizeAround,
   ]);
+  // --- [A] URL 읽기 유틸 (searchParams 대신 window.location 사용) ---
+  const getOpenFromLocation = useCallback((): string | null => {
+    if (typeof window === "undefined") return null;
+    const sp = new URLSearchParams(window.location.search);
+    const raw = sp.get("open");
+    return resolveFullName(raw); // (네가 이미 만든 resolveFullName 재사용)
+  }, [resolveFullName]);
 
-  // selectedRow → URL(open) 동기화
-  const setOpenAddressInUrl = useCallback(
+  // --- [B] URL 동기화: router.replace 대신 history.replaceState 우선 ---
+  const syncUrlOpen = useCallback(
     (address: `0x${string}` | null) => {
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        const curr = url.searchParams.get("open");
+        const next = address ? address.toLowerCase() : null;
+        if ((curr ?? null) === next) return; // 동일이면 건너뜀
+
+        if (next) url.searchParams.set("open", next);
+        else {
+          url.searchParams.delete("open");
+          url.searchParams.delete("stakePanel");
+        }
+
+        window.history.replaceState(null, "", url.toString()); // ★ 핵심
+        // 내부 업데이트 알림 (WalletTokens에서도 동일 이벤트 발행)
+        window.dispatchEvent(new CustomEvent("farm:query-updated"));
+        return;
+      }
+      // 서버/안전망: 기존 라우터(최소 사용, scroll:false)
       const sp = new URLSearchParams(searchParams.toString());
-      if (address) {
-        sp.set("open", address.toLowerCase());
-      } else {
+      if (address) sp.set("open", address.toLowerCase());
+      else {
         sp.delete("open");
         sp.delete("stakePanel");
       }
@@ -339,66 +441,136 @@ export default function FarmListTable({
     [router, pathname, searchParams]
   );
 
-  const ANIM = {
-    exitMs: 360, // FarmDetail의 EXIT.duration에 준하는 값
-    enterMs: 500, // FarmDetail의 ENTER.duration
-    gapMs: 75, // 닫힘 후 열기까지 숨 고르는 간격
-  };
-
-  const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isAnimatingRef = useRef(false);
-
-  const safeClearTimer = () => {
-    if (openTimerRef.current) {
-      clearTimeout(openTimerRef.current);
-      openTimerRef.current = null;
-    }
-  };
-
   const handleRowToggle = useCallback(
     (clickedFullName: string, clickedAddress: `0x${string}`) => {
-      // 애니메이션 중엔 무시(폭주 방지)
-      if (isAnimatingRef.current) return;
-      // 같은 행 → 토글(닫기)
-      if (selectedRow === clickedFullName) {
-        isAnimatingRef.current = true;
-        safeClearTimer();
-        setOpenAddressInUrl(null); // 닫기 시작
-        openTimerRef.current = setTimeout(() => {
-          isAnimatingRef.current = false; // 닫힘 완료
+      if (animatingRef.current) return;
+      const current = activeFullName;
+
+      if (current === clickedFullName) {
+        animatingRef.current = true;
+        clearTimer();
+        stabilizeAround(current); // ★ 화면 고정
+        setActiveFullName(null);
+        timerRef.current = setTimeout(() => {
+          syncUrlOpen(null);
+          animatingRef.current = false;
         }, ANIM.exitMs + ANIM.gapMs);
         return;
       }
-      // 다른 행으로 전환: 닫고 → (gap) → 연다
-      if (selectedRow && selectedRow !== clickedFullName) {
-        isAnimatingRef.current = true;
-        safeClearTimer();
-        setOpenAddressInUrl(null); // 닫기 시작
-        openTimerRef.current = setTimeout(() => {
-          setOpenAddressInUrl(clickedAddress); // 열기 시작
-          // 열림까지 포함해 전체가 끝난 뒤에 가드 해제
-          openTimerRef.current = setTimeout(() => {
-            isAnimatingRef.current = false;
+
+      if (current && current !== clickedFullName) {
+        animatingRef.current = true;
+        clearTimer();
+        stabilizeAround(current); // ★ 화면 고정
+        setActiveFullName(null);
+        timerRef.current = setTimeout(() => {
+          setActiveFullName(clickedFullName);
+          timerRef.current = setTimeout(() => {
+            syncUrlOpen(clickedAddress);
+            animatingRef.current = false;
           }, ANIM.enterMs);
         }, ANIM.exitMs + ANIM.gapMs);
         return;
       }
-      // 아무 것도 안 열려있으면 바로 열기
-      isAnimatingRef.current = true;
-      safeClearTimer();
-      setOpenAddressInUrl(clickedAddress); // 열기 시작
-      openTimerRef.current = setTimeout(() => {
-        isAnimatingRef.current = false;
+
+      // 아무 것도 안 열려 있으면 바로 열기
+      animatingRef.current = true;
+      clearTimer();
+      setActiveFullName(clickedFullName);
+      timerRef.current = setTimeout(() => {
+        syncUrlOpen(clickedAddress);
+        animatingRef.current = false;
       }, ANIM.enterMs);
     },
-    [selectedRow, setOpenAddressInUrl]
+    [
+      activeFullName,
+      syncUrlOpen,
+      ANIM.enterMs,
+      ANIM.exitMs,
+      ANIM.gapMs,
+      stabilizeAround,
+    ]
   );
 
+  // --- [C] URL 변화 감지: popstate + farm:query-updated ---
   useEffect(() => {
-    return () => {
-      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    const run = () => {
+      const desiredFull = getOpenFromLocation();
+      const currentFull = activeFullName;
+
+      if (desiredFull === currentFull) return;
+
+      if (animatingRef.current) return; // 애니메이션 중엔 스킵
+
+      clearTimer();
+
+      if (!desiredFull && currentFull) {
+        animatingRef.current = true;
+        stabilizeAround(currentFull);
+        setActiveFullName(null);
+        timerRef.current = setTimeout(() => {
+          animatingRef.current = false;
+        }, ANIM.exitMs + ANIM.gapMs);
+        return;
+      }
+
+      if (desiredFull && !currentFull) {
+        animatingRef.current = true;
+        setActiveFullName(desiredFull);
+        timerRef.current = setTimeout(() => {
+          animatingRef.current = false;
+        }, ANIM.enterMs);
+        return;
+      }
+
+      if (desiredFull && currentFull && desiredFull !== currentFull) {
+        animatingRef.current = true;
+        stabilizeAround(currentFull);
+        setActiveFullName(null);
+        timerRef.current = setTimeout(() => {
+          setActiveFullName(desiredFull);
+          timerRef.current = setTimeout(() => {
+            animatingRef.current = false;
+          }, ANIM.enterMs);
+        }, ANIM.exitMs + ANIM.gapMs);
+        return;
+      }
     };
+
+    // 최초 1회 + 브라우저 뒤/앞으로 + 내부 커스텀 이벤트 모두 동일하게 처리
+    run();
+    window.addEventListener("popstate", run);
+    window.addEventListener("farm:query-updated", run as EventListener);
+    return () => {
+      window.removeEventListener("popstate", run);
+      window.removeEventListener("farm:query-updated", run as EventListener);
+    };
+  }, [
+    activeFullName,
+    ANIM.enterMs,
+    ANIM.exitMs,
+    ANIM.gapMs,
+    stabilizeAround,
+    getOpenFromLocation,
+    clearTimer,
+  ]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && "scrollRestoration" in history) {
+      const prev = (history as any).scrollRestoration;
+      (history as any).scrollRestoration = "manual";
+      return () => {
+        (history as any).scrollRestoration = prev;
+      };
+    }
   }, []);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   return (
     <motion.div
@@ -443,10 +615,9 @@ export default function FarmListTable({
             apy={apy}
             tvl={tvl}
             price={price}
-            selectedRow={selectedRow}
-            setSelectedRow={() => {
-              handleRowToggle(item.wip_stakeToken.fullName, address);
-            }}
+            activeFullName={activeFullName}
+            onRowClick={(full, addr) => handleRowToggle(full, addr)}
+            attachRef={registerRowRef}
             chainId={chainId}
           />
         );

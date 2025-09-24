@@ -83,8 +83,28 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
       try {
         onClose?.();
 
-        // 라우팅은 한 틱 뒤에
-        const go = (href: string) => setTimeout(() => router.push(href), 0);
+        const isOnFarm =
+          typeof window !== "undefined" &&
+          window.location.pathname.startsWith("/farm");
+
+        const go = (href: string) => {
+          // 오버레이 닫힘과 겹치지 않게 살짝 대기
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              if (isOnFarm) {
+                // ★ 같은 /farm 내 이동: 라우터 금지, URL만 교체
+                const url = new URL(window.location.href);
+                const next = new URL(href, window.location.origin);
+                url.search = next.search; // 쿼리만 바꿈 (path 동일)
+                window.history.replaceState(null, "", url.toString());
+                window.dispatchEvent(new CustomEvent("farm:query-updated"));
+              } else {
+                // 다른 페이지 → Farm: 정상 push(스크롤 금지)
+                router.push(href, { scroll: false });
+              }
+            }, 160);
+          });
+        };
 
         if (t.type === "token") {
           const symbol = findSymbolByAddress(t.address as string, chainId);
