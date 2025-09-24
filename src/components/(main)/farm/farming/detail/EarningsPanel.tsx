@@ -22,6 +22,7 @@ import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
 import { BigDecimal } from "@/types/BigDecimal";
 import StakeDetail from "./earningsPanel/StakeDetail";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
+import { LoadingPulse } from "./earningsPanel/stakingPanels/common/LoadingPulse";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -225,8 +226,19 @@ export default function EarningsPanel({
             </div>
           ) : (
             <div className="text-default-500">
-              <div className="flex gap-4 justify-center">
-                <Spinner color="default" />
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between">
+                  <LoadingPulse w="w-60" />
+                  <LoadingPulse w="w-20" />
+                </div>
+                <div className="flex justify-between">
+                  <LoadingPulse w="w-60" />
+                  <LoadingPulse w="w-20" />
+                </div>
+                <div className="flex justify-between">
+                  <LoadingPulse w="w-60" />
+                  <LoadingPulse w="w-20" />
+                </div>
               </div>
             </div>
           )}

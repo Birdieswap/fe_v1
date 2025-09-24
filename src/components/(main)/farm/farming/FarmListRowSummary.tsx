@@ -15,7 +15,7 @@ import { CryptoTokenIcons } from "../FarmListTable";
 
 import Components from "./listRowSummary/components";
 import suffixNumbers from "@/utils/suffixNumbers";
-import { useContext, useMemo, useRef } from "react";
+import { forwardRef, useContext, useMemo, useRef } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import { Spacer } from "@heroui/react";
@@ -56,15 +56,7 @@ export function LoadingPulse({
   );
 }
 
-export default function FarmListRowSummary({
-  balance,
-  item,
-  isActive,
-  onClick,
-  apy,
-  tvl,
-  price,
-}: {
+type Props = {
   balance?: BigDecimal;
   isActive: boolean;
   onClick: () => void;
@@ -72,7 +64,12 @@ export default function FarmListRowSummary({
   apy: BigDecimal | null;
   tvl: BigDecimal | null;
   price: BigDecimal | null;
-}) {
+};
+
+export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
+  { balance, item, isActive, onClick, apy, tvl, price }: Props,
+  ref
+) {
   const stakeToken = item.wip_stakeToken;
   const account = useAccount();
   const chainId = useChainId();
@@ -174,6 +171,7 @@ export default function FarmListRowSummary({
 
   return (
     <motion.div
+      ref={ref}
       layout="position"
       {...defaultTransition}
       className={clsx(
@@ -184,6 +182,7 @@ export default function FarmListRowSummary({
         "max-md:col-span-3 max-md:row-span-2 max-md:px-4",
         "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
       )}
+      style={{ scrollMarginTop: "calc(var(--nav-h, 64px) + 8px)" }}
       onClick={onClick}
     >
       <motion.div
@@ -310,4 +309,4 @@ export default function FarmListRowSummary({
       </motion.div>
     </motion.div>
   );
-}
+});
