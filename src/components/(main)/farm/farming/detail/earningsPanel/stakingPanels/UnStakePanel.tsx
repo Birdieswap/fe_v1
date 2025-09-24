@@ -12,8 +12,8 @@ import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { AprEntry } from "@/app/AssetsContextProvider";
 import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
-
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { LoadingPulse } from "./common/LoadingPulse";
 
 export default function UnStakePanel({
   item,
@@ -36,8 +36,17 @@ export default function UnStakePanel({
     [state.tokenStatuses]
   );
 
-  const balance = state.tokenStatuses[0].balance;
-  const balanceNum = format2(balance.toNumber(), 5);
+  const firstStatus = state.tokenStatuses?.[0];
+  const balanceBD = firstStatus?.balance ?? null; // null이면 아직 로딩 중
+  const isBalanceReady = balanceBD !== null;
+  const balanceNumber = isBalanceReady
+    ? (balanceBD as any)?.toNumber?.() ??
+      Number.parseFloat((balanceBD as any)?.toString?.() ?? "0")
+    : NaN;
+  const balanceText =
+    isBalanceReady && Number.isFinite(balanceNumber)
+      ? format2(balanceNumber, 5)
+      : "";
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -108,10 +117,16 @@ export default function UnStakePanel({
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full flex-low justify-between items-center text-xs px-1">
         <div className="flex items-center gap-1">
-          <FaRegArrowAltCircleDown />
-          <div>Amount to Unstake</div>
+          {/* <FaRegArrowAltCircleDown />
+          <div>Amount to Unstake</div> */}
         </div>
-        <div>{`Staked Balance ${balanceNum}`}</div>
+        <div className="flex items-center">
+          {isBalanceReady ? (
+            <>Staked Balance&nbsp;{balanceText}</>
+          ) : (
+            <LoadingPulse w="w-20" />
+          )}
+        </div>
       </div>
       <StakingAmountInput
         amount={state.amount}
@@ -133,7 +148,7 @@ export default function UnStakePanel({
         isPending={state.isPending}
         isWrongNetwork={state.isWrongNetwork}
         execute={state.execute}
-        executeText="Unstaking"
+        executeText="Stop Staking"
         tokenStatuses={tokenStatusesApproved}
         variant="PINK"
       />

@@ -42,8 +42,8 @@ export default function StakePanel({
     <div className="flex w-full flex-col gap-2">
       <div className="flex w-full flex-low justify-between items-center text-xs px-1">
         <div className="flex items-center gap-1">
-          <FaRegArrowAltCircleUp />
-          <div>Amount to Stake</div>
+          {/* <FaRegArrowAltCircleUp />
+          <div>Amount to Stake</div> */}
         </div>
         <div className="flex items-center">
           {isBalanceReady ? (
@@ -80,7 +80,7 @@ export default function StakePanel({
         isPending={state.isPending}
         isWrongNetwork={state.isWrongNetwork}
         execute={state.execute}
-        executeText="Staking"
+        executeText="Start Staking"
         tokenStatuses={state.tokenStatuses}
         variant="MINT"
       />

@@ -110,7 +110,7 @@ export default function NavPoints() {
         <ModalContent>
           <ModalBody className="p-0">
             {/* 헤더 */}
-            <div className="px-6 py-5">
+            <div className="px-6 pt-5 pb-2">
               <p className="text-[14px] font-semibold leading-5 text-default-700">
                 Birdieswap Point
               </p>
