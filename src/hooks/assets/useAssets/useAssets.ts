@@ -86,6 +86,26 @@ function makeCompositeKey(chainId: number | string, address: string) {
   return `${cid}:${address.toLowerCase()}`;
 }
 
+function toScaled1e18FromDecimalString(s: string | null | undefined): bigint {
+  if (!s) return BigInt(0);
+  const raw = String(s).trim();
+  if (!raw || raw === "NaN") return BigInt(0);
+
+  // 부호/공백/쉼표 제거 (필요시)
+  const cleaned = raw.replace(/,/g, "");
+  // 정수부/소수부 분리
+  const [intPartRaw, fracRaw = ""] = cleaned.split(".");
+  const intPart = intPartRaw.replace(/[^0-9]/g, "");
+  const frac18 = (fracRaw.replace(/[^0-9]/g, "") + "0".repeat(18)).slice(0, 18);
+  if (!intPart) return BigInt(0);
+
+  try {
+    return BigInt(intPart + frac18);
+  } catch {
+    return BigInt(0);
+  }
+}
+
 const TargetBlockTime = 24 * 60 * 60; // seconds
 const annualBlockQty = Math.floor((365 * 24 * 60 * 60) / TargetBlockTime); // 정수
 const SCALE_DECIMALS = 1e18;
@@ -338,16 +358,51 @@ export default function useAssets() {
           }
 
           // console.log("useAssets vault apr7d", vaults.map(v=>v.apr7d), "sum", sum.toString(), "addr", addr)
+          let extraScaledTotal = BigInt(0); // (연 APR fraction) × 1e18
+          const extraList: any[] = Array.isArray(entry?.staking?.extraRewards)
+            ? entry.staking.extraRewards
+            : [];
 
-          let apyNumber: number;
-          if (sum > SUM_LIMIT) {
-            apyNumber = APY_CAP_PERCENT; // 혹은 APY_CAP_FRACTION (UI 단위에 맞춰 선택
-          } else {
-            const aprDecimal = Number(sum.toString()) / SCALE_DECIMALS; // ex: 0.05
-            const base = 1 + aprDecimal / annualBlockQty;
-            apyNumber = Math.pow(base, annualBlockQty) - 1;   // ex: 0.052
+          if (extraList.length > 0) {
+            // price: 해당 엔트리 contractAddress의 가격(BigDecimal)을 1e18 스케일로 변환
+            const pBD = nextPrice.get(addr as `0x${string}`);
+            const priceScaled = toScaled1e18FromDecimalString(pBD?.toString?.());
+
+            if (priceScaled > BigInt(0)) {
+              for (const er of extraList) {
+                // 주: 원 필드명이 dailyRewardPerTokenX18 (x18 스케일)
+                const rawX18 = er?.dailyRewardPerTokenX18 ?? er?.dailyRewardPerTokkenX18 ?? "0";
+                const decimals = Number(er?.decimals ?? 18);
+                let dailyX18 = BigInt(0);
+                try { dailyX18 = BigInt(rawX18); } catch { dailyX18 = BigInt(0); }
+
+                if (dailyX18 <= BigInt(0)) continue;
+                const denomPow = BigInt(10) ** BigInt(Math.max(0, decimals));
+
+                // extraScaled = floor( (dailyX18 / 10^decimals) * 365 / price ) × 1e18
+                // = floor( dailyX18 * 365 * 1e18 / (10^decimals * priceScaled) )
+                const numerator   = dailyX18 * BigInt(365) * BigInt(10) ** BigInt(18);
+                const denominator = denomPow * priceScaled;
+                if (denominator === BigInt(0)) continue;
+
+                const extraScaled = numerator / denominator; // BigInt (x1e18)
+                if (extraScaled > BigInt(0)) extraScaledTotal += extraScaled;
+              }
+            }
           }
 
+          // 3) vault APR 합 + extra APR 합 (모두 x1e18) → totalScaled
+          const totalScaled = sum + extraScaledTotal;
+
+          let apyNumber: number;
+          if (totalScaled > SUM_LIMIT) {
+            apyNumber = APY_CAP_PERCENT;
+          } else {
+            // totalAprDecimal: fraction (예: 0.05)
+            const totalAprDecimal = Number(totalScaled) / 1e18;
+            const base = 1 + totalAprDecimal / annualBlockQty;
+            apyNumber = Math.pow(base, annualBlockQty) - 1; // fraction
+          }
           // console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
 
 

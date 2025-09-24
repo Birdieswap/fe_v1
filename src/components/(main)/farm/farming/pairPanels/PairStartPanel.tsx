@@ -111,7 +111,7 @@ export function PairStartPanel({
         {/* <PairSlider isDisabled={false} item={item} state={state} /> */}
       </PanelHeader>
       <motion.div
-        layout
+        layout={false}
         {...defaultTransition}
         className="flex w-full flex-col"
       >

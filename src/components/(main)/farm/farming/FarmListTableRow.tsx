@@ -43,12 +43,12 @@ export default function FarmListTableRow({
     else setSelectedRow(item.wip_stakeToken.fullName);
   }, [item.wip_stakeToken.fullName, setSelectedRow, isActive]);
 
-  console.log(
-    "FarmListTableRow selectedRow",
-    selectedRow,
-    "fullname",
-    item.wip_stakeToken.fullName
-  );
+  // console.log(
+  //   "FarmListTableRow selectedRow",
+  //   selectedRow,
+  //   "fullname",
+  //   item.wip_stakeToken.fullName
+  // );
 
   return (
     <Fragment key={item.wip_stakeToken.fullName}>

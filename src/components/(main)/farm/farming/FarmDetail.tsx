@@ -30,13 +30,20 @@ export default function FarmDetail({
   const [selectedPanel, setSelectedPanel] = useState<"START" | "STOP">("START");
   const isActive = selectedRow === item.wip_stakeToken.fullName;
 
+  const ENTER = { type: "tween", duration: 0.5, ease: [0.22, 0.61, 0.36, 1] };
+  const EXIT = { type: "tween", duration: 0.32, ease: [0.4, 0.0, 1, 1] };
+
   return (
-    <AnimatePresence initial={false}>
+    <AnimatePresence initial={false} mode="wait">
       {isActive && (
         <motion.div
           key={`${item.name}-farm-detail`}
-          layout
-          {...presenceTransition}
+          // layout
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: "auto", opacity: 1, transition: ENTER }}
+          exit={{ height: 0, opacity: 0, transition: EXIT }}
+          style={{ overflow: "hidden", willChange: "height, opacity" }}
+          // {...presenceTransition}
           className={clsx(
             "flex w-full origin-top gap-4 overflow-hidden border-b-1 border-default-400 bg-default-100 px-4 py-6 dark:border-default-900 dark:bg-dark_popup_bg",
             "md:col-span-6 md:flex-row",
@@ -46,12 +53,12 @@ export default function FarmDetail({
           data-selected={isActive}
         >
           <motion.div
-            layout
+            layout={false}
             {...defaultTransition}
             className="flex h-full grow basis-10 flex-col"
           >
             <motion.div
-              layout
+              layout={false}
               {...defaultTransition}
               className="flex h-12 flex-row"
             >
@@ -81,7 +88,7 @@ export default function FarmDetail({
             </AnimatePresence>
           </motion.div>
           <motion.div
-            layout
+            layout={false}
             {...defaultTransition}
             className="flex h-full grow basis-0 flex-col"
           >

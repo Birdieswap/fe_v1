@@ -339,6 +339,67 @@ export default function FarmListTable({
     [router, pathname, searchParams]
   );
 
+  const ANIM = {
+    exitMs: 360, // FarmDetail의 EXIT.duration에 준하는 값
+    enterMs: 500, // FarmDetail의 ENTER.duration
+    gapMs: 75, // 닫힘 후 열기까지 숨 고르는 간격
+  };
+
+  const openTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isAnimatingRef = useRef(false);
+
+  const safeClearTimer = () => {
+    if (openTimerRef.current) {
+      clearTimeout(openTimerRef.current);
+      openTimerRef.current = null;
+    }
+  };
+
+  const handleRowToggle = useCallback(
+    (clickedFullName: string, clickedAddress: `0x${string}`) => {
+      // 애니메이션 중엔 무시(폭주 방지)
+      if (isAnimatingRef.current) return;
+      // 같은 행 → 토글(닫기)
+      if (selectedRow === clickedFullName) {
+        isAnimatingRef.current = true;
+        safeClearTimer();
+        setOpenAddressInUrl(null); // 닫기 시작
+        openTimerRef.current = setTimeout(() => {
+          isAnimatingRef.current = false; // 닫힘 완료
+        }, ANIM.exitMs + ANIM.gapMs);
+        return;
+      }
+      // 다른 행으로 전환: 닫고 → (gap) → 연다
+      if (selectedRow && selectedRow !== clickedFullName) {
+        isAnimatingRef.current = true;
+        safeClearTimer();
+        setOpenAddressInUrl(null); // 닫기 시작
+        openTimerRef.current = setTimeout(() => {
+          setOpenAddressInUrl(clickedAddress); // 열기 시작
+          // 열림까지 포함해 전체가 끝난 뒤에 가드 해제
+          openTimerRef.current = setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, ANIM.enterMs);
+        }, ANIM.exitMs + ANIM.gapMs);
+        return;
+      }
+      // 아무 것도 안 열려있으면 바로 열기
+      isAnimatingRef.current = true;
+      safeClearTimer();
+      setOpenAddressInUrl(clickedAddress); // 열기 시작
+      openTimerRef.current = setTimeout(() => {
+        isAnimatingRef.current = false;
+      }, ANIM.enterMs);
+    },
+    [selectedRow, setOpenAddressInUrl]
+  );
+
+  useEffect(() => {
+    return () => {
+      if (openTimerRef.current) clearTimeout(openTimerRef.current);
+    };
+  }, []);
+
   return (
     <motion.div
       className={clsx(
@@ -346,9 +407,8 @@ export default function FarmListTable({
         "md:grid-cols-[2fr_4.5fr_2fr_2fr_3fr_72px]",
         "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}
-      layout="size"
-      layoutScroll
-      transition={{ delay: -0.2 }}
+      layout={false}
+      // transition={{ delay: -0.2 }}
     >
       <FarmListTableHeader />
       {sortedItems.map((item) => {
@@ -384,17 +444,8 @@ export default function FarmListTable({
             tvl={tvl}
             price={price}
             selectedRow={selectedRow}
-            setSelectedRow={(next) => {
-              const nextValue =
-                typeof next === "function" ? next(selectedRow) : next;
-              if (nextValue) {
-                // 먼저 스냅
-                requestAnimationFrame(() => setSelectedRow(nextValue));
-                setOpenAddressInUrl(address ?? null);
-              } else {
-                setSelectedRow(null);
-                setOpenAddressInUrl(null);
-              }
+            setSelectedRow={() => {
+              handleRowToggle(item.wip_stakeToken.fullName, address);
             }}
             chainId={chainId}
           />

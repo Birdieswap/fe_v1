@@ -109,17 +109,17 @@ export default function StakeDetail({
     <AnimatePresence initial={false}>
       {isActive && (
         <motion.div
-          layout
+          layout={false}
           {...defaultTransition}
           className="flex h-full grow basis-0 flex-col"
         >
           <motion.div
-            layout
+            layout={false}
             {...defaultTransition}
             className="flex h-full grow basis-10 flex-col"
           >
             <motion.div
-              layout
+              layout={false}
               {...defaultTransition}
               className="flex h-8 flex-row"
             >

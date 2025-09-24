@@ -68,7 +68,7 @@ export function PairStopPanel({
         )}
       </PanelHeader>
       <motion.div
-        layout
+        layout={false}
         {...defaultTransition}
         className="flex w-full flex-col gap-0"
       >

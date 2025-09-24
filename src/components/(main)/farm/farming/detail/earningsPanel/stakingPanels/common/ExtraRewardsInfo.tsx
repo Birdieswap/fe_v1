@@ -8,12 +8,20 @@ import {
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useClient,
 } from "wagmi";
 import { formatUnits } from "viem";
 import { useContext, useEffect, useMemo } from "react";
 import clsx from "clsx";
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
+import { TransactionContext } from "@/app/TransactionContextProvider";
+import { TransactionType } from "@/types/TransactionTypes";
+import {
+  TransactionStatusProps,
+  claimTransactionProps,
+} from "@/app/TransactionContextProvider";
 
 type Address = `0x${string}`;
 
@@ -85,6 +93,8 @@ function ExtraRewardInfoRow(props: {
       refetchOnWindowFocus: false,
     },
   });
+  const client = useClient();
+  const transactionContext = useContext(TransactionContext);
 
   // ====== 2) 포맷팅 ======
   const amountNum = useMemo(() => {
@@ -112,14 +122,43 @@ function ExtraRewardInfoRow(props: {
 
   const onClaim = () => {
     if (!canClaim) return;
-    writeContract({
-      address: stakingAddress,
-      abi: birdieswap_staking_abi,
-      functionName: "claim",
-      // claim(uint256 index) 형태라고 가정 (추측입니다)
-      args: [BigInt(reward.indexNumber)],
+
+    // 1) 트랜잭션 프로퍼티(모달/로깅용) — 프로젝트 enum/shape에 맞게 수정
+    const transactionProps: TransactionStatusProps & claimTransactionProps = {
       chainId,
+      transactionType: TransactionType.CLAIM,
+      output: {
+        symbol: reward.symbol,
+        amount: amountNum,
+      },
+      address,
+    } as const;
+
+    // 2) 공용 핸들러: 모달/상태/에러 처리 일원화
+    const handlers = getWriteTransactionHandlers({
+      client,
+      transactionContext,
+      transactionProps,
+      refetch: async () => {
+        // 성공 시 최신화할 것들(earned만 재조회 + 전체 자산 리프레시)
+        await Promise.all([refetchEarned(), refetchAll?.()]);
+      },
     });
+
+    // 3) 실제 호출 + 콜백에 handlers 연결
+    writeContract(
+      {
+        address: stakingAddress,
+        abi: birdieswap_staking_abi,
+        functionName: "claim",
+        args: [BigInt(reward.indexNumber)],
+        chainId,
+      },
+      {
+        onError: handlers.onError,
+        onSuccess: handlers.onSuccess, // 내부에서 wait → 모달 업데이트까지 일괄 처리하도록 설계되었을 가능성 높음
+      }
+    );
   };
 
   // 트랜잭션 성공 후 최신화

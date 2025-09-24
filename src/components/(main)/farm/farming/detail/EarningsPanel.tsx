@@ -134,13 +134,13 @@ export default function EarningsPanel({
     return (matched?.vaults ?? []).map((v) => toRowItem(v, "vault"));
   }, [matched, periodKey]);
 
-  console.log(
-    "EarningsPanel item",
-    matched,
-    stakeTokenAddress,
-    priceMap?.get(stakeTokenAddress),
-    price
-  );
+  // console.log(
+  //   "EarningsPanel item",
+  //   matched,
+  //   stakeTokenAddress,
+  //   priceMap?.get(stakeTokenAddress),
+  //   price
+  // );
 
   // const [modalItem, setModalItem] = useState<any | null>(null);
   // const [isModalOpen, setIsModalOpen] = useState(false);
@@ -172,7 +172,7 @@ export default function EarningsPanel({
   const dailyPointRateNum = Number(
     typeof dprRaw === "string" || typeof dprRaw === "number" ? dprRaw : 0
   );
-  console.log("EarningsPanel dprRaw", dprRaw, dailyPointRateNum, price);
+  // console.log("EarningsPanel dprRaw", dprRaw, dailyPointRateNum, price);
   const hasPointRate =
     Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0;
 
