@@ -61,9 +61,9 @@ export default function UnStakePanel({
   }, [state.tokenStatuses]);
 
   // 한 번만 초기 프리셋을 적용하기 위한 가드
-  const appliedRef = useRef(false);
-
   const wantApplyRef = useRef(false);
+  const appliedRef = useRef(false);
+  const applyingRef = useRef(false);
   const lastTokenRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
@@ -89,7 +89,7 @@ export default function UnStakePanel({
     }
   }, []);
 
-  const ready =
+  const readyNow =
     state.isConnected &&
     !state.isWrongNetwork &&
     !state.isPending &&
@@ -99,23 +99,59 @@ export default function UnStakePanel({
   // ★ 타이머 재시도 제거!
   // ready가 변경되거나, balanceKey가 바뀌거나, 토큰이 바뀔 때마다 체크 → 준비되면 즉시 1회 적용
   useEffect(() => {
-    if (!ready) return; // 아직 준비 전이면 대기
-    if (!wantApplyRef.current) return; // 이번 사이클에 적용 의지가 없으면 무시
-    if (appliedRef.current) return; // 이미 적용했다면 무시
+    // 의지가 없거나 이미 도는 중이면 시작하지 않음
+    if (!wantApplyRef.current || applyingRef.current) return;
 
-    try {
-      state.setMaxAmount(); // 여기서 즉시 Max 적용
-      appliedRef.current = true;
-      wantApplyRef.current = false; // 소모
-      onPresetApplied?.(); // 부모에게 “적용 완료” 알림 → URL 정리
-    } catch (e) {
-      console.error("apply preset max failed:", e);
-    }
+    applyingRef.current = true;
+
+    let attempts = 0;
+    const MAX_ATTEMPTS = 60;
+    const INTERVAL_MS = 50;
+
+    const timer = setInterval(() => {
+      attempts += 1;
+
+      const ok =
+        state.isConnected &&
+        !state.isWrongNetwork &&
+        !state.isPending &&
+        typeof state.tokenStatuses?.[0]?.balance?.toString === "function" &&
+        state.tokenStatuses?.[0]?.balance?.toString() !== "";
+
+      if (ok && wantApplyRef.current && !appliedRef.current) {
+        try {
+          state.setMaxAmount();
+          appliedRef.current = true;
+          wantApplyRef.current = false;
+          applyingRef.current = false;
+          clearInterval(timer);
+          onPresetApplied?.(); // 부모가 URL 정리
+          return;
+        } catch (e) {
+          console.error("apply preset max failed:", e);
+        }
+      }
+
+      // 시간초과 또는 더 이상 의지가 없으면 종료
+      if (attempts >= MAX_ATTEMPTS || !wantApplyRef.current) {
+        applyingRef.current = false;
+        clearInterval(timer);
+      }
+    }, INTERVAL_MS);
+
+    return () => {
+      applyingRef.current = false;
+      clearInterval(timer);
+    };
+    // 토큰·연결 플래그들이 바뀌면 이 이펙트가 다시 실행될 수 있도록 deps에 핵심만 넣음
   }, [
-    ready,
-    balanceKey, // 밸런스 준비 변환 시 트리거
-    state.setMaxAmount,
-    onPresetApplied,
+    // 아래는 “준비 상태 변화”에 해당하는 핵심 신호들
+    state.isConnected,
+    state.isWrongNetwork,
+    state.isPending,
+    state.tokenStatuses,
+    // 부모 신호도 감지
+    presetMaxToken,
   ]);
 
   return (
