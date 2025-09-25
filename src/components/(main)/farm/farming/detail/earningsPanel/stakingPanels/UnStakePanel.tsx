@@ -18,9 +18,13 @@ import { LoadingPulse } from "./common/LoadingPulse";
 export default function UnStakePanel({
   item,
   matched,
+  presetMaxToken,
+  onPresetApplied,
 }: {
   item: Farm;
   matched: AprEntry | undefined;
+  presetMaxToken?: number;
+  onPresetApplied?: () => void;
 }) {
   const state = useUnStakePanel(item);
 
@@ -48,16 +52,6 @@ export default function UnStakePanel({
       ? format2(balanceNumber, 5)
       : "";
 
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const unstakeParam = useMemo(
-    () => searchParams.get("unstakeAmount"),
-    // pathname을 포함하면 다른 farm로 이동했을 때도 새로 읽힘
-    [searchParams, pathname]
-  );
-
   const balanceKey = useMemo(() => {
     try {
       return state?.tokenStatuses?.[0]?.balance?.toString?.() ?? "";
@@ -66,51 +60,62 @@ export default function UnStakePanel({
     }
   }, [state.tokenStatuses]);
 
+  // 한 번만 초기 프리셋을 적용하기 위한 가드
+  const appliedRef = useRef(false);
+
+  const wantApplyRef = useRef(false);
+  const lastTokenRef = useRef<number | undefined>(undefined);
+
   useEffect(() => {
-    const val = searchParams.get("unstakeAmount");
-    if (!val) return;
+    if (
+      presetMaxToken !== undefined &&
+      presetMaxToken !== lastTokenRef.current
+    ) {
+      lastTokenRef.current = presetMaxToken;
+      appliedRef.current = false; // 새 사이클: 아직 적용 전
+      wantApplyRef.current = true; // 적용 의지 ON
+    }
+  }, [presetMaxToken]);
 
-    const isReady =
-      state.isConnected &&
-      !state.isWrongNetwork &&
-      !state.isPending &&
-      typeof state.tokenStatuses?.[0]?.balance?.toString === "function" &&
-      state.tokenStatuses?.[0]?.balance?.toString() !== "";
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = new URLSearchParams(window.location.search).get(
+      "unstakeAmount"
+    );
+    if ((raw || "").toLowerCase() === "max") {
+      appliedRef.current = false;
+      wantApplyRef.current = true;
+      // URL 삭제는 부모(onPresetApplied) 타이밍에서 처리하므로 여기선 건드리지 않음
+    }
+  }, []);
 
-    if (!isReady) return;
+  const ready =
+    state.isConnected &&
+    !state.isWrongNetwork &&
+    !state.isPending &&
+    typeof state.tokenStatuses?.[0]?.balance?.toString === "function" &&
+    state.tokenStatuses?.[0]?.balance?.toString() !== "";
 
-    const lower = val.toLowerCase();
-    const id = setTimeout(() => {
-      try {
-        if (lower === "max") {
-          state.setMaxAmount();
-        } else {
-          const num = Number(val);
-          if (!Number.isNaN(num) && Number.isFinite(num) && num >= 0) {
-            state.setAmount(new BigDecimal(String(num)));
-          }
-        }
-        // 적용 후에는 항상 URL에서 제거
-        const sp = new URLSearchParams(searchParams.toString());
-        sp.delete("unstakeAmount");
-        // stakePanel은 남겨도 되고(UNSTAKE 유지), 바로 지울 거면 StakeDetail 방법 A가 잡아줌
-        const q = sp.toString();
-        router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-      } catch (e) {
-        console.error("apply unstakeAmount failed:", e);
-      }
-    }, 0);
-    return () => clearTimeout(id);
+  // ★ 타이머 재시도 제거!
+  // ready가 변경되거나, balanceKey가 바뀌거나, 토큰이 바뀔 때마다 체크 → 준비되면 즉시 1회 적용
+  useEffect(() => {
+    if (!ready) return; // 아직 준비 전이면 대기
+    if (!wantApplyRef.current) return; // 이번 사이클에 적용 의지가 없으면 무시
+    if (appliedRef.current) return; // 이미 적용했다면 무시
+
+    try {
+      state.setMaxAmount(); // 여기서 즉시 Max 적용
+      appliedRef.current = true;
+      wantApplyRef.current = false; // 소모
+      onPresetApplied?.(); // 부모에게 “적용 완료” 알림 → URL 정리
+    } catch (e) {
+      console.error("apply preset max failed:", e);
+    }
   }, [
-    searchParams,
-    pathname,
-    router,
-    state.isConnected,
-    state.isWrongNetwork,
-    state.isPending,
-    state.tokenStatuses,
+    ready,
+    balanceKey, // 밸런스 준비 변환 시 트리거
     state.setMaxAmount,
-    state.setAmount,
+    onPresetApplied,
   ]);
 
   return (

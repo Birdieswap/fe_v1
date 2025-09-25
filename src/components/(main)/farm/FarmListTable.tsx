@@ -348,59 +348,59 @@ export default function FarmListTable({
   // 클릭 시퀀스 (닫기 전 stabilizeAround 호출)
 
   // URL 변화도 클릭과 동일한 시퀀스로 처리 (닫기 전 stabilizeAround 호출)
-  useEffect(() => {
-    const openParam = searchParams.get("open");
-    const desiredFull = resolveFullName(openParam);
-    const currentFull = activeFullName;
+  // useEffect(() => {
+  //   const openParam = searchParams.get("open");
+  //   const desiredFull = resolveFullName(openParam);
+  //   const currentFull = activeFullName;
 
-    if (desiredFull === currentFull) return;
-    if (animatingRef.current) {
-      const t = setTimeout(() => {}, 0);
-      return () => clearTimeout(t);
-    }
+  //   if (desiredFull === currentFull) return;
+  //   if (animatingRef.current) {
+  //     const t = setTimeout(() => {}, 0);
+  //     return () => clearTimeout(t);
+  //   }
 
-    clearTimer();
+  //   clearTimer();
 
-    if (!desiredFull && currentFull) {
-      animatingRef.current = true;
-      stabilizeAround(currentFull); // ★ 화면 고정
-      setActiveFullName(null);
-      timerRef.current = setTimeout(() => {
-        animatingRef.current = false;
-      }, ANIM.exitMs + ANIM.gapMs);
-      return;
-    }
+  //   if (!desiredFull && currentFull) {
+  //     animatingRef.current = true;
+  //     stabilizeAround(currentFull); // ★ 화면 고정
+  //     setActiveFullName(null);
+  //     timerRef.current = setTimeout(() => {
+  //       animatingRef.current = false;
+  //     }, ANIM.exitMs + ANIM.gapMs);
+  //     return;
+  //   }
 
-    if (desiredFull && !currentFull) {
-      animatingRef.current = true;
-      setActiveFullName(desiredFull);
-      timerRef.current = setTimeout(() => {
-        animatingRef.current = false;
-      }, ANIM.enterMs);
-      return;
-    }
+  //   if (desiredFull && !currentFull) {
+  //     animatingRef.current = true;
+  //     setActiveFullName(desiredFull);
+  //     timerRef.current = setTimeout(() => {
+  //       animatingRef.current = false;
+  //     }, ANIM.enterMs);
+  //     return;
+  //   }
 
-    if (desiredFull && currentFull && desiredFull !== currentFull) {
-      animatingRef.current = true;
-      stabilizeAround(currentFull); // ★ 화면 고정
-      setActiveFullName(null);
-      timerRef.current = setTimeout(() => {
-        setActiveFullName(desiredFull);
-        timerRef.current = setTimeout(() => {
-          animatingRef.current = false;
-        }, ANIM.enterMs);
-      }, ANIM.exitMs + ANIM.gapMs);
-      return;
-    }
-  }, [
-    searchParams,
-    resolveFullName,
-    activeFullName,
-    ANIM.enterMs,
-    ANIM.exitMs,
-    ANIM.gapMs,
-    stabilizeAround,
-  ]);
+  //   if (desiredFull && currentFull && desiredFull !== currentFull) {
+  //     animatingRef.current = true;
+  //     stabilizeAround(currentFull); // ★ 화면 고정
+  //     setActiveFullName(null);
+  //     timerRef.current = setTimeout(() => {
+  //       setActiveFullName(desiredFull);
+  //       timerRef.current = setTimeout(() => {
+  //         animatingRef.current = false;
+  //       }, ANIM.enterMs);
+  //     }, ANIM.exitMs + ANIM.gapMs);
+  //     return;
+  //   }
+  // }, [
+  //   searchParams,
+  //   resolveFullName,
+  //   activeFullName,
+  //   ANIM.enterMs,
+  //   ANIM.exitMs,
+  //   ANIM.gapMs,
+  //   stabilizeAround,
+  // ]);
   // --- [A] URL 읽기 유틸 (searchParams 대신 window.location 사용) ---
   const getOpenFromLocation = useCallback((): string | null => {
     if (typeof window === "undefined") return null;
@@ -492,6 +492,8 @@ export default function FarmListTable({
     ]
   );
 
+  const FUSE_MS = 1200;
+
   // --- [C] URL 변화 감지: popstate + farm:query-updated ---
   useEffect(() => {
     const run = () => {
@@ -500,9 +502,17 @@ export default function FarmListTable({
 
       if (desiredFull === currentFull) return;
 
-      if (animatingRef.current) return; // 애니메이션 중엔 스킵
+      if (animatingRef.current) {
+        setTimeout(() => {
+          const desiredAfter = getOpenFromLocation();
+          const currentAfter = activeFullName;
+          if (desiredAfter !== currentAfter) {
+          }
+        }, ANIM.enterMs + 30);
+        return;
+      }
 
-      clearTimer();
+      // clearTimer();
 
       if (!desiredFull && currentFull) {
         animatingRef.current = true;
@@ -511,6 +521,9 @@ export default function FarmListTable({
         timerRef.current = setTimeout(() => {
           animatingRef.current = false;
         }, ANIM.exitMs + ANIM.gapMs);
+        setTimeout(() => {
+          animatingRef.current = false;
+        }, FUSE_MS);
         return;
       }
 
@@ -520,6 +533,9 @@ export default function FarmListTable({
         timerRef.current = setTimeout(() => {
           animatingRef.current = false;
         }, ANIM.enterMs);
+        setTimeout(() => {
+          animatingRef.current = false;
+        }, FUSE_MS);
         return;
       }
 
@@ -533,6 +549,9 @@ export default function FarmListTable({
             animatingRef.current = false;
           }, ANIM.enterMs);
         }, ANIM.exitMs + ANIM.gapMs);
+        setTimeout(() => {
+          animatingRef.current = false;
+        }, FUSE_MS);
         return;
       }
     };

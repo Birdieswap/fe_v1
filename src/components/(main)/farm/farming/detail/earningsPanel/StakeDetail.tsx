@@ -29,64 +29,110 @@ export default function StakeDetail({
   const pathname = usePathname();
 
   const lastTriggerRef = useRef<string>("");
-
-  // 2) URL -> 패널 문자열 파싱 유틸
-  const parsePanelFromUrl = useCallback((): "STAKE" | "UNSTAKE" => {
-    const p = (searchParams.get("stakePanel") || "").toLowerCase();
-    return p === "unstake" ? "UNSTAKE" : "STAKE";
+  const readUrl = useCallback(() => {
+    if (typeof window === "undefined") {
+      // 서버/폴백: next/navigation 훅
+      const p = (searchParams.get("stakePanel") || "").toLowerCase();
+      const amt = searchParams.get("unstakeAmount") || "";
+      const open = (searchParams.get("open") || "").toLowerCase();
+      return { panel: p, amount: amt, open };
+    }
+    const sp = new URLSearchParams(window.location.search);
+    const p = (sp.get("stakePanel") || "").toLowerCase();
+    const amt = sp.get("unstakeAmount") || "";
+    const open = (sp.get("open") || "").toLowerCase();
+    return { panel: p, amount: amt, open };
   }, [searchParams]);
+
+  const applyAndCleanUrl = useCallback(
+    (panel: string, amount: string) => {
+      // URL에서 stakePanel, unstakeAmount 삭제
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        let changed = false;
+        if (url.searchParams.has("stakePanel")) {
+          url.searchParams.delete("stakePanel");
+          changed = true;
+        }
+        if (url.searchParams.has("unstakeAmount")) {
+          url.searchParams.delete("unstakeAmount");
+          changed = true;
+        }
+        if (changed) {
+          window.history.replaceState(null, "", url.toString());
+          window.dispatchEvent(new CustomEvent("farm:query-updated")); // 일관성 유지
+        }
+      } else {
+        const sp2 = new URLSearchParams(searchParams.toString());
+        let changed = false;
+        if (sp2.has("stakePanel")) {
+          sp2.delete("stakePanel");
+          changed = true;
+        }
+        if (sp2.has("unstakeAmount")) {
+          sp2.delete("unstakeAmount");
+          changed = true;
+        }
+        if (changed)
+          router.replace(`${pathname}?${sp2.toString()}`, { scroll: false });
+      }
+    },
+    [pathname, router, searchParams]
+  );
 
   const [selectedPanel, setSelectedPanel] = useState<"STAKE" | "UNSTAKE">(
     "STAKE"
+  );
+  const [applyToken, setApplyToken] = useState(0);
+  const [awaitingApply, setAwaitingApply] = useState(false);
+
+  const presetMaxRef = useRef(false);
+
+  const pendingCleanRef = useRef<{ panel?: string; amount?: string } | null>(
+    null
   );
 
   // FarmDetail과 동일한 방식으로 활성화 판단 (키는 프로젝트 규칙에 맞게)
   const activeKey = item?.wip_stakeToken?.fullName ?? item?.name ?? "";
   const isActive = selectedRow === activeKey;
 
-  const initFromUrlRef = useRef(false);
+  const consumeUrlOnce = useCallback(() => {
+    const { panel, amount, open } = readUrl();
+    const sig = `${open}|${panel}|${amount}`;
+    if (sig === lastTriggerRef.current) return;
+    lastTriggerRef.current = sig;
+
+    if (panel === "unstake") setSelectedPanel("UNSTAKE");
+    else if (panel === "stake") setSelectedPanel("STAKE");
+
+    // ★ "max" 감지: 값 state 없이 ref + token만!
+    if (panel === "unstake" && amount.toLowerCase() === "max") {
+      presetMaxRef.current = true; // 다음에 한 번 max
+      setApplyToken((t) => t + 1); // 신호 토큰 증가 → 자식에서 이 변화만 트리거
+      setAwaitingApply(true);
+      pendingCleanRef.current = { panel, amount }; // URL 정리는 나중에
+    }
+  }, [readUrl]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (isActive) consumeUrlOnce();
+  }, [isActive, consumeUrlOnce]);
 
-    if (!initFromUrlRef.current) {
-      const next = parsePanelFromUrl();
-      setSelectedPanel(next);
-      initFromUrlRef.current = true;
-    }
-  }, [isActive, parsePanelFromUrl]);
-
+  // history.replaceState / 뒤로가기 신호 구독
   useEffect(() => {
-    if (!isActive) return;
-
-    const sp = searchParams;
-    const open = (sp.get("open") || "").toLowerCase();
-    const panel = (sp.get("stakePanel") || "").toLowerCase(); // "unstake"|"stake"|""
-    const amount = sp.get("unstakeAmount") || ""; // 값 or ""
-
-    // ★ 현재 트리거 서명
-    const curSig = `${open}|${panel}|${amount}`;
-
-    // ★ 직전과 다를 때만 소비 (같은 값 계속 들어와도, URL이 깨끗했다가 다시 들어오면 curSig가 달라짐)
-    if (curSig !== lastTriggerRef.current) {
-      lastTriggerRef.current = curSig;
-
-      // 1) 패널 적용 (URL → 상태)
-      if (panel === "unstake") setSelectedPanel("UNSTAKE");
-      else if (panel === "stake") setSelectedPanel("STAKE");
-      // panel이 없으면 상태 유지
-
-      // 2) URL 정리: stakePanel만 *지연 삭제
-      if (panel) {
-        setTimeout(() => {
-          const sp2 = new URLSearchParams(searchParams.toString());
-          sp2.delete("stakePanel");
-          const q = sp2.toString();
-          router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
-        }, 0);
-      }
-    }
-  }, [isActive, searchParams, router, pathname, setSelectedPanel]);
+    const onSignal = () => {
+      if (isActive) consumeUrlOnce();
+    };
+    window.addEventListener("farm:query-updated", onSignal as EventListener);
+    window.addEventListener("popstate", onSignal);
+    return () => {
+      window.removeEventListener(
+        "farm:query-updated",
+        onSignal as EventListener
+      );
+      window.removeEventListener("popstate", onSignal);
+    };
+  }, [isActive, consumeUrlOnce]);
 
   // 비활성화 시 정리(선택 사항): 다시 열릴 때 새 서명으로 인식
   useEffect(() => {
@@ -95,15 +141,41 @@ export default function StakeDetail({
     }
   }, [isActive]);
 
+  // 비활성화 시 URL 잔여 파라미터 정리(양쪽 모두)
   useEffect(() => {
     if (!isActive) {
-      const sp = new URLSearchParams(searchParams.toString());
-      if (sp.has("stakePanel")) {
-        sp.delete("stakePanel");
-        router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        let changed = false;
+        if (url.searchParams.has("stakePanel")) {
+          url.searchParams.delete("stakePanel");
+          changed = true;
+        }
+        if (url.searchParams.has("unstakeAmount")) {
+          url.searchParams.delete("unstakeAmount");
+          changed = true;
+        }
+        if (changed) {
+          window.history.replaceState(null, "", url.toString());
+          window.dispatchEvent(new CustomEvent("farm:query-updated"));
+        }
+      } else {
+        const sp2 = new URLSearchParams(searchParams.toString());
+        let changed = false;
+        if (sp2.has("stakePanel")) {
+          sp2.delete("stakePanel");
+          changed = true;
+        }
+        if (sp2.has("unstakeAmount")) {
+          sp2.delete("unstakeAmount");
+          changed = true;
+        }
+        if (changed)
+          router.replace(`${pathname}?${sp2.toString()}`, { scroll: false });
       }
+      setAwaitingApply(false);
     }
-  }, [isActive, router, pathname, searchParams]);
+  }, [isActive, pathname, router, searchParams]);
 
   return (
     <AnimatePresence initial={false}>
@@ -139,7 +211,23 @@ export default function StakeDetail({
                 {selectedPanel === "STAKE" ? (
                   <StakePanel item={item} matched={matched} />
                 ) : (
-                  <UnStakePanel item={item} matched={matched} />
+                  <UnStakePanel
+                    item={item}
+                    matched={matched}
+                    presetMaxToken={applyToken}
+                    onPresetApplied={() => {
+                      // URL 정리: 이제서야 삭제
+                      if (pendingCleanRef.current) {
+                        const { panel = "", amount = "" } =
+                          pendingCleanRef.current;
+                        pendingCleanRef.current = null;
+                        applyAndCleanUrl(panel, amount);
+                      }
+                      // 래치 해제
+                      presetMaxRef.current = false;
+                      setAwaitingApply(false);
+                    }}
+                  />
                 )}
               </AnimatePresence>
             </motion.div>

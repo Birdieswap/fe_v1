@@ -52,11 +52,9 @@ export default function SwapIndex() {
       const list: any[] = Array.isArray(tokens)
         ? (tokens as any[])
         : Object.values(tokens || {});
-      // 체인에 실제 주소가 있는 토큰만 대상
       return list.find((t) => {
         const symbolEq =
           t?.symbol?.toUpperCase?.() === s ||
-          // 심볼 별칭이 있다면 여기에 추가 (예: "ETH" → "WETH")
           (s === "ETH" && t?.symbol?.toUpperCase?.() === "WETH");
         const hasAddr = (t?.addresses && t?.addresses?.[chainId]) || t?.address;
         return symbolEq && !!hasAddr;
@@ -65,22 +63,13 @@ export default function SwapIndex() {
     [chainId]
   );
 
-  const clearSwapParamsInUrl = useCallback(() => {
-    const sp = new URLSearchParams(searchParams.toString());
-    const hadFrom = sp.has("from");
-    const hadTo = sp.has("to");
-    if (hadFrom) sp.delete("from");
-    if (hadTo) sp.delete("to");
-    if (hadFrom || hadTo) {
-      router.replace(`${pathname}?${sp.toString()}`, { scroll: false });
-    }
-  }, [searchParams, router, pathname]);
+  // URL(query) → 상태 적용 + 필요 시 URL 정리
+  const applySwapParamsFromLocation = useCallback(() => {
+    if (typeof window === "undefined") return;
 
-  useEffect(() => {
-    const fromSym = searchParams.get("from") || undefined;
-    const toSym = searchParams.get("to") || undefined;
-
-    // 파라미터 없으면 스킵
+    const sp = new URLSearchParams(window.location.search);
+    const fromSym = sp.get("from") || undefined;
+    const toSym = sp.get("to") || undefined;
     if (!fromSym && !toSym) return;
 
     const fTok = resolveBySymbol(fromSym);
@@ -88,7 +77,7 @@ export default function SwapIndex() {
 
     let didApply = false;
 
-    // from 적용
+    // from
     if (fromSym && fromSym !== lastAppliedRef.current.from) {
       if (fTok && fTok?.symbol !== fromToken?.symbol) {
         setIsTyping(true);
@@ -100,7 +89,7 @@ export default function SwapIndex() {
       lastAppliedRef.current.from = fromSym;
     }
 
-    // to 적용
+    // to
     if (toSym && toSym !== lastAppliedRef.current.to) {
       if (tTok && tTok?.symbol !== toToken?.symbol) {
         setIsTyping(true);
@@ -112,23 +101,20 @@ export default function SwapIndex() {
       lastAppliedRef.current.to = toSym;
     }
 
-    // 같은 토큰 들어온 경우 to 비우기(옵션)
+    // 같은 토큰이면 to 비우기(옵션)
     if (fTok && tTok && fTok?.symbol === tTok?.symbol) {
       setToToken?.(undefined);
     }
 
-    // 적용 후 URL 정리(루프 방지 & 깔끔한 주소)
+    // 적용 후 URL 정리: router 대신 history 사용 (스크롤/리렌더 간섭 없음)
     if (didApply) {
-      const sp = new URLSearchParams(searchParams.toString());
-      if (fromSym) sp.delete("from");
-      if (toSym) sp.delete("to");
-      const q = sp.toString();
-      router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false });
+      const url = new URL(window.location.href);
+      if (fromSym) url.searchParams.delete("from");
+      if (toSym) url.searchParams.delete("to");
+      window.history.replaceState(window.history.state, "", url.toString());
     }
   }, [
-    searchParams,
     resolveBySymbol,
-    chainId,
     fromToken?.symbol,
     toToken?.symbol,
     setFromTokenWithGuard,
@@ -138,9 +124,19 @@ export default function SwapIndex() {
     setFromAmount,
     setToAmount,
     setIsTyping,
-    router,
-    pathname,
   ]);
+
+  // 최초 1회 + 내부 커스텀 이벤트 + 뒤/앞으로 이동에 반응
+  useEffect(() => {
+    applySwapParamsFromLocation(); // mount 시 한 번 처리
+    const onEvt = () => applySwapParamsFromLocation();
+    window.addEventListener("swap:query-updated", onEvt);
+    window.addEventListener("popstate", onEvt);
+    return () => {
+      window.removeEventListener("swap:query-updated", onEvt);
+      window.removeEventListener("popstate", onEvt);
+    };
+  }, [applySwapParamsFromLocation]);
 
   return (
     <motion.section layout className="flex w-full flex-col items-center gap-9">
