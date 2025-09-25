@@ -83,42 +83,45 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
       try {
         onClose?.();
 
-        const isOnFarm =
-          typeof window !== "undefined" &&
-          window.location.pathname.startsWith("/farm");
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            const href =
+              t.type === "token"
+                ? `/?from=${encodeURIComponent(
+                    findSymbolByAddress(t.address as string, chainId) as string
+                  )}`
+                : t.type === "LP"
+                ? `/farm?open=${t.address}&stakePanel=stake`
+                : `/farm?open=${t.address}&stakePanel=unstake&unstakeAmount=max`;
 
-        const go = (href: string) => {
-          // 오버레이 닫힘과 겹치지 않게 살짝 대기
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              if (isOnFarm) {
-                // ★ 같은 /farm 내 이동: 라우터 금지, URL만 교체
-                const url = new URL(window.location.href);
-                const next = new URL(href, window.location.origin);
-                url.search = next.search; // 쿼리만 바꿈 (path 동일)
-                window.history.replaceState(null, "", url.toString());
-                window.dispatchEvent(new CustomEvent("farm:query-updated"));
-              } else {
-                // 다른 페이지 → Farm: 정상 push(스크롤 금지)
-                router.push(href, { scroll: false });
-              }
-            }, 160);
-          });
-        };
+            const curr =
+              typeof window !== "undefined"
+                ? new URL(window.location.href)
+                : null;
+            const next = new URL(href, window.location.origin);
 
-        if (t.type === "token") {
-          const symbol = findSymbolByAddress(t.address as string, chainId);
-          go(`/?from=${encodeURIComponent(symbol as string)}`);
-          return;
-        }
-        if (t.type === "LP") {
-          go(`/farm?open=${t.address}&stakePanel=stake`);
-          return;
-        }
-        if (t.type === "staked") {
-          go(`/farm?open=${t.address}&stakePanel=unstake&unstakeAmount=max`);
-          return;
-        }
+            const isSamePath = !!curr && curr.pathname === next.pathname;
+
+            if (isSamePath && curr) {
+              // ✅ 같은 경로면 라우터 대신 URL만 교체 + 해당 페이지용 이벤트 발행
+              curr.search = next.search;
+              window.history.replaceState(
+                window.history.state,
+                "",
+                curr.toString()
+              );
+
+              const evt =
+                curr.pathname === "/farm"
+                  ? "farm:query-updated"
+                  : "swap:query-updated";
+              window.dispatchEvent(new CustomEvent(evt));
+            } else {
+              // ✅ 다른 경로면 라우터로 이동 (스크롤 금지)
+              router.push(href, { scroll: false });
+            }
+          }, 160); // 오버레이 닫힘 애니메이션과 겹치지 않게 살짝 대기
+        });
       } catch (e) {
         console.error("WalletToken click failed:", e);
       }
