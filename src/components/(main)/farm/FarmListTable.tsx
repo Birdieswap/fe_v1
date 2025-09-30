@@ -291,12 +291,6 @@ export default function FarmListTable({
 
   const [activeFullName, setActiveFullName] = useState<string | null>(null);
 
-  // // URL 진입/뒤로가기 변화 → 로컬에 반영 (라우터 호출 없음)
-  // useEffect(() => {
-  //   const openParam = searchParams.get("open");
-  //   const full = resolveFullName(openParam);
-  //   setActiveFullName(full ?? null);
-  // }, [searchParams, resolveFullName]);
   const ANIM = {
     exitMs: 360, // FarmDetail의 EXIT.duration에 준하는 값
     enterMs: 500, // FarmDetail의 ENTER.duration
@@ -345,62 +339,6 @@ export default function FarmListTable({
     [ANIM.exitMs]
   );
 
-  // 클릭 시퀀스 (닫기 전 stabilizeAround 호출)
-
-  // URL 변화도 클릭과 동일한 시퀀스로 처리 (닫기 전 stabilizeAround 호출)
-  // useEffect(() => {
-  //   const openParam = searchParams.get("open");
-  //   const desiredFull = resolveFullName(openParam);
-  //   const currentFull = activeFullName;
-
-  //   if (desiredFull === currentFull) return;
-  //   if (animatingRef.current) {
-  //     const t = setTimeout(() => {}, 0);
-  //     return () => clearTimeout(t);
-  //   }
-
-  //   clearTimer();
-
-  //   if (!desiredFull && currentFull) {
-  //     animatingRef.current = true;
-  //     stabilizeAround(currentFull); // ★ 화면 고정
-  //     setActiveFullName(null);
-  //     timerRef.current = setTimeout(() => {
-  //       animatingRef.current = false;
-  //     }, ANIM.exitMs + ANIM.gapMs);
-  //     return;
-  //   }
-
-  //   if (desiredFull && !currentFull) {
-  //     animatingRef.current = true;
-  //     setActiveFullName(desiredFull);
-  //     timerRef.current = setTimeout(() => {
-  //       animatingRef.current = false;
-  //     }, ANIM.enterMs);
-  //     return;
-  //   }
-
-  //   if (desiredFull && currentFull && desiredFull !== currentFull) {
-  //     animatingRef.current = true;
-  //     stabilizeAround(currentFull); // ★ 화면 고정
-  //     setActiveFullName(null);
-  //     timerRef.current = setTimeout(() => {
-  //       setActiveFullName(desiredFull);
-  //       timerRef.current = setTimeout(() => {
-  //         animatingRef.current = false;
-  //       }, ANIM.enterMs);
-  //     }, ANIM.exitMs + ANIM.gapMs);
-  //     return;
-  //   }
-  // }, [
-  //   searchParams,
-  //   resolveFullName,
-  //   activeFullName,
-  //   ANIM.enterMs,
-  //   ANIM.exitMs,
-  //   ANIM.gapMs,
-  //   stabilizeAround,
-  // ]);
   // --- [A] URL 읽기 유틸 (searchParams 대신 window.location 사용) ---
   const getOpenFromLocation = useCallback((): string | null => {
     if (typeof window === "undefined") return null;

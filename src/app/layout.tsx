@@ -7,6 +7,7 @@ import clsx from "clsx";
 import Providers from "./providers";
 import TransactionContextProvider from "./TransactionContextProvider";
 import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
+import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           </div>
         </Providers>
         <DeniedWalletModalHost />
+        <RiskConsentModalHost />
       </body>
     </html>
   );

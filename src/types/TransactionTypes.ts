@@ -5,5 +5,6 @@ export enum TransactionType {
   STOP_FARMING = "STOP_FARMING",
   STAKING = "STAKING",
   UNSTAKING = "UNSTAKING",
-  CLAIM = "CLAIM"
+  CLAIM = "CLAIM",
+  SIGN ="SIGN"
 }

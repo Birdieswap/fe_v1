@@ -80,7 +80,19 @@ export function getWriteTransactionHandlers({
         transactionStatus: TransactionStatus.PENDING,
         txid: tx,
       });
-      const { chainId } = transactionProps;
+
+      const chainIdNum: number = (() => {
+        const v = (transactionProps as any).chainId;
+        if (typeof v === "number") return v;
+        if (typeof v === "bigint") return Number(v); // 주의: 안전성 — chainId는 보통 작음
+        if (typeof v === "string") {
+          const n = Number(v);
+          return Number.isFinite(n) ? n : NaN;
+        }
+        return NaN; // 또는 기본값(예: 1)
+      })();
+
+      const chainId = chainIdNum ;
 
       if (client)
         waitForTransactionReceipt(client, {
