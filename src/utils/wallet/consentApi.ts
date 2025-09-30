@@ -1,4 +1,4 @@
-// /utils/wallet/consentApi.ts
+
 import type {
   CheckResponse,
   InitiateResponseWire,

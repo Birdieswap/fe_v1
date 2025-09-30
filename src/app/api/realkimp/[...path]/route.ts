@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 const UPSTREAM = "https://realkimp.com/birdieswap";
 const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 function buildUpstreamUrl(req: Request) {
   const url = new URL(req.url);
@@ -20,14 +21,33 @@ function buildUpstreamUrl(req: Request) {
 function buildUpstreamHeaders(req: Request, extra?: Record<string, string>) {
   const h = new Headers();
   h.set("accept", "application/json");
+
+  // 원 요청 헤더들 반영
   const ct = req.headers.get("content-type");
   if (ct) h.set("content-type", ct);
+
   const cookie = req.headers.get("cookie");
-  if (cookie) h.set("cookie", cookie);                 // ★ 쿠키 전달
+  if (cookie) h.set("cookie", cookie);
+
   const ua = req.headers.get("user-agent");
   if (ua) h.set("user-agent", ua);
+
   const referer = req.headers.get("referer");
   if (referer) h.set("referer", referer);
+
+  // ★ upstream이 도메인/클라이언트 판단 시 쓰는 헤더들 추가
+  const origin = req.headers.get("origin");
+  if (origin) h.set("origin", origin);
+
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) h.set("x-forwarded-for", xff);
+
+  const xfhost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+  if (xfhost) h.set("x-forwarded-host", xfhost);
+
+  const xfproto = req.headers.get("x-forwarded-proto");
+  if (xfproto) h.set("x-forwarded-proto", xfproto);
+
   if (extra) for (const [k, v] of Object.entries(extra)) h.set(k, v);
   return h;
 }
@@ -43,6 +63,19 @@ function buildClientHeaders(upstream: Response, fallbackCT = "application/json")
     }
   });
   return out;
+}
+
+async function dumpIfNotOk(r: Response, label: string) {
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    console.error(`[proxy] ${label} upstream not ok:`, r.status, text.slice(0, 500));
+    // 에러 페이지가 HTML이면 그대로 전달해 주면 클라가 JSON 파싱을 시도하지 않게 됨
+    return new NextResponse(text || "upstream error", {
+      status: r.status,
+      headers: { "content-type": r.headers.get("content-type") ?? "text/plain" },
+    });
+  }
+  return null;
 }
 
 export async function GET(req: Request) {
@@ -69,6 +102,9 @@ export async function GET(req: Request) {
       });
     }
   }
+
+  const early = await dumpIfNotOk(r, "GET");
+  if (early) return early;
 
   return new NextResponse(r.body, {
     status: r.status,
@@ -113,6 +149,8 @@ export async function POST(req: Request) {
   console.log("[proxy] upstream status:", r.status);
   console.log("[proxy] upstream set-cookie:", r.headers.get("set-cookie"));
 
+  const early = await dumpIfNotOk(r, "POST");
+  if (early) return early;
 
   return new NextResponse(r.body, {
     status: r.status,
