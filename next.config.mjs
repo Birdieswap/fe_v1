@@ -4,6 +4,7 @@ const nextConfig = {
 
   webpack(config, { isServer }) {
     // 기존 svg loader
+    config.resolve.alias["@react-native-async-storage/async-storage"] = false;
     config.module.rules.push({
       test: /\.svg$/i,
       use: ["@svgr/webpack"],
