@@ -98,7 +98,7 @@ export default function FarmListTableRow({
       .getPropertyValue("--nav-h")
       .trim();
     const navH = (navVar ? parseInt(navVar, 10) : 64) + 8;
-    const ENTER_MS = 500;
+    const ENTER_MS = 700;
 
     const raf1 = requestAnimationFrame(() => {
       const t = setTimeout(() => {

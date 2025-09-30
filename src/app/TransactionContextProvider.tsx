@@ -63,8 +63,12 @@ export type claimTransactionProps = {
   address?: `0x${string}`;
 };
 
+export type signTransactionProps = {
+  transactionType: TransactionType.SIGN;
+};
+
 export type TransactionStatusProps = {
-  chainId: number;
+  chainId?: number;
   transactionStatus?: TransactionStatus;
   transactionType?: TransactionType;
   txid?: `0x${string}`;
@@ -78,6 +82,7 @@ export type TransactionStatusProps = {
   | StopFarmingTransactionProps
   | stakeTransactionProps
   | claimTransactionProps
+  | signTransactionProps
 );
 
 export type TransactionContextType = {
