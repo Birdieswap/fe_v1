@@ -20,44 +20,21 @@ import { WalletContext } from "@/app/WalletContextProvider";
 import { walletProviders } from "@/const/wallets";
 //import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
 import { useChainId, useConfig } from "wagmi"; // 🔥 이 import 추가
-import { getAccount, disconnect, signTypedData } from "wagmi/actions"; // ← 추가
+import { disconnect, getAccount } from "wagmi/actions"; // ← 추가
 import { ALLOWED_ADDRESSES } from "@/utils/wallet/allowedWalletList"; // ← 추가
 import { openDenyWalletModal } from "@/utils/wallet/denyWalletModal";
 import {
   isWalletAllowed,
   WALLET_ACCESS_MODE,
 } from "@/utils/wallet/connectPolicy";
-import { openRiskConsentModal } from "../RiskConsentModalHost";
-import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
-import { TransactionType } from "@/types/TransactionTypes";
-import {
-  TransactionStatusProps,
-  signTransactionProps,
-} from "@/app/TransactionContextProvider";
-import TransactionStatus from "@/types/TransactionStatus";
-import { apiCheck, apiInitiate, apiVerify } from "@/utils/wallet/consentApi";
-import {
-  computePolicyHash,
-  findValidLocalProof,
-  saveLocalProof,
-} from "@/utils/wallet/consentLocal";
-import type {
-  VerifyRequest,
-  InitiateResponseWire,
-  NormalizedEIP712Payload,
-  NormalizedDomain,
-  NormalizedConsentMessage,
-  RuntimeEIP712Types,
-} from "@/types/consent";
-import { consentTypes } from "@/utils/wallet/consentSchema";
-import {
-  hashTypedData,
-  verifyTypedData,
-  type TypedData,
-  type TypedDataDomain,
-  type Hex,
-} from "viem";
+
 import { verifyConsentFlow } from "@/utils/wallet/verifyConsentFlow";
+import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
+import {
+  addConsentDoneKey,
+  clearSoftBlock,
+  setSoftBlock,
+} from "@/utils/wallet/consentSession";
 
 declare global {
   interface Window {
@@ -144,26 +121,46 @@ export function SelectWalletListBox(props: {
   //===========whiteList 없앨때 삭제부=============
   async function handleConnect(connect: () => Promise<void>) {
     try {
-      props.onClose(); // 팝오버 닫기
+      props.onClose();
+      await new Promise((r) => setTimeout(r, 0));
+      // 1) 먼저 connect 시도 — 여기서 '취소'면 reject 됩니다.
+      try {
+        await connect();
+      } catch (err) {
+        // 사용자가 Metamask 연결 팝업에서 '취소'를 눌렀거나 연결 실패
+        console.warn("[SelectWalletMenu] connect() cancelled or failed:", err);
+        return;
+      }
 
+      // 2) 연결 성공 확인
+      const { address, status, connector } = getAccount(config);
+      if (!address || status !== "connected") {
+        // 연결이 최종 확정되지 않은 상태 — 모달 열지 않음
+        return;
+      }
+
+      // 3) 이제서야 버튼 경로 인터랙티브 락 ON (자동 가드 스킵 용도)
       if (typeof window !== "undefined") {
         (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
       }
 
-      await new Promise((r) => setTimeout(r));
-      await connect();
-
-      const { address, status, connector } = getAccount(config);
-      if (!address || status !== "connected") return;
-
-      // closed 모드면 미허용 즉시 차단
+      // 4) 화이트리스트 정책(있는 경우)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
-        await disconnect(config, { connector });
+        const provider = await connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        await safeDisconnect({
+          config,
+          connector,
+          provider,
+          hardReloadOnInjected: false, // 버튼 경로: 새로고침 없이
+        });
         openDenyWalletModal(address);
         return;
       }
 
-      // 연결 직후 동의 플로우 (모달 표시)
+      // 5) 연결 '성공' 이후에만 모달 플로우 진입
+      const provider = await connector?.getProvider?.().catch(() => undefined);
       const result = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
@@ -171,18 +168,28 @@ export function SelectWalletListBox(props: {
         mode: "interactive",
       });
 
-      if (result === "cancelled" || result === "failed") {
-        await disconnect(config, { connector });
+      // 6) 결과 해석
+      const ok = result === "already-consented" || result === "verified-now";
+
+      if (!ok) {
+        // 사용자가 모달에서 닫음/거부/실패 → 즉시 해제 (새로고침 없이)
+        await safeDisconnect({
+          config,
+          connector,
+          provider,
+          hardReloadOnInjected: false,
+        });
         return;
       }
 
+      // 7) 성공 → 팝오버 닫기
       props.onClose();
     } catch (e) {
       console.error("[SelectWalletMenu] handleConnect error:", e);
     } finally {
-      // (C) 인터랙티브 락 OFF (성공/실패 모두)
+      // 8) 락 해제 (성공/실패/취소 모두)
       if (typeof window !== "undefined") {
-        window.__CONSENT_INTERACTIVE_ACTIVE__ = false;
+        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = false;
       }
     }
   }
@@ -260,13 +267,7 @@ export default function SelectWalletMenu() {
       isOpen={isOpen}
       offset={12}
       placement="bottom-end"
-      onOpenChange={(v) => {
-        if (!v && isOpen) {
-          setIsConnectModalOpen(false);
-        } else if (v) {
-          setIsConnectModalOpen(true);
-        }
-      }}
+      onOpenChange={(v) => setIsConnectModalOpen(!!v)}
     >
       <PopoverTrigger>
         <Button className="connect-btn">
