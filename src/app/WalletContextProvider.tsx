@@ -15,15 +15,17 @@ import { walletProviders } from "@/const/wallets";
 import { useReferral } from "./ReferralContextProvider";
 import useAccountWalletData from "@/hooks/wallet/useAccountWalletData";
 import { disconnect, signTypedData } from "wagmi/actions";
-import { apiCheck, apiInitiate, apiVerify } from "@/utils/wallet/consentApi";
-import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
-import {
-  hashTypedData,
-  verifyTypedData,
-  type TypedData,
-  type TypedDataDomain,
-} from "viem";
+
 import { verifyConsentFlow } from "@/utils/wallet/verifyConsentFlow";
+import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
+import {
+  addConsentDoneKey,
+  clearSoftBlock,
+  hasConsentDoneKey,
+  isSoftBlocked,
+  setSoftBlock,
+} from "@/utils/wallet/consentSession";
+import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 
 declare global {
   interface Window {
@@ -242,7 +244,7 @@ export default function WalletContextProvider({
   const selectedNetwork = useMemo(() => {
     const network = networks.find((network) => network.id === chainId);
 
-    // ⭐ 디버깅 로그 추가 (개발 환경에서만)
+    //  디버깅 로그 추가 (개발 환경에서만)
     if (process.env.NODE_ENV === "development") {
       console.log("=== Network Debug ===");
       console.log("Chain ID:", chainId);
@@ -258,121 +260,148 @@ export default function WalletContextProvider({
 
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) {
-      // 연결 끊김/초기화 시 마지막 키 리셋
       prevKeyRef.current = null;
-      return;
-    }
-
-    // 버튼 경로에서 모달 진행 중이면 자동 가드 스킵
-    if (
-      typeof window !== "undefined" &&
-      window.__CONSENT_INTERACTIVE_ACTIVE__
-    ) {
       return;
     }
 
     const nextKey = `${account.address.toLowerCase()}@${chainId}`;
     const prevKey = prevKeyRef.current;
+    const isChanged = !!prevKey && prevKey !== nextKey;
 
-    // 다음 비교를 위해 현재 키 저장
-    prevKeyRef.current = nextKey;
+    const interactiveBusy =
+      typeof window !== "undefined" &&
+      (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
+    if (!isChanged && interactiveBusy) return;
 
-    // 중복 실행 방지
+    if (!prevKey) return;
+    if (!isChanged) return;
+
     if (verifyingRef.current) return;
-
-    // 최초 감지(이전 키 없음): 새로고침/자동복구 등 버튼 경로가 아닌 진입
-    if (!prevKey) {
-      verifyingRef.current = true;
-      (async () => {
-        try {
-          // 1) 조용히 서버에 동의 확인
-          const r1 = await verifyConsentFlow({
-            config,
-            address: account.address as `0x${string}`,
-            chainId,
-            mode: "silent",
-          });
-
-          if (r1 === "already-consented") {
-            // 이미 동의 있음 → 그대로 유지
-            return;
-          }
-
-          // 2) 동의 없음 → 모달 띄워서 즉시 검증
-          const r2 = await verifyConsentFlow({
-            config,
-            address: account.address as `0x${string}`,
-            chainId,
-            mode: "interactive",
-          });
-
-          if (r2 === "verified-now" || r2 === "already-consented") {
-            // 방금 서명 완료 or 서버상 이미 동의
-            return;
-          }
-
-          // 3) 취소/실패는 즉시 disconnect
-          if (account.connector) {
-            await disconnect(config, { connector: account.connector });
-          }
-        } catch (err) {
-          console.error("[WalletContext] auto-connect first guard error:", err);
-          if (account.connector) {
-            try {
-              await disconnect(config, { connector: account.connector });
-            } catch {}
-          }
-        } finally {
-          verifyingRef.current = false;
-        }
-      })();
-
-      return; // 이 분기에서는 아래 변경 감지 로직을 타지 않음
-    }
-
-    // 주소/체인 변경이 없는 경우 스킵
-    if (prevKey === nextKey) return;
-
-    // 주소/체인 변경 발생 → 동의 확인 루틴
     verifyingRef.current = true;
+
     (async () => {
       try {
-        // 1) 먼저 silent 체크 (있으면 모달 없이 통과)
-        const r1 = await verifyConsentFlow({
+        const result = await verifyConsentFlow({
+          config,
+          address: account.address as `0x${string}`,
+          chainId,
+          mode: "interactive", // 변경은 무조건 모달
+        });
+
+        const ok = result === "already-consented" || result === "verified-now";
+
+        if (ok) {
+          // 성공: 다음 비교를 위해 키 갱신 + 소프트락 해제
+          prevKeyRef.current = nextKey;
+          clearSoftBlock(); // ← 추가
+        } else {
+          const provider = await account.connector
+            ?.getProvider?.()
+            .catch(() => undefined);
+          await safeDisconnect({
+            config,
+            connector: account.connector,
+            provider,
+            hardReloadOnInjected: isInjectedLike(
+              account.connector?.id,
+              provider
+            ), // ← Injected라면 리로드 허용
+          });
+        }
+      } catch (err) {
+        console.error("[WalletContext] address-change guard error:", err);
+        const provider = await account.connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        await safeDisconnect({
+          config,
+          connector: account.connector,
+          provider,
+          hardReloadOnInjected: isInjectedLike(account.connector?.id, provider),
+        });
+      } finally {
+        verifyingRef.current = false;
+      }
+    })();
+  }, [
+    account.isConnected,
+    account.address,
+    account.connector,
+    chainId,
+    config,
+  ]);
+
+  // ===== 초기 연결 가드 =====
+  const initializingRef = useRef(false);
+
+  useEffect(() => {
+    if (!account.isConnected || !account.address || !chainId) return;
+
+    const currentKey = `${account.address.toLowerCase()}@${chainId}`;
+
+    // 버튼 경로에서 이미 끝낸 키면 스킵
+    if (hasConsentDoneKey(currentKey)) {
+      prevKeyRef.current = currentKey; // 기준키도 맞춰두기
+      return;
+    }
+
+    if (prevKeyRef.current === currentKey) return;
+    if (initializingRef.current) return;
+
+    initializingRef.current = true;
+
+    (async () => {
+      try {
+        const okSilent = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "silent",
         });
-        if (r1 === "already-consented") {
+        if (okSilent) {
+          prevKeyRef.current = currentKey;
+          clearSoftBlock(); // ← 추가(성공)
           return;
         }
 
-        // 2) 동의가 없으므로 모달 띄워서 즉시 검증
-        const r2 = await verifyConsentFlow({
+        const okInteractive = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "interactive",
         });
 
-        if (r2 === "verified-now" || r2 === "already-consented") {
-          return;
-        }
+        if (okInteractive) {
+          prevKeyRef.current = currentKey;
+          clearSoftBlock(); // ← 추가(성공)
+        } else {
+          const provider = await account.connector
+            ?.getProvider?.()
+            .catch(() => undefined);
+          const doHardReload = isInjectedLike(account.connector?.id, provider);
 
-        // 3) 모달 취소/실패 → disconnect
-        if (account.connector) {
-          await disconnect(config, { connector: account.connector });
+          await safeDisconnect({
+            config,
+            connector: account.connector,
+            provider,
+            hardReloadOnInjected: doHardReload,
+          });
         }
       } catch (err) {
-        console.error("[WalletContext] address-change guard error:", err);
-        if (account.connector) {
-          try {
-            await disconnect(config, { connector: account.connector });
-          } catch {}
-        }
+        console.error("[WalletContext] initial guard error:", err);
+        const provider = await account.connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        const doHardReload = isInjectedLike(account.connector?.id, provider); // MetaMask 등만 true
+
+        await safeDisconnect({
+          config,
+          connector: account.connector,
+          provider,
+          hardReloadOnInjected: doHardReload,
+        });
       } finally {
-        verifyingRef.current = false;
+        initializingRef.current = false;
       }
     })();
   }, [
