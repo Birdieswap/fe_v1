@@ -49,164 +49,171 @@ export async function GET(req: Request) {
   });
 }
 
+function buildUpstreamHeaders(req: Request) {
+  const h = new Headers();
 
+  const copy = (name: string) => {
+    const v = req.headers.get(name);
+    if (v) h.set(name, v);
+  };
 
-// import { NextResponse } from "next/server";
+  // 기본
+  h.set("accept", req.headers.get("accept") ?? "application/json, */*;q=0.1");
+  copy("accept-language");
+  copy("content-type");
+  copy("authorization");
+  copy("cookie");
+  copy("user-agent");
+  copy("referer");
 
-// const UPSTREAM = "https://realkimp.com/birdieswap";
-// const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
-// export const dynamic = "force-dynamic";
-// export const runtime = "nodejs";
+  // 프록시 정보
+  copy("x-forwarded-for");
+  h.set("x-forwarded-host", req.headers.get("x-forwarded-host") ?? (req.headers.get("host") ?? ""));
+  copy("x-forwarded-proto");
+  // 필요시: copy("x-real-ip");
 
-// function buildUpstreamUrl(req: Request) {
-//   const url = new URL(req.url);
-//   const base = "/api/realkimp/";
-//   const idx = url.pathname.indexOf(base);
-//   const tail = idx >= 0 ? url.pathname.slice(idx + base.length) : "";
-//   const endpoint = strip(tail);
+  // origin은 일부 백엔드의 CORS 로직을 괜히 태울 수 있어 기본 미전달
+  return h;
+}
 
-//   const u = new URL(`${UPSTREAM}/${endpoint}`);
-//   u.search = url.search;
-//   return u;
-// }
+// 응답에서 모든 Set-Cookie 수집
+function collectSetCookies(resp: Response): string[] {
+  const out: string[] = [];
+  resp.headers.forEach((v, k) => {
+    if (k.toLowerCase() === "set-cookie") out.push(v);
+  });
+  return out;
+}
 
-// // 공통: 요청 헤더 구성 (쿠키/UA/리퍼러 등 전달)
-// function buildUpstreamHeaders(req: Request, extra?: Record<string, string>) {
-//   const h = new Headers();
-//   h.set("accept", "application/json");
+// Set-Cookie(여러 개) → Cookie 헤더로 병합
+function mergeCookies(existingCookie: string | null | undefined, newSetCookies: string[]): string {
+  const jar: Record<string, string> = {};
+  const add = (pair: string) => {
+    const i = pair.indexOf("=");
+    if (i <= 0) return;
+    const k = pair.slice(0, i).trim();
+    const v = pair.slice(i + 1).split(";")[0].trim();
+    if (k) jar[k] = v;
+  };
+  if (existingCookie) {
+    existingCookie.split(";").forEach(s => {
+      const t = s.trim();
+      if (t) add(t);
+    });
+  }
+  for (const sc of newSetCookies) {
+    const j = sc.indexOf(";");
+    add((j > 0 ? sc.slice(0, j) : sc).trim());
+  }
+  return Object.entries(jar).map(([k, v]) => `${k}=${v}`).join("; ");
+}
 
-//   // 원 요청 헤더들 반영
-//   const ct = req.headers.get("content-type");
-//   if (ct) h.set("content-type", ct);
+// 3xx를 수동으로 최대 3회 추적(메서드/바디 유지 + Set-Cookie→Cookie 전파)
+async function followRedirectsPreservingMethod(
+  first: Response,
+  req: Request,
+  method: "POST",
+  body: BodyInit | null,
+  maxHops = 3
+) {
+  let r = first;
+  let hops = 0;
+  let carryCookie = req.headers.get("cookie") || undefined;
 
-//   const cookie = req.headers.get("cookie");
-//   if (cookie) h.set("cookie", cookie);
+  while (r.status >= 300 && r.status < 400 && hops < maxHops) {
+    const loc = r.headers.get("location");
+    if (!loc) break;
 
-//   const ua = req.headers.get("user-agent");
-//   if (ua) h.set("user-agent", ua);
+    // 1) set-cookie → cookie 전파
+    const setCookies = collectSetCookies(r);
+    if (setCookies.length) carryCookie = mergeCookies(carryCookie, setCookies);
 
-//   const referer = req.headers.get("referer");
-//   if (referer) h.set("referer", referer);
+    // 2) 다음 hop URL
+    const u = new URL(loc, UPSTREAM);
+    if (u.protocol === "http:") u.protocol = "https:";
+    // 뒤 슬래시는 건드리지 않음
+    if (!u.pathname.startsWith("/")) u.pathname = `/${u.pathname}`;
 
-//   // ★ upstream이 도메인/클라이언트 판단 시 쓰는 헤더들 추가
-//   const origin = req.headers.get("origin");
-//   if (origin) h.set("origin", origin);
+    // 3) 헤더 구성 + 쿠키 주입
+    const headers = buildUpstreamHeaders(req);
+    if (carryCookie) headers.set("cookie", carryCookie);
 
-//   const xff = req.headers.get("x-forwarded-for");
-//   if (xff) h.set("x-forwarded-for", xff);
+    // 4) 다음 요청(항상 같은 POST/바디로)
+    r = await fetch(u.toString(), {
+      method,
+      cache: "no-store",
+      redirect: "manual",
+      headers,
+      body,
+    });
 
-//   const xfhost = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
-//   if (xfhost) h.set("x-forwarded-host", xfhost);
+    hops++;
+  }
+  return r;
+}
 
-//   const xfproto = req.headers.get("x-forwarded-proto");
-//   if (xfproto) h.set("x-forwarded-proto", xfproto);
+// 프리플라이트(브라우저가 POST 전에 OPTIONS 보낼 때)
+export async function OPTIONS(req: Request) {
+  const headers = new Headers({
+    "access-control-allow-origin": req.headers.get("origin") || "*",
+    "access-control-allow-methods": "GET,POST,OPTIONS",
+    "access-control-allow-headers":
+      req.headers.get("access-control-request-headers") || "content-type,authorization",
+    "access-control-allow-credentials": "true",
+    "access-control-max-age": "600",
+  });
+  return new NextResponse(null, { status: 204, headers });
+}
 
-//   if (extra) for (const [k, v] of Object.entries(extra)) h.set(k, v);
-//   return h;
-// }
+// POST 프록시 (GET은 유지)
+export async function POST(req: Request) {
+  // 경로 구성(기존 GET 로직과 동일 규칙)
+  const url = new URL(req.url);
+  const base = "/api/realkimp/";
+  const idx = url.pathname.indexOf(base);
+  const tail = idx >= 0 ? url.pathname.slice(idx + base.length) : "";
+  const endpoint = strip(tail);
+  const u1 = new URL(`${UPSTREAM}/${endpoint}`);
+  u1.search = url.search;
 
-// // 공통: 응답 헤더 구성 (set-cookie 포함 전달)
-// function buildClientHeaders(upstream: Response, fallbackCT = "application/json") {
-//   const out = new Headers();
-//   out.set("content-type", upstream.headers.get("content-type") ?? fallbackCT);
-//   // ★ 여러 개의 set-cookie 헤더를 그대로 전달
-//   upstream.headers.forEach((v, k) => {
-//     if (k.toLowerCase() === "set-cookie") {
-//       out.append("set-cookie", v);
-//     }
-//   });
-//   return out;
-// }
+  // 본문: 어떤 타입이든 안전하게 전달
+  const ab = await req.arrayBuffer();
+  const bodyBuf: BodyInit | null = ab.byteLength ? new Uint8Array(ab) : null;
 
-// async function dumpIfNotOk(r: Response, label: string) {
-//   if (!r.ok) {
-//     const text = await r.text().catch(() => "");
-//     console.error(`[proxy] ${label} upstream not ok:`, r.status, text.slice(0, 500));
-//     // 에러 페이지가 HTML이면 그대로 전달해 주면 클라가 JSON 파싱을 시도하지 않게 됨
-//     return new NextResponse(text || "upstream error", {
-//       status: r.status,
-//       headers: { "content-type": r.headers.get("content-type") ?? "text/plain" },
-//     });
-//   }
-//   return null;
-// }
+  // 1차 요청: 리다이렉트 수동
+  let r = await fetch(u1.toString(), {
+    method: "POST",
+    cache: "no-store",
+    redirect: "manual",
+    headers: buildUpstreamHeaders(req),
+    body: bodyBuf,
+  });
 
-// export async function GET(req: Request) {
-//   const u1 = buildUpstreamUrl(req);
+  // 리다이렉트 체인 수동 추적 (쿠키 전파 + POST 유지)
+  r = await followRedirectsPreservingMethod(r, req, "POST", bodyBuf);
 
-//   let r = await fetch(u1.toString(), {
-//     method: "GET",
-//     cache: "no-store",
-//     redirect: "manual",
-//     headers: buildUpstreamHeaders(req),
-//   });
+  // 에러면 본문 일부를 그대로 전달(클라가 JSON 파싱 강요 안 받도록)
+  if (!r.ok) {
+    const text = await r.text().catch(() => "");
+    console.error("[proxy] POST upstream not ok:", r.status, text.slice(0, 500));
+    return new NextResponse(text || "upstream error", {
+      status: r.status,
+      headers: { "content-type": r.headers.get("content-type") ?? "text/plain" },
+    });
+  }
 
-//   if (r.status >= 300 && r.status < 400) {
-//     const loc = r.headers.get("location");
-//     if (loc) {
-//       const u2 = new URL(loc, UPSTREAM);
-//       if (u2.protocol === "http:") u2.protocol = "https:";
-//       u2.pathname = strip(u2.pathname);
-//       r = await fetch(u2.toString(), {
-//         method: "GET",
-//         cache: "no-store",
-//         redirect: "follow",
-//         headers: buildUpstreamHeaders(req),
-//       });
-//     }
-//   }
+  // 성공: 원본 스트림/상태/콘텐츠 타입 유지
+  // (Set-Cookie 등은 fetch가 단일화할 수 있어 원본을 그대로 append 못할 때가 있지만,
+  //  최소 content-type은 유지)
+  const outHeaders = new Headers();
+  outHeaders.set("content-type", r.headers.get("content-type") ?? "application/json");
+  // 가능하면 set-cookie도 전달(단일 헤더로 올 수 있음)
+  r.headers.forEach((v, k) => {
+    if (k.toLowerCase() === "set-cookie") outHeaders.append("set-cookie", v);
+  });
 
-//   const early = await dumpIfNotOk(r, "GET");
-//   if (early) return early;
-
-//   return new NextResponse(r.body, {
-//     status: r.status,
-//     headers: buildClientHeaders(r),
-//   });
-// }
-
-// export async function POST(req: Request) {
-//   console.log("[proxy] HIT POST", new Date().toISOString());
-//   const u1 = buildUpstreamUrl(req);
-//   const bodyText = await req.text();
-
-//   // 1차: 리다이렉트 수동 처리(POST→GET 변형 방지)
-//   let r = await fetch(u1.toString(), {
-//     method: "POST",
-//     cache: "no-store",
-//     redirect: "manual",
-//     headers: buildUpstreamHeaders(req),
-//     body: bodyText,
-//   });
-
-//   if (r.status >= 300 && r.status < 400) {
-//     const loc = r.headers.get("location");
-//     if (loc) {
-//       const u2 = new URL(loc, UPSTREAM);
-//       if (u2.protocol === "http:") u2.protocol = "https:";
-//       u2.pathname = strip(u2.pathname);
-//       // 2차: 같은 POST + 같은 바디로 재요청
-//       r = await fetch(u2.toString(), {
-//         method: "POST",
-//         cache: "no-store",
-//         redirect: "follow",
-//         headers: buildUpstreamHeaders(req),
-//         body: bodyText,
-//       });
-//     }
-//   }
-
-//   console.log("[proxy] POST upstream:", u1.toString());
-//   console.log("[proxy] req cookie:", req.headers.get("cookie") || "(none)");
-//   console.log("[proxy] body length:", bodyText.length);
-//   console.log("[proxy] upstream status:", r.status);
-//   console.log("[proxy] upstream set-cookie:", r.headers.get("set-cookie"));
-
-//   const early = await dumpIfNotOk(r, "POST");
-//   if (early) return early;
-
-//   return new NextResponse(r.body, {
-//     status: r.status,
-//     headers: buildClientHeaders(r),
-//   });
-// }
+  return new NextResponse(r.body, {
+    status: r.status,
+    headers: outHeaders,
+  });
+}
