@@ -258,16 +258,12 @@ export default function WalletContextProvider({
 
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) {
+      // 연결 끊김/초기화 시 마지막 키 리셋
       prevKeyRef.current = null;
       return;
     }
 
-    const nextKey = `${account.address.toLowerCase()}@${chainId}`;
-    const prevKey = prevKeyRef.current;
-    // 다음 비교를 위해 현재 키 업데이트
-    prevKeyRef.current = nextKey;
-
-    // 버튼 경로 인터랙티브 진행 중이면 자동 가드 스킵
+    // 버튼 경로에서 모달 진행 중이면 자동 가드 스킵
     if (
       typeof window !== "undefined" &&
       window.__CONSENT_INTERACTIVE_ACTIVE__
@@ -275,36 +271,48 @@ export default function WalletContextProvider({
       return;
     }
 
-    // 최초 연결(이전 키 없음)은 스킵 — 버튼 경로에서 이미 처리
+    const nextKey = `${account.address.toLowerCase()}@${chainId}`;
+    const prevKey = prevKeyRef.current;
+
+    // 다음 비교를 위해 현재 키 저장
+    prevKeyRef.current = nextKey;
+
+    // 중복 실행 방지
+    if (verifyingRef.current) return;
+
+    // 최초 감지(이전 키 없음): 새로고침/자동복구 등 버튼 경로가 아닌 진입
     if (!prevKey) {
+      verifyingRef.current = true;
       (async () => {
         try {
-          // 중복 실행 방지
-          if (verifyingRef.current) return;
-          verifyingRef.current = true;
-
-          // 1) 먼저 조용히 서버 체크(동의 있으면 그냥 유지)
-          const okSilent = await verifyConsentFlow({
+          // 1) 조용히 서버에 동의 확인
+          const r1 = await verifyConsentFlow({
             config,
             address: account.address as `0x${string}`,
             chainId,
             mode: "silent",
           });
-          if (okSilent) {
-            // 동의 이미 있음 → 모달 불필요
+
+          if (r1 === "already-consented") {
+            // 이미 동의 있음 → 그대로 유지
             return;
           }
 
-          // 2) 동의가 없으므로 모달 띄워서 즉시 검증
-          const okInteractive = await verifyConsentFlow({
+          // 2) 동의 없음 → 모달 띄워서 즉시 검증
+          const r2 = await verifyConsentFlow({
             config,
             address: account.address as `0x${string}`,
             chainId,
             mode: "interactive",
           });
 
-          // 3) 모달에서 서명 거부/닫기 → 즉시 끊기
-          if (!okInteractive && account.connector) {
+          if (r2 === "verified-now" || r2 === "already-consented") {
+            // 방금 서명 완료 or 서버상 이미 동의
+            return;
+          }
+
+          // 3) 취소/실패는 즉시 disconnect
+          if (account.connector) {
             await disconnect(config, { connector: account.connector });
           }
         } catch (err) {
@@ -319,28 +327,41 @@ export default function WalletContextProvider({
         }
       })();
 
-      // 이 분기에서는 이후 로직을 더 돌지 않게 return
-      return;
+      return; // 이 분기에서는 아래 변경 감지 로직을 타지 않음
     }
 
-    // 변경 없으면 스킵
+    // 주소/체인 변경이 없는 경우 스킵
     if (prevKey === nextKey) return;
 
-    // 중복 실행 방지
-    if (verifyingRef.current) return;
+    // 주소/체인 변경 발생 → 동의 확인 루틴
     verifyingRef.current = true;
-
     (async () => {
       try {
-        // 주소/체인 변경은 반드시 모달 띄워서 동의 확인
-        const ok = await verifyConsentFlow({
+        // 1) 먼저 silent 체크 (있으면 모달 없이 통과)
+        const r1 = await verifyConsentFlow({
+          config,
+          address: account.address as `0x${string}`,
+          chainId,
+          mode: "silent",
+        });
+        if (r1 === "already-consented") {
+          return;
+        }
+
+        // 2) 동의가 없으므로 모달 띄워서 즉시 검증
+        const r2 = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "interactive",
         });
 
-        if (!ok && account.connector) {
+        if (r2 === "verified-now" || r2 === "already-consented") {
+          return;
+        }
+
+        // 3) 모달 취소/실패 → disconnect
+        if (account.connector) {
           await disconnect(config, { connector: account.connector });
         }
       } catch (err) {

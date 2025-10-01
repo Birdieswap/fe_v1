@@ -18,6 +18,12 @@ import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
 
 export type VerifyConsentMode = "interactive" | "silent";
 
+export type VerifyConsentResult =
+  | "already-consented"   // 서버에 이미 동의 기록 있음
+  | "verified-now"        // 이번에 모달 열고 서명 & verify 성공
+  | "cancelled"           // 모달에서 닫기/거부
+  | "failed";             // 네트워크/서버 오류 등
+
 export type VerifyConsentParams = {
   config: any;                 // wagmi useConfig() 결과
   address: `0x${string}`;
@@ -63,7 +69,7 @@ function extractMessageAndNonceRaw(
   };
 }
 
-export async function verifyConsentFlow(params: VerifyConsentParams): Promise<boolean> {
+export async function verifyConsentFlow(params: VerifyConsentParams): Promise<VerifyConsentResult> {
   const {
     config,
     address,
@@ -75,34 +81,32 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
   const aborted = () => (typeof abortSignal === "function" ? abortSignal() : false);
 
   try {
-    // 조기 중단 체크 (시작)
-    if (aborted()) return false;
+    if (aborted()) return "cancelled";
 
     // 1) 서버 동의 상태 조회 (silent/interactive 공통)
     const resp = await apiCheck(address);
-    if (aborted()) return false;
+    if (aborted()) return "cancelled";
 
     if (resp?.response && resp?.result && resp?.userConsent) {
-      // 이미 동의 있음 → 끝
-      return true;
+      return "already-consented";
     }
 
-    // silent 모드면 여기서 바로 종료 (모달 미표시)
-    if (mode === "silent") return false;
+    // silent 모드면 모달 없이 여기서 종료
+    if (mode === "silent") return "cancelled";
 
-    // interactive: 모달 열기 직전에도 한 번 더 체크
-    if (aborted()) return false;
+    if (aborted()) return "cancelled";
 
+    // 2) 모달 열고 onConfirm에서 initiate → sign → verify 수행
     const confirmed = await openRiskConsentModal({
       onConfirm: async () => {
-        // onConfirm 들어와서도 한 번 체크
         if (aborted()) throw new Error("aborted");
 
-        // 2) initiate
+        // (a) initiate
         const init = await apiInitiate({ address, chainId, type: "initialConsent" });
         if (!init?.response || !init?.result) throw new Error("initiate_failed");
         if (aborted()) throw new Error("aborted");
 
+        // (b) payload 정규화
         const wire = init.EIP712Payload;
         const types = toRuntimeTypes((wire as any).types);
         const domain = {
@@ -114,7 +118,7 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
 
         if (aborted()) throw new Error("aborted");
 
-        // 3) 서명
+        // (c) 서명
         const signature = await signTypedData(config, {
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
@@ -122,7 +126,7 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
           message: messageNorm as unknown as Record<string, unknown>,
         });
 
-        // 4) 로컬 검증
+        // (d) 로컬 검증
         const ok = await verifyTypedData({
           address,
           domain: domain as TypedDataDomain,
@@ -135,7 +139,7 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
 
         if (aborted()) throw new Error("aborted");
 
-        // (선택) digest 비교
+        // (e) (선택) digest 비교
         const recomputed = hashTypedData({
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
@@ -143,16 +147,19 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
           message: messageNorm as unknown as Record<string, unknown>,
         });
         if (recomputed !== init.digest) {
-          console.warn("[verifyConsentFlow] digest mismatch", { recomputed, server: init.digest });
+          console.warn("[verifyConsentFlow] digest mismatch", {
+            recomputed,
+            serverDigest: init.digest,
+          });
         }
 
         if (aborted()) throw new Error("aborted");
 
-        // 5) 서버 verify
+        // (f) 서버 verify (nonce는 원본 타입 echo)
         const body: VerifyRequest = {
           address,
           chainId,
-          nonce: nonceRaw, // 원본 타입 echo
+          nonce: nonceRaw,
           type: (messageNorm as any).type,
           version: (messageNorm as any).version,
           signature,
@@ -165,7 +172,7 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
 
         if (aborted()) throw new Error("aborted");
 
-        // 6) 로컬 proof 저장
+        // (g) 로컬 proof 저장 (선택)
         const policyHash = await computePolicyHash(
           (messageNorm as any).statement,
           (messageNorm as any).version
@@ -192,14 +199,14 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<bo
       },
     });
 
-    // 모달 닫힘(취소) → false
-    return confirmed === true;
+    // 모달 닫힘/거부
+    if (!confirmed) return "cancelled";
+
+    // 여기까지 왔으면 이번에 서명 완료
+    return "verified-now";
   } catch (err) {
-    if ((err as Error)?.message === "aborted") {
-      // 프리엠션으로 중단된 케이스
-      return false;
-    }
+    if ((err as Error)?.message === "aborted") return "cancelled";
     console.error("[verifyConsentFlow] failed", err);
-    return false;
+    return "failed";
   }
 }

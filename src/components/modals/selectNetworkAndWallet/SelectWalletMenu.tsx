@@ -145,15 +145,16 @@ export function SelectWalletListBox(props: {
   async function handleConnect(connect: () => Promise<void>) {
     try {
       props.onClose(); // 팝오버 닫기
+
+      if (typeof window !== "undefined") {
+        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
+      }
+
       await new Promise((r) => setTimeout(r));
       await connect();
 
       const { address, status, connector } = getAccount(config);
       if (!address || status !== "connected") return;
-
-      if (typeof window !== "undefined") {
-        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
-      }
 
       // closed 모드면 미허용 즉시 차단
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
@@ -163,15 +164,14 @@ export function SelectWalletListBox(props: {
       }
 
       // 연결 직후 동의 플로우 (모달 표시)
-      const ok = await verifyConsentFlow({
+      const result = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "interactive",
       });
 
-      if (!ok && connector) {
-        // 동의 실패/취소 → 즉시 disconnect
+      if (result === "cancelled" || result === "failed") {
         await disconnect(config, { connector });
         return;
       }
