@@ -123,11 +123,11 @@ export function SelectWalletListBox(props: {
     try {
       props.onClose();
       await new Promise((r) => setTimeout(r, 0));
-      // 1) 먼저 connect 시도 — 여기서 '취소'면 reject 됩니다.
+
+      // 1) 먼저 connect 시도 — 여기서 '취소'면 reject
       try {
         await connect();
       } catch (err) {
-        // 사용자가 Metamask 연결 팝업에서 '취소'를 눌렀거나 연결 실패
         console.warn("[SelectWalletMenu] connect() cancelled or failed:", err);
         return;
       }
@@ -135,16 +135,15 @@ export function SelectWalletListBox(props: {
       // 2) 연결 성공 확인
       const { address, status, connector } = getAccount(config);
       if (!address || status !== "connected") {
-        // 연결이 최종 확정되지 않은 상태 — 모달 열지 않음
         return;
       }
 
-      // 3) 이제서야 버튼 경로 인터랙티브 락 ON (자동 가드 스킵 용도)
+      // 3) 버튼 경로 interactive 락
       if (typeof window !== "undefined") {
         (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
       }
 
-      // 4) 화이트리스트 정책(있는 경우)
+      // 4) 화이트리스트 정책 체크
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
         const provider = await connector
           ?.getProvider?.()
@@ -153,26 +152,41 @@ export function SelectWalletListBox(props: {
           config,
           connector,
           provider,
-          hardReloadOnInjected: false, // 버튼 경로: 새로고침 없이
+          hardReloadOnInjected: false,
         });
         openDenyWalletModal(address);
         return;
       }
 
-      // 5) 연결 '성공' 이후에만 모달 플로우 진입
+      // 5-a) 먼저 silent 확인
+      const silentResult = await verifyConsentFlow({
+        config,
+        address: address as `0x${string}`,
+        chainId,
+        mode: "silent",
+      });
+
+      if (silentResult === "already-consented") {
+        // 이미 동의 기록 있음 → 모달 없이 통과
+        props.onClose();
+        return;
+      }
+
+      // 5-b) 기록 없음 → interactive 모달
       const provider = await connector?.getProvider?.().catch(() => undefined);
-      const result = await verifyConsentFlow({
+      const interactiveResult = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "interactive",
       });
 
-      // 6) 결과 해석
-      const ok = result === "already-consented" || result === "verified-now";
+      const ok =
+        interactiveResult === "already-consented" ||
+        interactiveResult === "verified-now";
 
       if (!ok) {
-        // 사용자가 모달에서 닫음/거부/실패 → 즉시 해제 (새로고침 없이)
+        // 모달 거절/실패 → 즉시 disconnect
         await safeDisconnect({
           config,
           connector,
@@ -187,7 +201,6 @@ export function SelectWalletListBox(props: {
     } catch (e) {
       console.error("[SelectWalletMenu] handleConnect error:", e);
     } finally {
-      // 8) 락 해제 (성공/실패/취소 모두)
       if (typeof window !== "undefined") {
         (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = false;
       }
