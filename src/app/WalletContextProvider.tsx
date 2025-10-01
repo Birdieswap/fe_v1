@@ -276,7 +276,52 @@ export default function WalletContextProvider({
     }
 
     // 최초 연결(이전 키 없음)은 스킵 — 버튼 경로에서 이미 처리
-    if (!prevKey) return;
+    if (!prevKey) {
+      (async () => {
+        try {
+          // 중복 실행 방지
+          if (verifyingRef.current) return;
+          verifyingRef.current = true;
+
+          // 1) 먼저 조용히 서버 체크(동의 있으면 그냥 유지)
+          const okSilent = await verifyConsentFlow({
+            config,
+            address: account.address as `0x${string}`,
+            chainId,
+            mode: "silent",
+          });
+          if (okSilent) {
+            // 동의 이미 있음 → 모달 불필요
+            return;
+          }
+
+          // 2) 동의가 없으므로 모달 띄워서 즉시 검증
+          const okInteractive = await verifyConsentFlow({
+            config,
+            address: account.address as `0x${string}`,
+            chainId,
+            mode: "interactive",
+          });
+
+          // 3) 모달에서 서명 거부/닫기 → 즉시 끊기
+          if (!okInteractive && account.connector) {
+            await disconnect(config, { connector: account.connector });
+          }
+        } catch (err) {
+          console.error("[WalletContext] auto-connect first guard error:", err);
+          if (account.connector) {
+            try {
+              await disconnect(config, { connector: account.connector });
+            } catch {}
+          }
+        } finally {
+          verifyingRef.current = false;
+        }
+      })();
+
+      // 이 분기에서는 이후 로직을 더 돌지 않게 return
+      return;
+    }
 
     // 변경 없으면 스킵
     if (prevKey === nextKey) return;
