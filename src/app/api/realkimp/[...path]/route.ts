@@ -165,55 +165,55 @@ export async function OPTIONS(req: Request) {
   return new NextResponse(null, { status: 204, headers });
 }
 
-// POST 프록시 (GET은 유지)
-export async function POST(req: Request) {
-  // 경로 구성(기존 GET 로직과 동일 규칙)
-  const url = new URL(req.url);
-  const base = "/api/realkimp/";
-  const idx = url.pathname.indexOf(base);
-  const tail = idx >= 0 ? url.pathname.slice(idx + base.length) : "";
-  const endpoint = strip(tail);
-  const u1 = new URL(`${UPSTREAM}/${endpoint}`);
-  u1.search = url.search;
+// // POST 프록시 (GET은 유지)
+// export async function POST(req: Request) {
+//   // 경로 구성(기존 GET 로직과 동일 규칙)
+//   const url = new URL(req.url);
+//   const base = "/api/realkimp/";
+//   const idx = url.pathname.indexOf(base);
+//   const tail = idx >= 0 ? url.pathname.slice(idx + base.length) : "";
+//   const endpoint = strip(tail);
+//   const u1 = new URL(`${UPSTREAM}/${endpoint}`);
+//   u1.search = url.search;
 
-  // 본문: 어떤 타입이든 안전하게 전달
-  const ab = await req.arrayBuffer();
-  const bodyBuf: BodyInit | null = ab.byteLength ? new Uint8Array(ab) : null;
+//   // 본문: 어떤 타입이든 안전하게 전달
+//   const ab = await req.arrayBuffer();
+//   const bodyBuf: BodyInit | null = ab.byteLength ? new Uint8Array(ab) : null;
 
-  // 1차 요청: 리다이렉트 수동
-  let r = await fetch(u1.toString(), {
-    method: "POST",
-    cache: "no-store",
-    redirect: "manual",
-    headers: buildUpstreamHeaders(req),
-    body: bodyBuf,
-  });
+//   // 1차 요청: 리다이렉트 수동
+//   let r = await fetch(u1.toString(), {
+//     method: "POST",
+//     cache: "no-store",
+//     redirect: "manual",
+//     headers: buildUpstreamHeaders(req),
+//     body: bodyBuf,
+//   });
 
-  // 리다이렉트 체인 수동 추적 (쿠키 전파 + POST 유지)
-  r = await followRedirectsPreservingMethod(r, req, "POST", bodyBuf);
+//   // 리다이렉트 체인 수동 추적 (쿠키 전파 + POST 유지)
+//   r = await followRedirectsPreservingMethod(r, req, "POST", bodyBuf);
 
-  // 에러면 본문 일부를 그대로 전달(클라가 JSON 파싱 강요 안 받도록)
-  if (!r.ok) {
-    const text = await r.text().catch(() => "");
-    console.error("[proxy] POST upstream not ok:", r.status, text.slice(0, 500));
-    return new NextResponse(text || "upstream error", {
-      status: r.status,
-      headers: { "content-type": r.headers.get("content-type") ?? "text/plain" },
-    });
-  }
+//   // 에러면 본문 일부를 그대로 전달(클라가 JSON 파싱 강요 안 받도록)
+//   if (!r.ok) {
+//     const text = await r.text().catch(() => "");
+//     console.error("[proxy] POST upstream not ok:", r.status, text.slice(0, 500));
+//     return new NextResponse(text || "upstream error", {
+//       status: r.status,
+//       headers: { "content-type": r.headers.get("content-type") ?? "text/plain" },
+//     });
+//   }
 
-  // 성공: 원본 스트림/상태/콘텐츠 타입 유지
-  // (Set-Cookie 등은 fetch가 단일화할 수 있어 원본을 그대로 append 못할 때가 있지만,
-  //  최소 content-type은 유지)
-  const outHeaders = new Headers();
-  outHeaders.set("content-type", r.headers.get("content-type") ?? "application/json");
-  // 가능하면 set-cookie도 전달(단일 헤더로 올 수 있음)
-  r.headers.forEach((v, k) => {
-    if (k.toLowerCase() === "set-cookie") outHeaders.append("set-cookie", v);
-  });
+//   // 성공: 원본 스트림/상태/콘텐츠 타입 유지
+//   // (Set-Cookie 등은 fetch가 단일화할 수 있어 원본을 그대로 append 못할 때가 있지만,
+//   //  최소 content-type은 유지)
+//   const outHeaders = new Headers();
+//   outHeaders.set("content-type", r.headers.get("content-type") ?? "application/json");
+//   // 가능하면 set-cookie도 전달(단일 헤더로 올 수 있음)
+//   r.headers.forEach((v, k) => {
+//     if (k.toLowerCase() === "set-cookie") outHeaders.append("set-cookie", v);
+//   });
 
-  return new NextResponse(r.body, {
-    status: r.status,
-    headers: outHeaders,
-  });
-}
+//   return new NextResponse(r.body, {
+//     status: r.status,
+//     headers: outHeaders,
+//   });
+// }
