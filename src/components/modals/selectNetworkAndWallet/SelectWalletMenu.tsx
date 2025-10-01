@@ -57,179 +57,13 @@ import {
   type TypedDataDomain,
   type Hex,
 } from "viem";
+import { verifyConsentFlow } from "@/utils/wallet/verifyConsentFlow";
 
-type StrictConsentDomain = {
-  name: string;
-  version: string;
-  chainId: bigint;
-};
-
-function toRuntimeTypes(
-  wireTypes: any
-): Record<string, { name: string; type: string }[]> {
-  const mapArr = (a: any[] | readonly any[]) =>
-    Array.from(a ?? []).map((f: any) => ({
-      name: String(f.name),
-      type: String(f.type),
-    }));
-  return {
-    EIP712Domain: mapArr(wireTypes?.EIP712Domain),
-    Consent: mapArr(wireTypes?.Consent),
-  };
-}
-
-function equalsTypes(a: any, b: any): boolean {
-  try {
-    const norm = (x: any) =>
-      JSON.stringify(
-        Object.fromEntries(
-          Object.entries(x).map(([k, v]: any) => [
-            k,
-            v.map((f: any) => ({ name: f.name, type: f.type })),
-          ])
-        )
-      );
-    return norm(a) === norm(b);
-  } catch {
-    return false;
+declare global {
+  interface Window {
+    __CONSENT_INTERACTIVE_ACTIVE__?: boolean;
   }
 }
-
-async function checkServerConsent(address: string): Promise<boolean> {
-  try {
-    const resp = await apiCheck(address);
-    console.log("selectWalletMenu handleConnect check", resp);
-
-    return (
-      resp?.response === true && resp?.result === true && !!resp?.userConsent
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function startInitiate(address: `0x${string}`, chainId: number) {
-  const init = await apiInitiate({ address, chainId, type: "initialConsent" });
-  if (!init?.response || !init?.result) throw new Error("initiate_failed");
-
-  const wire = init.EIP712Payload;
-  const typesForSign = toRuntimeTypes(wire.types);
-
-  const msgWire = (wire as any).message?.Consent
-    ? (wire as any).message.Consent
-    : wire.message;
-
-  // ★ 원본 nonce 타입/값 보관 (string일 수도, number일 수도 있음)
-  const nonceRaw = msgWire.nonce as number | string;
-
-  const domain = {
-    name: String(wire.domain?.name ?? ""),
-    version: String(wire.domain?.version ?? ""),
-    chainId: BigInt(wire.domain!.chainId as any),
-  };
-
-  // 서명/검증용 message는 bigint로 정규화
-  const msgNorm = { ...msgWire, nonce: BigInt(msgWire.nonce) } as const;
-
-  const payload = {
-    types: typesForSign,
-    domain,
-    primaryType: "Consent",
-    message: msgNorm,
-  } as const;
-
-  // (선택) 로컬 해시 확인 – 서버 typesForSign 사용
-  const localDigest = hashTypedData({
-    domain: domain as TypedDataDomain,
-    types: typesForSign as unknown as TypedData,
-    primaryType: "Consent",
-    message: msgNorm as unknown as Record<string, unknown>,
-  });
-  if (localDigest !== init.digest) {
-    console.warn("[consent] localDigest != server digest", {
-      localDigest,
-      server: init.digest,
-    });
-  }
-
-  return {
-    payload,
-    domain,
-    digest: init.digest as `0x${string}`,
-    typesForSign,
-    addressParam: address, // Initiate 때 쓴 주소 문자열 그대로
-    chainIdParam: chainId, // Initiate 때 쓴 체인ID 그대로
-    nonceRaw, // ★ 여기에 담아서 돌려줌
-    rawWire: wire,
-  } as const;
-}
-
-/* -------------------------------------------------------------
- *  Client sign + local verify (EOA 기준)
- * ----------------------------------------------------------- */
-async function doClientSignAndVerify(params: {
-  config: ReturnType<typeof useConfig>;
-  address: `0x${string}`;
-  domain: { name: string; version: string; chainId: bigint };
-  message: { [k: string]: unknown };
-  typesForSign: Record<string, { name: string; type: string }[]>;
-}) {
-  const { config, address, domain, message, typesForSign } = params;
-
-  const d = domain as TypedDataDomain;
-  const t = typesForSign as unknown as TypedData;
-  const m = message as unknown as Record<string, unknown>;
-
-  const signature = await signTypedData(config, {
-    domain: d,
-    types: t,
-    primaryType: "Consent",
-    message: m,
-  });
-
-  const ok = await verifyTypedData({
-    address,
-    domain: d,
-    types: t,
-    primaryType: "Consent",
-    message: m,
-    signature,
-  });
-  if (!ok) throw new Error("client_verify_failed");
-  return signature as `0x${string}`;
-}
-
-async function runHandlersSafely(handlers: any): Promise<any | null> {
-  if (!handlers) return null;
-
-  if (typeof handlers.prepare === "function") {
-    await handlers.prepare();
-  }
-
-  let result: any = null;
-
-  if (typeof handlers.executeAll === "function") {
-    result = await handlers.executeAll();
-  } else if (typeof handlers.execute === "function") {
-    result = await handlers.execute();
-  } else if (typeof handlers.run === "function") {
-    result = await handlers.run();
-  } else if (Array.isArray(handlers.transactions)) {
-    // transactions 배열 형태라면 순차 실행(첫 반환값을 result에 담음)
-    for (const t of handlers.transactions) {
-      if (typeof t === "function") {
-        const r = await t();
-        if (result == null) result = r;
-      } else {
-        // transaction 아이템이 객체/설정이면, 그에 맞는 실행 로직 필요 (프로젝트에 맞게 확장)
-      }
-    }
-  }
-
-  // 반환값이 없을 수 있으니 null 허용
-  return result ?? null;
-}
-
 export function WalletIcon({
   provider,
   size,
@@ -259,10 +93,10 @@ export function SelectWalletListBox(props: {
   providers: WalletProviderInfo[];
   onClose: () => void;
 }) {
-  // ⭐ 사용 가능한 지갑만 필터링
+  // 사용 가능한 지갑만 필터링
   //const availableWalletKeys = useMemo(() => getAvailableWalletKeys(), []);
 
-  // 🔥 실제 등록된 Connector 동적 감지
+  // 실제 등록된 Connector 동적 감지
   const chainId = useChainId();
   const config = useConfig();
 
@@ -285,7 +119,7 @@ export function SelectWalletListBox(props: {
       availableWallets.includes(provider.key as any)
     );
 
-    // 🔥 디버깅 로그 추가
+    // 디버깅 로그 추가
     console.log("=== 필터링 디버그 ===");
     console.log("Available Keys:", availableWallets);
     console.log(
@@ -314,175 +148,42 @@ export function SelectWalletListBox(props: {
       await new Promise((r) => setTimeout(r));
       await connect();
 
-      const {
-        address,
-        status,
-        connector: activeConnector,
-      } = getAccount(config);
+      const { address, status, connector } = getAccount(config);
       if (!address || status !== "connected") return;
+
+      if (typeof window !== "undefined") {
+        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
+      }
 
       // closed 모드면 미허용 즉시 차단
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
-        await disconnect(config, { connector: activeConnector });
+        await disconnect(config, { connector });
         openDenyWalletModal(address);
         return;
       }
 
-      // 1) 서버 동의 상태 조회
-      let hasConsent = await checkServerConsent(address);
-      console.log("[consent] hasConsent (server):", hasConsent);
+      // 연결 직후 동의 플로우 (모달 표시)
+      const ok = await verifyConsentFlow({
+        config,
+        address: address as `0x${string}`,
+        chainId,
+        mode: "interactive",
+      });
 
-      // 2) 동의 없으면 Initiate → 모달 → 서명 → Verify
-      if (!hasConsent) {
-        let payload: NormalizedEIP712Payload | null = null;
-        let domain: StrictConsentDomain | null = null;
-        let digest: `0x${string}` | null = null;
-
-        try {
-          // ★ startInitiate는 다음을 반드시 반환해야 함:
-          // { payload, domain, digest, typesForSign, addressParam, chainIdParam, nonceRaw, rawWire }
-          const init = await startInitiate(address, chainId);
-
-          payload = init.payload;
-          domain = init.domain as StrictConsentDomain;
-          digest = init.digest;
-
-          const typesForSign = init.typesForSign; // 서버 types를 런타임용으로 변환한 것
-          const rawWire = init.rawWire; // ★ 서버 원본 EIP712Payload (echo 용)
-          const nonceRaw = init.nonceRaw; // ★ 원본 nonce (number|string)
-          const address0 = init.addressParam; // Initiate에 보낸 address 그대로
-          const chainId0 = init.chainIdParam; // Initiate에 보낸 chainId 그대로
-
-          const ok =
-            (await openRiskConsentModal({
-              onConfirm: async () => {
-                // (a) 클라 서명 + 로컬 검증 (EOA)
-                const signature = await doClientSignAndVerify({
-                  config,
-                  address, // 현재 월렛 주소
-                  domain: domain!,
-                  message: payload!.message,
-                  typesForSign, // 서버 types
-                });
-
-                // (b) (디버그) 로컬 재해시 — 서버 digest와 일치해야 정상
-                const recomputed = hashTypedData({
-                  domain: domain! as TypedDataDomain,
-                  types: typesForSign as unknown as TypedData,
-                  primaryType: "Consent",
-                  message: payload!.message as unknown as Record<
-                    string,
-                    unknown
-                  >,
-                });
-                if (recomputed !== digest) {
-                  console.warn("[consent] digest mismatch", {
-                    recomputed,
-                    serverDigest: digest,
-                  });
-                }
-
-                // (c) Verify 바디 — 서버가 재계산 가능한 재료를 '원본 그대로' echo
-                //    ※ rawWire.message가 { Consent: {...} } 형태면 그 형태 그대로 유지
-                const body: VerifyRequest = {
-                  // ---- echo: 서버가 재계산 가능한 전체 컨텍스트 제공 ----
-                  // EIP712Payload: rawWire, // ← startInitiate가 돌려준 서버 원본 그대로
-
-                  // ---- 서버가 키 매칭/로깅 등에 참고할 수 있는 필드 ----
-                  address: address0, // Initiate 때 보낸 address 그대로
-                  chainId: chainId0, // Initiate 때 보낸 chainId 그대로
-                  nonce: nonceRaw, // 원본 타입 유지 (number|string)
-                  type: payload!.message.type,
-                  version: payload!.message.version,
-
-                  // ---- 서명/다이제스트 ----
-                  signature,
-                  digest: digest!, // 서버가 Initiate에서 준 digest 그대로
-                };
-
-                console.log("[consent] verify body (final)", body, {
-                  typeofNonce: typeof body.nonce,
-                });
-
-                // (d) 서버 Verify 호출
-                let verified = false;
-                try {
-                  const v = await apiVerify(body);
-                  console.log("[consent] verify response:", v);
-                  if (!v?.response || !v?.result) {
-                    console.error(
-                      "[consent] server verify rejected:",
-                      v?.message
-                    );
-                    throw new Error(v?.message || "server_verify_failed");
-                  }
-                  verified = true;
-                } catch (e) {
-                  console.error("[consent] verify POST failed:", e);
-                }
-
-                // (e) 성공 시 로컬 프루프 저장(선택)
-                if (verified) {
-                  const policyHash = await computePolicyHash(
-                    payload!.message.statement,
-                    payload!.message.version
-                  );
-                  await saveLocalProof({
-                    address: address.toLowerCase() as `0x${string}`,
-                    chainId: Number(domain!.chainId),
-                    version: payload!.message.version,
-                    policyHash,
-                    payload: payload!,
-                    digest: digest!, // 서버 digest 저장
-                    signature,
-                    createdAt: Date.now(),
-                    offlineUntil: Date.now() + 10 * 60 * 1000,
-                  });
-                } else {
-                  // 실패 시 모달 resolve(false)로 처리하게 throw
-                  throw new Error("verify_failed");
-                }
-              },
-            })) === true;
-
-          if (!ok) {
-            // 사용자 취소/실패 → 아래 fallback 판단으로 이동
-            throw new Error("user_declined_or_failed");
-          }
-
-          hasConsent = true; // 여기까지 오면 성공
-        } catch (err) {
-          console.error("[consent] initiate/modal/sign/verify error:", err);
-
-          // 3) 서버 실패 시 로컬 프루프 fallback (선택)
-          try {
-            if (payload && domain) {
-              const local = await findValidLocalProof({
-                address,
-                chainId: Number(domain.chainId),
-                statement: payload.message.statement,
-                version: payload.message.version,
-              });
-              if (local) {
-                hasConsent = true;
-              }
-            }
-          } catch (e) {
-            console.error("[consent] local proof check error:", e);
-          }
-
-          if (!hasConsent) {
-            await disconnect(config, { connector: activeConnector });
-            return;
-          }
-        }
+      if (!ok && connector) {
+        // 동의 실패/취소 → 즉시 disconnect
+        await disconnect(config, { connector });
+        return;
       }
 
-      // 3) 최종 통과
       props.onClose();
     } catch (e) {
       console.error("[SelectWalletMenu] handleConnect error:", e);
-      return;
+    } finally {
+      // (C) 인터랙티브 락 OFF (성공/실패 모두)
+      if (typeof window !== "undefined") {
+        window.__CONSENT_INTERACTIVE_ACTIVE__ = false;
+      }
     }
   }
   //===================삭제부=========================

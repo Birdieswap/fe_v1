@@ -71,6 +71,11 @@ export default function RiskConsentModalHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [onConfirm, setOnConfirm] = useState<OnConfirm | null>(null);
 
+  useEffect(() => {
+    (window as any).__RISK_HOST_MOUNTED__ = true;
+    console.log("[RiskModal] mounted");
+  }, []);
+
   const [resolver, setResolver] = useState<Resolver | null>(null);
   const resolvedRef = useRef(false);
 
@@ -86,6 +91,7 @@ export default function RiskConsentModalHost() {
 
   useEffect(() => {
     const open = (e: Event) => {
+      console.log("[RiskModal] OPEN event received", e);
       const ce = e as OpenEvent;
       const detail = ce?.detail;
       if (!detail || typeof detail.resolve !== "function") {
@@ -99,7 +105,10 @@ export default function RiskConsentModalHost() {
       setIsOpen(true);
     };
 
-    const close = () => safeResolveAndReset(false);
+    const close = () => {
+      console.log("[RiskModal] CLOSE event received");
+      safeResolveAndReset(false);
+    };
 
     window.addEventListener(OPEN_RISK_CONSENT_EVENT, open as EventListener);
     window.addEventListener(CLOSE_RISK_CONSENT_EVENT, close as EventListener);
@@ -123,6 +132,9 @@ export default function RiskConsentModalHost() {
         closeButton: "w-9 h-9 text-foreground", // ★ 크기/색
       }}
       isOpen={isOpen}
+      motionProps={{}}
+      // ★ 추가: 최상단 보장
+      className="!z-[9999]"
       onOpenChange={(open) => {
         if (!open) safeResolveAndReset(false);
       }}

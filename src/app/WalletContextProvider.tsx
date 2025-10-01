@@ -23,6 +23,13 @@ import {
   type TypedData,
   type TypedDataDomain,
 } from "viem";
+import { verifyConsentFlow } from "@/utils/wallet/verifyConsentFlow";
+
+declare global {
+  interface Window {
+    __CONSENT_INTERACTIVE_ACTIVE__?: boolean; // 버튼 경로 인터랙티브 락
+  }
+}
 
 export type WalletContextType = {
   selectedProvider?: WalletProviderInfo;
@@ -245,162 +252,54 @@ export default function WalletContextProvider({
     return network;
   }, [chainId]);
 
-  function toRuntimeTypes(
-    wireTypes: any
-  ): Record<string, { name: string; type: string }[]> {
-    const mapArr = (a: any[] | readonly any[]) =>
-      Array.from(a ?? []).map((f: any) => ({
-        name: String(f.name),
-        type: String(f.type),
-      }));
-    return {
-      EIP712Domain: mapArr(wireTypes?.EIP712Domain),
-      Consent: mapArr(wireTypes?.Consent),
-    };
-  }
-
-  // chainId → bigint
-  function toBigIntChainId(v: string | number | bigint): bigint {
-    if (typeof v === "bigint") return v;
-    if (typeof v === "number") return BigInt(v);
-    return BigInt(v); // "1" 또는 "0x1"
-  }
-
-  // payload.message 에서 nonce 원본 타입 보존 + bigint 정규화
-  function extractMessageAndNonceRaw(wireMessage: any) {
-    if (wireMessage?.Consent) {
-      const inner = wireMessage.Consent as { nonce: string | number } & Record<
-        string,
-        any
-      >;
-      return {
-        messageNorm: { ...inner, nonce: BigInt(inner.nonce) },
-        nonceRaw: inner.nonce,
-      };
-    }
-    const m = wireMessage as Record<string, any>;
-    const nonceAny = m?.nonce;
-    return {
-      messageNorm: {
-        ...m,
-        nonce: typeof nonceAny === "bigint" ? nonceAny : BigInt(nonceAny),
-      },
-      nonceRaw: typeof nonceAny === "bigint" ? nonceAny.toString() : nonceAny,
-    };
-  }
-
-  // 중복 트리거/루프 방지
-  const lastKeyRef = useRef<string | null>(null);
+  // ===== 동의 가드: 주소/체인 변경 시 자동 체크 =====
+  const prevKeyRef = useRef<string | null>(null);
   const verifyingRef = useRef(false);
 
   useEffect(() => {
-    if (!account.isConnected || !account.address || !chainId) return;
+    if (!account.isConnected || !account.address || !chainId) {
+      prevKeyRef.current = null;
+      return;
+    }
 
-    const key = `${account.address.toLowerCase()}@${chainId}`;
-    if (lastKeyRef.current === key) return;
+    const nextKey = `${account.address.toLowerCase()}@${chainId}`;
+    const prevKey = prevKeyRef.current;
+    // 다음 비교를 위해 현재 키 업데이트
+    prevKeyRef.current = nextKey;
+
+    // 버튼 경로 인터랙티브 진행 중이면 자동 가드 스킵
+    if (
+      typeof window !== "undefined" &&
+      window.__CONSENT_INTERACTIVE_ACTIVE__
+    ) {
+      return;
+    }
+
+    // 최초 연결(이전 키 없음)은 스킵 — 버튼 경로에서 이미 처리
+    if (!prevKey) return;
+
+    // 변경 없으면 스킵
+    if (prevKey === nextKey) return;
+
+    // 중복 실행 방지
     if (verifyingRef.current) return;
-
     verifyingRef.current = true;
 
     (async () => {
       try {
-        // 1) 서버 동의 체크
-        const resp = await apiCheck(account.address!);
-        const hasConsent =
-          resp?.response === true &&
-          resp?.result === true &&
-          !!resp?.userConsent;
-
-        if (hasConsent) {
-          lastKeyRef.current = key;
-          return;
-        }
-
-        // 2) 동의 없음 → 모달 띄우고 onConfirm 안에서 initiate/sign/verify
-        const confirmed = await openRiskConsentModal({
-          onConfirm: async () => {
-            // (a) initiate
-            const init = await apiInitiate({
-              address: account.address as `0x${string}`,
-              chainId,
-              type: "initialConsent",
-            });
-            if (!init?.response || !init?.result) {
-              throw new Error("initiate_failed");
-            }
-
-            // (b) 정규화
-            const wire = init.EIP712Payload;
-            const runtimeTypes = toRuntimeTypes((wire as any).types);
-            const domain = {
-              name: String((wire as any).domain?.name ?? ""),
-              version: String((wire as any).domain?.version ?? ""),
-              chainId: toBigIntChainId((wire as any).domain?.chainId),
-            };
-            const { messageNorm, nonceRaw } = extractMessageAndNonceRaw(
-              (wire as any).message
-            );
-
-            // (c) 서명
-            const signature = await signTypedData(config, {
-              domain: domain as TypedDataDomain,
-              types: runtimeTypes as unknown as TypedData,
-              primaryType: "Consent",
-              message: messageNorm as unknown as Record<string, unknown>,
-            });
-
-            // (d) 로컬 검증
-            const ok = await verifyTypedData({
-              address: account.address as `0x${string}`,
-              domain: domain as TypedDataDomain,
-              types: runtimeTypes as unknown as TypedData,
-              primaryType: "Consent",
-              message: messageNorm as unknown as Record<string, unknown>,
-              signature,
-            });
-            if (!ok) throw new Error("client_verify_failed");
-
-            // (e) (선택) digest 확인
-            const recomputed = hashTypedData({
-              domain: domain as TypedDataDomain,
-              types: runtimeTypes as unknown as TypedData,
-              primaryType: "Consent",
-              message: messageNorm as unknown as Record<string, unknown>,
-            });
-            if (recomputed !== init.digest) {
-              console.warn("[WalletContext] digest mismatch", {
-                recomputed,
-                serverDigest: init.digest,
-              });
-            }
-
-            // (f) 서버 verify (nonce는 원본 타입 echo)
-            const v = await apiVerify({
-              address: account.address as `0x${string}`,
-              chainId,
-              nonce: nonceRaw,
-              type: (messageNorm as any).type,
-              version: (messageNorm as any).version,
-              signature,
-              digest: init.digest,
-            });
-            if (!v?.response || !v?.result) {
-              throw new Error(v?.message || "server_verify_failed");
-            }
-          },
+        // 주소/체인 변경은 반드시 모달 띄워서 동의 확인
+        const ok = await verifyConsentFlow({
+          config,
+          address: account.address as `0x${string}`,
+          chainId,
+          mode: "interactive",
         });
 
-        if (confirmed) {
-          lastKeyRef.current = key; // 성공 → 더 이상 재시도 안 함
-        } else {
-          // 사용자가 닫거나 서명 거부 → 즉시 disconnect
-          if (account.connector) {
-            await disconnect(config, { connector: account.connector });
-          }
+        if (!ok && account.connector) {
+          await disconnect(config, { connector: account.connector });
         }
       } catch (err) {
-        console.error("[WalletContext] consent guard error:", err);
-        // 에러 시 사용자 보호를 위해 연결 해제
+        console.error("[WalletContext] address-change guard error:", err);
         if (account.connector) {
           try {
             await disconnect(config, { connector: account.connector });
