@@ -352,28 +352,35 @@ export default function WalletContextProvider({
 
     (async () => {
       try {
-        const okSilent = await verifyConsentFlow({
+        const silentResult = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "silent",
         });
+
+        const okSilent = silentResult === "already-consented";
+
         if (okSilent) {
           prevKeyRef.current = currentKey;
-          clearSoftBlock(); // ← 추가(성공)
+          clearSoftBlock();
           return;
         }
 
-        const okInteractive = await verifyConsentFlow({
+        const interactiveResult = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "interactive",
         });
 
+        const okInteractive =
+          interactiveResult === "already-consented" ||
+          interactiveResult === "verified-now";
+
         if (okInteractive) {
           prevKeyRef.current = currentKey;
-          clearSoftBlock(); // ← 추가(성공)
+          clearSoftBlock();
         } else {
           const provider = await account.connector
             ?.getProvider?.()
