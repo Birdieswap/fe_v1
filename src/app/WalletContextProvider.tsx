@@ -1,13 +1,28 @@
 "use client";
 
-import { createContext, useMemo, useState, useEffect } from "react";
-import { Config, useAccount, UseAccountReturnType, useChainId } from "wagmi";
+import { createContext, useMemo, useState, useEffect, useRef } from "react";
+import {
+  Config,
+  useAccount,
+  UseAccountReturnType,
+  useChainId,
+  useConfig,
+} from "wagmi";
 
 import { WalletProviderInfo } from "@/types/WalletProviderInfo";
 import { NetworkInfo } from "@/types/NetworkInfo";
 import { walletProviders } from "@/const/wallets";
 import { useReferral } from "./ReferralContextProvider";
 import useAccountWalletData from "@/hooks/wallet/useAccountWalletData";
+import { disconnect, signTypedData } from "wagmi/actions";
+import { apiCheck, apiInitiate, apiVerify } from "@/utils/wallet/consentApi";
+import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
+import {
+  hashTypedData,
+  verifyTypedData,
+  type TypedData,
+  type TypedDataDomain,
+} from "viem";
 
 export type WalletContextType = {
   selectedProvider?: WalletProviderInfo;
@@ -101,6 +116,9 @@ export default function WalletContextProvider({
   const [isNetworkModalOpen, setIsNetworkModalOpen] = useState<boolean>(false);
 
   const account = useAccount();
+  const chainId = useChainId();
+  const config = useConfig();
+
   const { referralAddress, setReferralAddress } = useReferral();
   const walletData = useAccountWalletData(
     (account?.address as `0x${string}`) || undefined
@@ -214,8 +232,6 @@ export default function WalletContextProvider({
     };
   }, [account?.connector]);
 
-  const chainId = useChainId();
-
   const selectedNetwork = useMemo(() => {
     const network = networks.find((network) => network.id === chainId);
 
@@ -228,6 +244,179 @@ export default function WalletContextProvider({
 
     return network;
   }, [chainId]);
+
+  function toRuntimeTypes(
+    wireTypes: any
+  ): Record<string, { name: string; type: string }[]> {
+    const mapArr = (a: any[] | readonly any[]) =>
+      Array.from(a ?? []).map((f: any) => ({
+        name: String(f.name),
+        type: String(f.type),
+      }));
+    return {
+      EIP712Domain: mapArr(wireTypes?.EIP712Domain),
+      Consent: mapArr(wireTypes?.Consent),
+    };
+  }
+
+  // chainId → bigint
+  function toBigIntChainId(v: string | number | bigint): bigint {
+    if (typeof v === "bigint") return v;
+    if (typeof v === "number") return BigInt(v);
+    return BigInt(v); // "1" 또는 "0x1"
+  }
+
+  // payload.message 에서 nonce 원본 타입 보존 + bigint 정규화
+  function extractMessageAndNonceRaw(wireMessage: any) {
+    if (wireMessage?.Consent) {
+      const inner = wireMessage.Consent as { nonce: string | number } & Record<
+        string,
+        any
+      >;
+      return {
+        messageNorm: { ...inner, nonce: BigInt(inner.nonce) },
+        nonceRaw: inner.nonce,
+      };
+    }
+    const m = wireMessage as Record<string, any>;
+    const nonceAny = m?.nonce;
+    return {
+      messageNorm: {
+        ...m,
+        nonce: typeof nonceAny === "bigint" ? nonceAny : BigInt(nonceAny),
+      },
+      nonceRaw: typeof nonceAny === "bigint" ? nonceAny.toString() : nonceAny,
+    };
+  }
+
+  // 중복 트리거/루프 방지
+  const lastKeyRef = useRef<string | null>(null);
+  const verifyingRef = useRef(false);
+
+  useEffect(() => {
+    if (!account.isConnected || !account.address || !chainId) return;
+
+    const key = `${account.address.toLowerCase()}@${chainId}`;
+    if (lastKeyRef.current === key) return;
+    if (verifyingRef.current) return;
+
+    verifyingRef.current = true;
+
+    (async () => {
+      try {
+        // 1) 서버 동의 체크
+        const resp = await apiCheck(account.address!);
+        const hasConsent =
+          resp?.response === true &&
+          resp?.result === true &&
+          !!resp?.userConsent;
+
+        if (hasConsent) {
+          lastKeyRef.current = key;
+          return;
+        }
+
+        // 2) 동의 없음 → 모달 띄우고 onConfirm 안에서 initiate/sign/verify
+        const confirmed = await openRiskConsentModal({
+          onConfirm: async () => {
+            // (a) initiate
+            const init = await apiInitiate({
+              address: account.address as `0x${string}`,
+              chainId,
+              type: "initialConsent",
+            });
+            if (!init?.response || !init?.result) {
+              throw new Error("initiate_failed");
+            }
+
+            // (b) 정규화
+            const wire = init.EIP712Payload;
+            const runtimeTypes = toRuntimeTypes((wire as any).types);
+            const domain = {
+              name: String((wire as any).domain?.name ?? ""),
+              version: String((wire as any).domain?.version ?? ""),
+              chainId: toBigIntChainId((wire as any).domain?.chainId),
+            };
+            const { messageNorm, nonceRaw } = extractMessageAndNonceRaw(
+              (wire as any).message
+            );
+
+            // (c) 서명
+            const signature = await signTypedData(config, {
+              domain: domain as TypedDataDomain,
+              types: runtimeTypes as unknown as TypedData,
+              primaryType: "Consent",
+              message: messageNorm as unknown as Record<string, unknown>,
+            });
+
+            // (d) 로컬 검증
+            const ok = await verifyTypedData({
+              address: account.address as `0x${string}`,
+              domain: domain as TypedDataDomain,
+              types: runtimeTypes as unknown as TypedData,
+              primaryType: "Consent",
+              message: messageNorm as unknown as Record<string, unknown>,
+              signature,
+            });
+            if (!ok) throw new Error("client_verify_failed");
+
+            // (e) (선택) digest 확인
+            const recomputed = hashTypedData({
+              domain: domain as TypedDataDomain,
+              types: runtimeTypes as unknown as TypedData,
+              primaryType: "Consent",
+              message: messageNorm as unknown as Record<string, unknown>,
+            });
+            if (recomputed !== init.digest) {
+              console.warn("[WalletContext] digest mismatch", {
+                recomputed,
+                serverDigest: init.digest,
+              });
+            }
+
+            // (f) 서버 verify (nonce는 원본 타입 echo)
+            const v = await apiVerify({
+              address: account.address as `0x${string}`,
+              chainId,
+              nonce: nonceRaw,
+              type: (messageNorm as any).type,
+              version: (messageNorm as any).version,
+              signature,
+              digest: init.digest,
+            });
+            if (!v?.response || !v?.result) {
+              throw new Error(v?.message || "server_verify_failed");
+            }
+          },
+        });
+
+        if (confirmed) {
+          lastKeyRef.current = key; // 성공 → 더 이상 재시도 안 함
+        } else {
+          // 사용자가 닫거나 서명 거부 → 즉시 disconnect
+          if (account.connector) {
+            await disconnect(config, { connector: account.connector });
+          }
+        }
+      } catch (err) {
+        console.error("[WalletContext] consent guard error:", err);
+        // 에러 시 사용자 보호를 위해 연결 해제
+        if (account.connector) {
+          try {
+            await disconnect(config, { connector: account.connector });
+          } catch {}
+        }
+      } finally {
+        verifyingRef.current = false;
+      }
+    })();
+  }, [
+    account.isConnected,
+    account.address,
+    account.connector,
+    chainId,
+    config,
+  ]);
 
   const context: WalletContextType = useMemo(
     () => ({
