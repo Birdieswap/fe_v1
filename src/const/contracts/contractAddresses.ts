@@ -55,7 +55,7 @@ type AddressMap = Partial<Record<AddressKey, Address>>;
 export const contractAddresses: Record<ChainKey, AddressMap> = {
   sepolia: {
     ROUTER: "0x614522A39bF8ea0C437124b602bE0B1abA0170ba",
-    WRAPPER: "0xF0e05dea1435Cc0ff7Fd41A988f339F9fd1E3328",
+    WRAPPER: "0x67181D1a8A29e4Ff0FFA722967A9188e7945121E",
 
     ETH: "0x0000000000000000000000000000000000000000",
     // WETH: "0x05A5d4425dada56269fCB0A56272B0b45c59b471",

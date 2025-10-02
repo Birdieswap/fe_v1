@@ -8,7 +8,9 @@ import {
   getDefaultConfig,
   RainbowKitProvider,
   lightTheme,
+  connectorsForWallets,
 } from "@rainbow-me/rainbowkit";
+
 import {
   metaMaskWallet,
   trustWallet,
@@ -18,7 +20,7 @@ import {
   braveWallet,
   phantomWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { WagmiProvider } from "wagmi";
+import { createConfig, WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
@@ -48,6 +50,11 @@ const baseUrls = [
   process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY,
   process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA,
   "https://mainnet.base.org",
+].filter(Boolean) as string[];
+const arbitrumUrls = [
+  process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_ALCHEMY,
+  process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_INFURA,
+  "https://arb1.arbitrum.io/rpc",
 ].filter(Boolean) as string[];
 
 if (
@@ -105,7 +112,63 @@ const chains = [
   polygon,
   scroll,
   baseFork,
-];
+] as const;
+
+// 체인별 transports 정의
+const transports: Record<number, any> = {};
+for (const ch of chains) transports[ch.id] = http(); // 기본값
+
+if (sepoliaUrls.length) {
+  transports[sepolia.id] = fallback(
+    sepoliaUrls.map((url) => http(url, { timeout: 15_000 })),
+    { rank: false, retryCount: 3, retryDelay: 3000 }
+  );
+}
+
+if (baseUrls.length) {
+  transports[base_custom.id] = fallback(
+    baseUrls.map((url) => http(url, { timeout: 15_000 })),
+    { rank: false, retryCount: 3, retryDelay: 3000 }
+  );
+}
+
+if (arbitrumUrls.length) {
+  transports[arbitrum.id] = fallback(
+    arbitrumUrls.map((url) => http(url, { timeout: 15_000 })),
+    { rank: false, retryCount: 3, retryDelay: 3000 }
+  );
+}
+
+// RainbowKit 커넥터
+const projectId =
+  process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id";
+const appName = process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap";
+
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: "Popular",
+      wallets: [
+        metaMaskWallet,
+        walletConnectWallet,
+        uniswapWallet,
+        coinbaseWallet,
+        trustWallet,
+        braveWallet,
+        phantomWallet,
+      ],
+    },
+  ],
+  { appName, projectId }
+);
+
+// wagmiConfig 생성 (★ autoConnect:false 설정)
+export const wagmiConfig = createConfig({
+  chains,
+  transports,
+  connectors,
+  ssr: true,
+});
 
 // const transports: Record<number, any> = {};
 // for (const ch of chains) transports[ch.id] = http(); // 체인 정의의 rpcUrls.default 사용
@@ -123,88 +186,43 @@ const chains = [
 //   ),
 //   { rank: false, retryCount: 3, retryDelay: 3000 }
 // );
-if (typeof window !== "undefined") {
-  try {
-    // soft-block 상태(서명 거절/닫기 후)거나 MetaMask 인앱일 때 강하게 캐시 제거
-    const softBlocked =
-      sessionStorage.getItem("__CONSENT_BLOCKED_UNTIL_SIGN__") === "1";
-    const ua = navigator.userAgent || "";
-    const isMetaMaskInApp =
-      ua.includes("MetaMaskMobile") || ua.includes("MetaMask");
 
-    if (softBlocked || isMetaMaskInApp) {
-      const KEYS = [
-        // wagmi
-        "wagmi.store",
-        "wagmi.connected",
-        "wagmi.cache",
-        // rainbowkit
-        "rainbowkit.connectedWallets",
-        "rainbowkit:connectedWallets",
-        "rk-last-connector",
-        // walletconnect
-        "walletconnect",
-        "walletconnectv2",
-        "wc@2:client",
-        "WALLETCONNECT_DEEPLINK_CHOICE",
-        // coinbase
-        "coinbaseWalletSDK",
-        "walletlink",
-        "walletlink:https://www.walletlink.org:session",
-      ];
-      KEYS.forEach((k) => localStorage.removeItem(k));
-      // prefix 기반 잔여 키도 정리
-      const PREF = [
-        "wagmi.",
-        "rainbowkit.",
-        "wc@",
-        "walletconnect",
-        "coinbaseWallet:",
-        "walletlink:",
-      ];
-      Object.keys(localStorage).forEach((k) => {
-        if (PREF.some((p) => k.startsWith(p))) localStorage.removeItem(k);
-      });
-    }
-  } catch {}
-}
+// export const wagmiConfig = getDefaultConfig({
+//   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
+//   projectId:
+//     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
+//   chains: [
+//     sepolia,
+//     arbitrum,
+//     base_custom,
+//     optimism_custom,
+//     bsc,
+//     polygon,
+//     scroll,
+//     baseFork,
+//   ],
 
-export const wagmiConfig = getDefaultConfig({
-  appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
-  projectId:
-    process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
-  chains: [
-    sepolia,
-    arbitrum,
-    base_custom,
-    optimism_custom,
-    bsc,
-    polygon,
-    scroll,
-    baseFork,
-  ],
+//   // transports,
+//   ssr: true,
+//   //multiInjectedProviderDiscovery: false,
 
-  // transports,
-  ssr: true,
-  //multiInjectedProviderDiscovery: false,
-
-  // ⭐ 조건부 지갑 설정 - 타입 안전하게
-  wallets: [
-    {
-      groupName: "Popular",
-      wallets: [
-        metaMaskWallet, // "metaMask"
-        walletConnectWallet, // "walletConnect"
-        uniswapWallet, // "uniswap"
-        coinbaseWallet,
-        // 기타 지갑들은 프로덕션에서만
-        trustWallet,
-        braveWallet,
-        phantomWallet,
-      ],
-    },
-  ],
-});
+//   // ⭐ 조건부 지갑 설정 - 타입 안전하게
+//   wallets: [
+//     {
+//       groupName: "Popular",
+//       wallets: [
+//         metaMaskWallet, // "metaMask"
+//         walletConnectWallet, // "walletConnect"
+//         uniswapWallet, // "uniswap"
+//         coinbaseWallet,
+//         // 기타 지갑들은 프로덕션에서만
+//         trustWallet,
+//         braveWallet,
+//         phantomWallet,
+//       ],
+//     },
+//   ],
+// });
 
 console.log("MY_RPC_URL", process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL);
 
@@ -236,7 +254,7 @@ const queryClient = new QueryClient({
 
 export default function Providers({ children }: PropsWithChildren) {
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>
         <AssetsContextProvider>
           <RainbowKitProvider
