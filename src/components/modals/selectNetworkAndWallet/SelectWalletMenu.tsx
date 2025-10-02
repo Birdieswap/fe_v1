@@ -161,7 +161,7 @@ export function SelectWalletListBox(props: {
         });
 
         // 3) 짧은 플러시(펜딩 제거)
-        await new Promise((r) => setTimeout(r, 120));
+        await new Promise((r) => setTimeout(r, 10));
 
         // 4) 소프트블록 해제 – 이제 connect()가 정상 팝업 뜸
         clearSoftBlock();
@@ -184,7 +184,7 @@ export function SelectWalletListBox(props: {
       const { address, status, connector } = getAccount(config);
       if (!address || status !== "connected") return;
 
-      // ❺ 메타마스크 인앱 감지
+      // 메타마스크 인앱 감지
       const provider = await connector?.getProvider?.().catch(() => undefined);
       const ua =
         (typeof navigator !== "undefined" ? navigator.userAgent : "") || "";
@@ -203,7 +203,7 @@ export function SelectWalletListBox(props: {
           provider,
           hardReloadOnInjected: doHardReload,
         });
-        await new Promise((r) => setTimeout(r, 120)); // flush
+        await new Promise((r) => setTimeout(r, 10)); // flush
         openDenyWalletModal(address);
         return;
       }
@@ -228,7 +228,7 @@ export function SelectWalletListBox(props: {
             provider,
             hardReloadOnInjected: doHardReload,
           });
-          await new Promise((r) => setTimeout(r, 120));
+          await new Promise((r) => setTimeout(r, 10));
           return;
         }
         addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
@@ -236,7 +236,7 @@ export function SelectWalletListBox(props: {
         return; // 인앱 경로 끝
       }
 
-      // ❽ 일반 브라우저 경로: 기존대로 silent → 필요 시 interactive
+      // 일반 브라우저 경로: 기존대로 silent → 필요 시 interactive
       const silent = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
