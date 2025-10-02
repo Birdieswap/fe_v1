@@ -30,11 +30,10 @@ export default function RootLayout({
         <Script id="pre-wagmi-clean" strategy="beforeInteractive">{`
           try {
             var ua = navigator.userAgent || "";
-            var isMM = ua.indexOf("MetaMaskMobile") !== -1 || ua.indexOf("MetaMask") !== -1;
             var softBlocked = false;
             try { softBlocked = sessionStorage.getItem("__CONSENT_BLOCKED_UNTIL_SIGN__") === "1"; } catch(e) {}
 
-            if (isMM || softBlocked) {
+            if (softBlocked) {
               var KEYS = [
                 "wagmi.store","wagmi.connected","wagmi.cache",
                 "rainbowkit.connectedWallets","rainbowkit:connectedWallets","rk-last-connector",
