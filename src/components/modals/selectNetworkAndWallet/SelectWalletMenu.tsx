@@ -208,7 +208,7 @@ export function SelectWalletListBox(props: {
         return;
       }
 
-      // ❼ ★ 메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달 ★
+      //  메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달
       if (isMetaMaskInApp) {
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
         await new Promise((r) => setTimeout(r, 10));
