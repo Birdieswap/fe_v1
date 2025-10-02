@@ -254,7 +254,7 @@ const queryClient = new QueryClient({
 
 export default function Providers({ children }: PropsWithChildren) {
   return (
-    <WagmiProvider config={wagmiConfig} reconnectOnMount={true}>
+    <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <AssetsContextProvider>
           <RainbowKitProvider
