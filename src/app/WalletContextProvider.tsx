@@ -254,72 +254,93 @@ export default function WalletContextProvider({
     return network;
   }, [chainId]);
 
-  // ===== 동의 가드: 주소/체인 변경 시 자동 체크 =====
+  // ===== 최소 자동 가드 =====
   const prevKeyRef = useRef<string | null>(null);
   const verifyingRef = useRef(false);
 
+  // 기준키 베이스라인(처음 연결 시 1회 세팅)
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) {
       prevKeyRef.current = null;
       return;
     }
+    const currentKey = `${account.address.toLowerCase()}@${chainId}`;
+    if (hasConsentDoneKey(currentKey)) {
+      prevKeyRef.current = currentKey;
+    } else if (!prevKeyRef.current) {
+      prevKeyRef.current = currentKey;
+    }
+  }, [account.isConnected, account.address, chainId]);
+
+  // 주소/체인 변경 시: 간단/단일 경로
+  useEffect(() => {
+    if (!account.isConnected || !account.address || !chainId) return;
 
     const nextKey = `${account.address.toLowerCase()}@${chainId}`;
     const prevKey = prevKeyRef.current;
-    const isChanged = !!prevKey && prevKey !== nextKey;
+    const changed = prevKey !== null && prevKey !== nextKey;
 
-    const interactiveBusy =
+    // 버튼 경로 모달 중이면 자동 개입 금지
+    const busy =
       typeof window !== "undefined" &&
       (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
-    if (!isChanged && interactiveBusy) return;
+    if (busy) return;
 
-    if (!prevKey) return;
-    if (!isChanged) return;
+    // 사용자 거절 이후 자동 재개입 금지
+    if (isSoftBlocked()) return;
 
-    if (verifyingRef.current) return;
+    if (!changed || verifyingRef.current) return;
     verifyingRef.current = true;
 
     (async () => {
+      // ★ 인터랙션 락 ON: 가드 인터랙티브 중엔 다른 해제/가드 진입 금지
+      const w = typeof window !== "undefined" ? (window as any) : undefined;
+      if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
+
       try {
         const result = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
-          mode: "interactive", // 변경은 무조건 모달
+          mode: "interactive", // 변경은 모달
         });
 
         const ok = result === "already-consented" || result === "verified-now";
-
         if (ok) {
-          // 성공: 다음 비교를 위해 키 갱신 + 소프트락 해제
+          addConsentDoneKey(nextKey);
           prevKeyRef.current = nextKey;
-          clearSoftBlock(); // ← 추가
+          clearSoftBlock();
         } else {
           const provider = await account.connector
             ?.getProvider?.()
             .catch(() => undefined);
+          setSoftBlock(); // 자동 경로 재진입 차단
           await safeDisconnect({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: isInjectedLike(
-              account.connector?.id,
-              provider
-            ), // ← Injected라면 리로드 허용
+            hardReloadOnInjected: false, // 자동 경로: 리로드 금지 (레이스/루프 차단)
           });
+          // ★ 해제 후 한 틱 비워줘야 버튼 경로 재시도 시 provider pending이 안 남음
+          await new Promise((r) => setTimeout(r, 120));
+          prevKeyRef.current = nextKey;
         }
-      } catch (err) {
-        console.error("[WalletContext] address-change guard error:", err);
+      } catch (e) {
         const provider = await account.connector
           ?.getProvider?.()
           .catch(() => undefined);
+        setSoftBlock();
         await safeDisconnect({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: isInjectedLike(account.connector?.id, provider),
+          hardReloadOnInjected: false,
         });
+        await new Promise((r) => setTimeout(r, 120)); // ★ 동일
+        prevKeyRef.current = nextKey;
       } finally {
+        // ★ 인터랙션 락 OFF
+        if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
         verifyingRef.current = false;
       }
     })();
@@ -331,20 +352,21 @@ export default function WalletContextProvider({
     config,
   ]);
 
-  // ===== 초기 연결 가드 =====
+  // 초기 연결 시 1회 확인: silent → 필요 시 interactive
   const initializingRef = useRef(false);
-
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) return;
 
     const currentKey = `${account.address.toLowerCase()}@${chainId}`;
-
-    // 버튼 경로에서 이미 끝낸 키면 스킵
+    const busy =
+      typeof window !== "undefined" &&
+      (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
+    if (busy) return; // 버튼 경로 중엔 스킵
     if (hasConsentDoneKey(currentKey)) {
-      prevKeyRef.current = currentKey; // 기준키도 맞춰두기
+      prevKeyRef.current = currentKey;
       return;
     }
-
+    if (isSoftBlocked()) return; // 사용자 거절 이후 자동 재개입 금지
     if (prevKeyRef.current === currentKey) return;
     if (initializingRef.current) return;
 
@@ -352,60 +374,53 @@ export default function WalletContextProvider({
 
     (async () => {
       try {
-        const silentResult = await verifyConsentFlow({
+        const silent = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "silent",
         });
-
-        const okSilent = silentResult === "already-consented";
-
-        if (okSilent) {
+        if (silent === "already-consented") {
+          addConsentDoneKey(currentKey);
           prevKeyRef.current = currentKey;
           clearSoftBlock();
           return;
         }
 
-        const interactiveResult = await verifyConsentFlow({
+        const interactive = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "interactive",
         });
-
-        const okInteractive =
-          interactiveResult === "already-consented" ||
-          interactiveResult === "verified-now";
-
-        if (okInteractive) {
+        const ok =
+          interactive === "already-consented" || interactive === "verified-now";
+        if (ok) {
+          addConsentDoneKey(currentKey);
           prevKeyRef.current = currentKey;
           clearSoftBlock();
         } else {
           const provider = await account.connector
             ?.getProvider?.()
             .catch(() => undefined);
-          const doHardReload = isInjectedLike(account.connector?.id, provider);
-
+          setSoftBlock();
           await safeDisconnect({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: doHardReload,
+            hardReloadOnInjected: false, // 자동 경로는 리로드 금지
           });
         }
-      } catch (err) {
-        console.error("[WalletContext] initial guard error:", err);
+      } catch {
         const provider = await account.connector
           ?.getProvider?.()
           .catch(() => undefined);
-        const doHardReload = isInjectedLike(account.connector?.id, provider); // MetaMask 등만 true
-
+        setSoftBlock();
         await safeDisconnect({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected: false,
         });
       } finally {
         initializingRef.current = false;
