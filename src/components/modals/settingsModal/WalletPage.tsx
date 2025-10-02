@@ -10,7 +10,7 @@ import {
 } from "@heroui/react";
 import { Fragment, useContext, useMemo, useState } from "react";
 import Link from "next/link";
-import { Config, UseAccountReturnType, useChains } from "wagmi";
+import { Config, UseAccountReturnType, useChains, useConfig } from "wagmi";
 
 import { WalletContext } from "@/app/WalletContextProvider";
 import Icons from "@/assets/icons/icons";
@@ -23,6 +23,8 @@ import WalletRewards from "./walletPage/WalletRewards";
 import WalletTransactions from "./walletPage/WalletTransactions";
 import WalletTokens from "./walletPage/WalletTokens";
 import { useReferral } from "@/app/ReferralContextProvider";
+import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
+import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 
 function TabSelector(props: {
   selected: "History" | "Assets";
@@ -211,6 +213,7 @@ export default function WalletPage(props: {
   toSettings: () => void;
   onClose: () => void;
 }) {
+  const config = useConfig();
   const [tab, setTab] = useState<"History" | "Assets">("Assets");
   // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
@@ -243,9 +246,34 @@ export default function WalletPage(props: {
             className="m-0 size-6 min-w-0 bg-transparent p-0"
             variant="light"
             onPress={async () => {
-              await account?.connector?.disconnect();
-              props.onClose();
-              setIsConnectModalOpen(false);
+              try {
+                const connector = account?.connector;
+                const provider = await connector
+                  ?.getProvider?.()
+                  .catch(() => undefined);
+
+                // ✅ RainbowKit 최근 커넥터 캐시도 함께 지워 재연결 소스 제거
+                try {
+                  localStorage.removeItem("rk-last-connector");
+                  localStorage.removeItem("rainbowkit.connectedWallets");
+                  localStorage.removeItem("rainbowkit:connectedWallets");
+                } catch {}
+
+                const doHardReload = isInjectedLike(connector?.id, provider);
+                await safeDisconnect({
+                  config,
+                  connector,
+                  provider,
+                  hardReloadOnInjected: doHardReload, // ✅ Injected면 탭 리로드로 확실히 끊기
+                });
+
+                // 아주 짧은 틱으로 펜딩 이벤트 정리
+                await new Promise((r) => setTimeout(r, 10));
+              } finally {
+                // UI 정리
+                props.onClose();
+                setIsConnectModalOpen(false);
+              }
             }}
           >
             <Icons.WalletExit className="fill-default-700 stroke-default-700 stroke-[0.7px] dark:fill-default-300 dark:stroke-default-300" />
