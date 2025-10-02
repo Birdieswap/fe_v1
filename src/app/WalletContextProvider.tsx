@@ -315,12 +315,12 @@ export default function WalletContextProvider({
             ?.getProvider?.()
             .catch(() => undefined);
           setSoftBlock(); // 자동 경로 재진입 차단
-          const doHardReload = isInjectedLike(account.connector?.id, provider);
+
           await safeDisconnect({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: doHardReload, // 자동 경로: 리로드 금지 (레이스/루프 차단)
+            hardReloadOnInjected: false, // 자동 경로: 리로드 금지 (레이스/루프 차단)
           });
           // ★ 해제 후 한 틱 비워줘야 버튼 경로 재시도 시 provider pending이 안 남음
           await new Promise((r) => setTimeout(r, 120));
@@ -331,12 +331,11 @@ export default function WalletContextProvider({
           ?.getProvider?.()
           .catch(() => undefined);
         setSoftBlock();
-        const doHardReload = isInjectedLike(account.connector?.id, provider);
         await safeDisconnect({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected: false,
         });
         await new Promise((r) => setTimeout(r, 120)); // ★ 동일
         prevKeyRef.current = nextKey;
@@ -406,12 +405,12 @@ export default function WalletContextProvider({
             ?.getProvider?.()
             .catch(() => undefined);
           setSoftBlock();
-          const doHardReload = isInjectedLike(account.connector?.id, provider);
+
           await safeDisconnect({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: doHardReload, // 자동 경로는 리로드 금지
+            hardReloadOnInjected: false, // 자동 경로는 리로드 금지
           });
         }
       } catch {
@@ -419,12 +418,11 @@ export default function WalletContextProvider({
           ?.getProvider?.()
           .catch(() => undefined);
         setSoftBlock();
-        const doHardReload = isInjectedLike(account.connector?.id, provider);
         await safeDisconnect({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected: false,
         });
       } finally {
         initializingRef.current = false;
@@ -470,27 +468,19 @@ export default function WalletContextProvider({
               addConsentDoneKey(`${addrLower}@${chainId}`);
               clearSoftBlock();
             } else {
-              const doHardReload = isInjectedLike(
-                account.connector?.id,
-                provider
-              );
               await safeDisconnect({
                 config,
                 connector: account.connector,
                 provider,
-                hardReloadOnInjected: doHardReload, // 인앱(메타마스크)에서는 true가 될 것
+                hardReloadOnInjected: false, // 인앱(메타마스크)에서는 true가 될 것
               });
             }
           } catch {
-            const doHardReload = isInjectedLike(
-              account.connector?.id,
-              provider
-            );
             await safeDisconnect({
               config,
               connector: account.connector,
               provider,
-              hardReloadOnInjected: doHardReload,
+              hardReloadOnInjected: false,
             });
           } finally {
             if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;

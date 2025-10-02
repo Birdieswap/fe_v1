@@ -138,7 +138,7 @@ export function SelectWalletListBox(props: {
 
     try {
       props.onClose();
-      await new Promise((r) => setTimeout(r, 0));
+      await new Promise((r) => setTimeout(r, 10));
       // ★★★ 프리플러시: '서명 안 하고 닫음' 직후 첫 재시도일 수 있음
       const softBlocked =
         typeof sessionStorage !== "undefined" &&
@@ -211,7 +211,7 @@ export function SelectWalletListBox(props: {
       // ❼ ★ 메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달 ★
       if (isMetaMaskInApp) {
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
-        await new Promise((r) => setTimeout(r, 150));
+        await new Promise((r) => setTimeout(r, 10));
 
         const inter = await verifyConsentFlow({
           config,
