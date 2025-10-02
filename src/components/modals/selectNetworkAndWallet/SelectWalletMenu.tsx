@@ -35,6 +35,7 @@ import {
   clearSoftBlock,
   setSoftBlock,
 } from "@/utils/wallet/consentSession";
+import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 
 declare global {
   interface Window {
@@ -74,6 +75,7 @@ export function SelectWalletListBox(props: {
   //const availableWalletKeys = useMemo(() => getAvailableWalletKeys(), []);
 
   // 실제 등록된 Connector 동적 감지
+  const inFlightRef = useRef(false);
   const chainId = useChainId();
   const config = useConfig();
 
@@ -118,32 +120,72 @@ export function SelectWalletListBox(props: {
     );
   }
 
+  function clearRKRecent() {
+    try {
+      localStorage.removeItem("rk-last-connector");
+      localStorage.removeItem("rainbowkit.connectedWallets");
+      localStorage.removeItem("rainbowkit:connectedWallets");
+    } catch {}
+  }
+
   //===========whiteList 없앨때 삭제부=============
   async function handleConnect(connect: () => Promise<void>) {
+    // re-entrancy guard (render 간 유지)
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
+
+    const w = typeof window !== "undefined" ? (window as any) : undefined;
+    // 버튼 경로 시작: 가드 스킵 플래그 ON + 소프트블록 해제
+    if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
+
     try {
       props.onClose();
-      await new Promise((r) => setTimeout(r, 0));
+      // ★★★ 프리플러시: '서명 안 하고 닫음' 직후 첫 재시도일 수 있음
+      const softBlocked =
+        typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem("__CONSENT_BLOCKED_UNTIL_SIGN__") === "1";
 
-      // 1) 먼저 connect 시도 — 여기서 '취소'면 reject
+      if (softBlocked) {
+        // 1) RainbowKit 최근 커넥터 캐시 제거
+        clearRKRecent();
+
+        // 2) wagmi/connector 세션 정리 (리로드 없이)
+        const acc0 = getAccount(config);
+        const provider0 = await acc0.connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        await safeDisconnect({
+          config,
+          connector: acc0.connector,
+          provider: provider0,
+          hardReloadOnInjected: false, // 버튼 경로 프리플러시는 리로드 금지
+        });
+
+        // 3) 짧은 플러시(펜딩 제거)
+        await new Promise((r) => setTimeout(r, 120));
+
+        // 4) 소프트블록 해제 – 이제 connect()가 정상 팝업 뜸
+        clearSoftBlock();
+      }
+
+      // 1) 사용자 제스처 컨텍스트에서 즉시 connect() — 팝업 보장
       try {
         await connect();
-      } catch (err) {
+      } catch (err: any) {
+        const code = err?.code ?? err?.data?.originalError?.code;
+        if (code === -32002) {
+          console.warn("[SelectWalletMenu] request already pending (-32002)");
+          return; // 지갑 시트에서 사용자가 처리할 수 있도록 모달 유지
+        }
         console.warn("[SelectWalletMenu] connect() cancelled or failed:", err);
         return;
       }
 
-      // 2) 연결 성공 확인
+      // 3) 연결 확인
       const { address, status, connector } = getAccount(config);
-      if (!address || status !== "connected") {
-        return;
-      }
+      if (!address || status !== "connected") return;
 
-      // 3) 버튼 경로 interactive 락
-      if (typeof window !== "undefined") {
-        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
-      }
-
-      // 4) 화이트리스트 정책 체크
+      // 4) 화이트리스트(있다면)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
         const provider = await connector
           ?.getProvider?.()
@@ -154,56 +196,52 @@ export function SelectWalletListBox(props: {
           provider,
           hardReloadOnInjected: false,
         });
+        await new Promise((r) => setTimeout(r, 120)); // flush
         openDenyWalletModal(address);
         return;
       }
 
-      // 5-a) 먼저 silent 확인
-      const silentResult = await verifyConsentFlow({
+      // 5) silent 확인
+      const silent = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "silent",
       });
-
-      if (silentResult === "already-consented") {
-        // 이미 동의 기록 있음 → 모달 없이 통과
-        props.onClose();
+      if (silent === "already-consented") {
+        addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
+        clearSoftBlock();
         return;
       }
 
-      // 5-b) 기록 없음 → interactive 모달
+      // 6) interactive 모달
       const provider = await connector?.getProvider?.().catch(() => undefined);
-      const interactiveResult = await verifyConsentFlow({
+      const inter = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "interactive",
       });
-
-      const ok =
-        interactiveResult === "already-consented" ||
-        interactiveResult === "verified-now";
+      const ok = inter === "already-consented" || inter === "verified-now";
 
       if (!ok) {
-        // 모달 거절/실패 → 즉시 disconnect
+        const doHardReload = isInjectedLike(connector?.id, provider); // 인앱(Injected)만 리로드
         await safeDisconnect({
           config,
           connector,
           provider,
-          hardReloadOnInjected: false,
+          hardReloadOnInjected: doHardReload,
         });
+        await new Promise((r) => setTimeout(r, 120)); // flush
         return;
       }
 
-      // 7) 성공 → 팝오버 닫기
-      props.onClose();
-    } catch (e) {
-      console.error("[SelectWalletMenu] handleConnect error:", e);
+      // 7) 성공 마킹
+      addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
+      clearSoftBlock();
     } finally {
-      if (typeof window !== "undefined") {
-        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = false;
-      }
+      if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
+      inFlightRef.current = false;
     }
   }
   //===================삭제부=========================
@@ -226,8 +264,8 @@ export function SelectWalletListBox(props: {
               <Button
                 className="select-network-list-item min-w-[200px]"
                 startContent={<WalletIcon provider={provider} />}
-                onClick={async () => {
-                  if (canConnect) handleConnect(connect);
+                onClick={() => {
+                  if (canConnect) void handleConnect(connect);
                 }}
               >
                 <span className="select-network-list-item-title">
