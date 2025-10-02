@@ -123,6 +123,51 @@ const chains = [
 //   ),
 //   { rank: false, retryCount: 3, retryDelay: 3000 }
 // );
+if (typeof window !== "undefined") {
+  try {
+    // soft-block 상태(서명 거절/닫기 후)거나 MetaMask 인앱일 때 강하게 캐시 제거
+    const softBlocked =
+      sessionStorage.getItem("__CONSENT_BLOCKED_UNTIL_SIGN__") === "1";
+    const ua = navigator.userAgent || "";
+    const isMetaMaskInApp =
+      ua.includes("MetaMaskMobile") || ua.includes("MetaMask");
+
+    if (softBlocked || isMetaMaskInApp) {
+      const KEYS = [
+        // wagmi
+        "wagmi.store",
+        "wagmi.connected",
+        "wagmi.cache",
+        // rainbowkit
+        "rainbowkit.connectedWallets",
+        "rainbowkit:connectedWallets",
+        "rk-last-connector",
+        // walletconnect
+        "walletconnect",
+        "walletconnectv2",
+        "wc@2:client",
+        "WALLETCONNECT_DEEPLINK_CHOICE",
+        // coinbase
+        "coinbaseWalletSDK",
+        "walletlink",
+        "walletlink:https://www.walletlink.org:session",
+      ];
+      KEYS.forEach((k) => localStorage.removeItem(k));
+      // prefix 기반 잔여 키도 정리
+      const PREF = [
+        "wagmi.",
+        "rainbowkit.",
+        "wc@",
+        "walletconnect",
+        "coinbaseWallet:",
+        "walletlink:",
+      ];
+      Object.keys(localStorage).forEach((k) => {
+        if (PREF.some((p) => k.startsWith(p))) localStorage.removeItem(k);
+      });
+    }
+  } catch {}
+}
 
 export const wagmiConfig = getDefaultConfig({
   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",

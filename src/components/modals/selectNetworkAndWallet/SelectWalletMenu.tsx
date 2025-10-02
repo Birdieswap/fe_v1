@@ -21,7 +21,6 @@ import { walletProviders } from "@/const/wallets";
 //import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
 import { useChainId, useConfig } from "wagmi"; // 🔥 이 import 추가
 import { disconnect, getAccount } from "wagmi/actions"; // ← 추가
-import { ALLOWED_ADDRESSES } from "@/utils/wallet/allowedWalletList"; // ← 추가
 import { openDenyWalletModal } from "@/utils/wallet/denyWalletModal";
 import {
   isWalletAllowed,
@@ -33,7 +32,6 @@ import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
 import {
   addConsentDoneKey,
   clearSoftBlock,
-  setSoftBlock,
 } from "@/utils/wallet/consentSession";
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 
@@ -190,11 +188,12 @@ export function SelectWalletListBox(props: {
         const provider = await connector
           ?.getProvider?.()
           .catch(() => undefined);
+        const doHardReload = isInjectedLike(connector?.id, provider);
         await safeDisconnect({
           config,
           connector,
           provider,
-          hardReloadOnInjected: false,
+          hardReloadOnInjected: doHardReload,
         });
         await new Promise((r) => setTimeout(r, 120)); // flush
         openDenyWalletModal(address);
