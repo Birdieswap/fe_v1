@@ -438,6 +438,107 @@ export default function WalletContextProvider({
     config,
   ]);
 
+  // ===== (메타마스크 인앱 보강) provider 이벤트 직접 바인딩 =====
+  useEffect(() => {
+    if (!account?.connector) return;
+
+    let unsubscribed = false;
+    let provider: any;
+
+    (async () => {
+      try {
+        provider = await account.connector?.getProvider?.();
+        if (!provider || unsubscribed) return;
+
+        const runInteractiveCheck = async (addrLower: string) => {
+          // 버튼 경로/다른 가드와 경합 방지용 잠깐의 틱 + 락
+          await new Promise((r) => setTimeout(r, 200));
+          const w = typeof window !== "undefined" ? (window as any) : undefined;
+          if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
+
+          try {
+            const result = await verifyConsentFlow({
+              config,
+              address: addrLower as `0x${string}`,
+              chainId, // wagmi가 반영한 최신 chainId 사용
+              mode: "interactive",
+            });
+
+            const ok =
+              result === "already-consented" || result === "verified-now";
+            if (ok) {
+              addConsentDoneKey(`${addrLower}@${chainId}`);
+              clearSoftBlock();
+            } else {
+              const doHardReload = isInjectedLike(
+                account.connector?.id,
+                provider
+              );
+              await safeDisconnect({
+                config,
+                connector: account.connector,
+                provider,
+                hardReloadOnInjected: doHardReload, // 인앱(메타마스크)에서는 true가 될 것
+              });
+            }
+          } catch {
+            const doHardReload = isInjectedLike(
+              account.connector?.id,
+              provider
+            );
+            await safeDisconnect({
+              config,
+              connector: account.connector,
+              provider,
+              hardReloadOnInjected: doHardReload,
+            });
+          } finally {
+            if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
+          }
+        };
+
+        const onAccountsChanged = async (accs: string[]) => {
+          if (!accs || accs.length === 0) return;
+          const next = (accs[0] || "").toLowerCase();
+          const cur = (account.address || "").toLowerCase();
+          if (!next || next === cur) return;
+
+          // 사용자가 지갑에서 계정 바꾼 즉시 모달 강제 체크
+          await runInteractiveCheck(next);
+        };
+
+        const onChainChanged = async (_chainId: any) => {
+          // 체인 바뀐 직후 포커스 반환/렌더 타이밍 고려해서 한 틱 대기
+          await new Promise((r) => setTimeout(r, 200));
+          const addr = (account.address || "").toLowerCase();
+          if (!addr) return;
+          await runInteractiveCheck(addr);
+        };
+
+        // 중복 바인딩 방지: 기존 리스너 제거 후 재바인딩
+        try {
+          provider.removeListener?.("accountsChanged", onAccountsChanged);
+        } catch {}
+        try {
+          provider.removeListener?.("chainChanged", onChainChanged);
+        } catch {}
+
+        provider.on?.("accountsChanged", onAccountsChanged);
+        provider.on?.("chainChanged", onChainChanged);
+      } catch {}
+    })();
+
+    return () => {
+      unsubscribed = true;
+      try {
+        provider?.removeAllListeners?.("accountsChanged");
+      } catch {}
+      try {
+        provider?.removeAllListeners?.("chainChanged");
+      } catch {}
+    };
+  }, [account.connector, account.address, chainId, config]);
+
   const context: WalletContextType = useMemo(
     () => ({
       isConnectModalOpen,
