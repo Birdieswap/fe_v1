@@ -138,6 +138,7 @@ export function SelectWalletListBox(props: {
 
     try {
       props.onClose();
+      await new Promise((r) => setTimeout(r, 0));
       // ★★★ 프리플러시: '서명 안 하고 닫음' 직후 첫 재시도일 수 있음
       const softBlocked =
         typeof sessionStorage !== "undefined" &&
@@ -183,6 +184,13 @@ export function SelectWalletListBox(props: {
       const { address, status, connector } = getAccount(config);
       if (!address || status !== "connected") return;
 
+      // ❺ 메타마스크 인앱 감지
+      const provider = await connector?.getProvider?.().catch(() => undefined);
+      const ua =
+        (typeof navigator !== "undefined" ? navigator.userAgent : "") || "";
+      const isMMInjected = !!(provider && (provider as any).isMetaMask);
+      const isMetaMaskInApp = isMMInjected && /MetaMask/i.test(ua);
+
       // 4) 화이트리스트(있다면)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
         const provider = await connector
@@ -200,7 +208,35 @@ export function SelectWalletListBox(props: {
         return;
       }
 
-      // 5) silent 확인
+      // ❼ ★ 메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달 ★
+      if (isMetaMaskInApp) {
+        // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
+        await new Promise((r) => setTimeout(r, 150));
+
+        const inter = await verifyConsentFlow({
+          config,
+          address: address as `0x${string}`,
+          chainId,
+          mode: "interactive",
+        });
+        const ok = inter === "already-consented" || inter === "verified-now";
+        if (!ok) {
+          const doHardReload = isInjectedLike(connector?.id, provider); // 인앱은 true → 완전끊기
+          await safeDisconnect({
+            config,
+            connector,
+            provider,
+            hardReloadOnInjected: doHardReload,
+          });
+          await new Promise((r) => setTimeout(r, 120));
+          return;
+        }
+        addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
+        clearSoftBlock();
+        return; // 인앱 경로 끝
+      }
+
+      // ❽ 일반 브라우저 경로: 기존대로 silent → 필요 시 interactive
       const silent = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
@@ -213,8 +249,6 @@ export function SelectWalletListBox(props: {
         return;
       }
 
-      // 6) interactive 모달
-      const provider = await connector?.getProvider?.().catch(() => undefined);
       const inter = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
@@ -222,20 +256,18 @@ export function SelectWalletListBox(props: {
         mode: "interactive",
       });
       const ok = inter === "already-consented" || inter === "verified-now";
-
       if (!ok) {
-        const doHardReload = isInjectedLike(connector?.id, provider); // 인앱(Injected)만 리로드
+        const doHardReload = isInjectedLike(connector?.id, provider);
         await safeDisconnect({
           config,
           connector,
           provider,
           hardReloadOnInjected: doHardReload,
         });
-        await new Promise((r) => setTimeout(r, 120)); // flush
+        await new Promise((r) => setTimeout(r, 120));
         return;
       }
 
-      // 7) 성공 마킹
       addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
       clearSoftBlock();
     } finally {
