@@ -221,12 +221,12 @@ export function SelectWalletListBox(props: {
         });
         const ok = inter === "already-consented" || inter === "verified-now";
         if (!ok) {
-          const doHardReload = isInjectedLike(connector?.id, provider); // 인앱은 true → 완전끊기
+          // 인앱은 true → 완전끊기
           await safeDisconnect({
             config,
             connector,
             provider,
-            hardReloadOnInjected: doHardReload,
+            hardReloadOnInjected: true,
           });
           await new Promise((r) => setTimeout(r, 10));
           return;

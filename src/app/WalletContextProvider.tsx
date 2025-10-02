@@ -314,13 +314,16 @@ export default function WalletContextProvider({
           const provider = await account.connector
             ?.getProvider?.()
             .catch(() => undefined);
-          setSoftBlock(); // 자동 경로 재진입 차단
-          const doHardReload = isInjectedLike(account.connector?.id, provider);
+          const ua =
+            (typeof navigator !== "undefined" ? navigator.userAgent : "") || "";
+          const isMMInjected = !!(provider && (provider as any).isMetaMask);
+          const isMetaMaskInApp = isMMInjected && /MetaMask/i.test(ua);
+
           await safeDisconnect({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: doHardReload, // 자동 경로: 리로드 금지 (레이스/루프 차단)
+            hardReloadOnInjected: isMetaMaskInApp ? true : false, // 자동 경로: 리로드 금지 (레이스/루프 차단)
           });
           // ★ 해제 후 한 틱 비워줘야 버튼 경로 재시도 시 provider pending이 안 남음
           await new Promise((r) => setTimeout(r, 10));
@@ -330,14 +333,16 @@ export default function WalletContextProvider({
         const provider = await account.connector
           ?.getProvider?.()
           .catch(() => undefined);
-        setSoftBlock();
+        const ua =
+          (typeof navigator !== "undefined" ? navigator.userAgent : "") || "";
+        const isMMInjected = !!(provider && (provider as any).isMetaMask);
+        const isMetaMaskInApp = isMMInjected && /MetaMask/i.test(ua);
 
-        const doHardReload = isInjectedLike(account.connector?.id, provider);
         await safeDisconnect({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected: isMetaMaskInApp ? true : false,
         });
         await new Promise((r) => setTimeout(r, 10)); // ★ 동일
         prevKeyRef.current = nextKey;
