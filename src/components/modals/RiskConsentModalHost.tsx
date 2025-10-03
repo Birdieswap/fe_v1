@@ -211,7 +211,15 @@ export default function RiskConsentModalHost() {
       className="!z-[9999]"
       onOpenChange={(open) => {
         dbg("riskHost:onOpenChange", { open }); // [DBG]
-        if (!open) safeResolveAndReset(false);
+        if (!open) {
+          safeResolveAndReset(false);
+          try {
+            window.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
+          } catch {}
+          try {
+            document.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
+          } catch {}
+        }
       }}
     >
       <ModalContent className="w-[80vw] max-w-[500px]">

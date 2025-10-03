@@ -14,7 +14,12 @@ import { NetworkInfo } from "@/types/NetworkInfo";
 import { walletProviders } from "@/const/wallets";
 import { useReferral } from "./ReferralContextProvider";
 import useAccountWalletData from "@/hooks/wallet/useAccountWalletData";
-import { disconnect, signTypedData } from "wagmi/actions";
+import {
+  disconnect,
+  getAccount,
+  reconnect,
+  signTypedData,
+} from "wagmi/actions";
 
 import { verifyConsentFlow } from "@/utils/wallet/verifyConsentFlow";
 import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
@@ -524,17 +529,59 @@ export default function WalletContextProvider({
         provider = await account.connector?.getProvider?.();
         if (!provider || unsubscribed) return;
 
-        const runInteractiveCheck = async (addrLower: string) => {
+        const waitUntilWagmiSees = async (
+          nextLower: string,
+          timeoutMs = 2000
+        ) => {
+          const start = Date.now();
+          while (Date.now() - start < timeoutMs) {
+            const a = getAccount(config);
+            const wagmiLower = (a?.address || "").toLowerCase();
+            // provider 쪽 선택 계정도 함께 일치하는지 확인 (가능한 경우)
+            const provLower = (
+              provider?.selectedAddress ||
+              provider?.accounts?.[0] ||
+              ""
+            ).toLowerCase();
+            const provOk = provLower ? provLower === nextLower : true;
+            if (a?.status === "connected" && wagmiLower === nextLower && provOk)
+              return true;
+            await new Promise((r) => setTimeout(r, 50));
+          }
+          return false;
+        };
+
+        const runInteractiveCheck = async (nextLower: string) => {
           // 버튼 경로/다른 가드와 경합 방지용 잠깐의 틱 + 락
           await new Promise((r) => setTimeout(r, 200));
           const w = typeof window !== "undefined" ? (window as any) : undefined;
           if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
           try {
+            // ➊ wagmi가 실제로 새 계정을 반영할 때까지 대기
+            let seen = await waitUntilWagmiSees(nextLower, 2000);
+            if (!seen) {
+              // ➋ 여전히 반영 안 되면, 한 번 더 자극 (특히 인앱에서 효과적)
+              try {
+                await reconnect(config);
+              } catch {}
+              seen = await waitUntilWagmiSees(nextLower, 1000);
+            }
+            // ➌ 그래도 안 되면, verify를 건너뛰고 changeGuard(useEffect)가 처리하도록 반환
+            if (!seen) {
+              dbg("wcp:provEvt:wagmiNotSynced-skip", { nextLower });
+              return;
+            }
+
+            // ✅ 여기서 반드시 wagmi 스냅샷을 기준으로 실행 (provider와 동일 계정)
+            const snap = getAccount(config);
+            const verifiedAddr = snap?.address as `0x${string}`;
+            if (!verifiedAddr) return;
+
             await waitForRiskHost();
             const result = await verifyConsentFlow({
               config,
-              address: addrLower as `0x${string}`,
+              address: verifiedAddr,
               chainId, // wagmi가 반영한 최신 chainId 사용
               mode: "interactive",
             });
@@ -543,7 +590,7 @@ export default function WalletContextProvider({
             const ok =
               result === "already-consented" || result === "verified-now";
             if (ok) {
-              addConsentDoneKey(`${addrLower}@${chainId}`);
+              addConsentDoneKey(`${verifiedAddr.toLowerCase()}@${chainId}`);
               clearSoftBlock();
               dbg("wcp:provEvt:consent-ok");
             } else {
@@ -667,6 +714,76 @@ export default function WalletContextProvider({
     };
     // 의존성: 주소/체인/컨피그 바뀌면 최신 값 반영
   }, [account?.address, chainId, config]);
+
+  // === 모달을 서명 없이 닫았을 때: 즉시 연결 해제 (계정 변경 인터랙티브 가드 한정) ===
+  useEffect(() => {
+    const handler = async () => {
+      // 계정 변경/버튼 경로 인터랙티브 가드 중에만 반응 (초기 silent/interactive는 기존 로직 유지)
+      const w = typeof window !== "undefined" ? (window as any) : undefined;
+      if (!w?.__CONSENT_INTERACTIVE_ACTIVE__) return;
+
+      try {
+        // 1) provider 확보(있으면) → safeDisconnect
+        const provider =
+          (await account?.connector?.getProvider?.().catch(() => undefined)) ||
+          undefined;
+        if (account?.connector) {
+          await safeDisconnect({
+            config,
+            connector: account.connector,
+            provider,
+            hardReloadOnInjected: isMetaMaskInAppEnv(
+              account.connector,
+              provider
+            )
+              ? true
+              : false,
+          });
+        }
+
+        // 2) wagmi state 강제 해제 (일부 환경에서 provider.disconnect가 noop인 경우를 대비)
+        try {
+          await disconnect(config);
+        } catch {}
+        try {
+          // 일부 커넥터는 자체 disconnect 메서드를 노출
+          await account?.connector?.disconnect?.();
+        } catch {}
+        try {
+          // WalletConnect/부분 지갑들: provider에 직접 disconnect가 있는 경우
+          await (provider as any)?.disconnect?.();
+        } catch {}
+
+        // 3) 자동 재연결/재개입 방지
+        clearRKRecent();
+        setSoftBlock();
+        prevKeyRef.current = null;
+
+        dbg("wcp:modalClosed:disconnected");
+      } catch (e) {
+        dbg("wcp:modalClosed:disconnectError", { err: String(e) });
+      }
+    };
+
+    window.addEventListener(
+      "app/riskConsentModal/close",
+      handler as EventListener
+    );
+    document.addEventListener(
+      "app/riskConsentModal/close",
+      handler as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        "app/riskConsentModal/close",
+        handler as EventListener
+      );
+      document.removeEventListener(
+        "app/riskConsentModal/close",
+        handler as EventListener
+      );
+    };
+  }, [account?.connector, config]);
 
   const context: WalletContextType = useMemo(
     () => ({
