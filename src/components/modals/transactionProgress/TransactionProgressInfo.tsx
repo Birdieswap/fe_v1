@@ -32,7 +32,7 @@ function TokenIcon(props: { token?: IToken }) {
 }
 
 function getDisplayType(
-  props: Pick<TransactionStatusProps, "transactionStatus">,
+  props: Pick<TransactionStatusProps, "transactionStatus">
 ) {
   const isDisplayInput =
     props.transactionStatus === TransactionStatus.CONFIRM_NEEDED ||
@@ -43,10 +43,10 @@ function getDisplayType(
 }
 
 function ApproveTransactionInfoDisplay(
-  props: TransactionStatusProps & ApproveTransactionProps,
+  props: TransactionStatusProps & ApproveTransactionProps
 ) {
   return (
-    <div className="progress-info-container">
+    <div className="progress-info-container mt-5">
       <span className="info-text-normal">Approve</span>
       <span className="info-text-light">{props.input?.symbol}</span>
     </div>
@@ -61,27 +61,29 @@ function AmountAndSymbol({
   token?: IToken;
 }) {
   const amountString = amount
-    ?.roundToDecimals(token?.displayDecimals ?? token?.decimals ?? 8)
+    ?.roundToDecimals(token?.decimals ?? 8)
     .toPrecisionString(false, true);
 
   return (
     <Fragment>
-      <TokenIcon token={token} />
-      <span className="token-text">
-        {amountString ? amountString + "\u00A0" : ""}
-        {token?.symbol}
-      </span>
+      <div className="flex justify-center items-center gap-1">
+        <TokenIcon token={token} />
+        <span className="token-text text-foreground">
+          {amountString ? amountString + "\u00A0" : ""}
+          {token?.symbol}
+        </span>
+      </div>
     </Fragment>
   );
 }
 
 function SwapTransactionInfoDisplay(
-  props: TransactionStatusProps & SwapTransactionProps,
+  props: TransactionStatusProps & SwapTransactionProps
 ) {
   return (
-    <div className="progress-info-container progress-swap">
+    <div className="progress-info-container progress-swap flex flex-col items-center mt-5">
       <AmountAndSymbol {...props.input} token={props.input.token} />
-      <Icons.WalletSwapArrowSmall className="fill-foreground" />
+      <Icons.WalletSwapArrowSmall className="fill-foreground rotate-90" />
       <AmountAndSymbol {...props.output} token={props.output.token} />
     </div>
   );
@@ -108,14 +110,16 @@ function TokenList(props: {
 }
 
 function StartFarmingTransactionInfoDisplay(
-  props: TransactionStatusProps & StartFarmingTransactionProps,
+  props: TransactionStatusProps & StartFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
 
   return (
-    <div className="progress-info-container progress-farm">
-      <Icons.WalletTitleStartFarm className="fill-foreground" />
-      <span className="info-text-normal">Start Farming</span>
+    <div className="progress-info-container progress-farm flex flex-col items-center">
+      <div className="flex justify-center items-center gap-2 text-foreground mt-5 mb-5">
+        <Icons.WalletTitleStartFarm className="fill-foreground" />
+        <span className="info-text-normal">Start Farming</span>
+      </div>
       {isDisplayInput && (
         <TokenList
           tokens={props.input.filter((v) => v?.amount !== undefined)}
@@ -127,7 +131,7 @@ function StartFarmingTransactionInfoDisplay(
 }
 
 function StopFarmingTransactionInfoDisplay(
-  props: TransactionStatusProps & StopFarmingTransactionProps,
+  props: TransactionStatusProps & StopFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
 
