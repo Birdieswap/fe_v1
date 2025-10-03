@@ -25,6 +25,7 @@ import WalletTokens from "./walletPage/WalletTokens";
 import { useReferral } from "@/app/ReferralContextProvider";
 import { safeDisconnect } from "@/utils/wallet/safeDisconnect";
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
+import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 
 function TabSelector(props: {
   selected: "History" | "Assets";
@@ -252,7 +253,7 @@ export default function WalletPage(props: {
                   ?.getProvider?.()
                   .catch(() => undefined);
 
-                // ✅ RainbowKit 최근 커넥터 캐시도 함께 지워 재연결 소스 제거
+                // RainbowKit 최근 커넥터 캐시도 함께 지워 재연결 소스 제거
                 try {
                   localStorage.removeItem("rk-last-connector");
                   localStorage.removeItem("rainbowkit.connectedWallets");
@@ -264,7 +265,9 @@ export default function WalletPage(props: {
                   config,
                   connector,
                   provider,
-                  hardReloadOnInjected: doHardReload, // ✅ Injected면 탭 리로드로 확실히 끊기
+                  hardReloadOnInjected:
+                    isMetaMaskInAppEnv(connector as any, provider) ||
+                    isInjectedLike(connector?.id, provider),
                 });
 
                 // 아주 짧은 틱으로 펜딩 이벤트 정리
