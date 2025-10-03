@@ -139,6 +139,17 @@ export function SelectWalletListBox(props: {
     // 버튼 경로 시작: 가드 스킵 플래그 ON + 소프트블록 해제
     if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
+    // helper: wagmi가 실제로 connected 상태/주소를 반영할 때까지 기다림
+    const waitUntilConnected = async (timeoutMs = 2000) => {
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        const a = getAccount(config);
+        if (a?.status === "connected" && a?.address) return a;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      return getAccount(config); // 마지막 스냅샷 반환
+    };
+
     try {
       // [DBG]
       dbg("swm:beginHandleConnect");
@@ -189,6 +200,9 @@ export function SelectWalletListBox(props: {
         return;
       }
 
+      // 2) wagmi가 connected/주소를 반영할 때까지 기다림(최대 2초)
+      const snap = await waitUntilConnected(2000);
+
       // 3) 연결 확인
       const { address, status, connector } = getAccount(config);
       dbg("swm:afterConnect", { status, address, connId: connector?.id }); // [DBG]
@@ -223,8 +237,8 @@ export function SelectWalletListBox(props: {
           requestAnimationFrame(() => requestAnimationFrame(() => r()))
         );
         await new Promise((r) => setTimeout(r, 10));
-        // 2) 모달 호스트 준비 보장 (최대 500ms)
 
+        // 모달 호스트 준비 보장
         await waitForRiskHost();
         dbg("swm:mmInAppRoute:hostReady"); // [DBG]
 

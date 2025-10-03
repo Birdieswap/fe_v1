@@ -258,6 +258,19 @@ export default function WalletContextProvider({
     return network;
   }, [chainId]);
 
+  // ★ RainbowKit & wagmi 최근 연결 캐시 제거
+  function clearRKRecent() {
+    try {
+      localStorage.removeItem("rk-last-connector");
+      localStorage.removeItem("rainbowkit.connectedWallets");
+      localStorage.removeItem("rainbowkit:connectedWallets");
+      // wagmi(v1/v2) 계열에서 쓰던 흔적들 (존재해도 무해, 있으면 제거)
+      localStorage.removeItem("wagmi.connected");
+      localStorage.removeItem("wagmi.recentConnectorId");
+      sessionStorage.removeItem("wagmi.connected");
+    } catch {}
+  }
+
   // ===== 최소 자동 가드 =====
   const prevKeyRef = useRef<string | null>(null);
   const verifyingRef = useRef(false);
@@ -351,8 +364,11 @@ export default function WalletContextProvider({
               : false, // 자동 경로: 리로드 금지 (레이스/루프 차단)
           });
           // ★ 해제 후 한 틱 비워줘야 버튼 경로 재시도 시 provider pending이 안 남음
+          clearRKRecent();
+          setSoftBlock();
+          prevKeyRef.current = null;
+
           await new Promise((r) => setTimeout(r, 10));
-          prevKeyRef.current = nextKey;
           dbg("wcp:changeGuard:disconnected-no-consent"); // [DBG]
         }
       } catch (e) {
@@ -368,8 +384,10 @@ export default function WalletContextProvider({
             ? true
             : false,
         });
+        clearRKRecent();
+        setSoftBlock();
+        prevKeyRef.current = null;
         await new Promise((r) => setTimeout(r, 10)); // ★ 동일
-        prevKeyRef.current = nextKey;
         dbg("wcp:changeGuard:error-disconnected", { err: String(e) }); // [DBG]
       } finally {
         // ★ 인터랙션 락 OFF
@@ -540,6 +558,9 @@ export default function WalletContextProvider({
                   ? true
                   : false, // 인앱(메타마스크)에서는 true가 될 것
               });
+              clearRKRecent();
+              setSoftBlock();
+              prevKeyRef.current = null;
 
               dbg("wcp:provEvt:disconnected-no-consent");
             }
@@ -555,6 +576,10 @@ export default function WalletContextProvider({
                 ? true
                 : false,
             });
+            clearRKRecent();
+            setSoftBlock();
+            prevKeyRef.current = null;
+
             dbg("wcp:provEvt:error-disconnected", {
               err: String(e),
             });
