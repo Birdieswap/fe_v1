@@ -41,6 +41,25 @@ declare global {
     __CONSENT_INTERACTIVE_ACTIVE__?: boolean;
   }
 }
+
+const HOST_READY_FLAG = "__RISK_HOST_MOUNTED__";
+
+function waitForRiskHost(timeout = 800): Promise<void> {
+  return new Promise((resolve) => {
+    const start = Date.now();
+    const tick = () => {
+      if ((window as any)[HOST_READY_FLAG]) return resolve();
+      if (Date.now() - start > timeout) return resolve(); // 타임아웃이어도 진행
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
+}
+
+function tinyDelay(ms = 10) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 export function WalletIcon({
   provider,
   size,
@@ -210,6 +229,9 @@ export function SelectWalletListBox(props: {
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
         await new Promise((r) => setTimeout(r, 10));
 
+        await tinyDelay(10); // 지갑 시트 닫힘 → 포커스 복귀
+        await waitForRiskHost(800);
+
         const inter = await verifyConsentFlow({
           config,
           address: address as `0x${string}`,
@@ -245,6 +267,9 @@ export function SelectWalletListBox(props: {
         clearSoftBlock();
         return;
       }
+
+      await tinyDelay(10); // 지갑 시트 닫힘 → 포커스 복귀
+      await waitForRiskHost(800);
 
       const inter = await verifyConsentFlow({
         config,
