@@ -42,24 +42,6 @@ declare global {
   }
 }
 
-const HOST_READY_FLAG = "__RISK_HOST_MOUNTED__";
-
-function waitForRiskHost(timeout = 800): Promise<void> {
-  return new Promise((resolve) => {
-    const start = Date.now();
-    const tick = () => {
-      if ((window as any)[HOST_READY_FLAG]) return resolve();
-      if (Date.now() - start > timeout) return resolve(); // 타임아웃이어도 진행
-      requestAnimationFrame(tick);
-    };
-    tick();
-  });
-}
-
-function tinyDelay(ms = 10) {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 export function WalletIcon({
   provider,
   size,
@@ -227,10 +209,19 @@ export function SelectWalletListBox(props: {
       //  메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달
       if (isMetaMaskInAppEnv(connector, provider)) {
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
+        await new Promise<void>((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(() => r()))
+        );
         await new Promise((r) => setTimeout(r, 10));
-
-        await tinyDelay(10); // 지갑 시트 닫힘 → 포커스 복귀
-        await waitForRiskHost(800);
+        // 2) 모달 호스트 준비 보장 (최대 500ms)
+        const waitHost = async () => {
+          for (let i = 0; i < 50; i++) {
+            if ((window as any).__RISK_HOST_MOUNTED__) return true;
+            await new Promise((r) => setTimeout(r, 10));
+          }
+          return false;
+        };
+        await waitHost();
 
         const inter = await verifyConsentFlow({
           config,
@@ -267,9 +258,6 @@ export function SelectWalletListBox(props: {
         clearSoftBlock();
         return;
       }
-
-      await tinyDelay(10); // 지갑 시트 닫힘 → 포커스 복귀
-      await waitForRiskHost(800);
 
       const inter = await verifyConsentFlow({
         config,

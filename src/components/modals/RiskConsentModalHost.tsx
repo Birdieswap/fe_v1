@@ -138,12 +138,23 @@ export default function RiskConsentModalHost() {
 
     window.addEventListener(OPEN_RISK_CONSENT_EVENT, open as EventListener);
     window.addEventListener(CLOSE_RISK_CONSENT_EVENT, close as EventListener);
+    // 인앱 WebView 호환: document에도 동일 리스너 바인딩
+    document.addEventListener(OPEN_RISK_CONSENT_EVENT, open as EventListener);
+    document.addEventListener(CLOSE_RISK_CONSENT_EVENT, close as EventListener);
     return () => {
       window.removeEventListener(
         OPEN_RISK_CONSENT_EVENT,
         open as EventListener
       );
       window.removeEventListener(
+        CLOSE_RISK_CONSENT_EVENT,
+        close as EventListener
+      );
+      document.removeEventListener(
+        OPEN_RISK_CONSENT_EVENT,
+        open as EventListener
+      );
+      document.removeEventListener(
         CLOSE_RISK_CONSENT_EVENT,
         close as EventListener
       );
@@ -234,11 +245,16 @@ export async function openRiskConsentModal(
 
   // 4) 폴백: 커스텀 이벤트로 오픈
   return new Promise<boolean>((resolve) => {
-    window.dispatchEvent(
-      new CustomEvent<OpenEventDetail>(OPEN_RISK_CONSENT_EVENT, {
-        detail: { ...detail, resolve },
-      })
-    );
+    const ev = new CustomEvent<OpenEventDetail>(OPEN_RISK_CONSENT_EVENT, {
+      detail: { ...detail, resolve },
+    });
+    // 인앱 호환: window + document 양쪽으로 디스패치
+    try {
+      window.dispatchEvent(ev);
+    } catch {}
+    try {
+      document.dispatchEvent(ev);
+    } catch {}
   });
 }
 
