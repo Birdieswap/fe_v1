@@ -28,10 +28,12 @@ import {
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 import { waitForRiskHost } from "@/utils/wallet/waitForRiskHost";
+import { dbg } from "@/debug/dbg";
 
 declare global {
   interface Window {
     __CONSENT_INTERACTIVE_ACTIVE__?: boolean; // 버튼 경로 인터랙티브 락
+    __forceConsentGuard?: (label?: string) => Promise<void>; // [DBG]
   }
 }
 
@@ -263,13 +265,20 @@ export default function WalletContextProvider({
   // 기준키 베이스라인(처음 연결 시 1회 세팅)
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) {
+      dbg("wcp:baseline:reset", {
+        connected: account.isConnected,
+        addr: account.address,
+        chainId,
+      }); // [DBG]
       prevKeyRef.current = null;
       return;
     }
     const currentKey = `${account.address.toLowerCase()}@${chainId}`;
     if (hasConsentDoneKey(currentKey)) {
+      dbg("wcp:baseline:seen", { currentKey }); // [DBG]
       prevKeyRef.current = currentKey;
     } else if (!prevKeyRef.current) {
+      dbg("wcp:baseline:set", { currentKey }); // [DBG]
       prevKeyRef.current = currentKey;
     }
   }, [account.isConnected, account.address, chainId]);
@@ -286,13 +295,22 @@ export default function WalletContextProvider({
     const busy =
       typeof window !== "undefined" &&
       (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
-    if (busy) return;
+    if (busy) {
+      dbg("wcp:changeGuard:busy-skip");
+      return;
+    } // [DBG]
 
     // 사용자 거절 이후 자동 재개입 금지
-    if (isSoftBlocked()) return;
-
-    if (!changed || verifyingRef.current) return;
+    if (isSoftBlocked()) {
+      dbg("wcp:changeGuard:softBlocked-skip");
+      return;
+    } // [DBG]
+    if (!changed || verifyingRef.current) {
+      dbg("wcp:changeGuard:skip", { changed, verifying: verifyingRef.current });
+      return;
+    }
     verifyingRef.current = true;
+    dbg("wcp:changeGuard:enter", { prevKey, nextKey }); // [DBG]
 
     (async () => {
       // ★ 인터랙션 락 ON: 가드 인터랙티브 중엔 다른 해제/가드 진입 금지
@@ -300,19 +318,22 @@ export default function WalletContextProvider({
       if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
       try {
-        await waitForRiskHost();
+        await waitForRiskHost(); // [DBG]
+
         const result = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
           chainId,
           mode: "interactive", // 변경은 모달
         });
+        dbg("wcp:changeGuard:verifyResult", { result }); // [DBG]
 
         const ok = result === "already-consented" || result === "verified-now";
         if (ok) {
           addConsentDoneKey(nextKey);
           prevKeyRef.current = nextKey;
           clearSoftBlock();
+          dbg("wcp:changeGuard:consent-ok", { nextKey }); // [DBG]
         } else {
           const provider = await account.connector
             ?.getProvider?.()
@@ -332,6 +353,7 @@ export default function WalletContextProvider({
           // ★ 해제 후 한 틱 비워줘야 버튼 경로 재시도 시 provider pending이 안 남음
           await new Promise((r) => setTimeout(r, 10));
           prevKeyRef.current = nextKey;
+          dbg("wcp:changeGuard:disconnected-no-consent"); // [DBG]
         }
       } catch (e) {
         const provider = await account.connector
@@ -348,10 +370,12 @@ export default function WalletContextProvider({
         });
         await new Promise((r) => setTimeout(r, 10)); // ★ 동일
         prevKeyRef.current = nextKey;
+        dbg("wcp:changeGuard:error-disconnected", { err: String(e) }); // [DBG]
       } finally {
         // ★ 인터랙션 락 OFF
         if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
         verifyingRef.current = false;
+        dbg("wcp:changeGuard:leave"); // [DBG]
       }
     })();
   }, [
@@ -371,16 +395,30 @@ export default function WalletContextProvider({
     const busy =
       typeof window !== "undefined" &&
       (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
-    if (busy) return; // 버튼 경로 중엔 스킵
+    if (busy) {
+      dbg("wcp:init:busy-skip");
+      return;
+    } // [DBG]
     if (hasConsentDoneKey(currentKey)) {
       prevKeyRef.current = currentKey;
+      dbg("wcp:init:already-done", { currentKey });
       return;
-    }
-    if (isSoftBlocked()) return; // 사용자 거절 이후 자동 재개입 금지
-    if (prevKeyRef.current === currentKey) return;
-    if (initializingRef.current) return;
+    } // [DBG]
+    if (isSoftBlocked()) {
+      dbg("wcp:init:softBlocked-skip");
+      return;
+    } // [DBG]
+    if (prevKeyRef.current === currentKey) {
+      dbg("wcp:init:baseline-skip");
+      return;
+    } // [DBG]
+    if (initializingRef.current) {
+      dbg("wcp:init:already-running");
+      return;
+    } // [DBG]
 
     initializingRef.current = true;
+    dbg("wcp:init:enter", { currentKey }); // [DBG]
 
     (async () => {
       try {
@@ -390,10 +428,13 @@ export default function WalletContextProvider({
           chainId,
           mode: "silent",
         });
+        dbg("wcp:init:silentResult", { silent }); // [DBG]
+
         if (silent === "already-consented") {
           addConsentDoneKey(currentKey);
           prevKeyRef.current = currentKey;
           clearSoftBlock();
+          dbg("wcp:init:doneSilentOK");
           return;
         }
 
@@ -404,12 +445,15 @@ export default function WalletContextProvider({
           chainId,
           mode: "interactive",
         });
+        dbg("wcp:init:interResult", { interactive }); // [DBG]
+
         const ok =
           interactive === "already-consented" || interactive === "verified-now";
         if (ok) {
           addConsentDoneKey(currentKey);
           prevKeyRef.current = currentKey;
           clearSoftBlock();
+          dbg("wcp:init:doneInterOK");
         } else {
           const provider = await account.connector
             ?.getProvider?.()
@@ -420,10 +464,11 @@ export default function WalletContextProvider({
             config,
             connector: account.connector,
             provider,
-            hardReloadOnInjected: doHardReload, // 자동 경로는 리로드 금지
+            hardReloadOnInjected: false, // 자동 경로는 리로드 금지
           });
+          dbg("wcp:init:disconnected-no-consent");
         }
-      } catch {
+      } catch (e) {
         const provider = await account.connector
           ?.getProvider?.()
           .catch(() => undefined);
@@ -433,10 +478,12 @@ export default function WalletContextProvider({
           config,
           connector: account.connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected: false,
         });
+        dbg("wcp:init:error-disconnected", { err: String(e) }); // [DBG]
       } finally {
         initializingRef.current = false;
+        dbg("wcp:init:leave"); // [DBG]
       }
     })();
   }, [
@@ -473,34 +520,43 @@ export default function WalletContextProvider({
               chainId, // wagmi가 반영한 최신 chainId 사용
               mode: "interactive",
             });
+            dbg("wcp:provEvt:interResult", { result }); // [DBG]
 
             const ok =
               result === "already-consented" || result === "verified-now";
             if (ok) {
               addConsentDoneKey(`${addrLower}@${chainId}`);
               clearSoftBlock();
+              dbg("wcp:provEvt:consent-ok");
             } else {
-              const doHardReload = isInjectedLike(
-                account.connector?.id,
-                provider
-              );
               await safeDisconnect({
                 config,
                 connector: account.connector,
                 provider,
-                hardReloadOnInjected: doHardReload, // 인앱(메타마스크)에서는 true가 될 것
+                hardReloadOnInjected: isMetaMaskInAppEnv(
+                  account.connector,
+                  provider
+                )
+                  ? true
+                  : false, // 인앱(메타마스크)에서는 true가 될 것
               });
+
+              dbg("wcp:provEvt:disconnected-no-consent");
             }
-          } catch {
-            const doHardReload = isInjectedLike(
-              account.connector?.id,
-              provider
-            );
+          } catch (e) {
             await safeDisconnect({
               config,
               connector: account.connector,
               provider,
-              hardReloadOnInjected: doHardReload,
+              hardReloadOnInjected: isMetaMaskInAppEnv(
+                account.connector,
+                provider
+              )
+                ? true
+                : false,
+            });
+            dbg("wcp:provEvt:error-disconnected", {
+              err: String(e),
             });
           } finally {
             if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
@@ -512,6 +568,7 @@ export default function WalletContextProvider({
           const next = (accs[0] || "").toLowerCase();
           const cur = (account.address || "").toLowerCase();
           if (!next || next === cur) return;
+          dbg("wcp:provEvt:accountsChanged", { next, cur }); // [DBG]
 
           // 사용자가 지갑에서 계정 바꾼 즉시 모달 강제 체크
           await runInteractiveCheck(next);
@@ -522,6 +579,7 @@ export default function WalletContextProvider({
           await new Promise((r) => setTimeout(r, 200));
           const addr = (account.address || "").toLowerCase();
           if (!addr) return;
+          dbg("wcp:provEvt:chainChanged", { chainId: _chainId }); // [DBG]
           await runInteractiveCheck(addr);
         };
 
@@ -535,7 +593,10 @@ export default function WalletContextProvider({
 
         provider.on?.("accountsChanged", onAccountsChanged);
         provider.on?.("chainChanged", onChainChanged);
-      } catch {}
+        dbg("wcp:provEvt:bound"); // [DBG]
+      } catch (e) {
+        dbg("wcp:provEvt:bindError", { err: String(e) }); // [DBG]
+      }
     })();
 
     return () => {
@@ -546,8 +607,41 @@ export default function WalletContextProvider({
       try {
         provider?.removeAllListeners?.("chainChanged");
       } catch {}
+      dbg("wcp:provEvt:unbound"); // [DBG]
     };
   }, [account.connector, account.address, chainId, config]);
+
+  // [DBG #7] 콘솔/DebugHUD에서 수동으로 인터랙티브 모달 강제 실행해볼 수 있게
+  useEffect(() => {
+    (window as any).__forceConsentGuard = async (label = "manual") => {
+      try {
+        dbg("wcp:forceGuard:start", { label });
+        if (!account?.address || !chainId) {
+          dbg("wcp:forceGuard:skip-no-addr");
+          return;
+        }
+        await waitForRiskHost();
+        // 인앱 포커스 복귀 안정화: 아주 짧은 양보
+        await new Promise((r) => setTimeout(r, 10));
+
+        const res = await verifyConsentFlow({
+          config,
+          address: account.address as `0x${string}`,
+          chainId,
+          mode: "interactive",
+        });
+        dbg("wcp:forceGuard:result", { res });
+      } catch (e) {
+        dbg("wcp:forceGuard:error", { err: String(e) });
+      }
+    };
+    return () => {
+      try {
+        delete (window as any).__forceConsentGuard;
+      } catch {}
+    };
+    // 의존성: 주소/체인/컨피그 바뀌면 최신 값 반영
+  }, [account?.address, chainId, config]);
 
   const context: WalletContextType = useMemo(
     () => ({

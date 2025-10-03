@@ -4,9 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ModalContent, ModalBody, Checkbox, Link } from "@heroui/react";
 import ModalBase from "../atoms/ModalBase";
 import ThemedButton from "../atoms/ThemedButton";
+import { dbg } from "@/debug/dbg";
 
 export const OPEN_RISK_CONSENT_EVENT = "app/riskConsentModal/open";
 export const CLOSE_RISK_CONSENT_EVENT = "app/riskConsentModal/close";
+
+const DBG = true;
 
 type Resolver = (ok: boolean) => void;
 type OnConfirm = () => Promise<void> | void;
@@ -73,10 +76,28 @@ export default function RiskConsentModalHost() {
 
   useEffect(() => {
     (window as any).__RISK_HOST_MOUNTED__ = true;
-    console.log("[RiskModal] mounted");
+    (window as any).__RISK_HOST_Z = 9999;
+    dbg("riskHost:mounted", { ua: navigator.userAgent });
+
+    // ★ 강제 오픈 훅(디버그용)
+    (window as any).__forceConsentModal = (label = "manual") => {
+      dbg("riskHost:forceCall", { label });
+      window.dispatchEvent(
+        new CustomEvent(OPEN_RISK_CONSENT_EVENT, {
+          detail: {
+            resolve: (ok: boolean) =>
+              console.log("[RiskModal][force] resolved:", ok),
+          },
+        } as any)
+      );
+    };
 
     // === [ADD] 전역 오프너: 이벤트가 유실될 때 직접 호출 경로 확보 ===
     (window as any)[HOST_OPEN_FN] = (detail: OpenEventDetail) => {
+      dbg("riskHost:HOST_OPEN_FN", {
+        detail: !!detail,
+        hasResolve: typeof detail?.resolve === "function",
+      }); // [DBG]
       // detail.resolve, detail.onConfirm 를 그대로 넘겨받아 상태 세팅
       const { resolve, onConfirm } = detail || {};
       if (typeof resolve !== "function") return;
@@ -105,19 +126,34 @@ export default function RiskConsentModalHost() {
   const [resolver, setResolver] = useState<Resolver | null>(null);
   const resolvedRef = useRef(false);
 
+  const resolverRef = useRef<Resolver | null>(null);
+  useEffect(() => {
+    resolverRef.current = resolver;
+  }, [resolver]);
+
   const safeResolveAndReset = (ok: boolean) => {
+    dbg("riskHost:safeResolve", { ok }); // [DBG]
     if (!resolvedRef.current) {
       resolvedRef.current = true;
-      resolver?.(ok);
+      try {
+        // ⬇️ 최신 resolver 사용
+        resolverRef.current?.(ok);
+      } catch {}
     }
     setResolver(null);
+    resolverRef.current = null;
     setIsOpen(false);
     setOnConfirm(null);
   };
 
   useEffect(() => {
     const open = (e: Event) => {
+      dbg("riskHost:OPEN(event)", {
+        src: "window/document",
+        eType: (e as any)?.type,
+      }); // [DBG]
       console.log("[RiskModal] OPEN event received", e);
+      if (DBG) console.log("[RiskModal] OPEN event received:", e);
       const ce = e as OpenEvent;
       const detail = ce?.detail;
       if (!detail || typeof detail.resolve !== "function") {
@@ -132,7 +168,7 @@ export default function RiskConsentModalHost() {
     };
 
     const close = () => {
-      console.log("[RiskModal] CLOSE event received");
+      dbg("riskHost:CLOSE(event)"); // [DBG]
       safeResolveAndReset(false);
     };
 
@@ -164,6 +200,7 @@ export default function RiskConsentModalHost() {
 
   return (
     <ModalBase
+      isDismissable={false}
       hideCloseButton={false}
       classNames={{
         closeButton: "w-9 h-9 text-foreground", // ★ 크기/색
@@ -173,6 +210,7 @@ export default function RiskConsentModalHost() {
       // ★ 추가: 최상단 보장
       className="!z-[9999]"
       onOpenChange={(open) => {
+        dbg("riskHost:onOpenChange", { open }); // [DBG]
         if (!open) safeResolveAndReset(false);
       }}
     >
@@ -184,10 +222,12 @@ export default function RiskConsentModalHost() {
             <ThemedButton
               variant="MINT"
               onPress={async () => {
+                dbg("riskHost:pressSign"); // [DBG]
                 try {
                   await onConfirm?.();
                   safeResolveAndReset(true);
                 } catch {
+                  dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
                   safeResolveAndReset(false);
                 }
               }}
@@ -231,19 +271,24 @@ export async function openRiskConsentModal(
   arg: OnConfirm | { onConfirm?: OnConfirm }
 ): Promise<boolean> {
   const detail = typeof arg === "function" ? { onConfirm: arg } : arg ?? {};
+  dbg("riskHost:openFn:start"); // [DBG]
 
   // 1) 호스트 준비까지 대기 (인앱에서 특히 중요)
   await waitForRiskHost();
+  dbg("riskHost:openFn:hostReady"); // [DBG]
   // 2) 지갑 시트 → DApp 포커스 전환 안정화를 위해 1~10ms 양보
   await tinyDelay(10);
+  dbg("riskHost:openFn:afterTinyDelay"); // [DBG]
 
   // 3) 전역 오프너가 있으면 직접 호출 (이 경로가 인앱에서 가장 튼튼)
   const openFn = (window as any)[HOST_OPEN_FN];
   if (typeof openFn === "function") {
+    dbg("riskHost:openFn:useHostOpenFn"); // [DBG]
     return new Promise<boolean>((resolve) => openFn({ ...detail, resolve }));
   }
 
   // 4) 폴백: 커스텀 이벤트로 오픈
+  dbg("riskHost:openFn:dispatchEvent"); // [DBG]
   return new Promise<boolean>((resolve) => {
     const ev = new CustomEvent<OpenEventDetail>(OPEN_RISK_CONSENT_EVENT, {
       detail: { ...detail, resolve },
@@ -259,5 +304,6 @@ export async function openRiskConsentModal(
 }
 
 export function closeRiskConsentModal() {
+  dbg("riskHost:closeFn:dispatch"); // [DBG]
   window.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
 }
