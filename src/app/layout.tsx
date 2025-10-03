@@ -30,9 +30,11 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
+          <DeniedWalletModalHost />
+          <RiskConsentModalHost />
         </Providers>
-        <DeniedWalletModalHost />
-        <RiskConsentModalHost />
+        {/* <DeniedWalletModalHost />
+        <RiskConsentModalHost /> */}
       </body>
     </html>
   );
