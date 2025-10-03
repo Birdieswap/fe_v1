@@ -9,6 +9,7 @@ import TransactionContextProvider from "./TransactionContextProvider";
 import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
 import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
 import Script from "next/script";
+import ClientHUD from "./ClientHUD";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,11 +31,10 @@ export default function RootLayout({
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
-          <DeniedWalletModalHost />
-          <RiskConsentModalHost />
         </Providers>
-        {/* <DeniedWalletModalHost />
-        <RiskConsentModalHost /> */}
+        <DeniedWalletModalHost />
+        <RiskConsentModalHost />
+        <ClientHUD />
       </body>
     </html>
   );

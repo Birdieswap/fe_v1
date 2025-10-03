@@ -36,6 +36,7 @@ import {
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 import { waitForRiskHost } from "@/utils/wallet/waitForRiskHost";
+import { dbg } from "@/debug/dbg";
 
 declare global {
   interface Window {
@@ -100,17 +101,11 @@ export function SelectWalletListBox(props: {
     );
 
     // 디버깅 로그 추가
-    console.log("=== 필터링 디버그 ===");
-    console.log("Available Keys:", availableWallets);
-    console.log(
-      "Provider Keys:",
-      props.providers.map((p) => p.key)
-    );
-    console.log("Filtered Count:", filtered.length);
-    console.log(
-      "Filtered Keys:",
-      filtered.map((p) => p.key)
-    );
+    dbg("swm:filter", {
+      avail: availableWallets,
+      given: props.providers.map((p) => p.key),
+      kept: filtered.map((p) => p.key),
+    });
 
     return filtered;
   }, [props.providers, availableWallets]);
@@ -126,13 +121,18 @@ export function SelectWalletListBox(props: {
       localStorage.removeItem("rk-last-connector");
       localStorage.removeItem("rainbowkit.connectedWallets");
       localStorage.removeItem("rainbowkit:connectedWallets");
+      // [DBG]
+      dbg("swm:clearRKRecent");
     } catch {}
   }
 
   //===========whiteList 없앨때 삭제부=============
   async function handleConnect(connect: () => Promise<void>) {
     // re-entrancy guard (render 간 유지)
-    if (inFlightRef.current) return;
+    if (inFlightRef.current) {
+      dbg("swm:skipReentry"); // [DBG]
+      return;
+    }
     inFlightRef.current = true;
 
     const w = typeof window !== "undefined" ? (window as any) : undefined;
@@ -140,12 +140,16 @@ export function SelectWalletListBox(props: {
     if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
     try {
+      // [DBG]
+      dbg("swm:beginHandleConnect");
+
       props.onClose();
       await new Promise((r) => setTimeout(r, 10));
       // ★★★ 프리플러시: '서명 안 하고 닫음' 직후 첫 재시도일 수 있음
       const softBlocked =
         typeof sessionStorage !== "undefined" &&
         sessionStorage.getItem("__CONSENT_BLOCKED_UNTIL_SIGN__") === "1";
+      dbg("swm:softBlocked?", { softBlocked }); // [DBG]
 
       if (softBlocked) {
         // 1) RainbowKit 최근 커넥터 캐시 제거
@@ -156,6 +160,10 @@ export function SelectWalletListBox(props: {
         const provider0 = await acc0.connector
           ?.getProvider?.()
           .catch(() => undefined);
+        dbg("swm:softFlushDisconnect", {
+          connId: acc0.connector?.id,
+          hasProvider: !!provider0,
+        }); // [DBG]
         await safeDisconnect({
           config,
           connector: acc0.connector,
@@ -171,20 +179,19 @@ export function SelectWalletListBox(props: {
       }
 
       // 1) 사용자 제스처 컨텍스트에서 즉시 connect() — 팝업 보장
+      dbg("swm:callConnect"); // [DBG]
       try {
         await connect();
       } catch (err: any) {
         const code = err?.code ?? err?.data?.originalError?.code;
-        if (code === -32002) {
-          console.warn("[SelectWalletMenu] request already pending (-32002)");
-          return; // 지갑 시트에서 사용자가 처리할 수 있도록 모달 유지
-        }
-        console.warn("[SelectWalletMenu] connect() cancelled or failed:", err);
+        dbg("swm:connectError", { code, err: String(err) }); // [DBG]
+        if (code === -32002) return; // 지갑 시트에서 사용자가 처리할 수 있도록 모달 유지
         return;
       }
 
       // 3) 연결 확인
       const { address, status, connector } = getAccount(config);
+      dbg("swm:afterConnect", { status, address, connId: connector?.id }); // [DBG]
       if (!address || status !== "connected") return;
 
       // 메타마스크 인앱 감지
@@ -192,6 +199,7 @@ export function SelectWalletListBox(props: {
 
       // 4) 화이트리스트(있다면)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
+        dbg("swm:denyByWhitelist", { address }); // [DBG]
         const provider = await connector
           ?.getProvider?.()
           .catch(() => undefined);
@@ -209,30 +217,28 @@ export function SelectWalletListBox(props: {
 
       //  메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달
       if (isMetaMaskInAppEnv(connector, provider)) {
+        dbg("swm:mmInAppRoute:enter"); // [DBG]
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
         await new Promise<void>((r) =>
           requestAnimationFrame(() => requestAnimationFrame(() => r()))
         );
         await new Promise((r) => setTimeout(r, 10));
         // 2) 모달 호스트 준비 보장 (최대 500ms)
-        const waitHost = async () => {
-          for (let i = 0; i < 50; i++) {
-            if ((window as any).__RISK_HOST_MOUNTED__) return true;
-            await new Promise((r) => setTimeout(r, 10));
-          }
-          return false;
-        };
-        await waitHost();
 
         await waitForRiskHost();
+        dbg("swm:mmInAppRoute:hostReady"); // [DBG]
+
         const inter = await verifyConsentFlow({
           config,
           address: address as `0x${string}`,
           chainId,
           mode: "interactive",
         });
+        dbg("swm:mmInAppRoute:interResult", { inter }); // [DBG]
+
         const ok = inter === "already-consented" || inter === "verified-now";
         if (!ok) {
+          dbg("swm:mmInAppRoute:disconnectNoConsent"); // [DBG]
           // 인앱은 true → 완전끊기
           await safeDisconnect({
             config,
@@ -245,32 +251,42 @@ export function SelectWalletListBox(props: {
         }
         addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
         clearSoftBlock();
+        dbg("swm:mmInAppRoute:done"); // [DBG]
         return; // 인앱 경로 끝
       }
 
       // 일반 브라우저 경로: 기존대로 silent → 필요 시 interactive
+      dbg("swm:webRoute:silentCheck"); // [DBG]
       const silent = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "silent",
       });
+
+      dbg("swm:webRoute:silentResult", { silent }); // [DBG]
       if (silent === "already-consented") {
         addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
         clearSoftBlock();
+        dbg("swm:webRoute:doneSilentOK"); // [DBG]
         return;
       }
 
       await waitForRiskHost();
+      dbg("swm:webRoute:hostReady"); // [DBG]
+
       const inter = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,
         chainId,
         mode: "interactive",
       });
+      dbg("swm:webRoute:interResult", { inter }); // [DBG]
+
       const ok = inter === "already-consented" || inter === "verified-now";
       if (!ok) {
         const doHardReload = isInjectedLike(connector?.id, provider);
+        dbg("swm:webRoute:disconnectNoConsent", { doHardReload }); // [DBG]
         await safeDisconnect({
           config,
           connector,
@@ -283,9 +299,11 @@ export function SelectWalletListBox(props: {
 
       addConsentDoneKey(`${address.toLowerCase()}@${chainId}`);
       clearSoftBlock();
+      dbg("swm:webRoute:doneInteractiveOK"); // [DBG]
     } finally {
       if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
       inFlightRef.current = false;
+      dbg("swm:finally"); // [DBG]
     }
   }
   //===================삭제부=========================
@@ -298,17 +316,17 @@ export function SelectWalletListBox(props: {
             const canConnect = typeof connect === "function";
             if (!canConnect) {
               // 키가 안 맞으면 connect가 바인딩되지 않습니다.
-              console.warn(
-                "[SelectWalletMenu] connect not available for key:",
-                provider.key,
-                connector?.name
-              );
+              dbg("swm:connectorNotBindable", {
+                key: provider.key,
+                connectorName: connector?.name,
+              }); // [DBG]
             }
             return (
               <Button
                 className="select-network-list-item min-w-[200px]"
                 startContent={<WalletIcon provider={provider} />}
                 onClick={() => {
+                  dbg("swm:clickConnectBtn", { key: provider.key }); // [DBG]
                   if (canConnect) void handleConnect(connect);
                 }}
               >
