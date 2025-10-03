@@ -34,6 +34,7 @@ import {
   clearSoftBlock,
 } from "@/utils/wallet/consentSession";
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
+import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 
 declare global {
   interface Window {
@@ -186,10 +187,6 @@ export function SelectWalletListBox(props: {
 
       // 메타마스크 인앱 감지
       const provider = await connector?.getProvider?.().catch(() => undefined);
-      const ua =
-        (typeof navigator !== "undefined" ? navigator.userAgent : "") || "";
-      const isMMInjected = !!(provider && (provider as any).isMetaMask);
-      const isMetaMaskInApp = isMMInjected && /MetaMask/i.test(ua);
 
       // 4) 화이트리스트(있다면)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
@@ -209,7 +206,7 @@ export function SelectWalletListBox(props: {
       }
 
       //  메타마스크 인앱이면 silent를 건너뛰고 곧바로 interactive 모달
-      if (isMetaMaskInApp) {
+      if (isMetaMaskInAppEnv(connector, provider)) {
         // 시트 닫힘/포커스 반환 타이밍 고려: 아주 짧게 대기
         await new Promise((r) => setTimeout(r, 10));
 
