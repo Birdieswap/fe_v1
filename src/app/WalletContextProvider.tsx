@@ -27,6 +27,7 @@ import {
 } from "@/utils/wallet/consentSession";
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
+import { waitForRiskHost } from "@/utils/wallet/waitForRiskHost";
 
 declare global {
   interface Window {
@@ -299,6 +300,7 @@ export default function WalletContextProvider({
       if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
       try {
+        await waitForRiskHost();
         const result = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
@@ -395,6 +397,7 @@ export default function WalletContextProvider({
           return;
         }
 
+        await waitForRiskHost();
         const interactive = await verifyConsentFlow({
           config,
           address: account.address as `0x${string}`,
@@ -463,6 +466,7 @@ export default function WalletContextProvider({
           if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
 
           try {
+            await waitForRiskHost();
             const result = await verifyConsentFlow({
               config,
               address: addrLower as `0x${string}`,
