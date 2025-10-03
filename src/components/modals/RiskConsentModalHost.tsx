@@ -74,6 +74,32 @@ export default function RiskConsentModalHost() {
   useEffect(() => {
     (window as any).__RISK_HOST_MOUNTED__ = true;
     console.log("[RiskModal] mounted");
+
+    // === [ADD] 전역 오프너: 이벤트가 유실될 때 직접 호출 경로 확보 ===
+    (window as any)[HOST_OPEN_FN] = (detail: OpenEventDetail) => {
+      // detail.resolve, detail.onConfirm 를 그대로 넘겨받아 상태 세팅
+      const { resolve, onConfirm } = detail || {};
+      if (typeof resolve !== "function") return;
+
+      // 이전 요청이 살아있으면 안전 종료
+      try {
+        resolver?.(false);
+      } catch {}
+      resolvedRef.current = false;
+
+      setOnConfirm(() => onConfirm ?? null);
+      setResolver(() => resolve);
+      setIsOpen(true);
+    };
+
+    return () => {
+      try {
+        delete (window as any)[HOST_OPEN_FN];
+      } catch {}
+      try {
+        delete (window as any).__RISK_HOST_MOUNTED__;
+      } catch {}
+    };
   }, []);
 
   const [resolver, setResolver] = useState<Resolver | null>(null);
@@ -165,6 +191,7 @@ export default function RiskConsentModalHost() {
 }
 
 const HOST_READY_FLAG = "__RISK_HOST_MOUNTED__";
+const HOST_OPEN_FN = "__OPEN_RISK_MODAL__";
 
 /** RiskConsentModalHost가 마운트될 때까지 대기 (최대 800ms) */
 function waitForRiskHost(timeout = 800): Promise<void> {
@@ -179,7 +206,7 @@ function waitForRiskHost(timeout = 800): Promise<void> {
   });
 }
 
-/** 아주 짧은 지연 (인앱에서 지갑 시트 → DApp 포커스 전환 안정화) */
+/** 인앱에서 지갑 시트 닫힘→포커스 복귀 직후 렌더 타이밍 안정화 (1~10ms 권장) */
 function tinyDelay(ms = 10) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -194,11 +221,18 @@ export async function openRiskConsentModal(
 ): Promise<boolean> {
   const detail = typeof arg === "function" ? { onConfirm: arg } : arg ?? {};
 
-  // 1) 호스트가 아직이면 기다림 (메타마스크 인앱에서 특히 중요)
+  // 1) 호스트 준비까지 대기 (인앱에서 특히 중요)
   await waitForRiskHost();
-  // 2) 시트/포커스 타이밍 안정화를 위해 한 프레임/수 ms 양보
-  await tinyDelay(10); // <- 1~10ms 권장
+  // 2) 지갑 시트 → DApp 포커스 전환 안정화를 위해 1~10ms 양보
+  await tinyDelay(10);
 
+  // 3) 전역 오프너가 있으면 직접 호출 (이 경로가 인앱에서 가장 튼튼)
+  const openFn = (window as any)[HOST_OPEN_FN];
+  if (typeof openFn === "function") {
+    return new Promise<boolean>((resolve) => openFn({ ...detail, resolve }));
+  }
+
+  // 4) 폴백: 커스텀 이벤트로 오픈
   return new Promise<boolean>((resolve) => {
     window.dispatchEvent(
       new CustomEvent<OpenEventDetail>(OPEN_RISK_CONSENT_EVENT, {
