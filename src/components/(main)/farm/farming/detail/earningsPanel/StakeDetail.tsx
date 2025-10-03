@@ -214,7 +214,9 @@ export default function StakeDetail({
                   <UnStakePanel
                     item={item}
                     matched={matched}
-                    presetMaxToken={applyToken}
+                    presetMaxToken={
+                      presetMaxRef.current ? applyToken : undefined
+                    }
                     onPresetApplied={() => {
                       // URL 정리: 이제서야 삭제
                       if (pendingCleanRef.current) {
