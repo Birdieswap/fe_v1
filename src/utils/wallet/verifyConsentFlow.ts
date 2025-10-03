@@ -97,6 +97,10 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
     if (aborted()) return "cancelled";
 
     // 2) 모달 열고 onConfirm에서 initiate → sign → verify 수행
+    await new Promise((r) => setTimeout(r, 10));
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+
     const confirmed = await openRiskConsentModal({
       onConfirm: async () => {
         if (aborted()) throw new Error("aborted");
