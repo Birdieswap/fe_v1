@@ -35,6 +35,7 @@ import {
 } from "@/utils/wallet/consentSession";
 import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
+import { waitForRiskHost } from "@/utils/wallet/waitForRiskHost";
 
 declare global {
   interface Window {
@@ -223,6 +224,7 @@ export function SelectWalletListBox(props: {
         };
         await waitHost();
 
+        await waitForRiskHost();
         const inter = await verifyConsentFlow({
           config,
           address: address as `0x${string}`,
@@ -259,6 +261,7 @@ export function SelectWalletListBox(props: {
         return;
       }
 
+      await waitForRiskHost();
       const inter = await verifyConsentFlow({
         config,
         address: address as `0x${string}`,

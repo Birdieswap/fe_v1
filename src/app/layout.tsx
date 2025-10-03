@@ -26,12 +26,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>
-        <DeniedWalletModalHost />
-        <RiskConsentModalHost />
         <Providers>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
+          <DeniedWalletModalHost />
+          <RiskConsentModalHost />
         </Providers>
         {/* <DeniedWalletModalHost />
         <RiskConsentModalHost /> */}
