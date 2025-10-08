@@ -1,4 +1,4 @@
-import { Client, formatUnits, TransactionReceipt } from "viem";
+import { Client, formatUnits, TransactionReceipt, keccak256, toBytes } from "viem";
 import { waitForTransactionReceipt } from "viem/actions";
 
 import {
@@ -12,36 +12,57 @@ import { IToken } from "@/const/contracts/types/tokenTypes";
 
 import getTokenAddress from "./assets/getTokenAddress";
 
+// event signature topics
+const TRANSFER_TOPIC = keccak256(toBytes("Transfer(address,address,uint256)"));
+const WITHDRAWAL_TOPIC = keccak256(toBytes("Withdrawal(address,uint256)"));
+
+function topicEndsWithAddress(topic?: `0x${string}`, address?: `0x${string}`) {
+  if (!topic || !address) return false;
+  // 32바이트 패딩된 topic 끝 40글자가 주소(0x 제외)
+  return topic.toLowerCase().endsWith(address.toLowerCase().slice(2));
+}
+
+/**
+ * 특정 tokenAddress(ERC20)이면 Transfer(to=user) 로그를 모두 합산,
+ * tokenAddress가 없거나(네이티브) 혹은 Transfer가 없다면 Withdrawal(user, amount) 로그를 모두 합산.
+ */
 function getReceivedTransfersFromReceipt(
   receipt: TransactionReceipt,
   token?: IToken,
   tokenAddress?: `0x${string}` | null,
   address?: `0x${string}`,
 ) {
-  const transferReceive = receipt.logs.find((v) => {
-    return (
-      v.address &&
-      tokenAddress &&
-      BigInt(v.address) === BigInt(tokenAddress) &&
-      // sender
-      v.topics[0] &&
-      BigInt(v.topics[0]) ===
-        BigInt(
-          "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-        ) &&
-      // receiver
-      address &&
-      v.topics[2] &&
-      BigInt(v.topics[2]) === BigInt(address)
-    );
-  });
+  const decimals = token?.decimals ?? 18;
 
-  if (transferReceive) {
-    return new BigDecimal(
-      formatUnits(BigInt(transferReceive.data), token?.decimals ?? 18),
-      token?.decimals ?? 18,
-    );
-  } else return undefined;
+  // 1) ERC-20 Transfer(..., to=address) 합산
+  let total: bigint = BigInt(0);
+  if (tokenAddress) {
+    for (const v of receipt.logs) {
+      if (
+        v.address &&
+        v.address.toLowerCase() === tokenAddress.toLowerCase() &&
+        v.topics?.[0] === TRANSFER_TOPIC &&
+        topicEndsWithAddress(v.topics?.[2] as `0x${string}`, address)
+      ) {
+        total += BigInt(v.data);
+      }
+    }
+  }
+
+  // 2) 언랩(Withdrawal(address src, uint256 wad)) 합산 — tokenAddress 유무와 무관, 수신자 기준
+  //    (여러 WETH 컨트랙트 가능성 때문에 address 매칭을 강제하지 않고, 수신자 topic으로 잡습니다)
+  if (total === BigInt(0)) {
+    for (const v of receipt.logs) {
+      if (v.topics?.[0] === WITHDRAWAL_TOPIC && topicEndsWithAddress(v.topics?.[1] as `0x${string}`, address)) {
+        total += BigInt(v.data);
+      }
+    }
+  }
+
+  if (total > BigInt(0)) {
+    return new BigDecimal(formatUnits(total, decimals), decimals);
+  }
+  return undefined;
 }
 
 export function getWriteTransactionHandlers({
@@ -70,7 +91,6 @@ export function getWriteTransactionHandlers({
       });
       console.log("onError");
       console.log("e", error.message);
-      // alert(`Task submit Failed. reason : ${error.message}`);
     },
     onSuccess: (tx: `0x${string}`) => {
       refetch?.();
@@ -81,35 +101,27 @@ export function getWriteTransactionHandlers({
         txid: tx,
       });
 
+      // chainId를 number로 정규화
       const chainIdNum: number = (() => {
         const v = (transactionProps as any).chainId;
         if (typeof v === "number") return v;
-        if (typeof v === "bigint") return Number(v); // 주의: 안전성 — chainId는 보통 작음
+        if (typeof v === "bigint") return Number(v);
         if (typeof v === "string") {
           const n = Number(v);
           return Number.isFinite(n) ? n : NaN;
         }
-        return NaN; // 또는 기본값(예: 1)
+        return NaN;
       })();
 
-      const chainId = chainIdNum ;
+      const chainId = chainIdNum;
 
       if (client)
-        waitForTransactionReceipt(client, {
-          hash: tx,
-        })
+        waitForTransactionReceipt(client, { hash: tx })
           .then((receipt) => {
-            // const transferReceive = receipt.logs.find((v) => (
-            // v.topics.includes("0xddf252ad1c6f8a039b4c0a7e2d3b5e9c4d3f5e8a0") &&
-            // v.address ===
-            // ))
             if (receipt.status === "success") {
               refetch?.();
 
-              if (
-                transactionProps.transactionType ===
-                TransactionType.START_FARMING
-              ) {
+              if (transactionProps.transactionType === TransactionType.START_FARMING) {
                 const output = {
                   ...transactionProps.output,
                   amount: getReceivedTransfersFromReceipt(
@@ -129,22 +141,20 @@ export function getWriteTransactionHandlers({
                   transactionStatus: TransactionStatus.SUCCESS,
                   output,
                 });
-              } else if (
-                transactionProps.transactionType ===
-                TransactionType.STOP_FARMING
-              ) {
-                const output = transactionProps.output.map((v) => ({
+              } else if (transactionProps.transactionType === TransactionType.STOP_FARMING) {
+                const output = (transactionProps.output ?? []).map((v) => ({
                   ...v,
                   amount: getReceivedTransfersFromReceipt(
                     receipt,
                     v.token,
                     getTokenAddress({
                       token: v.token,
-                      chainId: transactionProps.chainId,
+                      chainId, // 정규화된 chainId 사용
                     }),
                     transactionProps.address,
                   ),
                 }));
+                console.log("handleWriteTransaction Stop Farming", output);
 
                 transactionContext.setTransactionProps({
                   ...transactionProps,
@@ -152,9 +162,7 @@ export function getWriteTransactionHandlers({
                   transactionStatus: TransactionStatus.SUCCESS,
                   output,
                 });
-              } else if (
-                transactionProps.transactionType === TransactionType.SWAP
-              ) {
+              } else if (transactionProps.transactionType === TransactionType.SWAP) {
                 const amount = getReceivedTransfersFromReceipt(
                   receipt,
                   transactionProps.output.token,
@@ -199,7 +207,6 @@ export function getWriteTransactionHandlers({
             transactionContext.onOpen();
             console.log("onError");
             console.log("e", error);
-            // alert(`Task submit Failed. reason : ${error}`);
           });
 
       console.log("onSettled");
@@ -207,3 +214,226 @@ export function getWriteTransactionHandlers({
     },
   };
 }
+
+
+
+// import { Client, formatUnits, keccak256, toBytes, TransactionReceipt } from "viem";
+// import { waitForTransactionReceipt } from "viem/actions";
+
+// import {
+//   TransactionContextType,
+//   TransactionStatusProps,
+// } from "@/app/TransactionContextProvider";
+// import TransactionStatus from "@/types/TransactionStatus";
+// import { BigDecimal } from "@/types/BigDecimal";
+// import { TransactionType } from "@/types/TransactionTypes";
+// import { IToken } from "@/const/contracts/types/tokenTypes";
+
+// import getTokenAddress from "./assets/getTokenAddress";
+
+// // event signature topics
+// const TRANSFER_TOPIC = keccak256(toBytes("Transfer(address,address,uint256)"));
+// const WITHDRAWAL_TOPIC = keccak256(toBytes("Withdrawal(address,uint256)"));
+
+// function topicEndsWithAddress(topic?: `0x${string}`, address?: `0x${string}`) {
+//   if (!topic || !address) return false;
+//   // 32바이트 패딩된 topic 끝 40글자가 주소(0x 제외)
+//   return topic.toLowerCase().endsWith(address.toLowerCase().slice(2));
+// }
+
+// function getReceivedTransfersFromReceipt(
+//   receipt: TransactionReceipt,
+//   token?: IToken,
+//   tokenAddress?: `0x${string}` | null,
+//   address?: `0x${string}`,
+// ) {
+//   const transferReceive = receipt.logs.find((v) => {
+//     return (
+//       v.address &&
+//       tokenAddress &&
+//       BigInt(v.address) === BigInt(tokenAddress) &&
+//       // sender
+//       v.topics[0] &&
+//       BigInt(v.topics[0]) ===
+//         BigInt(
+//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+//         ) &&
+//       // receiver
+//       address &&
+//       v.topics[2] &&
+//       BigInt(v.topics[2]) === BigInt(address)
+//     );
+//   });
+
+//   if (transferReceive) {
+//     return new BigDecimal(
+//       formatUnits(BigInt(transferReceive.data), token?.decimals ?? 18),
+//       token?.decimals ?? 18,
+//     );
+//   } else return undefined;
+// }
+
+// export function getWriteTransactionHandlers({
+//   client,
+//   transactionContext,
+//   transactionProps,
+//   refetch,
+// }: {
+//   client?: Client;
+//   transactionContext: TransactionContextType;
+//   transactionProps: TransactionStatusProps;
+//   refetch?: () => Promise<unknown>;
+// }) {
+//   transactionContext.setTransactionProps({
+//     ...transactionProps,
+//     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
+//   });
+//   transactionContext.onOpen();
+
+//   return {
+//     onError: (error: Error) => {
+//       transactionContext.onOpen();
+//       transactionContext.setTransactionProps({
+//         ...transactionProps,
+//         transactionStatus: TransactionStatus.FAILED,
+//       });
+//       console.log("onError");
+//       console.log("e", error.message);
+//       // alert(`Task submit Failed. reason : ${error.message}`);
+//     },
+//     onSuccess: (tx: `0x${string}`) => {
+//       refetch?.();
+//       transactionContext.onOpen();
+//       transactionContext.setTransactionProps({
+//         ...transactionProps,
+//         transactionStatus: TransactionStatus.PENDING,
+//         txid: tx,
+//       });
+
+//       const chainIdNum: number = (() => {
+//         const v = (transactionProps as any).chainId;
+//         if (typeof v === "number") return v;
+//         if (typeof v === "bigint") return Number(v); // 주의: 안전성 — chainId는 보통 작음
+//         if (typeof v === "string") {
+//           const n = Number(v);
+//           return Number.isFinite(n) ? n : NaN;
+//         }
+//         return NaN; // 또는 기본값(예: 1)
+//       })();
+
+//       const chainId = chainIdNum ;
+
+//       if (client)
+//         waitForTransactionReceipt(client, {
+//           hash: tx,
+//         })
+//           .then((receipt) => {
+//             // const transferReceive = receipt.logs.find((v) => (
+//             // v.topics.includes("0xddf252ad1c6f8a039b4c0a7e2d3b5e9c4d3f5e8a0") &&
+//             // v.address ===
+//             // ))
+//             if (receipt.status === "success") {
+//               refetch?.();
+
+//               if (
+//                 transactionProps.transactionType ===
+//                 TransactionType.START_FARMING
+//               ) {
+//                 const output = {
+//                   ...transactionProps.output,
+//                   amount: getReceivedTransfersFromReceipt(
+//                     receipt,
+//                     transactionProps.output.token,
+//                     getTokenAddress({
+//                       token: transactionProps.output.token,
+//                       chainId,
+//                     }),
+//                     transactionProps.address,
+//                   ),
+//                 };
+
+//                 transactionContext.setTransactionProps({
+//                   ...transactionProps,
+//                   txid: tx,
+//                   transactionStatus: TransactionStatus.SUCCESS,
+//                   output,
+//                 });
+//               } else if (
+//                 transactionProps.transactionType ===
+//                 TransactionType.STOP_FARMING
+//               ) {
+//                 const output = transactionProps.output.map((v) => ({
+//                   ...v,
+//                   amount: getReceivedTransfersFromReceipt(
+//                     receipt,
+//                     v.token,
+//                     getTokenAddress({
+//                       token: v.token,
+//                       chainId: transactionProps.chainId,
+//                     }),
+//                     transactionProps.address,
+//                   ),
+//                 }));
+//                 console.log("handleWriteTransaction Stop Farming", output);
+
+//                 transactionContext.setTransactionProps({
+//                   ...transactionProps,
+//                   txid: tx,
+//                   transactionStatus: TransactionStatus.SUCCESS,
+//                   output,
+//                 });
+//               } else if (
+//                 transactionProps.transactionType === TransactionType.SWAP
+//               ) {
+//                 const amount = getReceivedTransfersFromReceipt(
+//                   receipt,
+//                   transactionProps.output.token,
+//                   getTokenAddress({
+//                     token: transactionProps.output.token,
+//                     chainId,
+//                   }),
+//                   transactionProps.address,
+//                 );
+//                 const output = {
+//                   ...transactionProps.output,
+//                   amount: amount ?? transactionProps.output.amount,
+//                 };
+
+//                 transactionContext.setTransactionProps({
+//                   ...transactionProps,
+//                   txid: tx,
+//                   transactionStatus: TransactionStatus.SUCCESS,
+//                   output,
+//                 });
+//               } else {
+//                 transactionContext.setTransactionProps({
+//                   ...transactionProps,
+//                   txid: tx,
+//                   transactionStatus: TransactionStatus.SUCCESS,
+//                 });
+//               }
+//             } else {
+//               transactionContext.setTransactionProps({
+//                 ...transactionProps,
+//                 txid: tx,
+//                 transactionStatus: TransactionStatus.FAILED,
+//               });
+//             }
+//             transactionContext.onOpen();
+//           })
+//           .catch((error) => {
+//             transactionContext.setTransactionProps({
+//               ...transactionProps,
+//               transactionStatus: TransactionStatus.FAILED,
+//             });
+//             transactionContext.onOpen();
+//             console.log("onError");
+//             console.log("e", error);
+//             // alert(`Task submit Failed. reason : ${error}`);
+//           });
+
+//       console.log("onSettled");
+//       console.log("tx", tx);
+//     },
+//   };
+// }
