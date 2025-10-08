@@ -36,14 +36,14 @@ export default function NavPoints() {
   const desktopTrigger = (
     <Button
       variant="light"
-      className="h-9 rounded-md px-2 gap-2"
+      className="h-7 rounded-lg px-0 gap-0"
       onPress={disclosure.onOpen} // Popover 열기
     >
       <GiCosmicEgg size="1.5em" />
       <div className="flex max-w-[148px] flex-col items-end">
         <span className="text-md font-semibold">
           {isPointsLoading || total == null ? (
-            <LoadingPulse w="w-20" />
+            <LoadingPulse w="w-15" />
           ) : (
             <span>{totalFormatted}</span>
           )}

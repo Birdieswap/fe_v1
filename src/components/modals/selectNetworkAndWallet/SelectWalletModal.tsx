@@ -30,7 +30,7 @@ export default function SelectWalletModal() {
         onPress={() => setIsConnectModalOpen(true)}
       >
         <Icons.Wallet className="stroke-background" />
-        <span>Connect Wallet</span>
+        {/* <span>Connect Wallet</span> */}
       </Button>
       <ModalBase
         hideCloseButton

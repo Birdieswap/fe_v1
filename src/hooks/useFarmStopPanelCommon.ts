@@ -18,6 +18,8 @@ import useAllowance from "./useAllowance";
 import useApprove from "./useApprove";
 import { getFromContracts } from "@/utils/farm/getAddressHelpers";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+import { BigDecimal } from "@/types/BigDecimal";
+import { formatUnits } from "viem";
 
 type AnyFarm = FarmPair | FarmSingle;
 
@@ -89,6 +91,51 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     writeContract,
   });
 
+  /**
+   * route에 맞춰 STOP_FARMING의 표시용 input/output 기본 형태를 구성
+   * - input: 단일 객체 (해제 대상 토큰)
+   * - output: 수신 예상 토큰 배열 (amount는 영수증으로 채워짐)
+   */
+  function buildStopDisplayTokens(route: StopRoute, blpAmount?: bigint) {
+    // 입력표시용 수량(=사용자 입력) 생성
+    const inputAmount =
+      blpAmount !== undefined && stakeToken?.decimals !== undefined
+        ? new BigDecimal(
+            formatUnits(blpAmount, stakeToken.decimals),
+            stakeToken.decimals
+          )
+        : undefined;
+
+
+    // ─────────────────────────────────────────────────────────────────────────────
+    // 언더라이잉 토큰 추출 로직 (가장 중요한 부분)
+    // BirdieLP: stakeToken.lpPool.input[*].input  → CURRENCY 토큰 배열
+    // BirdieSingle: stakeToken.input              → CURRENCY 토큰 1개
+    // ─────────────────────────────────────────────────────────────────────────────
+    const asAny = stakeToken as any;
+    const lpInputs: any[] | undefined = asAny?.lpPool?.input; // [{ input: CURRENCY }, { input: CURRENCY }]
+    const singleUnderlying: any | undefined = asAny?.input;    // CURRENCY
+
+    let underlyingTokens: any[] = [];
+    if (Array.isArray(lpInputs) && lpInputs.length > 0) {
+      underlyingTokens = lpInputs.map((x) => x?.input).filter(Boolean);
+    } else if (singleUnderlying) {
+      underlyingTokens = [singleUnderlying];
+    }
+
+    // 언더라이잉을 못 찾으면(이상 케이스) 최소 방어로 stakeToken 사용
+    const outputPlaceholders =
+      underlyingTokens.length > 0
+        ? underlyingTokens.map((t) => ({ token: t }))
+        : [{ token: stakeToken }];
+
+    // 라우트와 상관없이(WRAPPER/ROUTER, SINGLE/PAIR) 언더라이잉 기준으로 출력
+    return {
+      input: { token: stakeToken, amount: inputAmount }, // 입력 수량 = BLP 수량
+      output: outputPlaceholders,                        // 실제 수령: 언더라이잉(CURRENCY)들
+    };
+  }
+
   // 실제 트랜잭션 실행은 여기서만!
   const performStop = useCallback(
     (args: {
@@ -99,14 +146,25 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     }) => {
       const { route, blpAmount, onSuccess } = args;
 
+      // STOP_FARMING 표시 토큰을 route에 맞게 준비 (핵심 수정)
+      const { input, output } = buildStopDisplayTokens(route, blpAmount);
+
       const transactionProps =
         ({
           chainId,
           transactionType: TransactionType.STOP_FARMING,
-          input: [], // Stop에서는 표시용 토큰 배열이 필요하면 상위 UI에서 처리 (여긴 최소화)
-          output: [],
+          input,   // 단일 객체
+          output,  // token만 채운 배열 (amount는 handleWriteTransaction에서 채움)
           address,
         } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
+      // const transactionProps =
+      //   ({
+      //     chainId,
+      //     transactionType: TransactionType.STOP_FARMING,
+      //     input: [], // Stop에서는 표시용 토큰 배열이 필요하면 상위 UI에서 처리 (여긴 최소화)
+      //     output: [],
+      //     address,
+      //   } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
 
       const handlers = getWriteTransactionHandlers({
         client,

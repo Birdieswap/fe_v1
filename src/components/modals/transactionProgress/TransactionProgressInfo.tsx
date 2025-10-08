@@ -95,9 +95,11 @@ function TokenList(props: {
     token?: IToken;
   }[];
 }) {
+  console.log("TransactionProgressInfo", props.tokens);
   return (
     <Fragment>
-      {props.tokens.map(({ token, amount }, index) => (
+      {/* {props.tokens.map(({ token, amount }, index) => ( */}
+      {(props.tokens ?? []).filter(Boolean).map(({ token, amount }, index) => (
         <Fragment key={index}>
           <AmountAndSymbol amount={amount} token={token} />
           {index < props.tokens.length - 1 && (
@@ -113,6 +115,7 @@ function StartFarmingTransactionInfoDisplay(
   props: TransactionStatusProps & StartFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
+  console.log("TransactionProgressInfo startFarmingTransaction", props);
 
   return (
     <div className="progress-info-container progress-farm flex flex-col items-center">
@@ -134,16 +137,22 @@ function StopFarmingTransactionInfoDisplay(
   props: TransactionStatusProps & StopFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
+  console.log("TransactionProgressInfo stopFarmingTransaction", props);
 
   return (
-    <div className="progress-info-container progress-farm">
-      <Icons.WalletTitleStartFarm className="fill-foreground" />
-      <span className="info-text-normal">Stop Farming</span>
+    <div className="progress-info-container progress-farm flex flex-col items-center">
+      <div className="flex justify-center items-center gap-2 text-foreground mt-5 mb-5">
+        <Icons.WalletTitleStopFarm className="fill-foreground" />
+        <span className="info-text-normal">Stop Farming</span>
+      </div>
       {isDisplayInput && <TokenList tokens={[props.input]} />}
       {isDisplayOutput && (
         <TokenList
-          tokens={props.output.filter((v) => v.amount !== undefined)}
+          tokens={(props.output ?? []).filter((v) => v?.amount !== undefined)}
         />
+        // <TokenList
+        //   tokens={props.output.filter((v) => v?.amount !== undefined)}
+        // />
       )}
     </div>
   );

@@ -145,7 +145,7 @@ export async function swap(
       {
         onError: (e: any) => {
           try {
-            // ✅ swap도 approve처럼 실패로 전환
+            // swap도 approve처럼 실패로 전환
             (handlers as any)?.onError?.(e);
           } finally {
             reject(e);
