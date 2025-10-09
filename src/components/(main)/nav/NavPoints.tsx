@@ -36,14 +36,14 @@ export default function NavPoints() {
   const desktopTrigger = (
     <Button
       variant="light"
-      className="h-7 rounded-lg px-0 gap-0"
+      className="h-9 rounded-lg min-w-0 p-0 gap-2 [&_[data-slot=content]]:px-0"
       onPress={disclosure.onOpen} // Popover 열기
     >
       <GiCosmicEgg size="1.5em" />
-      <div className="flex max-w-[148px] flex-col items-end">
+      <div className="flex max-w-[148px] flex-col items-center mx-0 px-0">
         <span className="text-md font-semibold">
           {isPointsLoading || total == null ? (
-            <LoadingPulse w="w-15" />
+            <LoadingPulse w="w-10" />
           ) : (
             <span>{totalFormatted}</span>
           )}
@@ -55,7 +55,7 @@ export default function NavPoints() {
   return (
     <>
       {/* 데스크탑: Popover + 트리거 (한 번만) */}
-      <NavbarItem className="max-sm:hidden">
+      <NavbarItem className="max-sm:hidden px-0 mx-0">
         <PointsMenu
           isOpenGlobal={disclosure.isOpen}
           setOpenGlobal={(v) =>
@@ -66,11 +66,12 @@ export default function NavPoints() {
       </NavbarItem>
 
       {/* 모바일: 아이콘 트리거 + 모달 */}
-      <NavbarItem className="sm:hidden">
+      <NavbarItem className="sm:hidden px-0 mx-0">
         <Button
           isIconOnly
           variant="light"
           radius="full"
+          className="h-9 px-0 [&_[data-slot=content]]:px-0"
           onPress={disclosure.onOpen} // 모달 열기
         >
           <GiCosmicEgg size="1.5em" />
@@ -81,8 +82,8 @@ export default function NavPoints() {
         className="mt-2 pt-6 sm:hidden"
         classNames={{
           wrapper: "items-end justify-center",
-          base: "m-0 max-h-[80vh]",
-          body: "p-0",
+          base: "m-0 max-h-[60vh] overflow-hidden",
+          body: "p-0 h-full flex flex-col",
           closeButton: "absolute top-3 right-4",
         }}
         closeButton={<ModalCloseButton onClose={disclosure.onClose} />}
@@ -107,23 +108,25 @@ export default function NavPoints() {
         size="lg"
         onClose={disclosure.onClose}
       >
-        <ModalContent>
-          <ModalBody className="p-0">
-            {/* 헤더 */}
-            <div className="px-6 pt-5 pb-2">
-              <p className="text-[14px] font-semibold leading-5 text-default-700">
-                Birdieswap Point
-              </p>
-              <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-                {isPointsLoading || total == null ? "—" : totalFormatted}
-              </p>
+        <ModalContent className="h-full">
+          <ModalBody className="p-0 h-full flex flex-col">
+            <div className="flex-1 overflow-y-auto">
+              {/* 헤더 */}
+              <div className="px-6 pt-5 pb-2">
+                <p className="text-[14px] font-semibold leading-5 text-default-700">
+                  Birdieswap Point
+                </p>
+                <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
+                  {isPointsLoading || total == null ? "—" : totalFormatted}
+                </p>
+              </div>
+
+              {/* 본문 패널: 모달에서는 가득/반응형 */}
+              <PointsPanel variant="modal" />
+
+              {/* 하단 안전 영역 */}
+              <div className="h-4" />
             </div>
-
-            {/* 본문 패널: 모달에서는 가득/반응형 */}
-            <PointsPanel variant="modal" />
-
-            {/* 하단 안전 영역 */}
-            <div className="h-4" />
           </ModalBody>
         </ModalContent>
       </ModalBase>

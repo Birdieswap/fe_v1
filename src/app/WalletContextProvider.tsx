@@ -62,18 +62,18 @@ const networks: NetworkInfo[] = [
     iconSrc: "/networks/sepolia.svg",
     blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
   },
-  // {
-  //   id: 8453,
-  //   name: "Base",
-  //   iconSrc: "/networks/base.svg",
-  //   blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
-  // },
-  // {
-  //   id: 42161,
-  //   name: "Arbitrum",
-  //   iconSrc: "/networks/arbitrum.svg",
-  //   blockExplorer: { name: "Arbiscan", url: "https://arbiscan.io/" },
-  // },
+  {
+    id: 8453,
+    name: "Base",
+    iconSrc: "/networks/base.svg",
+    blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
+  },
+  {
+    id: 42161,
+    name: "Arbitrum",
+    iconSrc: "/networks/arbitrum.svg",
+    blockExplorer: { name: "Arbiscan", url: "https://arbiscan.io/" },
+  },
 
   // {
   //   id: 10,
