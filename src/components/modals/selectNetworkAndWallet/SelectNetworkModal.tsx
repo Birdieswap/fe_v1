@@ -72,8 +72,8 @@ export default function SelectNetworkModal() {
         classNames={{
           wrapper: "items-end justify-center",
           backdrop: "bg-black/70 backdrop-blur-none",
-          base: "m-0 h-[80vh] overflow-hidden",
-          body: "p-0 h-full flex flex-col",
+          base: "m-0 max-h-[60vh] overflow-hidden",
+          body: "p-0 flex flex-col",
         }}
         isOpen={isOpen}
         motionProps={{
@@ -110,13 +110,13 @@ export default function SelectNetworkModal() {
           if (isOpen) setIsNetworkModalOpen(false);
         }}
       >
-        <ModalContent className="h-full overflow-hidden">
+        <ModalContent className="overflow-hidden">
           <ModalHeader className="px-6 py-[18px]">
             <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
               Select a network
             </p>
           </ModalHeader>
-          <ModalBody className="max-h-[70vh] overflow-y-auto p-0 pb-6 [-webkit-overflow-scrolling:touch]">
+          <ModalBody className="max-h-[60vh] overflow-y-auto p-0 pb-6 [-webkit-overflow-scrolling:touch]">
             <SelectNetworkListBox
               networks={networks}
               onClose={() => setIsNetworkModalOpen(false)}

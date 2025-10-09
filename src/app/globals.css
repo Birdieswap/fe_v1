@@ -62,3 +62,11 @@ body {
     @apply btn-mint-colors;
   }
 }
+
+@supports (-webkit-touch-callout: none) {
+  /* iOS 인식용 해크 */
+  [data-slot="backdrop"] {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}

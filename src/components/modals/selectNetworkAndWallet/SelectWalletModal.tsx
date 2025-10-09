@@ -51,8 +51,8 @@ export default function SelectWalletModal() {
         // iOS 16 화이트스크린 회피: backdrop blur 제거 + opacity 위주 애니메이션
         classNames={{
           backdrop: "bg-black/70 backdrop-blur-none",
-          base: "m-0 h-[60vh] overflow-hidden", // 바깥 스크롤 금지 + 고정 높이
-          body: "p-0 h-full flex flex-col", // 전체 높이 채우기
+          base: "m-0 max-h-[60vh] overflow-hidden", // 바깥 스크롤 금지 + 고정 높이
+          body: "p-0 flex flex-col", // 전체 높이 채우기
         }}
         motionProps={{
           variants: isIOS16
@@ -86,13 +86,13 @@ export default function SelectWalletModal() {
           if (isOpen) setIsConnectModalOpen(false);
         }}
       >
-        <ModalContent className="h-full overflow-hidden">
+        <ModalContent className="overflow-hidden">
           <ModalHeader className="px-6 py-[18px]">
             <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
               Connect a wallet
             </p>
           </ModalHeader>
-          <ModalBody className="max-h-[70vh] p-0 pb-6 overflow-y-auto [-webkit-overflow-scrolling:touch]">
+          <ModalBody className="max-h-[60vh] p-0 pb-6 overflow-y-auto [-webkit-overflow-scrolling:touch]">
             <SelectWalletListBox
               providers={walletProviders}
               onClose={() => setIsConnectModalOpen(false)}
