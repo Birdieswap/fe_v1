@@ -46,7 +46,7 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
       classNames={{
         backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
         wrapper: "items-end justify-center",
-        base: "m-0 max-h-[65vh] overflow-hidden",
+        base: "m-0 max-h-[75vh] overflow-hidden",
         body: "p-0 h-full flex flex-col",
         closeButton: "absolute top-3 right-4",
       }}

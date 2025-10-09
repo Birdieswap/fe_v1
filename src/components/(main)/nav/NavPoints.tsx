@@ -82,7 +82,7 @@ export default function NavPoints() {
         className="mt-2 pt-6 sm:hidden"
         classNames={{
           wrapper: "items-end justify-center",
-          base: "m-0 max-h-[60vh] overflow-hidden",
+          base: "m-0 max-h-[75vh] overflow-hidden",
           body: "p-0 h-full flex flex-col",
           closeButton: "absolute top-3 right-4",
         }}

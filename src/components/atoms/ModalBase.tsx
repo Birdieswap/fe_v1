@@ -19,12 +19,12 @@ export default function ModalBase(props: ModalProps) {
   return (
     <Modal
       {...rest}
-      // ✅ 항상 body로 포털 (상위가 따로 지정하면 그걸 사용)
+      // 항상 body로 포털 (상위가 따로 지정하면 그걸 사용)
       portalContainer={
         portalContainer ??
         (typeof window !== "undefined" ? document.body : undefined)
       }
-      // ✅ 기존 classNames 보존 + wrapper만 보정
+      // 기존 classNames 보존 + wrapper만 보정
       classNames={{
         ...classNames,
         backdrop: clsx(
@@ -36,7 +36,7 @@ export default function ModalBase(props: ModalProps) {
           classNames?.wrapper
         ),
       }}
-      // ✅ 베이스 className은 그대로 합성
+      // 베이스 className은 그대로 합성
       className={clsx(
         "rounded-2xl bg-background dark:border dark:border-dark_popup_bg dark:bg-dark_popup_bg",
         "max-sm:m-0 max-sm:w-full max-sm:max-w-full max-sm:rounded-b-none max-sm:rounded-t-2xl",

@@ -552,6 +552,10 @@ export default function WalletContextProvider({
         };
 
         const runInteractiveCheck = async (nextLower: string) => {
+          if (isSoftBlocked()) {
+            dbg("wcp:provEvt:softBlocked-skip");
+            return;
+          }
           // 버튼 경로/다른 가드와 경합 방지용 잠깐의 틱 + 락
           await new Promise((r) => setTimeout(r, 200));
           const w = typeof window !== "undefined" ? (window as any) : undefined;
@@ -724,6 +728,9 @@ export default function WalletContextProvider({
 
       try {
         // 1) provider 확보(있으면) → safeDisconnect
+        setSoftBlock();
+        prevKeyRef.current = null;
+
         const provider =
           (await account?.connector?.getProvider?.().catch(() => undefined)) ||
           undefined;
@@ -756,8 +763,6 @@ export default function WalletContextProvider({
 
         // 3) 자동 재연결/재개입 방지
         clearRKRecent();
-        setSoftBlock();
-        prevKeyRef.current = null;
 
         dbg("wcp:modalClosed:disconnected");
       } catch (e) {
