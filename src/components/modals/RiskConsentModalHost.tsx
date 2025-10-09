@@ -70,27 +70,30 @@ function StaticConsentContent() {
   );
 }
 
+const HOST_READY_FLAG = "__RISK_HOST_MOUNTED__";
+const HOST_OPEN_FN = "__OPEN_RISK_MODAL__";
+
 export default function RiskConsentModalHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [onConfirm, setOnConfirm] = useState<OnConfirm | null>(null);
 
   useEffect(() => {
-    (window as any).__RISK_HOST_MOUNTED__ = true;
+    (window as any)[HOST_READY_FLAG] = true;
     (window as any).__RISK_HOST_Z = 9999;
     dbg("riskHost:mounted", { ua: navigator.userAgent });
 
     // ★ 강제 오픈 훅(디버그용)
-    (window as any).__forceConsentModal = (label = "manual") => {
-      dbg("riskHost:forceCall", { label });
-      window.dispatchEvent(
-        new CustomEvent(OPEN_RISK_CONSENT_EVENT, {
-          detail: {
-            resolve: (ok: boolean) =>
-              console.log("[RiskModal][force] resolved:", ok),
-          },
-        } as any)
-      );
-    };
+    // (window as any).__forceConsentModal = (label = "manual") => {
+    //   dbg("riskHost:forceCall", { label });
+    //   window.dispatchEvent(
+    //     new CustomEvent(OPEN_RISK_CONSENT_EVENT, {
+    //       detail: {
+    //         resolve: (ok: boolean) =>
+    //           console.log("[RiskModal][force] resolved:", ok),
+    //       },
+    //     } as any)
+    //   );
+    // };
 
     // === [ADD] 전역 오프너: 이벤트가 유실될 때 직접 호출 경로 확보 ===
     (window as any)[HOST_OPEN_FN] = (detail: OpenEventDetail) => {
@@ -111,6 +114,10 @@ export default function RiskConsentModalHost() {
       setOnConfirm(() => onConfirm ?? null);
       setResolver(() => resolve);
       setIsOpen(true);
+
+      try {
+        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
+      } catch {}
     };
 
     return () => {
@@ -118,32 +125,45 @@ export default function RiskConsentModalHost() {
         delete (window as any)[HOST_OPEN_FN];
       } catch {}
       try {
-        delete (window as any).__RISK_HOST_MOUNTED__;
+        delete (window as any)[HOST_READY_FLAG];
       } catch {}
     };
   }, []);
 
   const [resolver, setResolver] = useState<Resolver | null>(null);
+  const resolverRef = useRef<Resolver | null>(null);
   const resolvedRef = useRef(false);
 
-  const resolverRef = useRef<Resolver | null>(null);
   useEffect(() => {
     resolverRef.current = resolver;
   }, [resolver]);
 
-  const safeResolveAndReset = (ok: boolean) => {
-    dbg("riskHost:safeResolve", { ok }); // [DBG]
+  const safeResolveAndReset = (ok: boolean, fromEvent = false) => {
+    dbg("riskHost:safeResolve", { ok, fromEvent });
+
+    // ⛔️ 내부(사용자 취소)에서만 close 이벤트를 1회 발행
+    if (!ok && !fromEvent) {
+      try {
+        window.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
+        document.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
+      } catch {}
+    }
+
     if (!resolvedRef.current) {
       resolvedRef.current = true;
       try {
-        // ⬇️ 최신 resolver 사용
         resolverRef.current?.(ok);
       } catch {}
     }
+
     setResolver(null);
     resolverRef.current = null;
     setIsOpen(false);
     setOnConfirm(null);
+
+    try {
+      (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = false;
+    } catch {}
   };
 
   useEffect(() => {
@@ -165,11 +185,15 @@ export default function RiskConsentModalHost() {
       setOnConfirm(() => detail.onConfirm ?? null);
       setResolver(() => detail.resolve);
       setIsOpen(true);
+
+      try {
+        (window as any).__CONSENT_INTERACTIVE_ACTIVE__ = true;
+      } catch {}
     };
 
     const close = () => {
-      dbg("riskHost:CLOSE(event)"); // [DBG]
-      safeResolveAndReset(false);
+      dbg("riskHost:CLOSE(event)");
+      safeResolveAndReset(false, /* fromEvent */ true);
     };
 
     window.addEventListener(OPEN_RISK_CONSENT_EVENT, open as EventListener);
@@ -198,6 +222,10 @@ export default function RiskConsentModalHost() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resolver]);
 
+  const handleClose = () => {
+    safeResolveAndReset(false);
+  };
+
   return (
     <ModalBase
       portalContainer={
@@ -209,9 +237,9 @@ export default function RiskConsentModalHost() {
       classNames={{
         backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
         wrapper: "items-end justify-center",
-        base: "m-0 max-h-[80vh] overflow-hidden", // base엔 max-h + overflow-hidden
+        base: "m-0 max-h-[85vh] overflow-hidden", // base엔 max-h + overflow-hidden
         body: "p-0 h-full flex flex-col", // 내부에서만 스크롤
-        closeButton: "w-9 h-9 text-foreground",
+        closeButton: "pointer-events-auto z-[2] w-9 h-9 text-foreground",
       }}
       isOpen={isOpen}
       motionProps={{
@@ -222,16 +250,11 @@ export default function RiskConsentModalHost() {
       }}
       // ★ 추가: 최상단 보장
       className="!z-[9999]"
+      onClose={() => safeResolveAndReset(false, /* fromEvent */ false)}
       onOpenChange={(open) => {
-        dbg("riskHost:onOpenChange", { open }); // [DBG]
+        dbg("riskHost:onOpenChange", { open });
         if (!open) {
-          safeResolveAndReset(false);
-          try {
-            window.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
-          } catch {}
-          try {
-            document.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
-          } catch {}
+          safeResolveAndReset(false, /* fromEvent */ false);
         }
       }}
     >
@@ -264,9 +287,6 @@ export default function RiskConsentModalHost() {
     </ModalBase>
   );
 }
-
-const HOST_READY_FLAG = "__RISK_HOST_MOUNTED__";
-const HOST_OPEN_FN = "__OPEN_RISK_MODAL__";
 
 /** RiskConsentModalHost가 마운트될 때까지 대기 (최대 800ms) */
 function waitForRiskHost(timeout = 800): Promise<void> {
