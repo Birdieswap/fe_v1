@@ -12,19 +12,9 @@ import { walletProviders } from "@/const/wallets";
 
 import { SelectWalletHelp, SelectWalletListBox } from "./SelectWalletMenu";
 
-//ios16 white screen issue
-function useIsIOS16() {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  // iPhone + iOS 16.x 탐지 (간단 버전)
-  return /iPhone/.test(ua) && /OS 16_/.test(ua);
-}
-
 export default function SelectWalletModal() {
   const { isConnectModalOpen, setIsConnectModalOpen } =
     useContext(WalletContext);
-
-  const isIOS16 = useIsIOS16();
 
   const modalRef = useRef<HTMLButtonElement>(null);
 
@@ -50,54 +40,45 @@ export default function SelectWalletModal() {
         scrollBehavior="inside"
         // iOS 16 화이트스크린 회피: backdrop blur 제거 + opacity 위주 애니메이션
         classNames={{
-          backdrop: "bg-black/70 backdrop-blur-none",
-          base: "m-0 max-h-[60vh] overflow-hidden", // 바깥 스크롤 금지 + 고정 높이
-          body: "p-0 flex flex-col", // 전체 높이 채우기
+          backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
+          wrapper: "items-end justify-center",
+          base: "m-0 max-h-[60vh] overflow-hidden",
+          body: "p-0 h-full flex flex-col",
         }}
         motionProps={{
-          variants: isIOS16
-            ? {
-                enter: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.2, ease: "easeOut" },
-                },
-                exit: {
-                  opacity: 0,
-                  y: 0,
-                  transition: { duration: 0.2, ease: "easeIn" },
-                },
-              }
-            : {
-                // iOS 외엔 기존 y 슬라이드 써도 OK (필요 없으면 동일하게 opacity만)
-                enter: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.3, ease: "easeOut" },
-                },
-                exit: {
-                  opacity: 0,
-                  y: "6%",
-                  transition: { duration: 0.25, ease: "easeIn" },
-                },
-              },
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.3, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.3, ease: "easeIn" },
+            },
+          },
         }}
         onClose={() => {
           if (isOpen) setIsConnectModalOpen(false);
         }}
       >
-        <ModalContent className="overflow-hidden">
+        <ModalContent>
           <ModalHeader className="px-6 py-[18px]">
             <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
               Connect a wallet
             </p>
           </ModalHeader>
-          <ModalBody className="max-h-[60vh] p-0 pb-6 overflow-y-auto [-webkit-overflow-scrolling:touch]">
-            <SelectWalletListBox
-              providers={walletProviders}
-              onClose={() => setIsConnectModalOpen(false)}
-            />
-            <SelectWalletHelp />
+          <ModalBody className="p-0 h-full flex flex-col">
+            {/* ✅ 이 DIV만 스크롤 */}
+            <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
+              <SelectWalletListBox
+                providers={walletProviders}
+                onClose={() => setIsConnectModalOpen(false)}
+              />
+              <SelectWalletHelp />
+              <div className="h-4" />
+            </div>
           </ModalBody>
         </ModalContent>
       </ModalBase>

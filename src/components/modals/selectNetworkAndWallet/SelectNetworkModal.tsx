@@ -10,12 +10,6 @@ import { WalletContext } from "@/app/WalletContextProvider";
 
 import { NetworkIcon, SelectNetworkListBox } from "./SelectNetworkMenu";
 
-function useIsIOS16() {
-  if (typeof navigator === "undefined") return false;
-  const ua = navigator.userAgent;
-  return /iPhone/.test(ua) && /OS 16_/.test(ua);
-}
-
 export default function SelectNetworkModal() {
   const {
     selectedNetwork,
@@ -23,8 +17,6 @@ export default function SelectNetworkModal() {
     isNetworkModalOpen,
     setIsNetworkModalOpen,
   } = useContext(WalletContext);
-
-  const isIOS16 = useIsIOS16();
 
   const modalRef = useRef<HTMLButtonElement>(null);
 
@@ -70,38 +62,25 @@ export default function SelectNetworkModal() {
         //  모바일 최적화 설정
         // iOS 16: backdrop blur 제거 + 컨테이너 고정 높이 + 외부 스크롤 금지
         classNames={{
+          backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
           wrapper: "items-end justify-center",
-          backdrop: "bg-black/70 backdrop-blur-none",
-          base: "m-0 max-h-[60vh] overflow-hidden",
-          body: "p-0 flex flex-col",
+          base: "m-0 max-h-[65vh] overflow-hidden",
+          body: "p-0 h-full flex flex-col",
         }}
         isOpen={isOpen}
         motionProps={{
-          variants: isIOS16
-            ? {
-                enter: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.2, ease: "easeOut" },
-                },
-                exit: {
-                  opacity: 0,
-                  y: 0,
-                  transition: { duration: 0.2, ease: "easeIn" },
-                },
-              }
-            : {
-                enter: {
-                  opacity: 1,
-                  y: 0,
-                  transition: { duration: 0.3, ease: "easeOut" },
-                },
-                exit: {
-                  opacity: 0,
-                  y: "6%",
-                  transition: { duration: 0.25, ease: "easeIn" },
-                },
-              },
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.3, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.3, ease: "easeIn" },
+            },
+          },
         }}
         placement="bottom"
         scrollBehavior="inside"
@@ -110,17 +89,20 @@ export default function SelectNetworkModal() {
           if (isOpen) setIsNetworkModalOpen(false);
         }}
       >
-        <ModalContent className="overflow-hidden">
+        <ModalContent>
           <ModalHeader className="px-6 py-[18px]">
             <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
               Select a network
             </p>
           </ModalHeader>
-          <ModalBody className="max-h-[60vh] overflow-y-auto p-0 pb-6 [-webkit-overflow-scrolling:touch]">
-            <SelectNetworkListBox
-              networks={networks}
-              onClose={() => setIsNetworkModalOpen(false)}
-            />
+          <ModalBody className="p-0 h-full flex flex-col">
+            <div className="flex-1 overflow-y-auto [-webkit-overflow-scrolling:touch]">
+              <SelectNetworkListBox
+                networks={networks}
+                onClose={() => setIsNetworkModalOpen(false)}
+              />
+              <div className="h-4" />
+            </div>
           </ModalBody>
         </ModalContent>
       </ModalBase>
