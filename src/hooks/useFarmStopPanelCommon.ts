@@ -20,6 +20,7 @@ import { getFromContracts } from "@/utils/farm/getAddressHelpers";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { BigDecimal } from "@/types/BigDecimal";
 import { formatUnits } from "viem";
+import tokens from "@/const/contracts/tokens/tokens";
 
 type AnyFarm = FarmPair | FarmSingle;
 
@@ -35,6 +36,16 @@ type StopSpenderOverride = {
   stopSpenderProvider?: any;            // stakingProviders.* 객체 (addresses[chainId]를 가짐)
   stopSpenderAddress?: `0x${string}`;   // 위 provider에서 뽑은 체인별 주소
 };
+
+function isWETH(tok: any) {
+  const sym = tok?.symbol?.toUpperCase?.() ?? "";
+  return sym === "WETH" || sym === "WETH9";
+}
+
+function isETH(tok: any) {
+  const sym = tok?.symbol?.toUpperCase?.() ?? "";
+  return sym === "ETH";
+}
 
 export default function useFarmStopPanelCommon(item: Farm, override?: StopSpenderOverride) {
   const base = useFarmPanelCommon(item);
@@ -122,17 +133,30 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     } else if (singleUnderlying) {
       underlyingTokens = [singleUnderlying];
     }
+    if (underlyingTokens.length === 0) {
+      underlyingTokens = [stakeToken];
+    }
 
-    // 언더라이잉을 못 찾으면(이상 케이스) 최소 방어로 stakeToken 사용
-    const outputPlaceholders =
-      underlyingTokens.length > 0
-        ? underlyingTokens.map((t) => ({ token: t }))
-        : [{ token: stakeToken }];
+    // 라우트가 WRAPPER_* 면, 언더라이잉 중 WETH → ETH로 치환
+    const unwrapToEth = route === "WRAPPER_SINGLE" || route === "WRAPPER_PAIR";
+    const keepAsWeth = route === "ROUTER_SINGLE" || route === "ROUTER_PAIR";
 
-    // 라우트와 상관없이(WRAPPER/ROUTER, SINGLE/PAIR) 언더라이잉 기준으로 출력
+    const normalizedOutputs = underlyingTokens.map((t) => {
+      // WRAPPER 경로: WETH → ETH
+      if (unwrapToEth && isWETH(t)) return tokens.ETH;
+
+      // ROUTER 경로: ETH가 언더라이잉에 섞여 있으면 WETH로 강제(받기옵션 WETH 보장)
+      if (keepAsWeth && isETH(t)) return tokens.WETH;
+
+      // ROUTER 경로: 언더라이잉이 WETH “유사 객체”면 공식 tokens.WETH로 통일
+      if (keepAsWeth && isWETH(t)) return tokens.WETH;
+
+      return t;
+    });
+
     return {
-      input: { token: stakeToken, amount: inputAmount }, // 입력 수량 = BLP 수량
-      output: outputPlaceholders,                        // 실제 수령: 언더라이잉(CURRENCY)들
+      input: { token: stakeToken, amount: inputAmount },              // BLP 수량
+      output: normalizedOutputs.map((t) => ({ token: t })),           // 실제 수령(ETH/WETH 규칙 반영)
     };
   }
 
@@ -146,6 +170,11 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     }) => {
       const { route, blpAmount, onSuccess } = args;
 
+      const executorAddress =
+        args.route === "WRAPPER_SINGLE" || args.route === "WRAPPER_PAIR"
+          ? WRAPPER_ADDRESS
+          : ROUTER_ADDRESS;
+
       // STOP_FARMING 표시 토큰을 route에 맞게 준비 (핵심 수정)
       const { input, output } = buildStopDisplayTokens(route, blpAmount);
 
@@ -156,15 +185,9 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
           input,   // 단일 객체
           output,  // token만 채운 배열 (amount는 handleWriteTransaction에서 채움)
           address,
+          executorAddress, 
         } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
-      // const transactionProps =
-      //   ({
-      //     chainId,
-      //     transactionType: TransactionType.STOP_FARMING,
-      //     input: [], // Stop에서는 표시용 토큰 배열이 필요하면 상위 UI에서 처리 (여긴 최소화)
-      //     output: [],
-      //     address,
-      //   } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
+      
 
       const handlers = getWriteTransactionHandlers({
         client,
