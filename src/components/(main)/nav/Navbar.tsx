@@ -55,8 +55,8 @@ export default function NavbarImpl() {
         <NavbarLink />
       </NavbarContent>
 
-      {/* ⭐ 데스크탑 네트워크 지갑 연결 버튼 */}
-      <NavbarContent className="max-sm:gap-2" justify="end">
+      {/* 데스크탑 네트워크 지갑 연결 버튼 */}
+      <NavbarContent className="max-sm:gap-2 gap-2" justify="end">
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}
@@ -64,7 +64,7 @@ export default function NavbarImpl() {
         <NavbarConnect />
       </NavbarContent>
 
-      {/* ⭐ 모바일 메뉴 모달 */}
+      {/* 모바일 메뉴 모달 */}
       <NavMenu {...menuDisclosure} />
     </Navbar>
   );

@@ -170,62 +170,6 @@ export const wagmiConfig = createConfig({
   ssr: true,
 });
 
-// const transports: Record<number, any> = {};
-// for (const ch of chains) transports[ch.id] = http(); // 체인 정의의 rpcUrls.default 사용
-
-// transports[sepolia.id] = fallback(
-//   (sepoliaUrls.length ? sepoliaUrls : ["https://sepolia.drpc.org"]).map((url) =>
-//     httpWithLog(url, { timeout: 15_000 })
-//   ),
-//   { rank: false, retryCount: 3, retryDelay: 3000 }
-// );
-
-// transports[base_custom.id] = fallback(
-//   (baseUrls.length ? baseUrls : ["https://mainnet.base.org"]).map((url) =>
-//     httpWithLog(url, { timeout: 15_000 })
-//   ),
-//   { rank: false, retryCount: 3, retryDelay: 3000 }
-// );
-
-// export const wagmiConfig = getDefaultConfig({
-//   appName: process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap",
-//   projectId:
-//     process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id",
-//   chains: [
-//     sepolia,
-//     arbitrum,
-//     base_custom,
-//     optimism_custom,
-//     bsc,
-//     polygon,
-//     scroll,
-//     baseFork,
-//   ],
-
-//   // transports,
-//   ssr: true,
-//   //multiInjectedProviderDiscovery: false,
-
-//   // ⭐ 조건부 지갑 설정 - 타입 안전하게
-//   wallets: [
-//     {
-//       groupName: "Popular",
-//       wallets: [
-//         metaMaskWallet, // "metaMask"
-//         walletConnectWallet, // "walletConnect"
-//         uniswapWallet, // "uniswap"
-//         coinbaseWallet,
-//         // 기타 지갑들은 프로덕션에서만
-//         trustWallet,
-//         braveWallet,
-//         phantomWallet,
-//       ],
-//     },
-//   ],
-// });
-
-console.log("MY_RPC_URL", process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL);
-
 // 🔥 디버깅 코드 추가
 if (typeof window !== "undefined" && process.env.NODE_ENV === "development") {
   console.log("=== Wagmi Config 생성됨 ===");

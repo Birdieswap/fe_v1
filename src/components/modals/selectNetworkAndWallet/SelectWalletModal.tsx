@@ -12,9 +12,19 @@ import { walletProviders } from "@/const/wallets";
 
 import { SelectWalletHelp, SelectWalletListBox } from "./SelectWalletMenu";
 
+//ios16 white screen issue
+function useIsIOS16() {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  // iPhone + iOS 16.x 탐지 (간단 버전)
+  return /iPhone/.test(ua) && /OS 16_/.test(ua);
+}
+
 export default function SelectWalletModal() {
   const { isConnectModalOpen, setIsConnectModalOpen } =
     useContext(WalletContext);
+
+  const isIOS16 = useIsIOS16();
 
   const modalRef = useRef<HTMLButtonElement>(null);
 
@@ -37,6 +47,42 @@ export default function SelectWalletModal() {
         className="sm:hidden"
         isOpen={isOpen}
         scrollBehavior="inside"
+        // iOS 16 화이트스크린 회피: backdrop blur 제거 + opacity 위주 애니메이션
+        classNames={{
+          backdrop: isIOS16
+            ? "bg-black/70 backdrop-blur-none"
+            : "bg-black/70 backdrop-blur-none",
+          base: "m-0 h-[60vh] overflow-hidden", // 바깥 스크롤 금지 + 고정 높이
+          body: "p-0 h-full flex flex-col", // 전체 높이 채우기
+        }}
+        motionProps={{
+          variants: isIOS16
+            ? {
+                enter: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.2, ease: "easeOut" },
+                },
+                exit: {
+                  opacity: 0,
+                  y: 0,
+                  transition: { duration: 0.2, ease: "easeIn" },
+                },
+              }
+            : {
+                // iOS 외엔 기존 y 슬라이드 써도 OK (필요 없으면 동일하게 opacity만)
+                enter: {
+                  opacity: 1,
+                  y: 0,
+                  transition: { duration: 0.3, ease: "easeOut" },
+                },
+                exit: {
+                  opacity: 0,
+                  y: "6%",
+                  transition: { duration: 0.25, ease: "easeIn" },
+                },
+              },
+        }}
         onClose={() => {
           if (isOpen) setIsConnectModalOpen(false);
         }}
