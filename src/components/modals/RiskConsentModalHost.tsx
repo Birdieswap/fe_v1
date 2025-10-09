@@ -205,9 +205,10 @@ export default function RiskConsentModalHost() {
       }
       isDismissable={false}
       hideCloseButton={false}
+      placement="bottom"
       classNames={{
         backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
-        wrapper: "items-center justify-center", // 중앙 모달이면 이렇게
+        wrapper: "items-end justify-center",
         base: "m-0 max-h-[80vh] overflow-hidden", // base엔 max-h + overflow-hidden
         body: "p-0 h-full flex flex-col", // 내부에서만 스크롤
         closeButton: "w-9 h-9 text-foreground",
@@ -235,7 +236,7 @@ export default function RiskConsentModalHost() {
       }}
     >
       <ModalContent className="w-[80vw] max-w-[500px]">
-        <ModalBody className="p-0 h-full flex flex-col">
+        <ModalBody className="p-0 flex flex-col">
           <div className="flex-1 overflow-y-auto p-6 [-webkit-overflow-scrolling:touch]">
             <StaticConsentContent />
 
