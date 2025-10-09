@@ -71,9 +71,7 @@ export default function SelectNetworkModal() {
         // iOS 16: backdrop blur 제거 + 컨테이너 고정 높이 + 외부 스크롤 금지
         classNames={{
           wrapper: "items-end justify-center",
-          backdrop: isIOS16
-            ? "bg-black/70 backdrop-blur-none"
-            : "bg-black/70 backdrop-blur-none",
+          backdrop: "bg-black/70 backdrop-blur-none",
           base: "m-0 h-[80vh] overflow-hidden",
           body: "p-0 h-full flex flex-col",
         }}

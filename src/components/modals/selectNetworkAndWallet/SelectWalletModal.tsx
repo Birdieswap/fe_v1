@@ -28,9 +28,10 @@ export default function SelectWalletModal() {
 
   const modalRef = useRef<HTMLButtonElement>(null);
 
-  const isOpen = useMemo(() => {
-    return isConnectModalOpen && (modalRef.current?.checkVisibility() ?? false);
-  }, [isConnectModalOpen, modalRef]);
+  const isOpen = isConnectModalOpen;
+  // useMemo(() => {
+  //   return isConnectModalOpen && (modalRef.current?.checkVisibility() ?? false);
+  // }, [isConnectModalOpen, modalRef]);
 
   return (
     <Fragment>
@@ -49,9 +50,7 @@ export default function SelectWalletModal() {
         scrollBehavior="inside"
         // iOS 16 화이트스크린 회피: backdrop blur 제거 + opacity 위주 애니메이션
         classNames={{
-          backdrop: isIOS16
-            ? "bg-black/70 backdrop-blur-none"
-            : "bg-black/70 backdrop-blur-none",
+          backdrop: "bg-black/70 backdrop-blur-none",
           base: "m-0 h-[60vh] overflow-hidden", // 바깥 스크롤 금지 + 고정 높이
           body: "p-0 h-full flex flex-col", // 전체 높이 채우기
         }}
