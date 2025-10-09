@@ -89,6 +89,10 @@ export default function NavbarConnect() {
             <SelectNetworkModal />
           </NavbarItem>
 
+          <NavbarItem hidden={!isAccountConnected}>
+            <SettingsModal />
+          </NavbarItem>
+
           <NavbarItem className="pl-1" hidden={isAccountConnected}>
             <SelectWalletModal />
           </NavbarItem>
