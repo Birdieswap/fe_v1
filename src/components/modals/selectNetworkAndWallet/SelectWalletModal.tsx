@@ -34,6 +34,9 @@ export default function SelectWalletModal() {
         {/* <span>Connect Wallet</span> */}
       </Button>
       <ModalBase
+        portalContainer={
+          typeof window !== "undefined" ? document.body : undefined
+        }
         hideCloseButton
         className="sm:hidden"
         isOpen={isOpen}
