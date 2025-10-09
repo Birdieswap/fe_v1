@@ -87,13 +87,13 @@ export default function SelectWalletModal() {
           if (isOpen) setIsConnectModalOpen(false);
         }}
       >
-        <ModalContent>
+        <ModalContent className="h-full overflow-hidden">
           <ModalHeader className="px-6 py-[18px]">
             <p className="w-full text-[14px] font-medium leading-[20px] text-default-800 dark:text-foreground">
               Connect a wallet
             </p>
           </ModalHeader>
-          <ModalBody className="max-h-[70vh] gap-0 overflow-y-auto p-0 pb-6">
+          <ModalBody className="max-h-[70vh] p-0 pb-6 overflow-y-auto [-webkit-overflow-scrolling:touch]">
             <SelectWalletListBox
               providers={walletProviders}
               onClose={() => setIsConnectModalOpen(false)}
