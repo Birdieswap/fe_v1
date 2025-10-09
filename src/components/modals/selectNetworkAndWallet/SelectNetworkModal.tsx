@@ -58,6 +58,9 @@ export default function SelectNetworkModal() {
       </Button>
       <ModalBase
         hideCloseButton
+        portalContainer={
+          typeof window !== "undefined" ? document.body : undefined
+        }
         className="sm:hidden"
         //  모바일 최적화 설정
         // iOS 16: backdrop blur 제거 + 컨테이너 고정 높이 + 외부 스크롤 금지
