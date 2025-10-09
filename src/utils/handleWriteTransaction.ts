@@ -11,6 +11,7 @@ import { TransactionType } from "@/types/TransactionTypes";
 import { IToken } from "@/const/contracts/types/tokenTypes";
 
 import getTokenAddress from "./assets/getTokenAddress";
+import tokens from "@/const/contracts/tokens/tokens";
 
 // event signature topics
 const TRANSFER_TOPIC = keccak256(toBytes("Transfer(address,address,uint256)"));
@@ -22,15 +23,43 @@ function topicEndsWithAddress(topic?: `0x${string}`, address?: `0x${string}`) {
   return topic.toLowerCase().endsWith(address.toLowerCase().slice(2));
 }
 
+function isNativeETH(token?: IToken) {
+  const sym = token?.symbol?.toUpperCase?.() ?? "";
+  return sym === "ETH";
+}
+
+function isWETH(token?: IToken) {
+  const sym = token?.symbol?.toUpperCase?.() ?? "";
+  return sym === "WETH" || sym === "WETH9";
+}
+
+function resolveTokenAddressSafe(token: IToken | undefined, chainId: number): `0x${string}` | null {
+  if (!token) return null;
+  // ETH는 네이티브로 처리해야 하므로 주소 null
+  if (isNativeETH(token)) return null;
+
+  // 우선 일반 로직
+  let addr = getTokenAddress({ token, chainId });
+
+  // 만약 WETH인데 주소가 비거나 수상하면, 공식 tokens.WETH로 보정
+  if ((!addr || addr.length < 10) && isWETH(token)) {
+    const fallback = getTokenAddress({ token: (tokens as any).WETH, chainId });
+    if (fallback) addr = fallback;
+  }
+
+  return addr ?? null;
+}
+
 /**
- * 특정 tokenAddress(ERC20)이면 Transfer(to=user) 로그를 모두 합산,
- * tokenAddress가 없거나(네이티브) 혹은 Transfer가 없다면 Withdrawal(user, amount) 로그를 모두 합산.
+ * ERC-20 → Transfer(to=user) 합산
+ * ETH(네이티브) → Withdrawal(src=executor) 합산
  */
 function getReceivedTransfersFromReceipt(
   receipt: TransactionReceipt,
   token?: IToken,
   tokenAddress?: `0x${string}` | null,
   address?: `0x${string}`,
+  executorAddress?: `0x${string}`, 
 ) {
   const decimals = token?.decimals ?? 18;
 
@@ -47,13 +76,13 @@ function getReceivedTransfersFromReceipt(
         total += BigInt(v.data);
       }
     }
-  }
-
-  // 2) 언랩(Withdrawal(address src, uint256 wad)) 합산 — tokenAddress 유무와 무관, 수신자 기준
-  //    (여러 WETH 컨트랙트 가능성 때문에 address 매칭을 강제하지 않고, 수신자 topic으로 잡습니다)
-  if (total === BigInt(0)) {
+  } else if (executorAddress) {
+    // 네이티브 ETH: Withdrawal(src=executor) 감지
     for (const v of receipt.logs) {
-      if (v.topics?.[0] === WITHDRAWAL_TOPIC && topicEndsWithAddress(v.topics?.[1] as `0x${string}`, address)) {
+      if (
+        v.topics?.[0] === WITHDRAWAL_TOPIC &&
+        topicEndsWithAddress(v.topics?.[1] as `0x${string}`, executorAddress)
+      ) {
         total += BigInt(v.data);
       }
     }
@@ -127,11 +156,9 @@ export function getWriteTransactionHandlers({
                   amount: getReceivedTransfersFromReceipt(
                     receipt,
                     transactionProps.output.token,
-                    getTokenAddress({
-                      token: transactionProps.output.token,
-                      chainId,
-                    }),
+                    resolveTokenAddressSafe(transactionProps.output.token, chainId),
                     transactionProps.address,
+                    undefined,
                   ),
                 };
 
@@ -142,19 +169,32 @@ export function getWriteTransactionHandlers({
                   output,
                 });
               } else if (transactionProps.transactionType === TransactionType.STOP_FARMING) {
-                const output = (transactionProps.output ?? []).map((v) => ({
-                  ...v,
-                  amount: getReceivedTransfersFromReceipt(
-                    receipt,
-                    v.token,
-                    getTokenAddress({
-                      token: v.token,
-                      chainId, // 정규화된 chainId 사용
-                    }),
-                    transactionProps.address,
-                  ),
-                }));
-                console.log("handleWriteTransaction Stop Farming", output);
+                const executor = (transactionProps as any).executorAddress as `0x${string}` | undefined;
+
+                const output = (transactionProps.output ?? []).map((v) => {
+                  const resolved = resolveTokenAddressSafe(v.token, chainId);
+
+                  // 디버깅에 도움되도록 로그 남기기 (필요 시 주석 처리)
+                  console.log("[STOP_FARMING][resolve]", {
+                    sym: (v.token as any)?.symbol,
+                    addr: resolved,
+                    user: transactionProps.address,
+                    exec: executor,
+                  });
+
+                  return {
+                    ...v,
+                    amount: getReceivedTransfersFromReceipt(
+                      receipt,
+                      v.token,
+                      isNativeETH(v.token) ? null : resolved,
+                      transactionProps.address,
+                      executor,
+                    ),
+                  };
+                });
+
+                console.log("handleWriteTransaction Stop Farming (resolved output)", output);
 
                 transactionContext.setTransactionProps({
                   ...transactionProps,
@@ -166,11 +206,9 @@ export function getWriteTransactionHandlers({
                 const amount = getReceivedTransfersFromReceipt(
                   receipt,
                   transactionProps.output.token,
-                  getTokenAddress({
-                    token: transactionProps.output.token,
-                    chainId,
-                  }),
+                  resolveTokenAddressSafe(transactionProps.output.token, chainId),
                   transactionProps.address,
+                  undefined,
                 );
                 const output = {
                   ...transactionProps.output,
