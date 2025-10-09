@@ -200,13 +200,25 @@ export default function RiskConsentModalHost() {
 
   return (
     <ModalBase
+      portalContainer={
+        typeof window !== "undefined" ? document.body : undefined
+      }
       isDismissable={false}
       hideCloseButton={false}
       classNames={{
-        closeButton: "w-9 h-9 text-foreground", // ★ 크기/색
+        backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
+        wrapper: "items-center justify-center", // 중앙 모달이면 이렇게
+        base: "m-0 max-h-[80vh] overflow-hidden", // base엔 max-h + overflow-hidden
+        body: "p-0 h-full flex flex-col", // 내부에서만 스크롤
+        closeButton: "w-9 h-9 text-foreground",
       }}
       isOpen={isOpen}
-      motionProps={{}}
+      motionProps={{
+        variants: {
+          enter: { opacity: 1, transition: { duration: 0.2, ease: "easeOut" } },
+          exit: { opacity: 0, transition: { duration: 0.2, ease: "easeIn" } },
+        },
+      }}
       // ★ 추가: 최상단 보장
       className="!z-[9999]"
       onOpenChange={(open) => {
@@ -223,25 +235,28 @@ export default function RiskConsentModalHost() {
       }}
     >
       <ModalContent className="w-[80vw] max-w-[500px]">
-        <ModalBody className="flex flex-col gap-3 p-6 text-foreground">
-          <StaticConsentContent />
+        <ModalBody className="p-0 h-full flex flex-col">
+          <div className="flex-1 overflow-y-auto p-6 [-webkit-overflow-scrolling:touch]">
+            <StaticConsentContent />
 
-          <div className="flex gap-3 justify-end pt-2">
-            <ThemedButton
-              variant="MINT"
-              onPress={async () => {
-                dbg("riskHost:pressSign"); // [DBG]
-                try {
-                  await onConfirm?.();
-                  safeResolveAndReset(true);
-                } catch {
-                  dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
-                  safeResolveAndReset(false);
-                }
-              }}
-            >
-              Sign
-            </ThemedButton>
+            <div className="flex gap-3 justify-end pt-2">
+              <ThemedButton
+                variant="MINT"
+                onPress={async () => {
+                  dbg("riskHost:pressSign"); // [DBG]
+                  try {
+                    await onConfirm?.();
+                    safeResolveAndReset(true);
+                  } catch {
+                    dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
+                    safeResolveAndReset(false);
+                  }
+                }}
+              >
+                Sign
+              </ThemedButton>
+            </div>
+            <div className="h-2" />
           </div>
         </ModalBody>
       </ModalContent>
