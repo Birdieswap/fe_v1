@@ -17,6 +17,7 @@ export type TransactionEvent = {
 export type TransactionsResponse = {
   response: boolean;
   result: boolean;
+  EarliestBlock: string; 
   Transactions: TransactionEvent[];
 };
 
@@ -32,8 +33,20 @@ export async function getMyTransactionData(
   opts: { blockHeight?: string | number; signal?: AbortSignal; chainId?: number } = {}
 ): Promise<TransactionsResponse> {
   const { blockHeight, signal, chainId } = opts;
-  const url = buildUrl("Transactions", { address, blockHeight, chainId: toChainIdParam(chainId) });
-  const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
-  if (!res.ok) throw new Error(`Transactions fetch failed: ${res.status}`);
-  return res.json();
+  const url = buildUrl("Transactions", { address, blockHeight, chainId});
+  try {
+    console.log("[tx fetch] GET", url);
+    const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
+    const json = await res.json();
+    console.log(
+      "[tx fetch] status", res.status,
+      "len", Array.isArray(json?.Transactions) ? json.Transactions.length : -1,
+      "Earliest", json?.EarliestBlock
+    );
+    if (!res.ok) throw new Error(`Transactions fetch failed: ${res.status}`);
+    return json as TransactionsResponse;
+  } catch (e) {
+    console.error("[tx fetch] error", e);
+    throw e;
+  }
 }
