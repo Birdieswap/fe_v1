@@ -4,7 +4,14 @@ import "./WalletTransactions.css";
 
 import { cn, Link } from "@heroui/react";
 import Image from "next/image";
-import { useContext, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import Icons from "@/assets/icons/icons";
 import { timeElapsed } from "@/utils/timeElapsed";
@@ -169,7 +176,7 @@ function BaseTransactionItem(props: TransactionProps) {
 
   const hashDisplay = props.hash.slice(0, sliceLength);
 
-  console.log("Wallet Transactions, BaseTransactionItem Props", props);
+  // console.log("Wallet Transactions, BaseTransactionItem Props", props);
 
   return (
     <Link
@@ -318,6 +325,9 @@ export default function WalletTransactions() {
   const { assetValues } = useContext(AssetsContext);
   const { walletData } = useContext(WalletContext);
   const TransactionInfo = walletData?.transactions;
+  const loadMore = walletData?.loadMore;
+  const endReached = walletData?.endReached;
+  const isFetchingNextPage = walletData?.isFetchingNextPage;
 
   const transactions = useMemo(() => {
     try {
@@ -343,6 +353,29 @@ export default function WalletTransactions() {
     return false;
   }, [chainId, TransactionInfo, transactions]);
 
+  /** === 인피니트 스크롤: sentinel === */
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const onIntersect = useCallback(
+    (entries: IntersectionObserverEntry[]) => {
+      const entry = entries[0];
+      if (!entry?.isIntersecting) return;
+      if (endReached) return;
+      if (isFetchingNextPage) return;
+      loadMore?.();
+    },
+    [loadMore, endReached, isFetchingNextPage]
+  );
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const io = new IntersectionObserver(onIntersect, {
+      root: null,
+      threshold: 0.1,
+    });
+    io.observe(sentinelRef.current);
+    return () => io.disconnect();
+  }, [onIntersect]);
+
   return (
     <div className="flex w-full grow flex-col gap-0 p-0">
       {showEmpty ? (
@@ -353,11 +386,24 @@ export default function WalletTransactions() {
           </span>
         </div>
       ) : (
-        <div className="w-full rounded-lg divide-y divide-default-100 px-6 sm:px-3">
-          {transactions.map((tx) => (
-            <BaseTransactionItem key={tx.hash} {...tx} />
-          ))}
-        </div>
+        <>
+          <div className="w-full rounded-lg divide-y divide-default-100 px-6 sm:px-3">
+            {transactions.map((tx) => (
+              <BaseTransactionItem key={tx.hash} {...tx} />
+            ))}
+          </div>
+          {/* sentinel: 화면에 보이면 loadMore 호출 */}
+          <div ref={sentinelRef} className="h-[1px]" />
+          {/* 상태 표시 */}
+          {isFetchingNextPage && (
+            <div className="pb-3 text-center text-default-700">Loading…</div>
+          )}
+          {endReached && (
+            <div className="pb-3 text-center text-default-700">
+              You’ve reached the end of the transaction list.
+            </div>
+          )}
+        </>
       )}
     </div>
   );

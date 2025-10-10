@@ -118,7 +118,7 @@ const networks: NetworkInfo[] = [
 const fallback: WalletContextType = {
   isConnectModalOpen: false,
   setIsConnectModalOpen: () => {},
-  isNetworkModalOpen: false, // ⭐ 단일 상태
+  isNetworkModalOpen: false, // 단일 상태
   setIsNetworkModalOpen: () => {},
   networks,
 };
@@ -139,7 +139,9 @@ export default function WalletContextProvider({
 
   const { referralAddress, setReferralAddress } = useReferral();
   const walletData = useAccountWalletData(
-    (account?.address as `0x${string}`) || undefined
+    (account?.address as `0x${string}`) || undefined,
+    undefined,
+    chainId
   );
 
   // console.log(
