@@ -147,7 +147,7 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
         </div>
       ) : (
         <Fragment>
-          <h2 className="w-full text-right text-[14px] font-semibold mt-3 leading-[17px] text-primary ">
+          <h2 className="w-full text-right text-[14px] font-semibold mt-3 max-sm:mt-1 leading-[17px] text-primary pr-1">
             {tokens.length} Tokens
           </h2>
           {tokens.map((token) => (

@@ -4,7 +4,7 @@ import "./WalletTransactions.css";
 
 import { cn, Link } from "@heroui/react";
 import Image from "next/image";
-import { useContext, useMemo } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 
 import Icons from "@/assets/icons/icons";
 import { timeElapsed } from "@/utils/timeElapsed";
@@ -151,6 +151,24 @@ function BaseTransactionItem(props: TransactionProps) {
     }
   }, [props.type]);
 
+  const [sliceLength, setSliceLength] = useState(45);
+
+  useEffect(() => {
+    const updateSliceLength = () => {
+      const width = window.innerWidth;
+      if (width < 375) setSliceLength(30); // iPhone mini 이하
+      else if (width < 440) setSliceLength(36); //iphone x 이하
+      // else if (width >= 641) setSliceLength(45); // sm 이상 (tablet, desktop)
+      else setSliceLength(45); // 일반
+    };
+
+    updateSliceLength();
+    window.addEventListener("resize", updateSliceLength);
+    return () => window.removeEventListener("resize", updateSliceLength);
+  }, []);
+
+  const hashDisplay = props.hash.slice(0, sliceLength);
+
   console.log("Wallet Transactions, BaseTransactionItem Props", props);
 
   return (
@@ -190,7 +208,7 @@ function BaseTransactionItem(props: TransactionProps) {
               {title}
             </h2>
             <span className="truncate text-[12px] leading-[15px] text-default-800 dark:text-default-700">
-              {props.hash.slice(0, 40)}...
+              {hashDisplay}...
             </span>
           </div>
           <div className="flex flex-row items-center gap-2">
