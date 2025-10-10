@@ -37,16 +37,10 @@ export default function NavbarConnect() {
 
   useEffect(() => {
     if (!isMobile) {
-      if (isNetworkModalOpen) setIsNetworkModalOpen(false);
-      if (isConnectModalOpen) setIsConnectModalOpen(false);
+      setIsNetworkModalOpen(false);
+      setIsConnectModalOpen(false);
     }
-  }, [
-    isMobile,
-    isNetworkModalOpen,
-    isConnectModalOpen,
-    setIsNetworkModalOpen,
-    setIsConnectModalOpen,
-  ]);
+  }, [isMobile, setIsNetworkModalOpen, setIsConnectModalOpen]);
 
   // 핵심 추가: 화면 크기 변화 감지하여 모달 상태 동기화
   // useEffect(() => {

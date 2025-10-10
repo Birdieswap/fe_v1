@@ -382,11 +382,7 @@ export default function SelectWalletMenu() {
 
   const popoverRef = useRef<HTMLSpanElement>(null);
 
-  const isOpen = useMemo(() => {
-    return (
-      isConnectModalOpen && (popoverRef.current?.checkVisibility() ?? false)
-    );
-  }, [isConnectModalOpen, popoverRef]);
+  const isOpen = isConnectModalOpen;
 
   return (
     <Popover
@@ -395,6 +391,11 @@ export default function SelectWalletMenu() {
       offset={12}
       placement="bottom-end"
       onOpenChange={(v) => setIsConnectModalOpen(!!v)}
+      // body 포털
+      portalContainer={
+        typeof window !== "undefined" ? document.body : undefined
+      }
+      classNames={{ content: "z-[1000]" }}
     >
       <PopoverTrigger>
         <Button className="connect-btn">

@@ -80,30 +80,20 @@ export default function SelectNetworkMenu() {
 
   const popoverRef = useRef<HTMLDivElement>(null);
 
-  const isOpen = useMemo(() => {
-    const isVisible = popoverRef.current?.checkVisibility() ?? false;
-    const result = isNetworkModalOpen && isVisible;
-
-    // ⭐ 디버깅 로그 추가 (개발 환경에서만)
-    if (process.env.NODE_ENV === "development") {
-      console.log("=== SelectNetworkMenu Debug ===");
-      console.log("isNetworkModalOpen:", isNetworkModalOpen);
-      console.log("isVisible:", isVisible);
-      console.log("Final isOpen:", result);
-    }
-
-    return result;
-  }, [isNetworkModalOpen, popoverRef]);
+  const isOpen = isNetworkModalOpen;
 
   return (
     <Popover
       className="max-sm:hidden"
       isOpen={isOpen}
       offset={12}
-      onOpenChange={(v) => {
-        if (!v && isOpen) setIsNetworkModalOpen(false);
-        else if (v) setIsNetworkModalOpen(true);
-      }}
+      onOpenChange={(v) => setIsNetworkModalOpen(!!v)}
+      // 항상 body 포털 사용 (z-index/overflow 영향 제거)
+      portalContainer={
+        typeof window !== "undefined" ? document.body : undefined
+      }
+      // 가려짐 방지를 위한 z-index 보정
+      classNames={{ content: "z-[1000]" }}
     >
       <PopoverTrigger>
         <Button isIconOnly radius="full" variant="light">
