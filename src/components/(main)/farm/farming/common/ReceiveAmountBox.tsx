@@ -9,6 +9,7 @@ import { setPrecisionString } from "@/utils/setPrecision";
 import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import suffixNumbers from "@/utils/suffixNumbers";
 
 export default function ReceiveAmountBox({
   amount,
@@ -28,6 +29,26 @@ export default function ReceiveAmountBox({
     return undefined;
   }, [bToken?.input.symbol, assetValues?.chainLinkPriceMap]);
 
+  // 표시용 소수 자릿수 (displayDecimals > decimals > fallback)
+  const tokenDecimals =
+    bToken?.input?.displayDecimals ??
+    bToken?.input?.decimals ??
+    bToken?.decimals ??
+    8;
+
+  // 토큰 수량 표기 (예: 123.45K / 1.23M ...)
+  const formattedAmount = useMemo(
+    () => suffixNumbers(amount, 100_000, 2, true, true),
+    [amount, tokenDecimals]
+  );
+
+  // USD 표기 (예: $12.3K / $1.2M ...)
+  const formattedUsd = useMemo(() => {
+    if (!activePrice) return "...";
+    const usd = amount.mul(activePrice);
+    return suffixNumbers(usd, 100_000, 2, true, true);
+  }, [amount, activePrice]);
+
   return (
     <motion.div
       {...presenceTransition}
@@ -44,16 +65,10 @@ export default function ReceiveAmountBox({
       </p>
       <div className="flex flex-col items-end gap-0.5">
         <p className="text-right text-[14px] font-medium leading-[17px] text-foreground">
-          {setPrecisionString(amount, bToken.decimals || 8)}
+          {formattedAmount}
         </p>
         <p className="text-right text-[14px] font-medium leading-[17px] text-default-800">
-          $
-          {activePrice
-            ? amount
-                .mul(activePrice)
-                .roundToDecimals(2)
-                .toPrecisionString(false, true)
-            : "..."}
+          {activePrice ? `$${formattedUsd}` : "..."}
         </p>
       </div>
     </motion.div>

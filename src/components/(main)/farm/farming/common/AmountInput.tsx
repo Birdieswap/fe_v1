@@ -65,6 +65,15 @@ export default function AmountInput({
   const { assetValues } = useContext(AssetsContext);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
 
+  const [isSmall, setIsSmall] = useState(false);
+
+  useEffect(() => {
+    const checkWidth = () => setIsSmall(window.innerWidth < 440);
+    checkWidth(); // 초기 실행
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
+
   useEffect(() => {
     const amountStrToNumber = new BigDecimal(amountStr || 0);
 
@@ -75,15 +84,7 @@ export default function AmountInput({
     }
   }, [amount, amountStr, token?.decimals]);
 
-  const balanceStr =
-    balance &&
-    suffixNumbers(
-      balance,
-      100_000,
-      token?.displayDecimals ?? token?.decimals ?? 8,
-      true,
-      true
-    );
+  const balanceStr = balance && suffixNumbers(balance, 100_000, 2, true, true);
 
   const tokenPrice =
     tokenPriceProp ??
@@ -96,11 +97,11 @@ export default function AmountInput({
   const dollarAmount =
     amount &&
     chosenPrice &&
-    suffixNumbers(amount.mul(chosenPrice), 100_000, 2, false, true);
+    suffixNumbers(amount.mul(chosenPrice), 100_000, 2, true, true);
   const dollarBalance =
     balance &&
     chosenPrice &&
-    suffixNumbers(balance.mul(chosenPrice), 100_000, 2, false, true);
+    suffixNumbers(balance.mul(chosenPrice), 100_000, 2, true, true);
 
   return (
     <AnimatePresence initial={false}>
@@ -119,6 +120,12 @@ export default function AmountInput({
             <div className="flex grow flex-row">
               <AmountInputBase
                 isDisabled={isDisabled}
+                classNames={{
+                  input:
+                    "text-[30px] max-[375px]:text-[22px] font-bold leading-[36px] max-[375px]:leading-[28px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+                  inputWrapper:
+                    "h-11 min-h-11 bg-transparent p-1 shadow-none data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+                }}
                 maxLength={64}
                 placeholder="0"
                 type="number"
@@ -143,7 +150,7 @@ export default function AmountInput({
             </div>
             <div className="flex shrink-0 flex-row items-center gap-2 px-1">
               {isApproved ? (
-                <div className="size-6" />
+                <div className="size-6 max-[375px]:size-5" />
               ) : (
                 <Icons.Lock
                   className="fill-default-800 dark:fill-default-700"
@@ -157,32 +164,37 @@ export default function AmountInput({
                   height={36}
                   src={token.iconSrc}
                   width={36}
+                  classNames={{
+                    img: "max-[375px]:h-6 max-[375px]:w-6",
+                  }}
                 />
               )}
-              <p className="text-xl font-semibold">{token.symbol}</p>
+              <p className="text-xl max-[375px]:text-base font-semibold">
+                {token.symbol}
+              </p>
             </div>
           </div>
-          <div className="flex w-full flex-row items-center gap-2 px-1 text-sm">
+          <div className="flex w-full flex-row items-center gap-2 px-1 text-sm max-[375px]:text-[10px]">
             <div className="grow text-default-800">
               <p>${dollarAmount ?? "0"}</p>
             </div>
             <div className="flex flex-row items-center gap-2">
               <div className="flex flex-col items-end">
-                <div className="flex flex-row justify-end gap-2.5 self-start">
-                  <span className="text-right font-semibold text-default-900 dark:text-default-800">
-                    Balance
+                <div className="flex flex-row justify-end gap-1.5 self-start">
+                  <span className="text-right max-[375px]:text-[10px] font-semibold text-default-900 dark:text-default-800">
+                    {isSmall ? "BAL" : "Balance"}
                   </span>
-                  <span className="text-default-800 dark:text-default-700">
+                  <span className="max-[375px]:text-[10px] text-default-800 dark:text-default-700">
                     {balanceStr ?? "..."}
                   </span>
                 </div>
-                <p className="self-end text-default-800 dark:text-default-700">
+                <p className="max-[375px]:text-[10px] self-end text-default-800 dark:text-default-700">
                   ${dollarBalance ?? "0"}
                 </p>
               </div>
               <Button
                 className={clsx(
-                  "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm",
+                  "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]",
                   "border-default-600 bg-primary-200 font-semibold",
                   "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
                 )}

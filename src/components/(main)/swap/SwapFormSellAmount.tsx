@@ -118,6 +118,12 @@ export default function SwapFormAmount({
         <div className="mb-2 flex w-full flex-row items-center justify-between">
           <SwapFormNumberInput
             ref={inputRef}
+            classNames={{
+              input:
+                "text-[30px] max-[375px]:text-[22px] font-bold leading-[36px] max-[375px]:leading-[28px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+              inputWrapper:
+                "h-11 min-h-11 bg-transparent p-1 shadow-none data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+            }}
             disabled={isPending || isDisabled || !token}
             isDisabled={isPending || isDisabled || !token}
             min={0}
@@ -149,11 +155,11 @@ export default function SwapFormAmount({
               fillRule="evenodd"
             />
           ) : (
-            <div className="size-6" />
+            <div className="size-6 max-[375px]:size-5" />
           )}
           <Button
             className={clsx(
-              "flex h-10 w-fit max-w-fit shrink-0 flex-row gap-1 px-1 py-0.5 text-xl",
+              "flex h-10 max-[375px]:h-8 w-fit max-w-fit shrink-0 flex-row gap-1 px-1 py-0.5 text-xl",
               "bg-background font-semibold text-foreground shadow-[0px_2px_rgba(0,0,0,0.25)]",
               "!data-[hover=true]:opacity-100 data-[hover=true]:bg-default-200 dark:data-[hover=true]:bg-default-100"
             )}
@@ -165,27 +171,34 @@ export default function SwapFormAmount({
             {token?.iconSrc && (
               <Image
                 alt={token?.symbol || ""}
-                className="!size-9 max-w-9"
+                className="size-9 max-w-9"
                 height={36}
                 radius="full"
                 src={token?.iconSrc}
                 width={36}
+                classNames={{
+                  img: "max-[375px]:h-7 max-[375px]:w-7",
+                }}
               />
             )}
             {token?.symbol ? (
-              token.symbol
+              <span className="pl-1.5 text-xl max-[375px]:text-base">
+                {token.symbol}
+              </span>
             ) : (
-              <span className="pl-1.5">Select Token</span>
+              <span className="pl-1.5 text-xl max-[375px]:text-base">
+                Select Token
+              </span>
             )}
             <Icons.SwapTokenArrow />
           </Button>
         </div>
-        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm text-default-800">
+        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm max-[375px]:text-[10px] text-default-800">
           <span className="grow">{token ? `$${dollarAmount}` : ""}</span>
           <BalanceDisplay balance={balance} token={token} />
           {type === "sell" && (
             <Button
-              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_mid_mint dark:bg-dark_mid_mint"
+              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_mid_mint dark:bg-dark_mid_mint max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]"
               size="sm"
               onPress={() => setAmount(balance.toPrecisionString(true, false))}
             >
