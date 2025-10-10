@@ -165,11 +165,11 @@ export default function AmountInput({
                   src={token.iconSrc}
                   width={36}
                   classNames={{
-                    img: "max-[375px]:h-6 max-[375px]:w-6",
+                    img: "max-[375px]:h-7 max-[375px]:w-7",
                   }}
                 />
               )}
-              <p className="text-xl max-[375px]:text-base font-semibold">
+              <p className="text-xl max-[375px]:text-lg font-semibold">
                 {token.symbol}
               </p>
             </div>
