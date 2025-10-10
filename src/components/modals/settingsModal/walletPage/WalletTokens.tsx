@@ -31,29 +31,31 @@ function WalletTokenItem(props: WalletTokenInfo & { onClick?: () => void }) {
       type="button"
       onClick={props.onClick}
       className={cn(
-        "flex w-full flex-row items-center gap-2 rounded-sm px-1 py-2",
-        "hover:bg-default-200 dark:hover:bg-default-100 transition-background cursor-pointe"
+        "grid w-full grid-cols-[60%_40%] items-center gap-2 rounded-sm px-1 py-2",
+        "hover:bg-default-200 dark:hover:bg-default-100 transition-background cursor-pointer"
       )}
     >
-      <div className="size-8 rounded-full">
-        {props.src && (
-          <Image
-            alt={props.name}
-            className="size-full rounded-full"
-            height={28}
-            src={props.src}
-            width={28}
-          />
-        )}
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="shrink-0 w-8 h-8 max-[375px]:w-6 max-[375px]:h-6">
+          {props.src && (
+            <Image
+              alt={props.name}
+              className="size-full rounded-full"
+              height={28}
+              src={props.src}
+              width={28}
+            />
+          )}
+        </div>
+        <span className="text-[14px] max-[375px]:text-[12px] font-bold leading-[15px] text-foreground text-left">
+          {props.name}
+        </span>
       </div>
-      <span className="text-[14px] font-bold leading-[15px] text-foreground text-left">
-        {props.name}
-      </span>
-      <div className="flex grow flex-col items-end gap-0.5">
-        <span className="text-[14px] font-semibold leading-[15px] text-foreground">
+      <div className="flex grow flex-col items-end gap-0.5 pr-2">
+        <span className="text-[14px] max-[375px]:text-[12px] font-semibold leading-[15px] text-foreground">
           {props.amount}
         </span>
-        <span className="text-[12px] font-bold leading-[14px] text-default-700 dark:text-default-300">
+        <span className="text-[12px] max-[375px]:text-[10px] font-bold leading-[14px] text-default-700 dark:text-default-300">
           $ {props.usdAmount}
         </span>
       </div>
@@ -135,7 +137,7 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
     <div
       className={cn(
         "flex w-full grow flex-col gap-1 px-4 pb-3",
-        "max-sm:pt-3 max-sm:px-6 max-sm:gap-6"
+        "max-sm:pt-3 max-sm:px-6 max-sm:gap-3 max-[375px]:gap-1.5"
       )}
     >
       {tokens.length === 0 ? (
