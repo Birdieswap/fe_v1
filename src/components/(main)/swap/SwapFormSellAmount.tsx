@@ -182,11 +182,11 @@ export default function SwapFormAmount({
               />
             )}
             {token?.symbol ? (
-              <span className="pl-1.5 text-xl max-[375px]:text-base">
+              <span className="pl-1.5 text-xl max-[375px]:text-lg">
                 {token.symbol}
               </span>
             ) : (
-              <span className="pl-1.5 text-xl max-[375px]:text-base">
+              <span className="pl-1.5 text-xl max-[375px]:text-lg">
                 Select Token
               </span>
             )}
