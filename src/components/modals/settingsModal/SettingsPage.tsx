@@ -84,7 +84,7 @@ export function SettingsPage(props: { onBack: () => void }) {
               </ThemeSelector>
             </div>
           </div>
-          <div className="drawer-item">
+          {/* <div className="drawer-item">
             <label className="drawer-item-label">Hide small balances</label>
             <ThemedSwitch
               isSelected={hideSmallBalances}
@@ -99,7 +99,7 @@ export function SettingsPage(props: { onBack: () => void }) {
               isSelected={hideUnknownTokens}
               onValueChange={setHideUnknownTokens}
             />
-          </div>
+          </div> */}
         </div>
       </ModalBody>
     </Fragment>

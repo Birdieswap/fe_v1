@@ -317,7 +317,7 @@ export default function EarningsPanel({
       </div>
       {canRenderStakeDetail && (
         <>
-          <div className="mb-3">
+          <div className="mb-3 pl-2">
             <SectionHeader>Unlock more benefits</SectionHeader>
           </div>
           <StakeDetail

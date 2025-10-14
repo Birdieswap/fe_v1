@@ -14,6 +14,7 @@ import {
 import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
+  EContractType,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
 import useStakedBalances from "./useStakedBalances";
@@ -125,7 +126,7 @@ export default function useAssets() {
   const farms = useMemo(() => {
     return FarmList
       .map((f) => {
-        const farm = f?.wip_stakeToken; // IBirdieSingleFarm | IBirdieLPFarm 로 가정
+        const farm = f?.wip_stakeToken as IBirdieSingleFarm | IBirdieLPFarm | undefined;
         const address = farm?.addresses?.[chainId] as `0x${string}` | undefined;
         return { farm, address };
       })
