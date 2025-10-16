@@ -1,51 +1,76 @@
-name: OSV Scanner
+name: OSV Scan
 
 on:
-  push:
   pull_request:
+  push:
+    branches: [ main, dev_fe ]
   schedule:
-    - cron: "0 6 * * 1" # 매주 월 15:00 KST
-
-permissions:
-  contents: read
+    - cron: "0 3 * * *" # 매일 12:00 KST 새벽 3시에 돌림
 
 jobs:
   osv:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node (for lockfile)
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: 'npm'
 
-      - name: Ensure package-lock.json
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm i --package-lock-only --ignore-scripts
-          fi
+      - name: Install deps (no build)
+        run: npm ci --legacy-peer-deps || npm i --legacy-peer-deps
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22.x'
-
-      - name: Install OSV-Scanner via go install
+      # GitHub Release 바이너리를 올바르게 가져와서 설치
+      - name: Install OSV Scanner
         run: |
-          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
-          echo "$HOME/go/bin" >> $GITHUB_PATH
+          set -euo pipefail
+          ARCH=amd64
+          OS=linux
+          # 최신 릴리스 태그 조회
+          TAG=$(curl -fsSL https://api.github.com/repos/google/osv-scanner/releases/latest | jq -r .tag_name)
+          URL="https://github.com/google/osv-scanner/releases/download/${TAG}/osv-scanner_${OS}_${ARCH}.tar.gz"
+          echo "Downloading $URL"
+          curl -fL "$URL" -o /tmp/osv-scanner.tgz
+          sudo tar -xzf /tmp/osv-scanner.tgz -C /usr/local/bin osv-scanner
+          sudo chmod +x /usr/local/bin/osv-scanner
           osv-scanner --version
 
-      - name: Run OSV-Scanner
+      - name: Run OSV (lockfile)
         run: |
-          osv-scanner --recursive --lockfile=package-lock.json --format=json > osv-results.json || true
+          osv-scanner --lockfile=package-lock.json --format json > osv-results.json
+          jq '. | {summary: (.results | length), high:
+              ([.results[].packages[]?.vulnerabilities[]? |
+                select(.database_specific.severity=="HIGH") ] | length),
+              critical:
+              ([.results[].packages[]?.vulnerabilities[]? |
+                select(.database_specific.severity=="CRITICAL") ] | length)}' osv-results.json || true
 
-      - name: Upload OSV results
+      # 게이트: High/Critical 있으면 실패
+      - name: Fail on High/Critical
+        run: |
+          node -e '
+            const fs=require("fs");
+            const j=JSON.parse(fs.readFileSync("osv-results.json","utf8"));
+            let bad=0;
+            for (const r of (j.results||[])) {
+              for (const p of (r.packages||[])) {
+                for (const v of (p.vulnerabilities||[])) {
+                  const sev=(v.database_specific?.severity||"").toUpperCase();
+                  if (sev==="HIGH" || sev==="CRITICAL") bad++;
+                }
+              }
+            }
+            if (bad>0) { console.error(`❌ OSV High/Critical ${bad}건`); process.exit(1); }
+            console.log("✅ OSV: no High/Critical");
+          '
+
+      - name: Upload OSV artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: osv-results
           path: osv-results.json
-          if-no-files-found: warn
