@@ -14,6 +14,7 @@ const basicCsp = [
 ].join("; ");
 
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: basicCsp },
   // 이미 vercel에서 HSTS가 있더라도 명시해 두는걸 권장
   {
     key: "Strict-Transport-Security",
