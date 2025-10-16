@@ -14,23 +14,13 @@ const basicCsp = [
 ].join("; ");
 
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: basicCsp },
-  // 이미 vercel에서 HSTS가 있더라도 명시해 두는걸 권장
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
   },
-
-  // MIME sniffing 방지
   { key: "X-Content-Type-Options", value: "nosniff" },
-
-  // 클릭재킹 방지 (CSP의 frame-ancestors가 우선이지만, 호환 위해 함께 설정)
   { key: "X-Frame-Options", value: "DENY" },
-
-  // 외부 사이트로의 Referer 최소화
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-
-  // 브라우저 기능 제한 (필요 시 하나씩 열기)
   {
     key: "Permissions-Policy",
     value: "camera=(), microphone=(), geolocation=()",
@@ -38,6 +28,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  poweredByHeader: false,
   reactStrictMode: true,
 
   webpack(config, { isServer }) {
