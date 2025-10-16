@@ -1,0 +1,56 @@
+name: Security Audit
+on:
+  push:
+  pull_request:
+
+jobs:
+  audits:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install deps
+        run: npm ci
+
+      # --- 의존성 취약점 (Snyk 또는 npm audit 중 택1/병행)
+      - name: npm audit
+        run: npm audit --omit=dev || true
+
+      # Snyk를 쓰고 싶다면: (SNYK_TOKEN 저장 필요 - GitHub repo Settings > Secrets > Actions)
+      # - name: Snyk test
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   run: npx snyk test || true
+
+      # --- Semgrep (정적 분석)
+      - name: Semgrep
+        run: |
+          pip install --break-system-packages semgrep || pip install semgrep
+          semgrep --config=p/javascript --severity=ERROR . || true
+
+      # --- Lighthouse (간단 베스트 프랙티스/성능 스냅샷)
+      - name: Lighthouse
+        run: |
+          npm i -g lighthouse
+          lighthouse https://birdieswap-dev.vercel.app --output html --output-path=lh-report.html --preset=desktop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-report
+          path: lh-report.html
+
+      # --- ZAP Baseline (DAST 빠른 점검)
+      - name: ZAP Baseline
+        run: |
+          docker run --rm -v $PWD:/zap/wrk/:rw owasp/zap2docker-stable \
+            zap-baseline.py -t https://birdieswap-dev.vercel.app -r zap-report.html || true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zap-report
+          path: zap-report.html
