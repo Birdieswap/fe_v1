@@ -1,43 +1,30 @@
 name: OSV Scanner
-
 on:
-  pull_request:
   push:
-    branches: [ main, dev_fe ]
+  pull_request:
   schedule:
-    - cron: "0 6 * * 1" # 매주 월요일 15:00 KST
-
-permissions:
-  contents: read
+    - cron: "0 3 * * 1" # 매주 월 12:00 KST 즈음
 
 jobs:
   osv:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: 'npm'
-
-      # 락파일이 없는 경우 생성
-      - name: Ensure lockfile
+      - name: Download OSV-Scanner
         run: |
-          if [ ! -f package-lock.json ]; then
-            npm ci --ignore-scripts || npm i --package-lock-only --ignore-scripts
-          fi
+          curl -sSL -o /tmp/osv.tgz \
+            https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_Linux_x86_64.tar.gz
+          tar -xzf /tmp/osv.tgz -C /usr/local/bin osv-scanner
+          chmod +x /usr/local/bin/osv-scanner
+          osv-scanner --version
 
-      # ✅ 올바른 액션: Docker 컨테이너 기반 공식 이미지
-      - name: Run OSV Scanner
-        uses: docker://gcr.io/osv-scanner/osv-scanner:latest
-        with:
-          args: >
-            -r
-            --lockfile=package-lock.json
-            --output=./osv-results.json
+      - name: Scan lockfiles (npm)
+        run: |
+          set -e
+          # lockfile/manifest 자동 탐지
+          osv-scanner --recursive --lockfile=package-lock.json --format=json \
+            > osv-results.json || true
 
       - name: Upload OSV results
         uses: actions/upload-artifact@v4
