@@ -1,26 +1,6 @@
 /** @type {import('next').NextConfig} */
 
-const csp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "img-src 'self' data: https:",
-  // inline/eval은 가능한 제거. 초기엔 빌드/라이브러리 때문에 허용 후 점진 축소.
-  `script-src 'self' 'nonce-${nonce}' https:`,
-  "style-src 'self' 'unsafe-inline' https:",
-  "font-src 'self' https:",
-  // wagmi / rainbowkit / API / RPC 등 네트워크 호출 허용
-  "connect-src 'self' https:",
-  // 외부 임베드 금지 (피싱/클릭재킹 방지)
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "form-action 'self'",
-].join("; ");
-
 const securityHeaders = [
-  // 강제로 적용하려면 아래 Content-Security-Policy를 쓰고,
-  // 테스트부터 하려면 'Content-Security-Policy-Report-Only' 로 바꿔서 사용.
-  { key: "Content-Security-Policy", value: csp },
-
   // 이미 vercel에서 HSTS가 있더라도 명시해 두는걸 권장
   {
     key: "Strict-Transport-Security",

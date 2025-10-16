@@ -10,6 +10,7 @@ import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
 import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
 import Script from "next/script";
 import ClientHUD from "./ClientHUD";
+import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,9 +25,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const reqHeaders = headers() as unknown as Headers;
+  const nonce = reqHeaders.get("x-csp-nonce") ?? undefined;
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>
+        <Script id="env-init" nonce={nonce} strategy="beforeInteractive">
+          {`window.__APP_ENV__ = "production"`}
+        </Script>
         <Providers>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
