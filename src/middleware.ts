@@ -15,7 +15,7 @@ export function middleware(req: NextRequest) {
     "base-uri 'self'",
     "img-src 'self' data: https:",
     `script-src 'self' 'nonce-${nonce}'`,
-    "style-src 'self' 'unsafe-inline' https:",
+    `style-src 'self' 'nonce-${nonce}' https:`,
     "font-src 'self' https:",
     "connect-src 'self' https:",
     "frame-ancestors 'none'",
@@ -26,8 +26,12 @@ export function middleware(req: NextRequest) {
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("x-csp-debug", `nonce:${nonce}`); // 확인 끝나면 삭제해도 됨
+  //보안 헤더
+  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   return res;
 }
 

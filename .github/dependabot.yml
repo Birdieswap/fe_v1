@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # NPM(프론트) 의존성 자동 PR
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"     # 매일
+    open-pull-requests-limit: 5
+    # 보안 픽스 우선
+    allow:
+      - dependency-type: "all"
+    # 레이블 자동 부여
+    labels: ["deps", "security"]
