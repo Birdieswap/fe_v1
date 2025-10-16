@@ -41,11 +41,11 @@ jobs:
           path: lh-report.html
 
       - name: Run OWASP ZAP Baseline
-        uses: zaproxy/action-baseline@v0.7.0
+        uses: zaproxy/action-baseline@v0.10.0
         with:
           target: "https://birdieswap-dev.vercel.app"
-          rules_file_name: ".zap/rules.tsv"
           cmd_options: "-a"
+          allow_issue_writing: false 
       - uses: actions/upload-artifact@v4
         with:
           name: zap-report
