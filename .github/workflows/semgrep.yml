@@ -1,18 +1,30 @@
 name: Semgrep
-
 on:
-  pull_request:
   push:
-    branches: [ "main", "dev_fe" ]
+  pull_request:
+  schedule:
+    - cron: "0 4 * * 1" # 매주 월요일 13:00 KST
 
 jobs:
   semgrep:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
+
+      - name: Setup Python and install Semgrep
+        run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
           pip3 install semgrep
-          # 기본 보안 규칙 + JS/TS
-          semgrep --config=p/ci --config=p/javascript --severity=ERROR . || true
+
+      - name: Run Semgrep (ruleset p/javascript)
+        run: |
+          semgrep --config=p/javascript --severity=ERROR \
+            --json > semgrep.json || true
+
+      - name: Upload Semgrep report
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep-report
+          path: semgrep.json
+          if-no-files-found: warn

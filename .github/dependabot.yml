@@ -1,13 +1,21 @@
 version: 2
 updates:
-  # NPM(프론트) 의존성 자동 PR
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"     # 매일
-    open-pull-requests-limit: 5
-    # 보안 픽스 우선
-    allow:
-      - dependency-type: "all"
-    # 레이블 자동 부여
-    labels: ["deps", "security"]
+      interval: "weekly"   # daily / weekly / monthly
+    open-pull-requests-limit: 10
+    groups:
+      minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
