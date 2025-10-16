@@ -1,30 +1,47 @@
 name: OSV Scanner
+
 on:
   push:
   pull_request:
   schedule:
-    - cron: "0 3 * * 1" # 매주 월 12:00 KST 즈음
+    - cron: "0 6 * * 1" # 매주 월 15:00 KST
+
+permissions:
+  contents: read
 
 jobs:
   osv:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Download OSV-Scanner
+      - name: Setup Node (for lockfile)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Ensure package-lock.json
         run: |
-          curl -sSL -o /tmp/osv.tgz \
-            https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_Linux_x86_64.tar.gz
-          tar -xzf /tmp/osv.tgz -C /usr/local/bin osv-scanner
-          chmod +x /usr/local/bin/osv-scanner
+          if [ ! -f package-lock.json ]; then
+            npm i --package-lock-only --ignore-scripts
+          fi
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+
+      - name: Install OSV-Scanner via go install
+        run: |
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+          echo "$HOME/go/bin" >> $GITHUB_PATH
           osv-scanner --version
 
-      - name: Scan lockfiles (npm)
+      - name: Run OSV-Scanner
         run: |
-          set -e
-          # lockfile/manifest 자동 탐지
-          osv-scanner --recursive --lockfile=package-lock.json --format=json \
-            > osv-results.json || true
+          osv-scanner --recursive --lockfile=package-lock.json --format=json > osv-results.json || true
 
       - name: Upload OSV results
         uses: actions/upload-artifact@v4
