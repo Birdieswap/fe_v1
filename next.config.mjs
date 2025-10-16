@@ -5,7 +5,7 @@ const csp = [
   "base-uri 'self'",
   "img-src 'self' data: https:",
   // inline/eval은 가능한 제거. 초기엔 빌드/라이브러리 때문에 허용 후 점진 축소.
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+  `script-src 'self' 'nonce-${nonce}' https:`,
   "style-src 'self' 'unsafe-inline' https:",
   "font-src 'self' https:",
   // wagmi / rainbowkit / API / RPC 등 네트워크 호출 허용
