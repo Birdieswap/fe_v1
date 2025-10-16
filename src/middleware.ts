@@ -14,7 +14,7 @@ export function middleware(req: NextRequest) {
     "default-src 'self'",
     "base-uri 'self'",
     "img-src 'self' data: https:",
-    `script-src 'self' 'nonce-${nonce}' https:`,
+    `script-src 'self' 'nonce-${nonce}'`,
     "style-src 'self' 'unsafe-inline' https:",
     "font-src 'self' https:",
     "connect-src 'self' https:",

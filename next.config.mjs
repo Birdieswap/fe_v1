@@ -1,18 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-const basicCsp = [
-  "default-src 'self'",
-  "base-uri 'self'",
-  "img-src 'self' data: https:",
-  "script-src 'self' 'unsafe-inline' https:",
-  "style-src 'self' 'unsafe-inline' https:",
-  "font-src 'self' https:",
-  "connect-src 'self' https:",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "form-action 'self'",
-].join("; ");
-
 const securityHeaders = [
   {
     key: "Strict-Transport-Security",
