@@ -1,4 +1,3 @@
-# .github/workflows/osv-scan.yml
 name: OSV Scan
 
 on:
