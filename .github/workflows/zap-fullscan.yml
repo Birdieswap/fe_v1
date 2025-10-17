@@ -2,9 +2,9 @@ name: ZAP Full Scan
 
 on:
   schedule:
-    - cron: "0 18 * * 0" # 월 03:00 KST
+    - cron: "0 18 * * 0" # 매주 월 03:00 KST 근처
   push:
-    branches: [main, master, dev_fe] # 개발 브랜치에서도 푸시 시 실행
+    branches: [main, master, dev_fe]
   workflow_dispatch:
     inputs:
       target:
@@ -16,9 +16,15 @@ permissions:
   contents: read
   actions: read
 
+env:
+  # workflow_dispatch면 inputs.target, 아니면 기본값 사용
+  TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.target || 'https://birdieswap-dev.vercel.app' }}
+
 jobs:
   zap-full:
     runs-on: ubuntu-latest
+    timeout-minutes: 120
+
     steps:
       - uses: actions/checkout@v4
 
@@ -26,18 +32,18 @@ jobs:
         uses: zaproxy/action-full-scan@v0.12.0
         continue-on-error: true
         with:
-          target: ${{ github.event.inputs.target || 'https://birdieswap-dev.vercel.app' }}
-          cmd_options: "-j -m 5"
+          target: ${{ env.TARGET }}
+          cmd_options: "-j -m 5" # JSON + 크롤링 제한
           docker_name: "ghcr.io/zaproxy/zaproxy:stable"
           allow_issue_writing: false
-          artifact_name: "zap-full-report-${{ github.run_id }}"
 
-      - name: Upload ZAP Full report (canonical)
+      - name: Upload ZAP Full report
         uses: actions/upload-artifact@v4
         with:
-          # run_id를 넣어 같은 run 내에서의중복을 피함 (항상 유니크)
-          name: "zap-full-report-${{ github.run_id }}"
+          # 실행마다 고유: run_id, 재실행 때도 고유: run_attempt
+          name: zap-full-report-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
             report_html.html
             report_json.json
+            report_md.md
           if-no-files-found: warn
