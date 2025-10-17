@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: "0 4 * * 1" # 매주 월요일 13:00 KST
 
+permissions:
+  contents: read
+  security-events: write # SARIF 업로드용
+
 jobs:
   semgrep:
     runs-on: ubuntu-latest
@@ -15,14 +19,22 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
+          pip3 install --upgrade pip
           pip3 install semgrep
 
-      - name: Run Semgrep (ruleset p/javascript)
+      - name: Run Semgrep and produce SARIF + JSON
         run: |
-          semgrep --config=p/javascript --severity=ERROR \
-            --json > semgrep.json || true
+          semgrep scan --config=p/javascript --severity=ERROR \
+            --sarif -o semgrep.sarif || true
+          semgrep scan --config=p/javascript --severity=ERROR \
+            --json  -o semgrep.json  || true
 
-      - name: Upload Semgrep report
+      - name: Upload SARIF to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+
+      - name: Upload Semgrep JSON (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: semgrep-report
