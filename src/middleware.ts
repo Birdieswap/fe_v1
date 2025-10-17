@@ -13,25 +13,32 @@ export function middleware(req: NextRequest) {
   const csp = [
     "default-src 'self'",
     "base-uri 'self'",
+    "block-all-mixed-content", // optional but useful
+    "form-action 'self'",
+    "frame-ancestors 'self'", // aligns with X-Frame-Options: SAMEORIGIN
+    "object-src 'none'",
+    "script-src 'self' 'nonce-" + nonce + "'", // allow inline scripts only via nonce
+    "style-src 'self' 'nonce-" + nonce + "' https:", // allow external styles from https
     "img-src 'self' data: https:",
-    `script-src 'self' 'nonce-${nonce}'`,
-    `style-src 'self' 'nonce-${nonce}' https:`,
     "font-src 'self' https:",
     "connect-src 'self' https:",
-    "frame-ancestors 'none'",
-    "object-src 'none'",
-    "form-action 'self'",
   ].join("; ");
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set("x-csp-debug", `nonce:${nonce}`); // 확인 끝나면 삭제해도 됨
   //보안 헤더
-  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+  res.headers.set(
+    "Strict-Transport-Security",
+    "max-age=63072000; includeSubDomains; preload"
+  );
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("X-Frame-Options", "DENY");
-  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()"
+  );
   return res;
 }
 
