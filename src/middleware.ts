@@ -18,9 +18,9 @@ export function middleware(req: NextRequest) {
     "frame-ancestors 'self'", // aligns with X-Frame-Options: SAMEORIGIN
     "object-src 'none'",
     "script-src 'self' 'nonce-" + nonce + "'", // allow inline scripts only via nonce
-    "style-src 'self' 'nonce-" + nonce + "' https:", // allow external styles from https
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`, // allow external styles from https
     "img-src 'self' data: https:",
-    "font-src 'self' https:",
+    "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' https:",
   ].join("; ");
 
@@ -34,7 +34,7 @@ export function middleware(req: NextRequest) {
   );
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.headers.set("X-Frame-Options", "DENY");
+  res.headers.set("X-Frame-Options", "SAMEORIGIN");
   res.headers.set(
     "Permissions-Policy",
     "camera=(), microphone=(), geolocation=()"
