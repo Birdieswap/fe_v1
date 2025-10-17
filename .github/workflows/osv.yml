@@ -1,34 +1,48 @@
+# .github/workflows/osv.yml
 name: OSV Scan
-
 on:
   push:
   pull_request:
-
 jobs:
-  osv-scan:
+  osv:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      # GHCR의 공식 컨테이너로 실행 (GCR 폐지 이슈 회피)
-      - name: Run OSV (package-lock.json)
-        uses: addnab/docker-run-action@v3
+      - uses: actions/checkout@v4
         with:
-          image: ghcr.io/google/osv-scanner:latest
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            cd /workspace
-            # 최우선: lockfile 기준 스캔 (FRONT 앱에는 이게 정확)
-            osv-scanner --lockfile=package-lock.json --format json > osv-results.json
-            # 보조: 소스 트리 스캔 (선택)
-            osv-scanner --recursive --format json . > osv-tree.json || true
+          fetch-depth: 0
 
-      - name: Upload OSV artifacts
-        uses: actions/upload-artifact@v4
+      # 진짜 락파일이 있는지 먼저 확인 (디버그에 매우 도움됨)
+      - name: Show lockfiles
+        run: |
+          echo "== PWD ==" && pwd
+          echo "== lockfiles ==" && find . -maxdepth 4 -type f \( -name "package-lock.json" -o -name "pnpm-lock.yaml" -o -name "yarn.lock" \) -print
+
+      # OSV 바이너리 설치 (아티팩트 레지스트리 최신 릴리스에서)
+      - name: Install OSV-Scanner
+        run: |
+          set -euxo pipefail
+          TAG=$(curl -sSL https://api.github.com/repos/google/osv-scanner/releases/latest | jq -r .tag_name)
+          curl -sSL -o /tmp/osv.tar.gz "https://github.com/google/osv-scanner/releases/download/${TAG}/osv-scanner_${TAG#v}_linux_amd64.tar.gz"
+          tar -xzf /tmp/osv.tar.gz -C /usr/local/bin osv-scanner
+          chmod +x /usr/local/bin/osv-scanner
+          osv-scanner --version
+
+      # 재귀 스캔: 루트부터 모든 lockfile 자동 탐지
+      - name: Run OSV (recursive)
+        run: |
+          set -euxo pipefail
+          osv-scanner -r . --skip-git --format json --output osv-results.json
+          # 사람이 보기 쉬운 테이블도 같이 저장(선택)
+          osv-scanner -r . --skip-git --format table --output osv-table.txt
+          # 디펜던시 트리 느낌의 요약이 필요하면 npm ls 등 병행
+          if [ -f package-lock.json ]; then
+            npx --yes npm@10 ls --all > npm-tree.txt || true
+          fi
+
+      - uses: actions/upload-artifact@v4
         with:
-          name: osv-scan
+          name: osv-results
           path: |
             osv-results.json
-            osv-tree.json
-          if-no-files-found: warn
+            osv-table.txt
+            npm-tree.txt
