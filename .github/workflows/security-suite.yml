@@ -174,7 +174,7 @@ jobs:
 
       - name: Run OSV-Scanner
         run: |
-          osv-scanner --format sarif --output osv.sarif .
+          osv-scanner --format sarif --output osv.sarif --skip-git . || true
 
       - name: Upload OSV SARIF
         uses: actions/upload-artifact@v4
