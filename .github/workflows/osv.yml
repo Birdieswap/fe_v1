@@ -1,48 +1,65 @@
-# .github/workflows/osv.yml
 name: OSV Scan
+
 on:
   push:
   pull_request:
+
+permissions:
+  contents: read
+  actions: read # upload-sarif가 워크플로우 정보 읽을 때 필요
+  security-events: write # SARIF 업로드 권한
+
 jobs:
   osv:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      # 진짜 락파일이 있는지 먼저 확인 (디버그에 매우 도움됨)
-      - name: Show lockfiles
-        run: |
-          echo "== PWD ==" && pwd
-          echo "== lockfiles ==" && find . -maxdepth 4 -type f \( -name "package-lock.json" -o -name "pnpm-lock.yaml" -o -name "yarn.lock" \) -print
-
-      # OSV 바이너리 설치 (아티팩트 레지스트리 최신 릴리스에서)
+      # OSV-Scanner 최신 릴리스를 안전하게 설치 (linux x86_64 tar.gz 자동 선택)
       - name: Install OSV-Scanner
         run: |
           set -euxo pipefail
-          TAG=$(curl -sSL https://api.github.com/repos/google/osv-scanner/releases/latest | jq -r .tag_name)
-          curl -sSL -o /tmp/osv.tar.gz "https://github.com/google/osv-scanner/releases/download/${TAG}/osv-scanner_${TAG#v}_linux_amd64.tar.gz"
-          tar -xzf /tmp/osv.tar.gz -C /usr/local/bin osv-scanner
-          chmod +x /usr/local/bin/osv-scanner
-          osv-scanner --version
+          sudo apt-get update
+          sudo apt-get install -y jq
+          API="https://api.github.com/repos/google/osv-scanner/releases/latest"
+          ASSET_URL=$(curl -fsSL "$API" \
+            | jq -r '.assets[] 
+              | select((.name|test("linux"; "i")) 
+                       and (.name|test("(x86_64|amd64)"; "i")) 
+                       and (.name|endswith(".tar.gz"))) 
+              | .browser_download_url' \
+            | head -n1)
+          if [ -z "$ASSET_URL" ]; then
+            echo "Failed to find linux x86_64 tar.gz asset" >&2
+            exit 1
+          fi
+          curl -fsSL -o /tmp/osv.tar.gz "$ASSET_URL"
+          tar -tzf /tmp/osv.tar.gz >/dev/null  # 무결성 체크
+          sudo tar -xzf /tmp/osv.tar.gz -C /usr/local/bin osv-scanner
+          /usr/local/bin/osv-scanner --version
 
-      # 재귀 스캔: 루트부터 모든 lockfile 자동 탐지
-      - name: Run OSV (recursive)
+      # SARIF + 텍스트 리포트 생성 (실패해도 워크플로우 계속)
+      - name: Run OSV-Scanner (generate SARIF)
         run: |
           set -euxo pipefail
-          osv-scanner -r . --skip-git --format json --output osv-results.json
-          # 사람이 보기 쉬운 테이블도 같이 저장(선택)
-          osv-scanner -r . --skip-git --format table --output osv-table.txt
-          # 디펜던시 트리 느낌의 요약이 필요하면 npm ls 등 병행
-          if [ -f package-lock.json ]; then
-            npx --yes npm@10 ls --all > npm-tree.txt || true
-          fi
+          osv-scanner --recursive . --format sarif --output osv.sarif || true
+          osv-scanner --recursive . --output osv.txt || true
 
-      - uses: actions/upload-artifact@v4
+      # 포크 PR이면 권한 제한으로 실패하므로 업로드 생략
+      - name: Upload SARIF to GitHub Code Scanning
+        if: github.event.pull_request.head.repo.fork == false
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          name: osv-results
+          sarif_file: osv.sarif
+
+      # 결과물 아티팩트로도 보관
+      - name: Upload OSV artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scan-results
           path: |
-            osv-results.json
-            osv-table.txt
-            npm-tree.txt
+            osv.sarif
+            osv.txt
+          if-no-files-found: warn
