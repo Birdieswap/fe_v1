@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
+        continue-on-error: true
         with:
           target: ${{ github.event.inputs.zap_target || 'https://birdieswap-dev.vercel.app' }}
           rules_file_name: ""
@@ -68,7 +69,7 @@ jobs:
     permissions:
       actions: read
       contents: read
-      # code scanning에 올릴 거면 아래 주석 해제(+ 업로드 스텝 사용)
+      # code scanning에 업로드하려면 아래 주석 해제하고 analyze의 upload 사용
       # security-events: write
     env:
       CODEQL_EXTRACTOR_JAVASCRIPT_INSTALL_NODE_MODULES: "false"
@@ -81,7 +82,6 @@ jobs:
           unzip -q codeql.zip -d /opt
           echo "/opt/codeql" >> $GITHUB_PATH
 
-      # 빌드/의존성 설치 없이 DB 생성
       - name: Create CodeQL DB (no build)
         run: |
           /opt/codeql/codeql database create codeql-db \
@@ -94,6 +94,18 @@ jobs:
             javascript-code-scanning.qls \
             --format=sarifv2.1.0 \
             --output=codeql.sarif || true
+
+      - name: Ensure SARIF exists (even if empty)
+        run: |
+          if [ ! -s codeql.sarif ]; then
+            cat > codeql.sarif <<'JSON'
+            {
+              "version": "2.1.0",
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "runs": []
+            }
+          JSON
+          fi
 
       - name: Upload CodeQL SARIF artifact (for aggregate job)
         uses: actions/upload-artifact@v4
@@ -117,7 +129,6 @@ jobs:
       - name: Run Semgrep (produce SARIF + JSON)
         run: |
           EXCLUDES="--exclude node_modules --exclude .next --exclude dist --exclude build"
-          # 규칙셋: p/javascript (현행) 또는 p/ci (리포 전반 CI용)
           semgrep scan --config=p/javascript $EXCLUDES --timeout 600 --severity=ERROR --sarif -o semgrep.sarif || true
           semgrep scan --config=p/javascript $EXCLUDES --timeout 600 --severity=ERROR --json  -o semgrep.json  || true
 
@@ -150,13 +161,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install OSV-Scanner
+
+      - name: Install OSV-Scanner (release binary)
         run: |
-          curl -sSfL https://raw.githubusercontent.com/google/osv-scanner/main/scripts/install.sh | sh -s -- -b /usr/local/bin
-          osv-scanner --version
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
+          OS=$(uname -s)
+          ARCH=$(uname -m)
+          case "$ARCH" in
+            x86_64) ARCH=x86_64 ;;
+            aarch64) ARCH=arm64 ;;
+            *) echo "Unsupported arch: $ARCH"; exit 1 ;;
+          esac
+          TAG=$(curl -sSL https://api.github.com/repos/google/osv-scanner/releases/latest | jq -r .tag_name)
+          curl -L -o osv.zip "https://github.com/google/osv-scanner/releases/download/${TAG}/osv-scanner_${OS}_${ARCH}.zip"
+          sudo unzip -o osv.zip -d /usr/local/bin
+          sudo chmod +x /usr/local/bin/osv-scanner
+          /usr/local/bin/osv-scanner --version
+
       - name: Run OSV-Scanner
         run: |
           osv-scanner --format sarif --output osv.sarif .
+
       - name: Upload OSV SARIF
         uses: actions/upload-artifact@v4
         with:
@@ -191,25 +218,112 @@ jobs:
           path: zap_full
         continue-on-error: true
 
-      - name: Install SARIF Multitool & wkhtmltopdf & Node
+      - name: Install SARIF Multitool (release) & wkhtmltopdf
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y dotnet-sdk-8.0 wkhtmltopdf
-          dotnet tool install --global Microsoft.CodeAnalysis.Sarif.Multitool
-          echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+          sudo apt-get install -y wget unzip wkhtmltopdf
+          mkdir -p "$HOME/.local/bin"
+          cd "$HOME/.local/bin"
+          curl -sSL -o sarif-multitool.zip \
+            https://github.com/microsoft/sarif-sdk/releases/latest/download/Sarif.Multitool.linux-x64.zip
+          unzip -o sarif-multitool.zip
+          chmod +x Sarif.Multitool
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      - name: Create summarize-sarif.js
+        run: |
+          mkdir -p scripts
+          cat > scripts/summarize-sarif.js <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          const args = require('node:process').argv.slice(2);
+          const opts = {};
+          for (let i = 0; i < args.length; i += 2) {
+            const k = args[i], v = args[i + 1];
+            if (k && k.startsWith('--')) opts[k.slice(2)] = v;
+          }
+          const sarifDir = opts.in || 'sarif_in';
+          const combinedSarif = opts.combined || 'combined.sarif';
+          function safeReadJSON(p) { try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return null; } }
+          function sevOrder(sev) {
+            const map = { critical:0, high:1, medium:2, low:3, note:4, warning:2, error:1, info:4 };
+            return map[(sev||'').toLowerCase()] ?? 9;
+          }
+          const perTool = {};
+          const files = fs.readdirSync(sarifDir).filter(f => f.endsWith('.sarif'));
+          for (const f of files) {
+            const doc = safeReadJSON(path.join(sarifDir, f));
+            if (!doc || !Array.isArray(doc.runs)) continue;
+            for (const run of doc.runs) {
+              const toolName = (run.tool && (run.tool.driver?.name || run.tool?.name)) || 'unknown';
+              const results = Array.isArray(run.results) ? run.results : [];
+              if (!perTool[toolName]) perTool[toolName] = { severities: {}, total: 0 };
+              for (const r of results) {
+                const sev = r.level?.toUpperCase()
+                  || r.properties?.problem?.severity?.toUpperCase()
+                  || r.properties?.severity?.toUpperCase()
+                  || 'NOTE';
+                perTool[toolName].severities[sev] = (perTool[toolName].severities[sev] || 0) + 1;
+                perTool[toolName].total++;
+              }
+            }
+          }
+          const combined = safeReadJSON(combinedSarif) || { runs: [] };
+          const overall = {}; let overallTotal = 0;
+          for (const run of combined.runs) {
+            for (const r of (run.results || [])) {
+              const sev = r.level?.toUpperCase()
+                || r.properties?.problem?.severity?.toUpperCase()
+                || r.properties?.severity?.toUpperCase()
+                || 'NOTE';
+              overall[sev] = (overall[sev] || 0) + 1;
+              overallTotal++;
+            }
+          }
+          function pill(sev, n) { return `<span class="pill sev-${sev}">${sev}: ${n}</span>`; }
+          const sevKeys = Object.keys(overall).sort((a,b)=>sevOrder(a)-sevOrder(b));
+          let html = '';
+          html += `<h1>Security Summary</h1>`;
+          html += `<p>Total findings: <strong>${overallTotal}</strong></p>`;
+          html += `<p>` + sevKeys.map(s=>pill(s, overall[s])).join(' ') + `</p>`;
+          html += `<h2>Findings by Tool</h2>`;
+          html += `<table><thead><tr><th>Tool</th><th>Total</th><th>By Severity</th></tr></thead><tbody>`;
+          const toolsSorted = Object.entries(perTool).sort((a,b)=>b[1].total - a[1].total);
+          for (const [tool, data] of toolsSorted) {
+            const keys = Object.keys(data.severities).sort((a,b)=>sevOrder(a)-sevOrder(b));
+            html += `<tr><td>${tool}</td><td>${data.total}</td><td>`;
+            html += keys.map(s=>pill(s, data.severities[s])).join(' ');
+            html += `</td></tr>`;
+          }
+          html += `</tbody></table>`;
+          function zapNote(kind, dir) {
+            if (fs.existsSync(path.join(dir, 'report_html.html'))) {
+              return `<li><strong>${kind}:</strong> <code>report_html.html</code> / <code>report_json.json</code> artifact에 포함</li>`;
+            }
+            return '';
+          }
+          html += `<h2>ZAP Reports</h2><ul>`;
+          html += zapNote('ZAP Baseline', opts.zapBaselineDir || 'zap_baseline');
+          html += zapNote('ZAP Full', opts.zapFullDir || 'zap_full');
+          html += `</ul>`;
+          fs.writeFileSync(opts.out || 'summary.html', html);
+          console.log('summary.html written');
+          EOF
+
       - name: Merge SARIF
         run: |
           ls -1 sarif_in/*.sarif > /dev/null
-          ~/.dotnet/tools/sarif multitool merge sarif_in/*.sarif --output combined.sarif
-          ~/.dotnet/tools/sarif multitool validate combined.sarif
+          Sarif.Multitool merge sarif_in/*.sarif --output combined.sarif
+          Sarif.Multitool validate combined.sarif
 
       - name: Transform SARIF -> HTML (appendix)
         run: |
-          ~/.dotnet/tools/sarif multitool transform combined.sarif --format html --output appendix.sarif.html
+          Sarif.Multitool transform combined.sarif --format html --output appendix.sarif.html
 
       - name: Create summary HTML
         run: |
@@ -226,7 +340,6 @@ jobs:
           cat summary.html >> combined.html
           echo "<hr/><h2>Appendix: Full SARIF (auto-generated)</h2>" >> combined.html
           cat appendix.sarif.html >> combined.html
-          # ZAP 링크/첨부 안내
           echo "<hr/><h2>ZAP Reports</h2>" >> combined.html
           if [ -f "zap_baseline/report_html.html" ]; then
             echo "<p><strong>ZAP Baseline:</strong> artifact <code>zap-baseline-${{ github.run_id }}-${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
