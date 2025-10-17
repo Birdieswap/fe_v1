@@ -29,13 +29,6 @@ jobs:
           semgrep scan --config=p/javascript --severity=ERROR --sarif -o semgrep.sarif || true
           semgrep scan --config=p/javascript --severity=ERROR --json  -o semgrep.json  || true
 
-      # GHAS 없는 프라이빗 레포에서 실패하므로, 퍼블릭일 때만 업로드
-      - name: Upload SARIF to GitHub Code Scanning
-        if: github.repository_visibility == 'public'
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: semgrep.sarif
-
       - name: Upload Semgrep artifacts
         if: always()
         uses: actions/upload-artifact@v4

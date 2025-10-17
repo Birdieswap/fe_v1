@@ -42,8 +42,10 @@ jobs:
 
       - name: Convert SARIF to HTML
         run: |
-          npm install -g sarif-to-html
-          sarif-to-html codeql.sarif -o codeql-report.html || true
+          sudo apt-get update
+          sudo apt-get install -y dotnet-sdk-8.0
+          dotnet tool install --global Microsoft.CodeAnalysis.Sarif.Multitool
+          ~/.dotnet/tools/sarif multitool transform codeql.sarif --format html --output codeql-report.html
 
       - name: Upload CodeQL Reports
         uses: actions/upload-artifact@v4
