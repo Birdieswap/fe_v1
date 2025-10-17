@@ -1,12 +1,12 @@
-name: CodeQL
+name: CodeQL (No-GHAS Safe)
 
 on:
   push:
-    branches: [ "main", "dev_fe" ]
+    branches: ["main", "dev_fe"]
   pull_request:
-    branches: [ "main", "dev_fe" ]
+    branches: ["main", "dev_fe"]
   schedule:
-    - cron: "0 3 * * 1"  # 매주 월요일 03:00 UTC
+    - cron: "0 3 * * 1" # 매주 월요일 03:00 UTC
 
 jobs:
   analyze:
@@ -14,18 +14,56 @@ jobs:
     permissions:
       actions: read
       contents: read
-      security-events: write  # Code scanning alerts에 결과 올림
     steps:
       - uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+      # 1️⃣ CodeQL CLI 다운로드
+      - name: Download CodeQL CLI
+        run: |
+          curl -L -o codeql.zip https://github.com/github/codeql-cli-binaries/releases/latest/download/codeql-linux64.zip
+          unzip -q codeql.zip -d /opt
+          echo "/opt/codeql" >> $GITHUB_PATH
+
+      # 2️⃣ 데이터베이스 생성 (JS/TS용)
+      - name: Create CodeQL DB
+        run: |
+          /opt/codeql/codeql database create codeql-db \
+            --language=javascript \
+            --source-root=. \
+            --command="npm ci || npm install"
+
+      # 3️⃣ 분석 실행 (SARIF 생성)
+      - name: Run CodeQL Analysis
+        run: |
+          /opt/codeql/codeql database analyze codeql-db \
+            javascript-code-scanning.qls \
+            --format=sarifv2.1.0 \
+            --output=codeql.sarif || true
+
+      # 4️⃣ SARIF → HTML 변환
+      - name: Convert SARIF to HTML
+        run: |
+          npm install -g sarif-to-html
+          sarif-to-html codeql.sarif -o codeql-report.html || true
+
+      # 5️⃣ 결과 업로드 (artifact)
+      - name: Upload CodeQL Reports
+        uses: actions/upload-artifact@v4
         with:
-          languages: javascript, typescript
+          name: codeql-report-${{ github.run_id }}
+          path: |
+            codeql.sarif
+            codeql-report.html
+          if-no-files-found: warn
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v2
+      - name: Summarize SARIF
+        run: |
+          node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('codeql.sarif','utf8'));let t=s.runs.flatMap(r=>r.results||[]);let g=t.reduce((a,x)=>{let k=x.level||'none';a[k]=(a[k]||0)+1;return a},{});console.log(`High:${g.error||0}, Medium:${g.warning||0}, Low:${g.note||0}`);" > summary.txt
 
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: summary.txt
