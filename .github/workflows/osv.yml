@@ -1,3 +1,4 @@
+# .github/workflows/osv-scan.yml
 name: OSV Scan
 
 on:
@@ -15,55 +16,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OSV-Scanner (auto-detect .tar.gz or .zip)
+      # Docker로 바로 실행 (설치 X)
+      - name: Run OSV-Scanner (Docker, generate SARIF + text)
         run: |
           set -euxo pipefail
-          sudo apt-get update
-          sudo apt-get install -y jq unzip
-          API="https://api.github.com/repos/google/osv-scanner/releases/latest"
+          docker pull ghcr.io/google/osv-scanner:latest
+          # SARIF
+          docker run --rm -v "$PWD":/repo -w /repo ghcr.io/google/osv-scanner:latest \
+            --recursive . --format sarif --output osv.sarif || true
+          # Text 리포트(참고용)
+          docker run --rm -v "$PWD":/repo -w /repo ghcr.io/google/osv-scanner:latest \
+            --recursive . --output osv.txt || true
 
-          # 1) tar.gz 또는 zip 중 하나를 고름
-          ASSET_URL=$(curl -fsSL "$API" | jq -r '
-            .assets[]
-            | select(
-                (.name|test("linux"; "i"))
-                and (.name|test("(x86_64|amd64)"; "i"))
-                and ((.name|endswith(".tar.gz")) or (.name|endswith(".zip")))
-              )
-            | .browser_download_url
-          ' | head -n1)
-
-          if [ -z "$ASSET_URL" ]; then
-            echo "Failed to find linux x86_64 asset (.tar.gz or .zip)" >&2
-            exit 1
-          fi
-
-          echo "Downloading: $ASSET_URL"
-          curl -fsSL -o /tmp/osv-asset "$ASSET_URL"
-
-          # 2) 압축 형태에 따라 설치
-          if echo "$ASSET_URL" | grep -qi '\.tar\.gz$'; then
-            file /tmp/osv-asset
-            tar -tzf /tmp/osv-asset >/dev/null
-            mkdir -p /tmp/osv-extract
-            tar -xzf /tmp/osv-asset -C /tmp/osv-extract
-          else
-            file /tmp/osv-asset
-            unzip -q /tmp/osv-asset -d /tmp/osv-extract
-          fi
-
-          # 3) 바이너리만 찾아 /usr/local/bin 에 배치
-          chmod +x /tmp/osv-extract/osv-scanner || true
-          sudo mv /tmp/osv-extract/osv-scanner /usr/local/bin/osv-scanner
-          /usr/local/bin/osv-scanner --version
-
-      - name: Run OSV-Scanner (generate SARIF + text)
-        run: |
-          set -euxo pipefail
-          osv-scanner --recursive . --format sarif --output osv.sarif || true
-          osv-scanner --recursive . --output osv.txt || true
-
-      # GHAS(Advanced Security) 미사용 레포에서는 이 스텝이 실패하므로 조건부 처리(아래 2번 참고)
+      # 퍼블릭 레포만 SARIF 업로드(프라이빗 + GHAS 미사용이면 실패하므로)
       - name: Upload SARIF to GitHub Code Scanning
         if: github.repository_visibility == 'public'
         uses: github/codeql-action/upload-sarif@v3
