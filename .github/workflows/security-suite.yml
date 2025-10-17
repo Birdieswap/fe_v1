@@ -162,22 +162,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install OSV-Scanner (release binary)
+      - name: Install OSV-Scanner via Go
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y jq unzip
-          OS=$(uname -s)
-          ARCH=$(uname -m)
-          case "$ARCH" in
-            x86_64) ARCH=x86_64 ;;
-            aarch64) ARCH=arm64 ;;
-            *) echo "Unsupported arch: $ARCH"; exit 1 ;;
-          esac
-          TAG=$(curl -sSL https://api.github.com/repos/google/osv-scanner/releases/latest | jq -r .tag_name)
-          curl -L -o osv.zip "https://github.com/google/osv-scanner/releases/download/${TAG}/osv-scanner_${OS}_${ARCH}.zip"
-          sudo unzip -o osv.zip -d /usr/local/bin
-          sudo chmod +x /usr/local/bin/osv-scanner
+          sudo apt-get install -y golang-go
+          # /usr/local/bin에 바로 설치
+          export GOBIN=/usr/local/bin
+          go install github.com/google/osv-scanner/cmd/osv-scanner@latest
           /usr/local/bin/osv-scanner --version
 
       - name: Run OSV-Scanner
