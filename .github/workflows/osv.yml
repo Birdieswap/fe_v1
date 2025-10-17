@@ -6,54 +6,70 @@ on:
 
 permissions:
   contents: read
-  actions: read # upload-sarif가 워크플로우 정보 읽을 때 필요
-  security-events: write # SARIF 업로드 권한
+  actions: read
+  security-events: write
 
 jobs:
   osv:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
-      # OSV-Scanner 최신 릴리스를 안전하게 설치 (linux x86_64 tar.gz 자동 선택)
-      - name: Install OSV-Scanner
+      - name: Install OSV-Scanner (auto-detect .tar.gz or .zip)
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y jq
+          sudo apt-get install -y jq unzip
           API="https://api.github.com/repos/google/osv-scanner/releases/latest"
-          ASSET_URL=$(curl -fsSL "$API" \
-            | jq -r '.assets[] 
-              | select((.name|test("linux"; "i")) 
-                       and (.name|test("(x86_64|amd64)"; "i")) 
-                       and (.name|endswith(".tar.gz"))) 
-              | .browser_download_url' \
-            | head -n1)
+
+          # 1) tar.gz 또는 zip 중 하나를 고름
+          ASSET_URL=$(curl -fsSL "$API" | jq -r '
+            .assets[]
+            | select(
+                (.name|test("linux"; "i"))
+                and (.name|test("(x86_64|amd64)"; "i"))
+                and ((.name|endswith(".tar.gz")) or (.name|endswith(".zip")))
+              )
+            | .browser_download_url
+          ' | head -n1)
+
           if [ -z "$ASSET_URL" ]; then
-            echo "Failed to find linux x86_64 tar.gz asset" >&2
+            echo "Failed to find linux x86_64 asset (.tar.gz or .zip)" >&2
             exit 1
           fi
-          curl -fsSL -o /tmp/osv.tar.gz "$ASSET_URL"
-          tar -tzf /tmp/osv.tar.gz >/dev/null  # 무결성 체크
-          sudo tar -xzf /tmp/osv.tar.gz -C /usr/local/bin osv-scanner
+
+          echo "Downloading: $ASSET_URL"
+          curl -fsSL -o /tmp/osv-asset "$ASSET_URL"
+
+          # 2) 압축 형태에 따라 설치
+          if echo "$ASSET_URL" | grep -qi '\.tar\.gz$'; then
+            file /tmp/osv-asset
+            tar -tzf /tmp/osv-asset >/dev/null
+            mkdir -p /tmp/osv-extract
+            tar -xzf /tmp/osv-asset -C /tmp/osv-extract
+          else
+            file /tmp/osv-asset
+            unzip -q /tmp/osv-asset -d /tmp/osv-extract
+          fi
+
+          # 3) 바이너리만 찾아 /usr/local/bin 에 배치
+          chmod +x /tmp/osv-extract/osv-scanner || true
+          sudo mv /tmp/osv-extract/osv-scanner /usr/local/bin/osv-scanner
           /usr/local/bin/osv-scanner --version
 
-      # SARIF + 텍스트 리포트 생성 (실패해도 워크플로우 계속)
-      - name: Run OSV-Scanner (generate SARIF)
+      - name: Run OSV-Scanner (generate SARIF + text)
         run: |
           set -euxo pipefail
           osv-scanner --recursive . --format sarif --output osv.sarif || true
           osv-scanner --recursive . --output osv.txt || true
 
-      # 포크 PR이면 권한 제한으로 실패하므로 업로드 생략
+      # GHAS(Advanced Security) 미사용 레포에서는 이 스텝이 실패하므로 조건부 처리(아래 2번 참고)
       - name: Upload SARIF to GitHub Code Scanning
-        if: github.event.pull_request.head.repo.fork == false
+        if: github.repository_visibility == 'public'
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: osv.sarif
 
-      # 결과물 아티팩트로도 보관
       - name: Upload OSV artifacts
         if: always()
         uses: actions/upload-artifact@v4
