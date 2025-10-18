@@ -56,6 +56,17 @@ const nextConfig = {
         source: "/(.*)",
         headers: securityHeaders,
       },
+
+      // (선택) 특정 경로에만 제한적 CORS 허용 예시
+      // {
+      //   source: "/api/:path*",
+      //   headers: [
+      //     { key: "Access-Control-Allow-Origin", value: "https://birdieswap-dev.vercel.app" },
+      //     { key: "Vary", value: "Origin" },
+      //     { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
+      //     { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
+      //   ],
+      // },
     ];
   },
 
@@ -63,6 +74,10 @@ const nextConfig = {
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // remotePatterns: [
+    //   { protocol: "https", hostname: "images.unsplash.com" },
+    //   { protocol: "https", hostname: "cdn.yourcdn.com" },
+    // ],
   },
 
   typescript: {

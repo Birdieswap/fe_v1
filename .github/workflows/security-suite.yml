@@ -334,8 +334,8 @@ jobs:
           else
             echo "Merging ${#files[@]} SARIF files..."
             if command -v sarif >/dev/null 2>&1; then
-              sarif multitool merge "${files[@]}" --output combined.sarif
-              sarif multitool validate combined.sarif
+              sarif merge "${files[@]}" --output combined.sarif
+              sarif validate combined.sarif
             else
               "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output combined.sarif
               "$HOME/.local/bin/Sarif.Multitool" validate combined.sarif
@@ -347,7 +347,7 @@ jobs:
         run: |
           set -euo pipefail
           if command -v sarif >/dev/null 2>&1; then
-            sarif multitool transform combined.sarif --format html --output appendix.sarif.html
+            sarif transform combined.sarif --format html --output appendix.sarif.html
           else
             "$HOME/.local/bin/Sarif.Multitool" transform combined.sarif --format html --output appendix.sarif.html
           fi
