@@ -334,10 +334,12 @@ jobs:
           else
             echo "Merging ${#files[@]} SARIF files..."
             if command -v sarif >/dev/null 2>&1; then
-              sarif merge "${files[@]}" --output combined.sarif
+              # 최신 버전 CLI (4.6.0+)는 'merge' 서브커맨드와 --output-file 옵션 사용
+              sarif merge "${files[@]}" --output-file combined.sarif --merge-runs
               sarif validate combined.sarif
             else
-              "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output combined.sarif
+              # 구버전 (Sarif.Multitool 직접 호출)
+              "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output-file combined.sarif --merge-runs
               "$HOME/.local/bin/Sarif.Multitool" validate combined.sarif
             fi
           fi
