@@ -14,6 +14,10 @@ on:
         required: false
         default: "https://birdieswap-dev.vercel.app"
 
+concurrency:
+  group: security-suite-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   security-events: write
@@ -30,7 +34,7 @@ jobs:
         with:
           target: ${{ github.event.inputs.zap_target || 'https://birdieswap-dev.vercel.app' }}
           rules_file_name: ""
-          cmd_options: "-j -m 5"
+          cmd_options: "-j -m 5 -T 120"
           allow_issue_writing: false
           # artifact_name 삭제! (자동 업로드 비활성화)
       - name: Upload ZAP Baseline reports #우리가 올림
@@ -211,18 +215,28 @@ jobs:
           path: zap_full
         continue-on-error: true
 
-      - name: Install SARIF Multitool (release) & wkhtmltopdf
+      - name: Install SARIF Multitool (stable-first, fallback to release asset) + wkhtmltopdf
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y wget unzip wkhtmltopdf
-          mkdir -p "$HOME/.local/bin"
-          cd "$HOME/.local/bin"
-          curl -sSL -o sarif-multitool.zip \
-            https://github.com/microsoft/sarif-sdk/releases/latest/download/Sarif.Multitool.linux-x64.zip
-          unzip -o sarif-multitool.zip
-          chmod +x Sarif.Multitool
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          sudo apt-get install -y dotnet-sdk-8.0 wkhtmltopdf jq wget unzip
+          # 1) 안정 경로: NuGet 도구 설치
+          if dotnet tool install --global Sarif.Multitool; then
+            echo "Installed via dotnet tool"
+            echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+          else
+            echo "dotnet tool install failed; falling back to release asset..."
+            mkdir -p "$HOME/.local/bin"
+            url=$(curl -sSL https://api.github.com/repos/microsoft/sarif-sdk/releases/latest \
+              | jq -r '.assets[] | select(.name | test("Multitool.*linux.*zip$")) | .browser_download_url' | head -n1)
+            if [ -z "${url:-}" ]; then
+              echo "Could not find Multitool asset in latest release"; exit 1
+            fi
+            wget -O sarif-multitool.zip "$url"
+            unzip -o sarif-multitool.zip -d "$HOME/.local/bin"
+            chmod +x "$HOME/.local/bin"/Sarif.Multitool || true
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
+          fi
 
       - uses: actions/setup-node@v4
         with:
@@ -308,22 +322,43 @@ jobs:
           console.log('summary.html written');
           EOF
 
-      - name: Merge SARIF
+      - name: Merge SARIF (safe even if none)
         run: |
-          if ! ls -1 sarif_in/*.sarif >/dev/null 2>&1; then
-            echo '{
-              "version":"2.1.0",
-              "$schema":"https://json.schemastore.org/sarif-2.1.0.json",
-              "runs":[]
-            }' > combined.sarif
-          else
-            Sarif.Multitool merge sarif_in/*.sarif --output combined.sarif
-          fi
-          Sarif.Multitool validate combined.sarif
+          set -euo pipefail
+          shopt -s nullglob
 
+          files=(sarif_in/*.sarif)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No SARIF files found; creating minimal combined.sarif"
+            cat > combined.sarif <<'JSON'
+            {
+              "version": "2.1.0",
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "runs": []
+            }
+            JSON
+            # 빈 파일은 멀티툴 검증을 생략해도 됨 (원하면 아래 주석 해제)
+            # if command -v sarif >/dev/null 2>&1; then sarif multitool validate combined.sarif; fi
+          else
+            echo "Merging ${#files[@]} SARIF files..."
+            if command -v sarif >/dev/null 2>&1; then
+              sarif multitool merge "${files[@]}" --output combined.sarif
+              sarif multitool validate combined.sarif
+            else
+              "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output combined.sarif
+              "$HOME/.local/bin/Sarif.Multitool" validate combined.sarif
+            fi
+          fi
+
+      # (기존 Transform SARIF -> HTML 스텝 교체)
       - name: Transform SARIF -> HTML (appendix)
         run: |
-          Sarif.Multitool transform combined.sarif --format html --output appendix.sarif.html
+          set -euo pipefail
+          if command -v sarif >/dev/null 2>&1; then
+            sarif multitool transform combined.sarif --format html --output appendix.sarif.html
+          else
+            "$HOME/.local/bin/Sarif.Multitool" transform combined.sarif --format html --output appendix.sarif.html
+          fi
 
       - name: Create summary HTML
         run: |
@@ -342,10 +377,10 @@ jobs:
           cat appendix.sarif.html >> combined.html
           echo "<hr/><h2>ZAP Reports</h2>" >> combined.html
           if [ -f "zap_baseline/report_html.html" ]; then
-            echo "<p><strong>ZAP Baseline:</strong> artifact <code>zap-baseline-${{ github.run_id }}-${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
+            echo "<p><strong>ZAP Baseline:</strong> artifact <code>zap-baseline_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
           fi
           if [ -f "zap_full/report_html.html" ]; then
-            echo "<p><strong>ZAP Full:</strong> artifact <code>zap-full-${{ github.run_id }}-${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
+            echo "<p><strong>ZAP Full:</strong> artifact <code>zap-full_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
           fi
           echo "</body></html>" >> combined.html
 
