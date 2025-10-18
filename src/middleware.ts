@@ -5,24 +5,40 @@ function createNonce(): string {
 }
 
 export function middleware(req: NextRequest) {
+  const IMG_DOMAINS: string[] = [
+    // 예: 외부 이미지/CDN이 실제로 필요할 때만 추가
+    // "images.unsplash.com",
+    // "cdn.yourcdn.com",
+  ];
+
+  const CONNECT_DOMAINS: string[] = [
+    // 예: API, 분석, RPC, WebSocket 등 실제 호출하는 대상만 추가
+    // "api.yourdomain.com",
+    // "analytics.vercel-insights.com",
+    // "sepolia.infura.io",
+  ];
+
   const nonce = createNonce();
 
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-csp-nonce", nonce);
 
-  const csp = [
+  const cspParts: string[] = [
     "default-src 'self'",
     "base-uri 'self'",
-    "block-all-mixed-content", // optional but useful
+    "block-all-mixed-content",
     "form-action 'self'",
-    "frame-ancestors 'self'", // aligns with X-Frame-Options: SAMEORIGIN
+    "frame-ancestors 'self'", // X-Frame-Options: SAMEORIGIN과 일치
     "object-src 'none'",
-    "script-src 'self' 'nonce-" + nonce + "'", // allow inline scripts only via nonce
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`, // allow external styles from https
-    "img-src 'self' data: https:",
+    `script-src 'self' 'nonce-${nonce}'`,
+    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
     "font-src 'self' https://fonts.gstatic.com",
-    "connect-src 'self' https:",
-  ].join("; ");
+    "img-src 'self' data: " + IMG_DOMAINS.join(" ") + ";",
+    "connect-src 'self' " + CONNECT_DOMAINS.join(" ") + ";",
+    // 필요시: "upgrade-insecure-requests"
+  ];
+
+  const csp = cspParts.join("; ");
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("Content-Security-Policy", csp);
