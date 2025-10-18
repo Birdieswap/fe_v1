@@ -330,15 +330,7 @@ jobs:
           files=(sarif_in/*.sarif)
           if [ ${#files[@]} -eq 0 ]; then
             echo "No SARIF files found; creating minimal combined.sarif"
-            cat > combined.sarif <<'JSON'
-            {
-              "version": "2.1.0",
-              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-              "runs": []
-            }
-            JSON
-            # 빈 파일은 멀티툴 검증을 생략해도 됨 (원하면 아래 주석 해제)
-            # if command -v sarif >/dev/null 2>&1; then sarif multitool validate combined.sarif; fi
+            jq -n '{version:"2.1.0", "$schema":"https://json.schemastore.org/sarif-2.1.0.json", runs:[]}' > combined.sarif
           else
             echo "Merging ${#files[@]} SARIF files..."
             if command -v sarif >/dev/null 2>&1; then
@@ -377,10 +369,10 @@ jobs:
           cat appendix.sarif.html >> combined.html
           echo "<hr/><h2>ZAP Reports</h2>" >> combined.html
           if [ -f "zap_baseline/report_html.html" ]; then
-            echo "<p><strong>ZAP Baseline:</strong> artifact <code>zap-baseline_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
+            echo "<p><strong>ZAP Baseline:</strong> artifact <code>zap_baseline_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
           fi
           if [ -f "zap_full/report_html.html" ]; then
-            echo "<p><strong>ZAP Full:</strong> artifact <code>zap-full_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
+            echo "<p><strong>ZAP Full:</strong> artifact <code>zap_full_${{ github.run_id }}_${{ github.run_attempt }}</code> 에 <code>report_html.html</code> / <code>report_json.json</code> 포함</p>" >> combined.html
           fi
           echo "</body></html>" >> combined.html
 
