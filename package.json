@@ -34,8 +34,8 @@
     "lint": "next lint",
     "env:backup": "cp -f .env.local .env.local.backup || true",
     "env:restore": "test -f .env.local.backup && cp -f .env.local.backup .env.local || cp -f .env.local.example .env.local",
-    "rename:tokens": "bash scripts/rename-tokens.sh",
-    "rename:tokens:dry": "bash scripts/rename-tokens.sh --dry"
+    "rename:tokens": "zsh scripts/rename-tokens.zsh",
+    "rename:tokens:dry": "zsh scripts/rename-tokens.zsh --dry"
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^3.0.1",
