@@ -7,16 +7,19 @@
 /* HeroUI v4 플러그인 + 소스 스캔 경로 (경로는 프로젝트 구조에 맞게 조정) */
 @plugin "./hero.ts";
 
-@source "./**/*.{ts,tsx,js,jsx,mdx,css}";
-@source "../**/*.{ts,tsx,js,jsx,mdx,css}";
+@source "./**/*.{js,ts,jsx,tsx,mdx}";
+@source "../components/**/*.{js,ts,jsx,tsx}";
+@source "../hooks/**/*.{js,ts,jsx,tsx}";
+@source "../shared/**/*.{js,ts,jsx,tsx}";
+@source "../utils/**/*.{js,ts,jsx,tsx}";
+@source "../const/**/*.{js,ts,jsx,tsx}";
+@source "../types/**/*.{js,ts,jsx,tsx}";
+@source "../assets/**/*.{js,ts,jsx,tsx}"; /* JSX/TSX가 있으면 유지, 아니면 빼도 됨 */
 
-@source "./app/**/*.{js,ts,jsx,tsx,mdx}";
-@source "./components/**/*.{js,ts,jsx,tsx}";
-@source "./pages/**/*.{js,ts,jsx,tsx}";
-
-@source "../../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
-@source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
-@source "../../node_modules/@rainbow-me/rainbowkit/dist/**/*.{js,ts,jsx,tsx}";
+/* 사용 중인 UI 라이브러리 (node_modules는 src/app에서 두 단계 위) */
+@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@source "../node_modules/@rainbow-me/rainbowkit/dist/**/*.{js,ts,jsx,tsx}";
 
 /* 다크모드 (.dark 클래스) */
 @custom-variant dark (&:is(.dark *));
@@ -25,34 +28,34 @@
 /*  RGB 공백 구분: r g b  (hex → rgb 변환 반영) */
 @theme {
   /* Light */
-  --color-light_pink: 248 61 151; /* #F83D97 */
-  --color-light_pink_hover: 242 10 122; /* #F20A7A */
-  --color-light_primary: 0 201 204; /* #00C9CC */
-  --color-light_primary_hover: 7 171 173; /* #07ABAD */
-  --color-light_light_mint: 229 250 250; /* #E5FAFA */
-  --color-light_mid_mint: 204 249 247; /* #CCF9F7 */
-  --color-light_mid_mint_2: 178 239 240; /* #B2EFF0 */
+  --color-light-pink: 248 61 151; /* #F83D97 */
+  --color-light-pink-hover: 242 10 122; /* #F20A7A */
+  --color-light-primary: 0 201 204; /* #00C9CC */
+  --color-light-primary-hover: 7 171 173; /* #07ABAD */
+  --color-light-light-mint: 229 250 250; /* #E5FAFA */
+  --color-light-mid-mint: 204 249 247; /* #CCF9F7 */
+  --color-light-mid-mint-2: 178 239 240; /* #B2EFF0 */
 
   /* Dark */
-  --color-dark_pink: 255 90 169; /* #FF5AA9 */
-  --color-dark_swap_bg: 31 34 52; /* #1F2234 */
-  --color-dark_popup_bg: 38 43 59; /* #262B3B */
-  --color-dark_pink_hover: 240 114 175; /* #F072AF */
-  --color-dark_empty_state: 34 106 117; /* #226A75 */
-  --color-dark_green_key: 27 223 225; /* #1BDFE1 */
-  --color-dark_primary: 104 224 224; /* #68E0E0 */
-  --color-dark_primary_hover: 113 232 233; /* #71E8E9 */
-  --color-dark_mid_mint: 30 169 175; /* #1EA9AF */
-  --color-dark_mid_mint_2: 34 106 117; /* #226A75 */
-  --color-dark_mid_mint_25: 39 75 88; /* #274B58 */
-  --color-dark_mid_mint_3: 22 75 88; /* #164B58 */
-  --color-dark_mid_mint_4: 81 169 174; /* #51A9AE */
+  --color-dark-pink: 255 90 169; /* #FF5AA9 */
+  --color-dark-swap-bg: 31 34 52; /* #1F2234 */
+  --color-dark-popup-bg: 38 43 59; /* #262B3B */
+  --color-dark-pink-hover: 240 114 175; /* #F072AF */
+  --color-dark-empty-state: 34 106 117; /* #226A75 */
+  --color-dark-green-key: 27 223 225; /* #1BDFE1 */
+  --color-dark-primary: 104 224 224; /* #68E0E0 */
+  --color-dark-primary-hover: 113 232 233; /* #71E8E9 */
+  --color-dark-mid-mint: 30 169 175; /* #1EA9AF */
+  --color-dark-mid-mint-2: 34 106 117; /* #226A75 */
+  --color-dark-mid-mint-25: 39 75 88; /* #274B58 */
+  --color-dark-mid-mint-3: 22 75 88; /* #164B58 */
+  --color-dark-mid-mint-4: 81 169 174; /* #51A9AE */
 
   /* Theme background/foreground */
-  --color-light_background: 255 255 255; /* #FFFFFF */
-  --color-light_foreground: 20 25 42; /* #14192A */
-  --color-dark_background: 20 25 42; /* #14192A */
-  --color-dark_foreground: 255 255 255; /* #FFFFFF */
+  --color-light-background: 255 255 255; /* #FFFFFF */
+  --color-light-foreground: 20 25 42; /* #14192A */
+  --color-dark-background: 20 25 42; /* #14192A */
+  --color-dark-foreground: 255 255 255; /* #FFFFFF */
 
   /* default scale (light에서 쓰던 100~900) */
   --color-default-100: 249 251 254; /* #F9FBFE */
@@ -69,10 +72,21 @@
   --color-secondary: 2 223 184; /* #02DFB8 */
   --color-danger: 255 0 0; /* #FF0000 */
   --color-warning: 248 61 151; /* #F83D97 */
+  /* === Semantic tokens === */
+  --color-background: 255 255 255;
+  --color-foreground: 20 25 42;
+  --color-primary: 0 201 204;
+  --color-primary-foreground: 255 255 255;
 }
 
 /* ===== (원래 있던 전역 변수 유지 가능) ===== */
 :root {
+  /* 의미 토큰: 라이트 */
+  --color-background: var(--color-light-background);
+  --color-foreground: var(--color-light-foreground);
+  --color-primary: var(--color-light-primary);
+  --color-primary-foreground: 255 255 255;
+
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
@@ -88,17 +102,17 @@
 /* === Tailwind v4 의미 토큰 매핑 (light 기본) === */
 :root {
   /* semantic colors used by classes like bg-background, text-foreground, bg-primary... */
-  --color-background: var(--color-light_background);
-  --color-foreground: var(--color-light_foreground);
-  --color-primary: var(--color-light_primary);
+  --color-background: var(--color-light-background);
+  --color-foreground: var(--color-light-foreground);
+  --color-primary: var(--color-light-primary);
   --color-primary-foreground: 255 255 255; /* white */
 }
 
 /* dark 모드에서 의미 토큰 덮어쓰기 */
 .dark {
-  --color-background: var(--color-dark_background);
-  --color-foreground: var(--color-dark_foreground);
-  --color-primary: var(--color-dark_primary);
+  --color-background: var(--color-dark-background);
+  --color-foreground: var(--color-dark-foreground);
+  --color-primary: var(--color-dark-primary);
   --color-primary-foreground: 20 25 42; /* 필요시 조정 (#14192A) */
 }
 
@@ -119,16 +133,16 @@ body {
 }
 
 @utility btn-mint-colors {
-  @apply bg-light_primary text-primary-foreground dark:bg-dark_green_key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
 }
 /* hover 상태는 선택자로 유지 (가장 호환성 좋음) */
 .btn-mint-colors:hover,
 .btn-mint-colors[data-hover="true"] {
-  @apply bg-light_primary_hover opacity-100 dark:bg-dark_primary_hover;
+  @apply bg-light-primary-hover opacity-100 dark:bg-dark-primary-hover;
 }
 
 @utility btn-light-colors {
-  @apply bg-background dark:bg-dark_popup_bg;
+  @apply bg-background dark:bg-dark-popup-bg;
 }
 .btn-light-colors:hover,
 .btn-light-colors[data-hover="true"] {
@@ -138,7 +152,7 @@ body {
 /* svg fill */
 .themed-fill-primary {
   fill-rule: evenodd;
-  @apply fill-light_primary dark:fill-dark_primary;
+  @apply fill-light-primary dark:fill-dark-primary;
 }
 
 /* 숫자 입력 스핀버튼 제거 */
@@ -149,11 +163,11 @@ body {
 
 /* 조합형 (JSX에서 className으로 붙여도 되고, 다른 CSS에서 @apply 해도 됨) */
 .btn-mint {
-  @apply bg-light_primary text-primary-foreground dark:bg-dark_green_key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
 }
 .btn-mint[data-hover="true"],
 .btn-mint:hover {
-  @apply bg-light_primary_hover opacity-100 dark:bg-dark_primary_hover;
+  @apply bg-light-primary-hover opacity-100 dark:bg-dark-primary-hover;
 }
 
 /* iOS backdrop 해크 */

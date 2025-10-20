@@ -35,7 +35,7 @@ export default async function RootLayout({
         <Script id="env-init" nonce={nonce} strategy="beforeInteractive">
           {`window.__APP_ENV__ = "production"`}
         </Script>
-        <Providers>
+        <Providers nonce={nonce}>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>

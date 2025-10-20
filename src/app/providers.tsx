@@ -196,9 +196,17 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function Providers({ children }: PropsWithChildren) {
+export default function Providers({
+  children,
+  nonce,
+}: PropsWithChildren<{ nonce?: string }>) {
   return (
-    <ThemeProvider attribute="class" enableSystem defaultTheme="system">
+    <ThemeProvider
+      attribute="class"
+      enableSystem
+      defaultTheme="system"
+      nonce={nonce}
+    >
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
