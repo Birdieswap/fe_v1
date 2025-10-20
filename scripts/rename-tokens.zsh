@@ -89,7 +89,7 @@ for pair in "${mapping[@]}"; do
   if [[ "$DRY" == "--dry" ]]; then
     matched=()
     for f in "${files[@]}"; do
-      if grep -q -E "\b${FROM}\b" "$f"; then
+      if grep -q -E "\\b${FROM}\\b" "$f"; then
         matched+=("$f")
       fi
     done
@@ -101,8 +101,8 @@ for pair in "${mapping[@]}"; do
   else
     hit=0
     for f in "${files[@]}"; do
-      if grep -q -E "\b${FROM}\b" "$f"; then
-        /usr/bin/perl -pi -e "s/\\b${FROM}\\b/${TO}/g" "$f"
+      if grep -q -E "\\b${FROM}\\b" "$f"; then
+        /usr/bin/perl -pi -e "s/\\\\b${FROM}\\\\b/${TO}/g" "$f"
         hit=1
       fi
     done

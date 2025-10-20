@@ -21,7 +21,7 @@ const config: Config = {
         light_pink: "#F83D97",
         light_pink_hover: "#F20A7A",
         light_primary: "#00C9CC",
-        light_primary_hover: "#07ABAD",
+        light-primary-hover: "#07ABAD",
         light_light_mint: "#E5FAFA",
         light_mid_mint: "#CCF9F7",
         light_mid_mint_2: "#B2EFF0",
