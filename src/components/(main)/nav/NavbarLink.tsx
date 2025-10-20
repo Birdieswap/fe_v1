@@ -41,10 +41,10 @@ export function NavbarLinkItem({
         "px-0 text-foreground transition-colors",
         "hover:text-default-800",
         "max-md:py-4 sm:px-2 lg:px-4",
-        "data-[active=true]:text-light_primary",
-        "data-[active=true]:hover:text-light_primary_hover",
-        "dark:data-[active=true]:text-dark_primary",
-        "dark:data-[active=true]:hover:text-dark_primary_hover"
+        "data-[active=true]:text-light-primary",
+        "data-[active=true]:hover:text-light-primary_hover",
+        "dark:data-[active=true]:text-dark-primary",
+        "dark:data-[active=true]:hover:text-dark-primary_hover"
       )}
       isActive={isActive}
     >
@@ -133,10 +133,10 @@ export function MobileNavLink({
         "px-0 text-foreground transition-colors",
         "hover:text-default-800",
         "max-md:py-4 sm:px-2 lg:px-4",
-        "data-[active=true]:text-light_primary",
-        "data-[active=true]:hover:text-light_primary_hover",
-        "dark:data-[active=true]:text-dark_primary",
-        "dark:data-[active=true]:hover:text-dark_primary_hover"
+        "data-[active=true]:text-light-primary",
+        "data-[active=true]:hover:text-light-primary_hover",
+        "dark:data-[active=true]:text-dark-primary",
+        "dark:data-[active=true]:hover:text-dark-primary_hover"
       )}
       isActive={isActive}
     >

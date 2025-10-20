@@ -84,7 +84,7 @@ export default function PointsModal({
           </div>
 
           <div className="mt-2 text-center">
-            <p className="text-[32px] font-bold  text-light_primary dark:text-dark_primary">
+            <p className="text-[32px] font-bold  text-light-primary dark:text-dark-primary">
               “Coming Soon”
             </p>
           </div>

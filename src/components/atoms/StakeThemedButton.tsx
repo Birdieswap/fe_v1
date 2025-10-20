@@ -24,9 +24,9 @@ function StakeThemedButtonComponent(
         "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",
         props.variant === "MINT" && "btn-mint",
         props.variant === "LIGHT" && [
-          "text-light_primary dark:text-dark_green_key",
+          "text-light-primary dark:text-dark_green_key",
           "bg-transparent",
-          "data-[hover=true]:bg-transparent data-[hover=true]:text-light_primary_hover dark:data-[hover=true]:text-dark_primary_hover",
+          "data-[hover=true]:bg-transparent data-[hover=true]:text-light-primary_hover dark:data-[hover=true]:text-dark-primary_hover",
         ],
         props.variant === "PINK" && [
           "text-warning-foreground",

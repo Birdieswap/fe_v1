@@ -19,7 +19,7 @@ function Title({ text, searchText }: { text: string; searchText: string }) {
   return (
     <span>
       {text.slice(0, index)}
-      <span className="font-semibold text-light_primary dark:text-dark_primary">
+      <span className="font-semibold text-light-primary dark:text-dark-primary">
         {text.slice(index, index + searchText.length)}
       </span>
       {text.slice(index + searchText.length)}

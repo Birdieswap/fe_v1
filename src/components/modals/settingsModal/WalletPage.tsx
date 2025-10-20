@@ -41,7 +41,7 @@ function TabSelector(props: {
         "flex h-9 border-1 text-center text-[14px] font-normal md:w",
         "border-default-400 bg-transparent text-default-600 data-[hover=true]:bg-default-400/20",
         "dark:border-default-100 dark:text-default-400 data-[hover=true]:opacity-100 ",
-        "data-[selected=true]:border-light_primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light_primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white"
+        "data-[selected=true]:border-light-primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light-primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white"
       )}
       data-selected={props.value === props.selected}
       //radius="none"
@@ -204,7 +204,7 @@ function WalletDisplay({
             </Button>
           </div>
         </div>
-        <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+        <div className="text-[11px] text-light-primary dark:text-dark_green_key">
           Join our referral program : share, invite, and be rewarded.
         </div>
       </div>
@@ -272,7 +272,7 @@ function MobileReferralAccordion({ ReferralLink }: { ReferralLink: string }) {
         )}
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="text-left text-[11px] text-light_primary dark:text-dark_green_key">
+        <div className="text-left text-[11px] text-light-primary dark:text-dark_green_key">
           Join our referral program : share, invite, and be rewarded.
         </div>
 
