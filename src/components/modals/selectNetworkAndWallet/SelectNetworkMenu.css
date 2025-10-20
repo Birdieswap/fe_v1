@@ -1,58 +1,60 @@
-@tailwind base;
-@tailwind components;
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
 
-@layer components {
-  [data-selected='true'].select-network-list-item {
-    @apply border-default-200 bg-default-200;
-    @apply dark:border-default-100 dark:bg-default-100;
-  }
-  [data-selectable='true'].select-network-list-item {
-    @apply focus:border-default-200 focus:bg-default-200;
-    @apply dark:focus:border-default-100 dark:focus:bg-dark_swap_bg;
-  }
-  [data-hover='true'].select-network-list-item {
-    @apply border-default-300 bg-default-200;
-    @apply dark:border-default-100 dark:bg-default-100;
-  }
+/* 선택 상태 */
+[data-selected="true"].select-network-list-item {
+  @apply border-default-200 bg-default-200 dark:border-default-100 dark:bg-default-100;
+}
+
+/* 포커스 가능 상태 */
+[data-selectable="true"].select-network-list-item {
+  @apply focus:border-default-200 focus:bg-default-200 dark:focus:border-default-100 dark:focus:bg-dark_swap_bg;
+}
+
+/* 호버 상태 */
+[data-hover="true"].select-network-list-item {
+  @apply border-default-300 bg-default-200 dark:border-default-100 dark:bg-default-100;
+}
+
+/* 기본(모바일 우선) */
+button.select-network-list-item {
+  @apply flex flex-row gap-2 items-center px-3 py-2.5;
+  @apply max-sm:px-6 max-sm:py-4 max-sm:h-fit;
+  @apply box-border rounded-none;
+  /* border-0 border-b (v4 표기) */
+  @apply border-0 border-b;
+  @apply border-default-300 bg-background dark:border-default-100 dark:bg-dark_popup_bg;
+}
+
+@media (min-width: 640px) {
   button.select-network-list-item {
-    @apply flex flex-row gap-2 items-center px-3 py-2.5;
-    @apply max-sm:px-6 max-sm:py-4 max-sm:h-fit;
-    @apply box-border rounded-none;
-    @apply border-0 border-b-1;
-    @apply sm:border-1 sm:border-b-0 sm:first:rounded-t-xl sm:last:rounded-b-xl sm:last:border-b-1;
-    @apply border-default-300 bg-background dark:border-default-100 dark:bg-dark_popup_bg;
+    @apply border border-b-0;
+    @apply first:rounded-t-xl last:rounded-b-xl last:border-b;
   }
-  .select-network-list-item-title {
-    @apply grow text-left text-[15px] font-medium leading-[18px];
-    @apply max-sm:text-[16px] max-sm:leading-[19px];
-    @apply text-foreground;
-  }
-  button[data-hover='true'].connect-btn {
-    @apply bg-light_primary_hover opacity-100;
-    @apply dark:bg-dark_primary_hover;
-    @apply opacity-100;
-  }
+}
 
-  button.connect-btn:hover {
-    @apply bg-light_primary_hover opacity-100;
-    @apply dark:bg-dark_primary_hover;
-    @apply opacity-100;
-  }
+.select-network-list-item-title {
+  @apply grow text-left text-[15px] font-medium leading-[18px]
+         max-sm:text-[16px] max-sm:leading-[19px] text-foreground;
+}
 
-  button.connect-btn {
-    @apply rounded-2xl;
-    @apply bg-light_primary dark:bg-dark_green_key;
-    @apply min-w-min max-w-max min-h-min max-h-max;
-    @apply flex flex-row items-center gap-1 px-3 py-1;
-  }
+/* Connect 버튼 */
+button[data-hover="true"].connect-btn,
+button.connect-btn:hover {
+  @apply bg-light_primary_hover opacity-100 dark:bg-dark_primary_hover;
+}
 
-  button[aria-expanded='true'].connect-btn {
-    @apply bg-light_primary dark:bg-dark_green_key;
-    @apply opacity-100;
-  }
+button.connect-btn {
+  @apply rounded-2xl bg-light_primary dark:bg-dark_green_key;
+  @apply min-w-0 max-w-max min-h-min max-h-max;
+  @apply flex flex-row items-center gap-1 px-3 py-1;
+}
 
-  button.connect-btn > span {
-    @apply font-medium text-[16px] leading-[30px] text-background;
-    @apply max-sm:text-[14px] max-sm:leading-[24px];
-  }
+button[aria-expanded="true"].connect-btn {
+  @apply bg-light_primary dark:bg-dark_green_key opacity-100;
+}
+
+button.connect-btn > span {
+  @apply font-medium text-[16px] leading-[30px] text-background
+         max-sm:text-[14px] max-sm:leading-[24px];
 }
