@@ -20,13 +20,15 @@ export const metadata: Metadata = {
     "Birdieswap - Dual staking DeFi service with Uniswap LP and staking solutions",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const reqHeaders = headers() as unknown as Headers;
+  // ✅ headers()는 반드시 await
+  const reqHeaders = await headers();
   const nonce = reqHeaders.get("x-csp-nonce") ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>

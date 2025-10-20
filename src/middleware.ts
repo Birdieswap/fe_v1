@@ -6,9 +6,11 @@ function createNonce(): string {
 
 export function middleware(req: NextRequest) {
   const IMG_DOMAINS: string[] = [
-    // 예: 외부 이미지/CDN이 실제로 필요할 때만 추가
-    // "images.unsplash.com",
-    // "cdn.yourcdn.com",
+    "images.ctfassets.net",
+    "assets.coingecko.com",
+    "ipfs.io",
+    "cdn.rainbowkit.com",
+    "raw.githubusercontent.com",
   ];
 
   const CONNECT_DOMAINS: string[] = [

@@ -241,6 +241,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: "npm"
 
       - name: Create summarize-sarif.js
         run: |
@@ -334,25 +335,57 @@ jobs:
           else
             echo "Merging ${#files[@]} SARIF files..."
             if command -v sarif >/dev/null 2>&1; then
-              # 최신 버전 CLI (4.6.0+)는 'merge' 서브커맨드와 --output-file 옵션 사용
-              sarif merge "${files[@]}" --output-file combined.sarif --merge-runs
+              sarif merge "${files[@]}" --output-file combined.sarif --log ForceOverwrite
               sarif validate combined.sarif
             else
-              # 구버전 (Sarif.Multitool 직접 호출)
-              "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output-file combined.sarif --merge-runs
+              "$HOME/.local/bin/Sarif.Multitool" merge "${files[@]}" --output-file combined.sarif --log ForceOverwrite
               "$HOME/.local/bin/Sarif.Multitool" validate combined.sarif
             fi
           fi
 
-      # (기존 Transform SARIF -> HTML 스텝 교체)
-      - name: Transform SARIF -> HTML (appendix)
+      - name: Create appendix HTML generator
         run: |
-          set -euo pipefail
-          if command -v sarif >/dev/null 2>&1; then
-            sarif transform combined.sarif --format html --output appendix.sarif.html
-          else
-            "$HOME/.local/bin/Sarif.Multitool" transform combined.sarif --format html --output appendix.sarif.html
-          fi
+          mkdir -p scripts
+          cat > scripts/sarif-appendix-html.js <<'EOF'
+          const fs = require('fs');
+
+          function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
+
+          const sarif = JSON.parse(fs.readFileSync('combined.sarif','utf8'));
+          let html = '<h2>Appendix: Full SARIF</h2>';
+
+          (sarif.runs||[]).forEach((run, ri) => {
+            const tool = run.tool?.driver?.name || 'unknown';
+            html += `<h3>Run ${ri+1}: ${esc(tool)}</h3>`;
+            const results = run.results || [];
+            if (results.length === 0) {
+              html += `<p>No results.</p>`;
+              return;
+            }
+            html += `<table><thead><tr><th>Rule</th><th>Level</th><th>Message</th><th>Location</th></tr></thead><tbody>`;
+            for(const r of results){
+              const ruleId = r.ruleId || r.rule?.id || '';
+              const level = (r.level||'').toUpperCase();
+              const msg = r.message?.text || r.message?.markdown || '';
+              const loc = r.locations?.[0]?.physicalLocation;
+              const file = loc?.artifactLocation?.uri || '';
+              const region = loc?.region;
+              const line = region?.startLine, col = region?.startColumn;
+
+              const locText = file ? `${file}${line?`:${line}${col?`:${col}`:''}`:''}` : '';
+              html += `<tr>
+                <td>${esc(ruleId)}</td>
+                <td>${esc(level)}</td>
+                <td>${esc(msg)}</td>
+                <td>${esc(locText)}</td>
+              </tr>`;
+            }
+            html += `</tbody></table>`;
+          });
+
+          fs.writeFileSync('appendix.sarif.html', `<!doctype html><meta charset="utf-8">${html}`);
+          console.log('appendix.sarif.html written');
+          EOF
 
       - name: Create summary HTML
         run: |
@@ -362,6 +395,9 @@ jobs:
             --zapBaselineDir zap_baseline \
             --zapFullDir zap_full \
             --out summary.html
+
+      - name: Build appendix HTML from SARIF
+        run: node scripts/sarif-appendix-html.js
 
       - name: Build final combined HTML
         run: |
@@ -380,7 +416,7 @@ jobs:
 
       - name: HTML -> PDF
         run: |
-          wkhtmltopdf --enable-local-file-access combined.html combined.pdf
+          wkhtmltopdf --enable-local-file-access combined.html combined.pdf || { echo "wkhtmltopdf failed, continuing without PDF"; touch combined.pdf; }
 
       - name: Upload merged outputs
         uses: actions/upload-artifact@v4

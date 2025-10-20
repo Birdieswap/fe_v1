@@ -1,66 +1,98 @@
-@import "/src/app/globals.css";
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* 라이트/다크 베이스 */
+section.drawer-base {
+  /* 공통 */
+  @apply text-foreground border; /* (v3의 border-1 → v4에서는 border) */
+  @apply bg-background border-default-200;
+}
 
-@layer components {
-  .drawer-base-dark {
-    @apply bg-dark_popup_bg border-default-100;
-  }
-  .drawer-base-light {
-    @apply bg-background border-default-200;
-  }
-  .drawer-base-sm {
+/* 다크 모드 보정 */
+.dark section.drawer-base {
+  @apply bg-dark_popup_bg border-default-100;
+}
+
+/* ▶︎ sm 이상에서의 형태 (예전 sm:drawer-base-sm 대체) */
+@media (min-width: 640px) {
+  section.drawer-base {
     @apply h-full max-h-full rounded-xl m-0;
     @apply shadow-[0_4px_10px_0_rgba(0,0,0,0.1)];
   }
-  .drawer-base-max-sm {
+}
+
+/* ▶︎ sm 미만에서의 형태 (예전 max-sm:drawer-base-max-sm 대체) */
+@media (max-width: 639px) {
+  section.drawer-base {
     @apply border-none m-0 w-full max-w-full shadow-none;
-    @apply min-h-[90vh] max-h-[100vh];
+    @apply min-h-[90svh] max-h-[100dvh];
     @apply rounded-b-none rounded-t-xl;
   }
-  section.drawer-base {
-    @apply text-foreground border-1;
-    @apply sm:drawer-base-sm;
-    @apply max-sm:drawer-base-max-sm;
-    @apply drawer-base-light dark:drawer-base-dark;
-  }
-  .theme-selector-unselected {
-    @apply text-foreground fill-foreground;
-    @apply bg-background hover:bg-default-200;
-    @apply dark:bg-dark_popup_bg dark:hover:bg-default-100;
-  }
-  .theme-selector-selected {
-    @apply text-foreground fill-foreground;
-    @apply bg-light_light_mint hover:bg-light_primary_hover;
-    @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
-  }
-  button.theme-selector {
-    @apply min-w-0 rounded-full px-[10px] py-[5px] text-[15px] leading-[18px] font-semibold data-[hover=true]:opacity-100;
-    @apply data-[selected=false]:theme-selector-unselected;
-    @apply data-[selected=true]:theme-selector-selected;
-  }
+}
+
+/* 테마 셀렉터 */
+.theme-selector-unselected {
+  @apply text-foreground fill-foreground;
+  @apply bg-background hover:bg-default-200;
+  @apply dark:bg-dark_popup_bg dark:hover:bg-default-100;
+}
+.theme-selector-selected {
+  @apply text-foreground fill-foreground;
+  @apply bg-light_light_mint hover:bg-light_primary_hover;
+  @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
+}
+button.theme-selector {
+  @apply min-w-0 rounded-full px-[10px] py-[5px] text-[15px] leading-[18px] font-semibold;
+  @apply data-[hover=true]:opacity-100;
+}
+
+/* 비선택 상태 */
+button.theme-selector[data-selected="false"] {
+  @apply text-foreground fill-foreground bg-background hover:bg-default-200
+         dark:bg-dark_popup_bg dark:hover:bg-default-100;
+}
+
+/* 선택 상태 */
+button.theme-selector[data-selected="true"] {
+  @apply text-foreground fill-foreground bg-light_light_mint hover:bg-light_primary_hover
+         dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
+}
+
+/* 항목 라인 */
+div.drawer-item {
+  @apply flex w-full flex-row items-center justify-between;
+}
+/* max-md:h-[72px] → md 미만에서만 높이 72px */
+@media (max-width: 767px) {
   div.drawer-item {
-    @apply flex w-full flex-row items-center justify-between;
-    @apply max-md:h-[72px];
-  }
-  label.drawer-item-label {
-    @apply text-[15px] leading-[18px] font-medium;
-  }
-  button.wallet-btn {
-    @apply rounded-2xl;
-    @apply bg-background dark:bg-dark_popup_bg;
-    @apply border-default-500 dark:border-default-200;
-    @apply border-1 box-border;
-    @apply min-w-min max-w-max min-h-min max-h-max;
-    @apply flex flex-row items-center gap-1.5 px-3 py-1;
-    @apply max-sm:p-1 max-sm:border-0 max-sm:bg-transparent max-sm:rounded-full;
-    @apply btn-light-colors;
-  }
-  button.wallet-btn > span {
-    @apply max-sm:hidden;
-    @apply font-medium text-[16px] leading-[32px] text-foreground;
+    height: 72px;
   }
 }
-  
+
+label.drawer-item-label {
+  @apply text-[15px] leading-[18px] font-medium;
+}
+
+/* 지갑 버튼 */
+button.wallet-btn {
+  @apply rounded-2xl;
+  @apply bg-background dark:bg-dark_popup_bg;
+  @apply border-default-500 dark:border-default-200;
+  @apply border box-border; /* v3의 border-1 → border */
+  @apply min-w-0 max-w-max min-h-min max-h-max;
+  @apply flex flex-row items-center gap-1.5 px-3 py-1;
+  @apply btn-light-colors;
+}
+
+/* max-sm:… → sm 미만에서만 덮어쓰기 */
+@media (max-width: 639px) {
+  button.wallet-btn {
+    padding: 0.25rem; /* p-1 */
+    border: 0; /* border-0 */
+    background: transparent; /* bg-transparent */
+    border-radius: 9999px; /* rounded-full */
+  }
+  button.wallet-btn > span {
+    display: none; /* hidden */
+  }
+}

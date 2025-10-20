@@ -1,16 +1,21 @@
-@import "/src/app/globals.css";
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
 
-@tailwind base;
-@tailwind utilities;
-@tailwind components;
+/* v4에서는 @layer 없이 일반 셀렉터로 선언해도 충분합니다 */
+button.max-slippage-selector {
+  @apply py-1 text-[14px] leading-[20px] font-medium;
+  @apply min-w-0 max-w-max min-h-min max-h-max;
+  @apply rounded-xl transition-colors;
+}
 
-@layer components {
-  button.max-slippage-selector {
-    @apply py-1 text-[14px] leading-[20px] font-medium;
-    @apply btn-size-auto;
-    @apply rounded-xl;
-    @apply data-[selected=false]:bg-background data-[selected=false]:text-default-500 data-[selected=false]:dark:bg-dark_popup_bg;
-    @apply data-[selected=true]:btn-mint-colors;
-    @apply transition-colors;
-  }
+/* data 상태별 스타일 — 커스텀 클래스(@apply btn-mint-colors) 대신 직접 토큰 적용 */
+button.max-slippage-selector[data-selected="false"] {
+  @apply bg-background text-default-500 dark:bg-dark_popup_bg;
+}
+button.max-slippage-selector[data-selected="true"] {
+  @apply bg-light_primary text-primary-foreground dark:bg-dark_green_key;
+}
+button.max-slippage-selector[data-selected="true"]:hover,
+button.max-slippage-selector[data-selected="true"][data-hover="true"] {
+  @apply bg-light_primary_hover dark:bg-dark_primary_hover opacity-100;
 }

@@ -1,32 +1,54 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@reference "tailwindcss";
+@reference "../../app/globals.css";
 
-@layer components {
-  span.switch-base {
-    @apply flex;
-  }
+/* 기본 유틸만 @apply, 반응형은 미디어쿼리로 분리 */
+span.switch-base {
+  @apply flex;
+}
+
+span.switch-wrapper {
+  @apply flex w-12 h-6 px-0 py-0;
+  @apply bg-default-400 dark:bg-default-500;
+  @apply group-data-[selected=true]:bg-primary;
+  @apply group-data-[selected=true]:dark:bg-dark_green_key;
+}
+
+/* md 미만(≤767px)에서 w-10 적용 (max-md:w-10 대체) */
+@media (max-width: 767px) {
   span.switch-wrapper {
-    @apply flex w-12 h-6 px-0 py-0;
-    @apply max-md:w-10;
-    @apply bg-default-400;
-    @apply dark:bg-default-500;
-    @apply group-data-[selected=true]:bg-primary;
-    @apply group-data-[selected=true]:dark:bg-dark_green_key;
+    width: 2.5rem; /* w-10 */
   }
+}
+
+/* 선택 상태에서 thumb 위치 */
+.switch-thumb-selected {
+  @apply ms-0;
+  left: 25px; /* left-[25px] */
+}
+
+/* md 미만에서 위치 덮어쓰기 (max-md:left-[17px]) */
+@media (max-width: 767px) {
   .switch-thumb-selected {
-    @apply ms-0 left-[25px];
-    @apply max-md:left-[17px];
+    left: 17px;
   }
+}
+
+.switch-thumb-selected-pressed {
+  @apply ml-0;
+  left: 21px; /* left-[21px] */
+}
+
+/* md 미만에서 위치 덮어쓰기 (max-md:left-[13px]) */
+@media (max-width: 767px) {
   .switch-thumb-selected-pressed {
-    @apply ml-0 left-[21px];
-    @apply max-md:left-[13px];
+    left: 13px;
   }
-  span.switch-thumb {
-    @apply absolute left-[1px] top-[1px] w-[22px] h-[22px];
-    @apply shadow-[0_1px_2px_0_rgba(0,0,0,0.1)];
-    @apply group-data-[selected=true]:switch-thumb-selected;
-    @apply group-data-[pressed=true]:w-[26px];
-    @apply group-data-[selected]:group-data-[pressed]:switch-thumb-selected-pressed;
-  }
+}
+
+span.switch-thumb {
+  @apply absolute left-[1px] top-[1px] w-[22px] h-[22px];
+  @apply shadow-[0_1px_2px_0_rgba(0,0,0,0.1)];
+  @apply group-data-[selected=true]:switch-thumb-selected;
+  @apply group-data-[pressed=true]:w-[26px];
+  @apply group-data-[selected]:group-data-[pressed]:switch-thumb-selected-pressed;
 }
