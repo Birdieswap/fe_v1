@@ -1,29 +1,31 @@
 #!/bin/zsh
 set -eu
 
-# 사용법:
-#   - 드라이런: npm run rename:tokens:dry
-#   - 실제치환: npm run rename:tokens
-
 DRY="${1:-}"
 
-# 대상 파일 수집 (node_modules/.next/dist/build 제외)
+# 현재 작업 디렉터리 안내
+echo "cwd: $PWD"
+
+# 대상 파일 수집 (macOS 호환: -name ... -o -name ... 사용)
 files=()
 while IFS= read -r f; do
   files+=("$f")
-done < <(find . -type f \
-  -regex '.*\.\(tsx\|ts\|jsx\|js\|css\|mdx\)$' \
-  -not -path "./node_modules/*" -not -path "./.next/*" \
-  -not -path "./dist/*" -not -path "./build/*")
+done < <(
+  find . -type f \
+    \( -name "*.tsx" -o -name "*.ts" -o -name "*.jsx" -o -name "*.js" -o -name "*.css" -o -name "*.mdx" \) \
+    -not -path "./node_modules/*" \
+    -not -path "./.next/*" \
+    -not -path "./dist/*" \
+    -not -path "./build/*"
+)
 
+echo "탐색된 파일 수: ${#files[@]}"
 if [[ ${#files[@]} -eq 0 ]]; then
-  echo "대상 파일이 없습니다."
+  echo "대상 파일이 없습니다. (루트에서 실행 중인지, 확장자가 맞는지 확인하세요)"
   exit 0
 fi
 
-echo "대상 파일 수: ${#files[@]}"
-
-# FROM:TO 매핑 (긴 → 짧은 순서, 혼합형 포함)
+# FROM:TO 매핑 (긴 → 짧은 순서 + 혼합형 포함)
 mapping=(
   "light_primary_hover:light-primary-hover"
   "light_primary:light-primary"
@@ -73,9 +75,9 @@ mapping=(
 )
 
 echo
-echo "=== 치환 대상 샘플 탐색 ==="
+echo "=== 치환 대상 샘플 ==="
 grep -R --line-number --color=always -E 'light_.*mint|dark_.*mint|_popup_bg|_swap_bg|_primary(_hover)?|_pink(_hover)?|_foreground|_background' . 2>/dev/null | head -n 20 || true
-echo "=========================="
+echo "====================="
 echo
 
 changed_pairs=0
