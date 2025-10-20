@@ -55,7 +55,7 @@ function ReferralDisplay() {
           </Button>
         </div>
       </div>
-      <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+      <div className="text-[11px] text-light-primary dark:text-dark_green_key">
         Join our referral program : share, invite, and be rewarded.
       </div>
     </div>

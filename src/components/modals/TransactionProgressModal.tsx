@@ -204,7 +204,7 @@ export default function TransactionProgressModal(
               </AnimatePresence>
               <Link
                 className={
-                  "pt-2 text-light_primary data-[failed=true]:pointer-events-none data-[failed=true]:cursor-default dark:text-dark_primary"
+                  "pt-2 text-light-primary data-[failed=true]:pointer-events-none data-[failed=true]:cursor-default dark:text-dark-primary"
                 }
                 data-failed={transactionStatus === TransactionStatus.FAILED}
                 href={txHref}

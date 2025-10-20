@@ -38,8 +38,8 @@ section.drawer-base {
 }
 .theme-selector-selected {
   @apply text-foreground fill-foreground;
-  @apply bg-light_light_mint hover:bg-light_primary_hover;
-  @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
+  @apply bg-light_light_mint hover:bg-light-primary_hover;
+  @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark-primary_hover;
 }
 button.theme-selector {
   @apply min-w-0 rounded-full px-[10px] py-[5px] text-[15px] leading-[18px] font-semibold;
@@ -54,8 +54,8 @@ button.theme-selector[data-selected="false"] {
 
 /* 선택 상태 */
 button.theme-selector[data-selected="true"] {
-  @apply text-foreground fill-foreground bg-light_light_mint hover:bg-light_primary_hover
-         dark:bg-dark_mid_mint_4 dark:hover:bg-dark_primary_hover;
+  @apply text-foreground fill-foreground bg-light_light_mint hover:bg-light-primary_hover
+         dark:bg-dark_mid_mint_4 dark:hover:bg-dark-primary_hover;
 }
 
 /* 항목 라인 */

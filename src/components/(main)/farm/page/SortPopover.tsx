@@ -66,7 +66,7 @@ export default function SortPopover({
         />
         <Button
           className={clsx(
-            "data-[selected=true]:bg-light_primary bg-default-300 text-sm font-medium text-default-800 dark:bg-dark_swap_bg dark:text-default-200 data-[selected=true]:dark:bg-dark_green_key  data-[selected=true]:text-background w-[109px] h-[33px] text-[14px]",
+            "data-[selected=true]:bg-light-primary bg-default-300 text-sm font-medium text-default-800 dark:bg-dark_swap_bg dark:text-default-200 data-[selected=true]:dark:bg-dark_green_key  data-[selected=true]:text-background w-[109px] h-[33px] text-[14px]",
             "data-[disabled=true]:bg-default-300 data-[disabled=true]:text-default-800 data-[disabled=true]:opacity-100",
             "data-[disabled=true]:dark:bg-dark_swap_bg data-[disabled=true]:dark:text-default-200",
           )}

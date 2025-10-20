@@ -59,7 +59,7 @@ function SwapDisplay() {
           </Button>
         </div>
       </div>
-      <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+      <div className="text-[11px] text-light-primary dark:text-dark_green_key">
         Prefer not to share rewards with a referrer? Opt out anytime.
       </div>
     </div>

@@ -31,7 +31,7 @@ export default function SwapPage() {
           <SwapIndex />
         </Suspense>
         <SwapFeeInfo />
-        <div className="p-4 bg-light_primary text-primary-foreground rounded-lg">
+        <div className="p-4 bg-light-primary text-primary-foreground rounded-lg">
           Tailwind v4 token test
         </div>
       </div>
