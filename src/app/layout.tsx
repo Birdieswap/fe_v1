@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-
 import { Inter } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
@@ -8,11 +7,10 @@ import Providers from "./providers";
 import TransactionContextProvider from "./TransactionContextProvider";
 import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
 import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
-import Script from "next/script";
 import ClientHUD from "./ClientHUD";
 import { headers } from "next/headers";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
   title: "Birdieswap",
@@ -22,20 +20,32 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  // ✅ headers()는 반드시 await
+}: Readonly<{ children: React.ReactNode }>) {
+  const isDev = process.env.NODE_ENV !== "production";
   const reqHeaders = await headers();
-  const nonce = reqHeaders.get("x-csp-nonce") ?? undefined;
+  const headerNonce = reqHeaders.get("x-csp-nonce") ?? undefined;
+
+  const nonce = isDev ? undefined : headerNonce;
+
+  const APP_ENV =
+    process.env.NEXT_PUBLIC_APP_ENV ??
+    (process.env.NODE_ENV === "production" ? "production" : "development");
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>
-        <Script id="env-init" nonce={nonce} strategy="beforeInteractive">
-          {`window.__APP_ENV__ = "production"`}
-        </Script>
-        <Providers nonce={nonce}>
+        <script
+          {...(!isDev ? { nonce: headerNonce ?? undefined } : {})}
+          dangerouslySetInnerHTML={{
+            __html: `
+            // Lit dev-mode 경고 비활성화
+            window.litDisableDevMode = true;
+            // (옵션) 번들 경고도 숨김
+            window.litDisableBundleWarning = true;
+          `,
+          }}
+        />
+        <Providers nonce={headerNonce}>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>

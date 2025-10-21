@@ -10,7 +10,7 @@ section.drawer-base {
 
 /* 다크 모드 보정 */
 .dark section.drawer-base {
-  @apply bg-dark_popup_bg border-default-100;
+  @apply bg-dark-popup-bg border-default-100;
 }
 
 /* ▶︎ sm 이상에서의 형태 (예전 sm:drawer-base-sm 대체) */
@@ -34,12 +34,12 @@ section.drawer-base {
 .theme-selector-unselected {
   @apply text-foreground fill-foreground;
   @apply bg-background hover:bg-default-200;
-  @apply dark:bg-dark_popup_bg dark:hover:bg-default-100;
+  @apply dark:bg-dark-popup-bg dark:hover:bg-default-100;
 }
 .theme-selector-selected {
   @apply text-foreground fill-foreground;
-  @apply bg-light_light_mint hover:bg-light-primary_hover;
-  @apply dark:bg-dark_mid_mint_4 dark:hover:bg-dark-primary_hover;
+  @apply bg-light-light-mint hover:bg-light-primary-hover;
+  @apply dark:bg-dark-mid-mint-4 dark:hover:bg-dark-primary-hover;
 }
 button.theme-selector {
   @apply min-w-0 rounded-full px-[10px] py-[5px] text-[15px] leading-[18px] font-semibold;
@@ -49,13 +49,13 @@ button.theme-selector {
 /* 비선택 상태 */
 button.theme-selector[data-selected="false"] {
   @apply text-foreground fill-foreground bg-background hover:bg-default-200
-         dark:bg-dark_popup_bg dark:hover:bg-default-100;
+         dark:bg-dark-popup-bg dark:hover:bg-default-100;
 }
 
 /* 선택 상태 */
 button.theme-selector[data-selected="true"] {
-  @apply text-foreground fill-foreground bg-light_light_mint hover:bg-light-primary_hover
-         dark:bg-dark_mid_mint_4 dark:hover:bg-dark-primary_hover;
+  @apply text-foreground fill-foreground bg-light-light-mint hover:bg-light-primary-hover
+         dark:bg-dark-mid-mint-4 dark:hover:bg-dark-primary-hover;
 }
 
 /* 항목 라인 */
@@ -76,7 +76,7 @@ label.drawer-item-label {
 /* 지갑 버튼 */
 button.wallet-btn {
   @apply rounded-2xl;
-  @apply bg-background dark:bg-dark_popup_bg;
+  @apply bg-background dark:bg-dark-popup-bg;
   @apply border-default-500 dark:border-default-200;
   @apply border box-border; /* v3의 border-1 → border */
   @apply min-w-0 max-w-max min-h-min max-h-max;

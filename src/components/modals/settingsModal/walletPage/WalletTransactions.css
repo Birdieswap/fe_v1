@@ -7,7 +7,7 @@
 
 .wallet-tx-farm-swap-container {
   @apply flex flex-col gap-3 my-1.5 rounded-[4px] border fill-background py-3 pl-[22px] pr-0;
-  @apply border-default-400 dark:border-default-200 dark:bg-dark_popup_bg;
+  @apply border-default-400 dark:border-default-200 dark:bg-dark-popup-bg;
 }
 
 .wallet-tx-farm-swap-item {

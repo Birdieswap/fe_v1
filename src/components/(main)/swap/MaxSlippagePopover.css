@@ -10,12 +10,12 @@ button.max-slippage-selector {
 
 /* data 상태별 스타일 — 커스텀 클래스(@apply btn-mint-colors) 대신 직접 토큰 적용 */
 button.max-slippage-selector[data-selected="false"] {
-  @apply bg-background text-default-500 dark:bg-dark_popup_bg;
+  @apply bg-background text-default-500 dark:bg-dark-popup-bg;
 }
 button.max-slippage-selector[data-selected="true"] {
-  @apply bg-light-primary text-primary-foreground dark:bg-dark_green_key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
 }
 button.max-slippage-selector[data-selected="true"]:hover,
 button.max-slippage-selector[data-selected="true"][data-hover="true"] {
-  @apply bg-light-primary_hover dark:bg-dark-primary_hover opacity-100;
+  @apply bg-light-primary-hover dark:bg-dark-primary-hover opacity-100;
 }

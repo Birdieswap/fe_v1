@@ -380,7 +380,7 @@ export default function WalletTransactions() {
     <div className="flex w-full grow flex-col gap-0 p-0">
       {showEmpty ? (
         <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyTx className="fill-light_mid_mint_2 stroke-light_mid_mint_2 dark:fill-dark_empty_state dark:stroke-dark_empty_state" />
+          <Icons.WalletEmptyTx className="fill-light-mid-mint-2 stroke-light-mid-mint-2 dark:fill-dark_empty_state dark:stroke-dark_empty_state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             No recent transactions
           </span>

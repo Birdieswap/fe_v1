@@ -20,7 +20,7 @@ function ThemedButtonComponent(
       className={clsx(
         "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl text-lg font-semibold",
         "disabled:bg-default-300 disabled:text-default-600",
-        "dark:disabled:bg-dark_popup_bg dark:disabled:text-default-400",
+        "dark:disabled:bg-dark-popup-bg dark:disabled:text-default-400",
         "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",
         props.variant === "MINT" && "btn-mint",
         props.variant === "LIGHT" && [

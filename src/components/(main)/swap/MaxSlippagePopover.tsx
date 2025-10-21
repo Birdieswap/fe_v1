@@ -71,7 +71,7 @@ export default function MaxSlippagePopover(props: {
         as={motion.div}
         {...defaultTransition}
         className={clsx(
-          "dark:border-1 dark:border-default-900 dark:bg-dark_popup_bg",
+          "dark:border-1 dark:border-default-900 dark:bg-dark-popup-bg",
         )}
       >
         <motion.div

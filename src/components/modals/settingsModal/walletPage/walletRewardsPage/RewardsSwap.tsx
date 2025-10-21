@@ -158,7 +158,7 @@ export default function RewardsSwap() {
       >
         {!isSelfReferral ? <SwapDisplay /> : null}
         <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark_empty_state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             You have no Swap rewards to claim
           </span>

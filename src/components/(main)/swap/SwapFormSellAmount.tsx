@@ -102,7 +102,7 @@ export default function SwapFormAmount({
         className={clsx(
           "transition-colors duration-200",
           !token
-            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-dark_popup_bg"
+            ? "cursor-pointer hover:bg-gray-50 dark:hover:bg-dark-popup-bg"
             : "cursor-text" // 토큰이 있을 때는 텍스트 커서, // 토큰이 없을 때만 클릭 가능한 스타일
         )}
         onClick={() => {
@@ -198,7 +198,7 @@ export default function SwapFormAmount({
           <BalanceDisplay balance={balance} token={token} />
           {type === "sell" && (
             <Button
-              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark_mid_mint dark:bg-dark_mid_mint max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]"
+              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark-mid-mint dark:bg-dark-mid-mint max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]"
               size="sm"
               onPress={() => setAmount(balance.toPrecisionString(true, false))}
             >
