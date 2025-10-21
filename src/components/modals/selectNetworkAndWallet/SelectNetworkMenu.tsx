@@ -106,7 +106,7 @@ export default function SelectNetworkMenu() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="gap-4 border-default-200 bg-background p-4 dark:border-1 dark:border-default-100 dark:bg-dark_popup_bg">
+      <PopoverContent className="gap-4 border-default-200 bg-background p-4 dark:border-1 dark:border-default-100 dark:bg-dark-popup-bg">
         <p className="w-full text-[16px] font-medium leading-[19px] text-foreground">
           Select a network
         </p>

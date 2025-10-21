@@ -120,7 +120,7 @@ export default function StakeInput({
                 className={clsx(
                   "h-[24px] min-w-fit rounded-md border-1 px-2.5 text-xs",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
+                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {

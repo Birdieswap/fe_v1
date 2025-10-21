@@ -40,7 +40,7 @@ export default function SortPopover({
             "h-9 max-h-9 min-h-9 ",
             "data-[hover=true]:opacity-100 dark:border-default-800 dark:text-default-600",
             "border-default-400 bg-transparent text-default-800 data-[hover=true]:bg-default-400/20",
-            "data-[selected=true]:border-default-600 data-[selected=true]:bg-primary-200 data-[selected=true]:dark:bg-dark_mid_mint",
+            "data-[selected=true]:border-default-600 data-[selected=true]:bg-primary-200 data-[selected=true]:dark:bg-dark-mid-mint",
             "hover:border-default-600 hover:bg-default-100",
             "aria-expanded:opacity-100",
           )}
@@ -56,7 +56,7 @@ export default function SortPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[141px] h-[230px]  gap-4 p-3.5
-       border-default-300 bg-background text-foreground dark:text-p-4 dark:border-1 dark:border-default-100 dark:bg-dark_popup_bg">
+       border-default-300 bg-background text-foreground dark:text-p-4 dark:border-1 dark:border-default-100 dark:bg-dark-popup-bg">
         <p className="w-full">Sort by</p>
         <SortOptions
           setSortColumns={setSortColumns}

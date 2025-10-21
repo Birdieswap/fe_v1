@@ -31,7 +31,7 @@ export default function PointsMenu({
         <div>{trigger}</div>
       </PopoverTrigger>
 
-      <PopoverContent className="gap-0 border-default-200 bg-background p-0 dark:border-1 dark:border-default-100 dark:bg-dark_popup_bg mt-2 -ml-3">
+      <PopoverContent className="gap-0 border-default-200 bg-background p-0 dark:border-1 dark:border-default-100 dark:bg-dark-popup-bg mt-2 -ml-3">
         <PointsPanel variant="popover" />
       </PopoverContent>
     </Popover>

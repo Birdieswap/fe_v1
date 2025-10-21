@@ -17,9 +17,9 @@
 @source "../assets/**/*.{js,ts,jsx,tsx}"; /* JSX/TSX가 있으면 유지, 아니면 빼도 됨 */
 
 /* 사용 중인 UI 라이브러리 (node_modules는 src/app에서 두 단계 위) */
-@source "../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
-@source "../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
-@source "../node_modules/@rainbow-me/rainbowkit/dist/**/*.{js,ts,jsx,tsx}";
+@source "../../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
+@source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
+@source "../../node_modules/@rainbow-me/rainbowkit/dist/**/*.{js,ts,jsx,tsx}";
 
 /* 다크모드 (.dark 클래스) */
 @custom-variant dark (&:is(.dark *));

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildUpstreamHeaders, pickProxyResponseHeaders } from "@/utils/proxy";
+import { pickProxyResponseHeaders } from "@/utils/proxy"; // buildUpstreamHeaders는 쓰지 않음
 import { withTimeout } from "@/utils/timeout";
 
 const UPSTREAM = "https://realkimp.com/birdieswap";
@@ -8,28 +8,56 @@ const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** 업스트림으로 안전하게 전달할 헤더 구성 */
+function safeUpstreamHeaders(req: Request) {
+  const h = new Headers();
+
+  // 최소 필수 헤더만
+  h.set("accept", "application/json, text/plain, */*");
+  h.set("user-agent", req.headers.get("user-agent") ?? "BirdieswapProxy/1.0");
+
+  // 프록시 체인 정보(선택)
+  const fwdFor =
+    (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
+    req.headers.get("cf-connecting-ip") ||
+    "";
+  if (fwdFor) h.set("x-forwarded-for", fwdFor);
+
+  // 전송 중 압축 해제/재압축 꼬임 방지
+  h.set("accept-encoding", "identity");
+
+  // vhost/오리진에 민감한 헤더는 제거
+  h.delete("host");
+  h.delete("origin");
+  h.delete("referer");
+  h.delete("cookie");
+  h.delete("authorization"); // 필요 시에만 별도 세팅
+
+  return h;
+}
+
 export async function GET(
   req: Request,
   { params }: { params: { path: string[] } }
 ) {
   const tail = strip((params.path || []).join("/"));
   if (!tail) {
-    return NextResponse.json({ error: "missing endpoint" }, { status: 400 });
+    return NextResponse.json(
+      { ok: false, error: "missing endpoint" },
+      { status: 200 }
+    );
   }
 
   // 숫자 id 감지 (예: "1" 또는 "1.json")
   const m = tail.match(/^(\d+)(?:\.json)?$/);
   const id = m ? m[1] : null;
 
-  // 1) 후보 URL들 구성 (중복 제거)
+  // 시도할 후보 URL들
   const candidates = Array.from(
     new Set(
       [
-        // 그대로 시도
         `${UPSTREAM}/${tail}`,
-        // tail이 .json이 아니면 .json 붙여 시도
         !tail.endsWith(".json") ? `${UPSTREAM}/${tail}.json` : null,
-        // 숫자 id면 패턴 몇 개 추가 시도
         id ? `${UPSTREAM}/${id}.json` : null,
         id ? `${UPSTREAM}/${id}` : null,
         id ? `${UPSTREAM}/chains/${id}.json` : null,
@@ -37,54 +65,80 @@ export async function GET(
     )
   );
 
-  // 쿼리 문자열 유지
   const original = new URL(req.url);
   const tried: string[] = [];
   let lastResp: Response | null = null;
 
   for (const base of candidates) {
     const u = new URL(base);
-    u.search = original.search; // ?query 그대로
-
+    u.search = original.search; // 쿼리 그대로 유지
     tried.push(u.toString());
 
-    const r = await withTimeout(10_000, (signal) =>
-      fetch(u.toString(), {
+    const r = await withTimeout(12_000, (signal) =>
+      fetch(u, {
         method: "GET",
-        headers: buildUpstreamHeaders(req),
+        headers: safeUpstreamHeaders(req),
         cache: "no-store",
         redirect: "follow",
         signal,
       })
     ).catch((e) => new Response(String(e), { status: 502 }));
 
-    // JSON이라고 확신할 수 있는지 가벼운 체크
     const ct = r.headers.get("content-type") || "";
-    const looksJson =
+    const looksJsonByCT =
       ct.includes("application/json") || u.pathname.endsWith(".json");
 
-    if (r.ok && r.body && looksJson) {
-      const headers = pickProxyResponseHeaders(r);
-      headers.set("cache-control", "no-store, max-age=0");
-      headers.set("x-upstream-url", u.toString());
-      headers.set("x-upstream-ms", r.headers.get("x-upstream-ms") ?? ""); // 있으면 보존
-      headers.set("x-upstream-tried", tried.join(" | "));
-      return new NextResponse(r.body, { status: r.status, headers });
+    // 1) 스트리밍으로 JSON 확신되면 바로 패스
+    if (r.ok && r.body && looksJsonByCT) {
+      const out = pickProxyResponseHeaders(r);
+      out.delete("content-encoding");
+      out.delete("transfer-encoding");
+      out.delete("content-length");
+      out.set("cache-control", "no-store, max-age=0");
+      out.set("content-type", "application/json; charset=utf-8");
+      out.set("x-upstream-url", u.toString());
+      out.set("x-upstream-tried", tried.join(" | "));
+      return new NextResponse(r.body, { status: 200, headers: out });
     }
 
-    // 실패 응답 저장해두고 다음 후보 시도
+    // 2) 본문 스니핑으로 JSON 보정
+    try {
+      const text = await r.clone().text();
+      const looksJsonByBody = /^[\s\r\n]*[\{\[]/.test(text);
+      if (r.ok && looksJsonByBody) {
+        const out = pickProxyResponseHeaders(r);
+        out.delete("content-encoding");
+        out.delete("transfer-encoding");
+        out.delete("content-length");
+        out.set("cache-control", "no-store, max-age=0");
+        out.set("content-type", "application/json; charset=utf-8");
+        out.set("x-upstream-url", u.toString());
+        out.set("x-upstream-tried", tried.join(" | "));
+        return new NextResponse(text, { status: 200, headers: out });
+      }
+    } catch {
+      // body 읽기 실패 시 다음 후보
+    }
+
     lastResp = r;
   }
 
-  // 전부 실패: 마지막 응답을 그대로 전달 + 디버그 헤더
-  const body = lastResp
-    ? await lastResp.text().catch(() => "")
-    : "upstream error";
-  const h = new Headers();
-  h.set("content-type", lastResp?.headers.get("content-type") ?? "text/plain");
-  h.set("x-upstream-tried", tried.join(" | "));
-  return new NextResponse(body || "upstream error", {
-    status: lastResp?.status || 502,
-    headers: h,
-  });
+  // 3) 모두 실패 → 항상 200 JSON으로 래핑하여 반환 (프론트 res.json() 안정)
+  if (lastResp) {
+    const text = await lastResp.text().catch(() => "");
+    return NextResponse.json(
+      {
+        ok: false,
+        status: lastResp.status,
+        tried,
+        bodyPreview: text.slice(0, 2000),
+      },
+      { status: 200 }
+    );
+  }
+
+  return NextResponse.json(
+    { ok: false, error: "upstream error", tried },
+    { status: 200 }
+  );
 }

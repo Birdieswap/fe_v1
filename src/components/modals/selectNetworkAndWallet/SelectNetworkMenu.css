@@ -8,7 +8,7 @@
 
 /* 포커스 가능 상태 */
 [data-selectable="true"].select-network-list-item {
-  @apply focus:border-default-200 focus:bg-default-200 dark:focus:border-default-100 dark:focus:bg-dark_swap_bg;
+  @apply focus:border-default-200 focus:bg-default-200 dark:focus:border-default-100 dark:focus:bg-dark-swap-bg;
 }
 
 /* 호버 상태 */
@@ -23,7 +23,7 @@ button.select-network-list-item {
   @apply box-border rounded-none;
   /* border-0 border-b (v4 표기) */
   @apply border-0 border-b;
-  @apply border-default-300 bg-background dark:border-default-100 dark:bg-dark_popup_bg;
+  @apply border-default-300 bg-background dark:border-default-100 dark:bg-dark-popup-bg;
 }
 
 @media (min-width: 640px) {
@@ -41,17 +41,17 @@ button.select-network-list-item {
 /* Connect 버튼 */
 button[data-hover="true"].connect-btn,
 button.connect-btn:hover {
-  @apply bg-light-primary_hover opacity-100 dark:bg-dark-primary_hover;
+  @apply bg-light-primary-hover opacity-100 dark:bg-dark-primary-hover;
 }
 
 button.connect-btn {
-  @apply rounded-2xl bg-light-primary dark:bg-dark_green_key;
+  @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
   @apply min-w-0 max-w-max min-h-min max-h-max;
   @apply flex flex-row items-center gap-1 px-3 py-1;
 }
 
 button[aria-expanded="true"].connect-btn {
-  @apply bg-light-primary dark:bg-dark_green_key opacity-100;
+  @apply bg-light-primary dark:bg-dark-green-key opacity-100;
 }
 
 button.connect-btn > span {

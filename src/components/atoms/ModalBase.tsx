@@ -38,7 +38,7 @@ export default function ModalBase(props: ModalProps) {
       }}
       // 베이스 className은 그대로 합성
       className={clsx(
-        "rounded-2xl bg-background dark:border dark:border-dark_popup_bg dark:bg-dark_popup_bg",
+        "rounded-2xl bg-background dark:border dark:border-dark-popup-bg dark:bg-dark-popup-bg",
         "max-sm:m-0 max-sm:w-full max-sm:max-w-full max-sm:rounded-b-none max-sm:rounded-t-2xl",
         className
       )}
@@ -59,7 +59,7 @@ export default function ModalBase(props: ModalProps) {
 //           wrapper: "items-end sm:items-end md:items-center",
 //         },
 //         className: clsx(
-//           "rounded-2xl bg-background dark:border-1 dark:border-dark_popup_bg dark:bg-dark_popup_bg",
+//           "rounded-2xl bg-background dark:border-1 dark:border-dark-popup-bg dark:bg-dark-popup-bg",
 //           "max-sm:m-0 max-sm:w-full max-sm:max-w-full max-sm:rounded-b-none max-sm:rounded-t-2xl",
 //           props.className
 //         ),

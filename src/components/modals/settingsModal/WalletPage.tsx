@@ -133,7 +133,7 @@ function WalletDisplay({
   return (
     <div
       className={cn(
-        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark_mid_mint max-sm:h-auto max-sm:min-h-[84px]",
+        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark-mid-mint max-sm:h-auto max-sm:min-h-[84px]",
         "flex-col items-stretch gap-0",
         "max-sm:flex-col max-sm:gap-1 max-sm:py-1 max-sm:items-start"
       )}

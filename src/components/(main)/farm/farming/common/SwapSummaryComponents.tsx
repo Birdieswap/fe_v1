@@ -22,7 +22,7 @@ export const Container: React.FC<PropsWithChildren> = ({ children }) => (
 export const Header = () => (
   <motion.div
     layout
-    className="rounded-t-2xl bg-primary-100 px-6 py-4 dark:bg-dark_mid_mint_25"
+    className="rounded-t-2xl bg-primary-100 px-6 py-4 dark:bg-dark-mid-mint-25"
   >
     <h2 className="text-lg font-semibold text-default-900 dark:text-default-400">
       Summary

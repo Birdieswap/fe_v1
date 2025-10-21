@@ -196,7 +196,7 @@ export default function AmountInput({
                 className={clsx(
                   "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
+                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {
