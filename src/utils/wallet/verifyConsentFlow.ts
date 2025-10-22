@@ -1,4 +1,3 @@
-
 import { apiCheck, apiInitiate, apiVerify } from "@/utils/wallet/consentApi";
 import { computePolicyHash, saveLocalProof } from "@/utils/wallet/consentLocal";
 import {
@@ -19,16 +18,16 @@ import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
 export type VerifyConsentMode = "interactive" | "silent";
 
 export type VerifyConsentResult =
-  | "already-consented"   // 서버에 이미 동의 기록 있음
-  | "verified-now"        // 이번에 모달 열고 서명 & verify 성공
-  | "cancelled"           // 모달에서 닫기/거부
-  | "failed";             // 네트워크/서버 오류 등
+  | "already-consented" // 서버에 이미 동의 기록 있음
+  | "verified-now" // 이번에 모달 열고 서명 & verify 성공
+  | "cancelled" // 모달에서 닫기/거부
+  | "failed"; // 네트워크/서버 오류 등
 
 export type VerifyConsentParams = {
-  config: any;                 // wagmi useConfig() 결과
+  config: any; // wagmi useConfig() 결과
   address: `0x${string}`;
   chainId: number;
-  mode?: VerifyConsentMode;    // 기본 "interactive"
+  mode?: VerifyConsentMode; // 기본 "interactive"
   abortSignal?: () => boolean; // 🔸 언제든 true면 조기 중단
 };
 
@@ -53,23 +52,38 @@ function toBigIntChainId(v: string | number | bigint): bigint {
 function extractMessageAndNonceRaw(
   wireMessage:
     | NormalizedConsentMessage
-    | { Consent: Omit<NormalizedConsentMessage, "nonce"> & { nonce: string | number } }
+    | {
+        Consent: Omit<NormalizedConsentMessage, "nonce"> & {
+          nonce: string | number;
+        };
+      }
 ): { messageNorm: NormalizedConsentMessage; nonceRaw: string | number } {
   if (typeof (wireMessage as any)?.Consent !== "undefined") {
-    const inner = (wireMessage as any).Consent as Omit<NormalizedConsentMessage, "nonce"> & {
+    const inner = (wireMessage as any).Consent as Omit<
+      NormalizedConsentMessage,
+      "nonce"
+    > & {
       nonce: string | number;
     };
-    return { messageNorm: { ...inner, nonce: BigInt(inner.nonce) }, nonceRaw: inner.nonce };
+    return {
+      messageNorm: { ...inner, nonce: BigInt(inner.nonce) },
+      nonceRaw: inner.nonce,
+    };
   }
   const m = wireMessage as NormalizedConsentMessage;
   const nonceAny: any = (m as any).nonce;
   return {
-    messageNorm: { ...m, nonce: typeof nonceAny === "bigint" ? nonceAny : BigInt(nonceAny) },
+    messageNorm: {
+      ...m,
+      nonce: typeof nonceAny === "bigint" ? nonceAny : BigInt(nonceAny),
+    },
     nonceRaw: typeof nonceAny === "bigint" ? nonceAny.toString() : nonceAny,
   };
 }
 
-export async function verifyConsentFlow(params: VerifyConsentParams): Promise<VerifyConsentResult> {
+export async function verifyConsentFlow(
+  params: VerifyConsentParams
+): Promise<VerifyConsentResult> {
   const {
     config,
     address,
@@ -78,7 +92,8 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
     abortSignal,
   } = params;
 
-  const aborted = () => (typeof abortSignal === "function" ? abortSignal() : false);
+  const aborted = () =>
+    typeof abortSignal === "function" ? abortSignal() : false;
 
   try {
     if (aborted()) return "cancelled";
@@ -98,16 +113,22 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
 
     // 2) 모달 열고 onConfirm에서 initiate → sign → verify 수행
     await new Promise((r) => setTimeout(r, 10));
-    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-
+    await new Promise((r) =>
+      requestAnimationFrame(() => requestAnimationFrame(r))
+    );
 
     const confirmed = await openRiskConsentModal({
       onConfirm: async () => {
         if (aborted()) throw new Error("aborted");
 
         // (a) initiate
-        const init = await apiInitiate({ address, chainId, type: "initialConsent" });
-        if (!init?.response || !init?.result) throw new Error("initiate_failed");
+        const init = await apiInitiate({
+          address,
+          chainId,
+          type: "initialConsent",
+        });
+        if (!init?.response || !init?.result)
+          throw new Error("initiate_failed");
         if (aborted()) throw new Error("aborted");
 
         // (b) payload 정규화
@@ -118,17 +139,28 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
           version: String((wire as any).domain?.version ?? ""),
           chainId: toBigIntChainId((wire as any).domain?.chainId),
         };
-        const { messageNorm, nonceRaw } = extractMessageAndNonceRaw((wire as any).message);
+        const { messageNorm, nonceRaw } = extractMessageAndNonceRaw(
+          (wire as any).message
+        );
 
         if (aborted()) throw new Error("aborted");
 
         // (c) 서명
+        console.debug("[consent] signing eip712", {
+          address,
+          chainId,
+          domain,
+          primaryType: "Consent",
+        });
         const signature = await signTypedData(config, {
+          account: address as `0x${string}`,
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
           primaryType: "Consent",
           message: messageNorm as unknown as Record<string, unknown>,
         });
+
+        console.debug("[consent] signed", { len: signature?.length });
 
         // (d) 로컬 검증
         const ok = await verifyTypedData({
@@ -139,7 +171,10 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
           message: messageNorm as unknown as Record<string, unknown>,
           signature,
         });
-        if (!ok) throw new Error("client_verify_failed");
+        if (!ok) {
+          console.error("[consent] client_verify_failed");
+          throw new Error("client_verify_failed");
+        }
 
         if (aborted()) throw new Error("aborted");
 
@@ -160,6 +195,7 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
         if (aborted()) throw new Error("aborted");
 
         // (f) 서버 verify (nonce는 원본 타입 echo)
+        console.debug("[consent] calling apiVerify");
         const body: VerifyRequest = {
           address,
           chainId,
@@ -171,8 +207,10 @@ export async function verifyConsentFlow(params: VerifyConsentParams): Promise<Ve
         };
         const v = await apiVerify(body);
         if (!v?.response || !v?.result) {
+          console.error("[consent] server_verify_failed", v);
           throw new Error(v?.message || "server_verify_failed");
         }
+        console.debug("[consent] server_verify_ok");
 
         if (aborted()) throw new Error("aborted");
 
