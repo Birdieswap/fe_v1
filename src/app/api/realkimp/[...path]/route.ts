@@ -6,28 +6,47 @@ const UPSTREAM = "https://realkimp.com/birdieswap";
 const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
 
 export const runtime = "nodejs";
+export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
-/** 업스트림으로 안전하게 전달할 헤더 구성 */
-function safeUpstreamHeaders(req: Request) {
+/** 업스트림으로 안전하게 전달할 헤더 구성 (Consent 계열은 쿠키/오리진 보존) */
+function safeUpstreamHeaders(req: Request, tail: string) {
   const h = new Headers();
+
+  // 공통
   h.set("accept", "application/json, text/plain, */*");
   h.set("user-agent", req.headers.get("user-agent") ?? "BirdieswapProxy/1.0");
+  h.set("accept-encoding", "identity");
+  const acceptLang = req.headers.get("accept-language");
+  if (acceptLang) h.set("accept-language", acceptLang);
 
+  // 원격 IP/프로토콜 전달
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
     "";
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
+  const proto = req.headers.get("x-forwarded-proto");
+  if (proto) h.set("x-forwarded-proto", proto);
 
-  h.set("accept-encoding", "identity");
-
-  // 오리진 민감/불필요 헤더 제거
+  // 기본적으로 민감 헤더 제거
   h.delete("host");
   h.delete("origin");
   h.delete("referer");
   h.delete("cookie");
   h.delete("authorization");
+
+  // ✅ Consent/* 경로는 Cloudflare 통과에 쿠키/오리진 필요할 수 있어 보존
+  const isConsentPath = /^consent(\/|$)/i.test(tail);
+  if (isConsentPath) {
+    const origin = req.headers.get("origin");
+    const referer = req.headers.get("referer");
+    const cookie = req.headers.get("cookie"); // cf_clearance 등
+    if (origin) h.set("origin", origin);
+    if (referer) h.set("referer", referer);
+    if (cookie) h.set("cookie", cookie);
+  }
+
   return h;
 }
 
@@ -35,12 +54,12 @@ function safeUpstreamHeaders(req: Request) {
 export async function GET(req: Request, context?: any) {
   const url = new URL(req.url);
 
-  // 1) 우선 App Router가 준 params.path를 사용
+  // 1) App Router params 우선
   const raw = context?.params?.path;
   const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
-  // 2) 없으면 pathname에서 보완 슬라이스
-  let tail = strip(parts.join("/"));
+  // 2) pathname에서 보완 슬라이스
+  let tail: string = strip(parts.join("/"));
   if (!tail) {
     const base = "/api/realkimp/";
     const i = url.pathname.indexOf(base);
@@ -85,7 +104,7 @@ export async function GET(req: Request, context?: any) {
     const r = await withTimeout(12_000, (signal) =>
       fetch(u, {
         method: "GET",
-        headers: safeUpstreamHeaders(req),
+        headers: safeUpstreamHeaders(req, tail), // ✅ tail 전달
         cache: "no-store",
         redirect: "follow",
         signal,
@@ -106,6 +125,14 @@ export async function GET(req: Request, context?: any) {
       out.set("content-type", "application/json; charset=utf-8");
       out.set("x-upstream-url", u.toString());
       out.set("x-upstream-tried", tried.join(" | "));
+
+      // ✅ Set-Cookie 전달 (환경에 따라 getSetCookie가 없을 수 있어 fallback)
+      const getSetCookie = (r.headers as any).getSetCookie?.bind(r.headers) as
+        | (() => string[])
+        | undefined;
+      const setCookies: string[] = getSetCookie ? getSetCookie() : [];
+      for (const sc of setCookies) out.append("set-cookie", sc);
+
       return new NextResponse(r.body, { status: 200, headers: out });
     }
 
@@ -122,6 +149,13 @@ export async function GET(req: Request, context?: any) {
         out.set("content-type", "application/json; charset=utf-8");
         out.set("x-upstream-url", u.toString());
         out.set("x-upstream-tried", tried.join(" | "));
+
+        const getSetCookie = (r.headers as any).getSetCookie?.bind(
+          r.headers
+        ) as (() => string[]) | undefined;
+        const setCookies: string[] = getSetCookie ? getSetCookie() : [];
+        for (const sc of setCookies) out.append("set-cookie", sc);
+
         return new NextResponse(text, { status: 200, headers: out });
       }
     } catch {

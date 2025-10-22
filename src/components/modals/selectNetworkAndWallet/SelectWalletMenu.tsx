@@ -44,6 +44,9 @@ declare global {
   }
 }
 
+const ALLOW_HARD_RELOAD =
+  (process.env.NEXT_PUBLIC_WALLET_ALLOW_HARD_RELOAD ?? "0") === "1";
+
 export function WalletIcon({
   provider,
   size,
@@ -222,7 +225,8 @@ export function SelectWalletListBox(props: {
           config,
           connector,
           provider,
-          hardReloadOnInjected: doHardReload,
+          hardReloadOnInjected:
+            ALLOW_HARD_RELOAD && doHardReload ? true : false,
         });
         await new Promise((r) => setTimeout(r, 10)); // flush
         openDenyWalletModal(address);
@@ -258,7 +262,10 @@ export function SelectWalletListBox(props: {
             config,
             connector,
             provider,
-            hardReloadOnInjected: true,
+            hardReloadOnInjected:
+              ALLOW_HARD_RELOAD && isMetaMaskInAppEnv(connector, provider)
+                ? true
+                : false,
           });
           await new Promise((r) => setTimeout(r, 10));
           return;
