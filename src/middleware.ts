@@ -44,7 +44,13 @@ export function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────
   const scriptSrc = isDev
     ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"].join(" ")
-    : ["'self'", `'nonce-${nonce}'`].join(" ");
+    : [
+        "'self'",
+        `'nonce-${nonce}'`,
+        ,
+        "'strict-dynamic'",
+        "'wasm-unsafe-eval'",
+      ].join(" ");
 
   // ─────────────────────────────────────────────────────────────
   // 스타일: elem/attr 분리
@@ -53,9 +59,11 @@ export function middleware(req: NextRequest) {
   //           prod에서도 unsafe-inline 허용(대신 'self'로 출처 제한)
   //      * nonce를 모든 <style>에 주입할 수 있다면 elem을 'nonce'로 바꿔도 됨
   // ─────────────────────────────────────────────────────────────
-  const styleSrcElem = isDev
-    ? ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ")
-    : ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ");
+  const styleSrcElem = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+  ].join(" ");
 
   const styleSrcAttr = "'unsafe-inline'";
 
@@ -85,7 +93,7 @@ export function middleware(req: NextRequest) {
     `connect-src 'self' ws: wss: https: ${CONNECT_DOMAINS.join(" ")}`,
 
     // 필요 시 주석 해제
-    // "upgrade-insecure-requests",
+    "worker-src 'self' blob:",
   ];
 
   const csp = cspParts.join("; ");

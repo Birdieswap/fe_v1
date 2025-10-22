@@ -10,6 +10,8 @@ import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
 import ClientHUD from "./ClientHUD";
 import { headers } from "next/headers";
 
+export const dynamic = "force-dynamic";
+
 const inter = Inter({ subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
@@ -23,9 +25,9 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const isDev = process.env.NODE_ENV !== "production";
   const reqHeaders = await headers();
-  const headerNonce = reqHeaders.get("x-csp-nonce") ?? undefined;
-
-  const nonce = isDev ? undefined : headerNonce;
+  const nonce = isDev
+    ? undefined
+    : (reqHeaders.get("x-csp-nonce") ?? undefined);
 
   const APP_ENV =
     process.env.NEXT_PUBLIC_APP_ENV ??
@@ -35,17 +37,17 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>
         <script
-          {...(!isDev ? { nonce: headerNonce ?? undefined } : {})}
+          {...(!isDev ? { nonce } : {})}
           dangerouslySetInnerHTML={{
             __html: `
-            // Lit dev-mode 경고 비활성화
-            window.litDisableDevMode = true;
-            // (옵션) 번들 경고도 숨김
-            window.litDisableBundleWarning = true;
-          `,
+              // Lit dev-mode 경고 비활성화
+              window.litDisableDevMode = true;
+              // (옵션) 번들 경고도 숨김
+              window.litDisableBundleWarning = true;
+            `,
           }}
         />
-        <Providers nonce={headerNonce}>
+        <Providers nonce={nonce}>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
