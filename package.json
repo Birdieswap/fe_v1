@@ -53,6 +53,7 @@
     "@uniswap/v3-periphery": "^1.4.4",
     "@uniswap/v3-sdk": "^3.25.2",
     "clsx": "^2.1.1",
+    "critters": "^0.0.23",
     "ethers": "^6.13.4",
     "framer-motion": "^11.3.28",
     "graphql": "^16.9.0",
