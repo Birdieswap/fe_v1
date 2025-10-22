@@ -5,10 +5,7 @@ import type {
   VerifyResponse,
 } from "@/types/consent";
 
-const BASE_GET_DEFAULT = "/api/realkimp/Consent";
-const BASE_GET = (
-  process.env.NEXT_PUBLIC_CONSENT_GET_BASE ?? BASE_GET_DEFAULT
-).replace(/\/$/, "");
+const BASE_GET = "https://realkimp.com/birdieswap/Consent";
 
 // POST는 업스트림 직접 호출
 const BASE_POST = "https://realkimp.com/birdieswap/Consent";
