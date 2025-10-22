@@ -12,6 +12,7 @@ import type {
   NormalizedConsentMessage,
   NormalizedEIP712Payload,
   VerifyRequest,
+  CheckResponse,
 } from "@/types/consent";
 import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
 
@@ -99,15 +100,28 @@ export async function verifyConsentFlow(
     if (aborted()) return "cancelled";
 
     // 1) 서버 동의 상태 조회 (silent/interactive 공통)
-    const resp = await apiCheck(address);
+    let resp: CheckResponse | null = null;
+    try {
+      resp = await apiCheck(address);
+    } catch (e) {
+      // prod에서 check가 막혀도 interactive로 진행할 수 있게 함
+      console.error(
+        "[consent] apiCheck error (will proceed to interactive)",
+        e
+      );
+    }
     if (aborted()) return "cancelled";
 
     if (resp?.response && resp?.result && resp?.userConsent) {
+      console.debug("[consent] already-consented (server)");
       return "already-consented";
     }
 
-    // silent 모드면 모달 없이 여기서 종료
-    if (mode === "silent") return "cancelled";
+    // silent 모드면 모달 없이 종료
+    if (mode === "silent") {
+      console.debug("[consent] silent mode → no modal, cancelling");
+      return "cancelled";
+    }
 
     if (aborted()) return "cancelled";
 
@@ -122,13 +136,17 @@ export async function verifyConsentFlow(
         if (aborted()) throw new Error("aborted");
 
         // (a) initiate
+        console.debug("[consent] initiate...");
         const init = await apiInitiate({
           address,
           chainId,
           type: "initialConsent",
         });
-        if (!init?.response || !init?.result)
+        if (!init?.response || !init?.result) {
+          console.error("[consent] initiate_failed payload", init);
           throw new Error("initiate_failed");
+        }
+        console.debug("[consent] initiate ok", { digest: init.digest });
         if (aborted()) throw new Error("aborted");
 
         // (b) payload 정규화
@@ -153,13 +171,12 @@ export async function verifyConsentFlow(
           primaryType: "Consent",
         });
         const signature = await signTypedData(config, {
-          account: address as `0x${string}`,
+          account: address as `0x${string}`, // ✅ 명시
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
           primaryType: "Consent",
           message: messageNorm as unknown as Record<string, unknown>,
         });
-
         console.debug("[consent] signed", { len: signature?.length });
 
         // (d) 로컬 검증
@@ -178,7 +195,7 @@ export async function verifyConsentFlow(
 
         if (aborted()) throw new Error("aborted");
 
-        // (e) (선택) digest 비교
+        // (e) digest 비교(선택)
         const recomputed = hashTypedData({
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
@@ -186,7 +203,7 @@ export async function verifyConsentFlow(
           message: messageNorm as unknown as Record<string, unknown>,
         });
         if (recomputed !== init.digest) {
-          console.warn("[verifyConsentFlow] digest mismatch", {
+          console.warn("[consent] digest mismatch", {
             recomputed,
             serverDigest: init.digest,
           });
@@ -242,9 +259,13 @@ export async function verifyConsentFlow(
     });
 
     // 모달 닫힘/거부
-    if (!confirmed) return "cancelled";
+    if (!confirmed) {
+      console.debug("[consent] modal closed/cancelled");
+      return "cancelled";
+    }
 
     // 여기까지 왔으면 이번에 서명 완료
+    console.debug("[consent] verified-now");
     return "verified-now";
   } catch (err) {
     if ((err as Error)?.message === "aborted") return "cancelled";
