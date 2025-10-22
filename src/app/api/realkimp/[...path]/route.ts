@@ -38,9 +38,11 @@ function safeUpstreamHeaders(req: Request) {
 
 export async function GET(
   req: Request,
-  { params }: { params: { path: string[] } }
+  { params }: { params: Record<string, string | string[]> }
 ) {
-  const tail = strip((params.path || []).join("/"));
+  const raw = params?.path;
+  const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  const tail = strip(parts.join("/"));
   if (!tail) {
     return NextResponse.json(
       { ok: false, error: "missing endpoint" },
