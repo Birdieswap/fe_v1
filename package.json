@@ -2,6 +2,7 @@
   "name": "birdieswap-fe",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "overrides": {
     "use-sync-external-store": "^1.6.0",
     "valtio": {
