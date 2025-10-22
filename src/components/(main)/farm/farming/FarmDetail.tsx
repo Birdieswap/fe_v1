@@ -45,7 +45,7 @@ export default function FarmDetail({
           style={{ overflow: "hidden", willChange: "height, opacity" }}
           // {...presenceTransition}
           className={clsx(
-            "flex w-full origin-top gap-4 overflow-hidden border-b-1 border-default-400 bg-default-100 px-4 py-6 dark:border-default-900 dark:bg-dark_popup_bg",
+            "flex w-full origin-top gap-4 overflow-hidden border-b-1 border-default-400 bg-default-100 px-4 py-6 dark:border-default-900 dark:bg-dark-popup-bg",
             "md:col-span-6 md:flex-row",
             "max-md:col-span-3 max-md:row-span-2 max-md:flex-col"
             // "data-[selected=false]:h-0 data-[selected=true]:h-fit data-[selected=true]:border-default-100",

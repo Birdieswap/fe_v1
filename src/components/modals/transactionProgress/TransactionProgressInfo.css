@@ -1,27 +1,23 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@reference "tailwindcss";
+@reference "../../../app/globals.css";
 
-@layer components {
-  .progress-info-container {
-    @apply flex flex-row items-center gap-2;
-  }
-  .progress-info-container > .info-text-normal {
-    @apply text-[14px] leading-[17px] font-medium;
-    @apply text-foreground;
-  }
-  .progress-info-container > .info-text-light {
-    @apply text-[14px] leading-[17px] font-medium;
-    @apply text-default-800 dark:text-default-700;
-  }
+/* v4에서는 그냥 일반 셀렉터만 써도 됩니다 */
+.progress-info-container {
+  @apply flex items-center gap-2;
+}
 
-  .progress-info-container.progress-swap > .token-text {
-    @apply text-[14px] leading-[17px] font-medium;
-    @apply text-foreground;
-  }
+.progress-info-container > .info-text-normal {
+  @apply text-[14px] leading-[17px] font-medium text-foreground;
+}
 
-  .progress-info-container.progress-farm > .token-text {
-    @apply text-[14px] leading-[17px] font-medium;
-    @apply text-default-800 dark:text-default-700;
-  }
+.progress-info-container > .info-text-light {
+  @apply text-[14px] leading-[17px] font-medium text-default-800 dark:text-default-700;
+}
+
+.progress-info-container.progress-swap > .token-text {
+  @apply text-[14px] leading-[17px] font-medium text-foreground;
+}
+
+.progress-info-container.progress-farm > .token-text {
+  @apply text-[14px] leading-[17px] font-medium text-default-800 dark:text-default-700;
 }

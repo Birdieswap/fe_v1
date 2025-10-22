@@ -10,7 +10,7 @@ export default function MaxSlippageSection() {
 
   return (
     <Fragment>
-      <p className="text-[13px] font-medium text-light_primary dark:text-dark_primary">
+      <p className="text-[13px] font-medium text-light-primary dark:text-dark-primary">
         {maxSlippage !== "auto" && `${maxSlippage || ""}% slippage`}
       </p>
       <MaxSlippagePopover

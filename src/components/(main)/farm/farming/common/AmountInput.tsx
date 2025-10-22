@@ -110,7 +110,7 @@ export default function AmountInput({
           layout
           className={clsx(
             "mb-6 flex max-h-32 w-full flex-col gap-4 rounded-2xl px-3 py-4",
-            "bg-default-100 dark:bg-dark_swap_bg",
+            "bg-default-100 dark:bg-dark-swap-bg",
             "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
             "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5"
           )}
@@ -196,7 +196,7 @@ export default function AmountInput({
                 className={clsx(
                   "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
+                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {

@@ -1,9 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@reference "tailwindcss";
+@reference "../../../../../app/globals.css";
 
-@layer utilities {
-  .loading {
-    @apply opacity-70 animate-pulse;
-  }
+/* v4: 유틸은 그냥 일반 클래스 정의로 충분 */
+.loading {
+  @apply opacity-70 animate-pulse;
 }

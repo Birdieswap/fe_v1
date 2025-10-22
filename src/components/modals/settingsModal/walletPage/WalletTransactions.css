@@ -1,24 +1,23 @@
-@tailwind base;
-@tailwind components;
+@reference "tailwindcss";
+@reference "../../../../app/globals.css";
 
-@layer components {
-  .wallet-tx-details-container {
-    @apply flex flex-col gap-1.5 rounded-[4px] bg-default-100 mx-2 p-3 dark:bg-background group-hover:dark:bg-background;
-  }
-  .wallet-tx-farm-swap-container {
-    @apply flex flex-col gap-3 my-1.5 rounded-[4px] border-1 fill-background py-3 pl-[22px] pr-0;
-    @apply border-default-400 dark:border-default-200;
-    @apply dark:bg-dark_popup_bg;
-  }
-  .wallet-tx-farm-swap-item {
-    @apply flex flex-col gap-2;
-  }
-  .wallet-tx-farm-swap-title {
-    @apply flex flex-row gap-1;
-    @apply font-semibold text-[12px] leading-[15px];
-    @apply text-default-800 dark:text-foreground;
-  }
-  div.wallet-tx-farm-swap-bar {
-    @apply h-full w-px bg-default-800 dark:bg-default-300;
-  }
+.wallet-tx-details-container {
+  @apply flex flex-col gap-1.5 rounded-[4px] bg-default-100 mx-2 p-3 dark:bg-background group-hover:dark:bg-background;
+}
+
+.wallet-tx-farm-swap-container {
+  @apply flex flex-col gap-3 my-1.5 rounded-[4px] border fill-background py-3 pl-[22px] pr-0;
+  @apply border-default-400 dark:border-default-200 dark:bg-dark-popup-bg;
+}
+
+.wallet-tx-farm-swap-item {
+  @apply flex flex-col gap-2;
+}
+
+.wallet-tx-farm-swap-title {
+  @apply flex flex-row gap-1 font-semibold text-[12px] leading-[15px] text-default-800 dark:text-foreground;
+}
+
+div.wallet-tx-farm-swap-bar {
+  @apply h-full w-px bg-default-800 dark:bg-default-300;
 }
