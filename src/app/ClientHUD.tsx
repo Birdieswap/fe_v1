@@ -69,8 +69,9 @@ export default function ClientHUD() {
                 .join(" "),
             });
             // 너무 길어지지 않게 제한
-            const s = JSON.stringify(arr);
-            sessionStorage.setItem(KEY, s.length > 20000 ? s.slice(-20000) : s);
+            const MAX = 300; // 최근 300개만 유지 (원하면 500 등으로)
+            if (arr.length > MAX) arr.splice(0, arr.length - MAX);
+            sessionStorage.setItem(KEY, JSON.stringify(arr));
           } catch {}
         };
 
