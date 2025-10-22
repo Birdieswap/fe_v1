@@ -3,7 +3,7 @@
 
 /* v4에서는 그냥 일반 셀렉터만 써도 됩니다 */
 .progress-info-container {
-  @apply flex flex-row items-center gap-2;
+  @apply flex items-center gap-2;
 }
 
 .progress-info-container > .info-text-normal {

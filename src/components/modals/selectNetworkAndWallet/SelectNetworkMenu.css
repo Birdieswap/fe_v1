@@ -45,9 +45,12 @@ button.connect-btn:hover {
 }
 
 button.connect-btn {
-  @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
+  /* @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
   @apply min-w-0 max-w-max min-h-min max-h-max;
-  @apply flex flex-row items-center gap-1 px-3 py-1;
+  @apply flex flex-row items-center gap-1 px-3 py-1; */
+  @apply btn-size-40;
+  /* 모양/색 */
+  @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
 }
 
 button[aria-expanded="true"].connect-btn {
@@ -55,6 +58,9 @@ button[aria-expanded="true"].connect-btn {
 }
 
 button.connect-btn > span {
-  @apply font-medium text-[16px] leading-[30px] text-background
-         max-sm:text-[14px] max-sm:leading-[24px];
+  /* @apply font-medium text-[16px] leading-[30px] text-background
+         max-sm:text-[14px] max-sm:leading-[24px]; */
+  @apply btn-label-16-30 text-background;
+  /* 좁은 화면에서만 살짝 축소하고 싶다면 유지 */
+  @apply max-sm:text-[14px] max-sm:leading-[24px];
 }

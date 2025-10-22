@@ -31,18 +31,6 @@ export default function SwapPage() {
           <SwapIndex />
         </Suspense>
         <SwapFeeInfo />
-        <div className="p-4 bg-light-primary text-primary-foreground rounded">
-          token class test
-        </div>
-        <div
-          style={{
-            background: "rgb(var(--color-light-primary))",
-            color: "rgb(var(--color-primary-foreground))",
-          }}
-          className="p-4 rounded"
-        >
-          direct CSS var
-        </div>
       </div>
     </SwapProvider>
   );

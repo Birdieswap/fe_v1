@@ -1,10 +1,10 @@
-/*stylelint-disable at-rule-no-unknown*/
+/* stylelint-disable at-rule-no-unknown */
 /* stylelint-disable function-no-unknown */
 
-/* Tailwind v4 핵심 */
+/* ───────────────── Tailwind v4 core ───────────────── */
 @import "tailwindcss";
 
-/* HeroUI v4 플러그인 + 소스 스캔 경로 (경로는 프로젝트 구조에 맞게 조정) */
+/* HeroUI v4 플러그인 + 소스 스캔 경로 */
 @plugin "./hero.ts";
 
 @source "./**/*.{js,ts,jsx,tsx,mdx}";
@@ -14,114 +14,176 @@
 @source "../utils/**/*.{js,ts,jsx,tsx}";
 @source "../const/**/*.{js,ts,jsx,tsx}";
 @source "../types/**/*.{js,ts,jsx,tsx}";
-@source "../assets/**/*.{js,ts,jsx,tsx}"; /* JSX/TSX가 있으면 유지, 아니면 빼도 됨 */
+@source "../assets/**/*.{js,ts,jsx,tsx}";
 
-/* 사용 중인 UI 라이브러리 (node_modules는 src/app에서 두 단계 위) */
+/* 사용 중인 라이브러리 (node_modules는 src/app에서 두 단계 위) */
 @source "../../node_modules/@heroui/react/dist/**/*.{js,ts,jsx,tsx}";
 @source "../../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}";
 @source "../../node_modules/@rainbow-me/rainbowkit/dist/**/*.{js,ts,jsx,tsx}";
 
-/* 다크모드 (.dark 클래스) */
-@custom-variant dark (&:is(.dark *));
+/* 다크모드 (.dark 클래스) - 안전 패턴 */
+@custom-variant dark (&:where(.dark, .dark *));
 
-/* ==== 팔레트: tailwind.config.ts → v4 @theme 변환 ==== */
-/*  RGB 공백 구분: r g b  (hex → rgb 변환 반영) */
+/* ──────────────── Tokens (@theme) ────────────────
+   v4에서 안전하게 쓰기 위해:
+   1) *-rgb: "R G B" 숫자 3개 저장
+   2) *: rgb(var(--*-rgb))  → 언제나 유효한 CSS 색
+   이렇게 두 계층을 모두 제공합니다.
+*/
 @theme {
-  /* Light */
-  --color-light-pink: 248 61 151; /* #F83D97 */
-  --color-light-pink-hover: 242 10 122; /* #F20A7A */
-  --color-light-primary: 0 201 204; /* #00C9CC */
-  --color-light-primary-hover: 7 171 173; /* #07ABAD */
-  --color-light-light-mint: 229 250 250; /* #E5FAFA */
-  --color-light-mid-mint: 204 249 247; /* #CCF9F7 */
-  --color-light-mid-mint-2: 178 239 240; /* #B2EFF0 */
+  /* ===== Light (RGB base) ===== */
+  --color-light-pink-rgb: 248 61 151; /* #F83D97 */
+  --color-light-pink-hover-rgb: 242 10 122; /* #F20A7A */
+  --color-light-primary-rgb: 0 201 204; /* #00C9CC */
+  --color-light-primary-hover-rgb: 7 171 173; /* #07ABAD */
+  --color-light-light-mint-rgb: 229 250 250; /* #E5FAFA */
+  --color-light-mid-mint-rgb: 204 249 247; /* #CCF9F7 */
+  --color-light-mid-mint-2-rgb: 178 239 240; /* #B2EFF0 */
 
-  /* Dark */
-  --color-dark-pink: 255 90 169; /* #FF5AA9 */
-  --color-dark-swap-bg: 31 34 52; /* #1F2234 */
-  --color-dark-popup-bg: 38 43 59; /* #262B3B */
-  --color-dark-pink-hover: 240 114 175; /* #F072AF */
-  --color-dark-empty-state: 34 106 117; /* #226A75 */
-  --color-dark-green-key: 27 223 225; /* #1BDFE1 */
-  --color-dark-primary: 104 224 224; /* #68E0E0 */
-  --color-dark-primary-hover: 113 232 233; /* #71E8E9 */
-  --color-dark-mid-mint: 30 169 175; /* #1EA9AF */
-  --color-dark-mid-mint-2: 34 106 117; /* #226A75 */
-  --color-dark-mid-mint-25: 39 75 88; /* #274B58 */
-  --color-dark-mid-mint-3: 22 75 88; /* #164B58 */
-  --color-dark-mid-mint-4: 81 169 174; /* #51A9AE */
+  /* ===== Dark (RGB base) ===== */
+  --color-dark-pink-rgb: 255 90 169; /* #FF5AA9 */
+  --color-dark-swap-bg-rgb: 31 34 52; /* #1F2234 */
+  --color-dark-popup-bg-rgb: 38 43 59; /* #262B3B */
+  --color-dark-pink-hover-rgb: 240 114 175; /* #F072AF */
+  --color-dark-empty-state-rgb: 34 106 117; /* #226A75 */
+  --color-dark-green-key-rgb: 27 223 225; /* #1BDFE1 */
+  --color-dark-primary-rgb: 104 224 224; /* #68E0E0 */
+  --color-dark-primary-hover-rgb: 113 232 233; /* #71E8E9 */
+  --color-dark-mid-mint-rgb: 30 169 175; /* #1EA9AF */
+  --color-dark-mid-mint-2-rgb: 34 106 117; /* #226A75 */
+  --color-dark-mid-mint-25-rgb: 39 75 88; /* #274B58 */
+  --color-dark-mid-mint-3-rgb: 22 75 88; /* #164B58 */
+  --color-dark-mid-mint-4-rgb: 81 169 174; /* #51A9AE */
 
-  /* Theme background/foreground */
-  --color-light-background: 255 255 255; /* #FFFFFF */
-  --color-light-foreground: 20 25 42; /* #14192A */
-  --color-dark-background: 20 25 42; /* #14192A */
-  --color-dark-foreground: 255 255 255; /* #FFFFFF */
+  /* ===== Background / Foreground (RGB base) ===== */
+  --color-light-background-rgb: 255 255 255; /* #FFFFFF */
+  --color-light-foreground-rgb: 20 25 42; /* #14192A */
+  --color-dark-background-rgb: 20 25 42; /* #14192A */
+  --color-dark-foreground-rgb: 255 255 255; /* #FFFFFF */
 
-  /* default scale (light에서 쓰던 100~900) */
-  --color-default-100: 249 251 254; /* #F9FBFE */
-  --color-default-200: 239 240 245; /* #EFF0F5 */
-  --color-default-300: 236 239 248; /* #ECEFF8 */
-  --color-default-400: 228 230 239; /* #E4E6EF */
-  --color-default-500: 201 207 224; /* #C9CFE0 */
-  --color-default-600: 170 177 199; /* #AAB1C7 */
-  --color-default-700: 146 154 177; /* #929AB1 */
-  --color-default-800: 105 108 130; /* #696C82 */
-  --color-default-900: 82 85 103; /* #525567 */
+  /* ===== Default scale (RGB base) ===== */
+  --color-default-100-rgb: 249 251 254; /* #F9FBFE */
+  --color-default-200-rgb: 239 240 245; /* #EFF0F5 */
+  --color-default-300-rgb: 236 239 248; /* #ECEFF8 */
+  --color-default-400-rgb: 228 230 239; /* #E4E6EF */
+  --color-default-500-rgb: 201 207 224; /* #C9CFE0 */
+  --color-default-600-rgb: 170 177 199; /* #AAB1C7 */
+  --color-default-700-rgb: 146 154 177; /* #929AB1 */
+  --color-default-800-rgb: 105 108 130; /* #696C82 */
+  --color-default-900-rgb: 82 85 103; /* #525567 */
 
-  /* 기타 토큰 */
-  --color-secondary: 2 223 184; /* #02DFB8 */
-  --color-danger: 255 0 0; /* #FF0000 */
-  --color-warning: 248 61 151; /* #F83D97 */
-  /* === Semantic tokens === */
-  --color-background: 255 255 255;
-  --color-foreground: 20 25 42;
-  --color-primary: 0 201 204;
-  --color-primary-foreground: 255 255 255;
-}
+  /* ===== Misc (RGB base) ===== */
+  --color-secondary-rgb: 2 223 184; /* #02DFB8 */
+  --color-danger-rgb: 255 0 0; /* #FF0000 */
+  --color-warning-rgb: 248 61 151; /* #F83D97 */
 
-/* ===== (원래 있던 전역 변수 유지 가능) ===== */
-:root {
-  /* 의미 토큰: 라이트 */
+  /* ===== Resolved CSS colors (rgb(...)) ===== */
+  --color-light-pink: rgb(var(--color-light-pink-rgb));
+  --color-light-pink-hover: rgb(var(--color-light-pink-hover-rgb));
+  --color-light-primary: rgb(var(--color-light-primary-rgb));
+  --color-light-primary-hover: rgb(var(--color-light-primary-hover-rgb));
+  --color-light-light-mint: rgb(var(--color-light-light-mint-rgb));
+  --color-light-mid-mint: rgb(var(--color-light-mid-mint-rgb));
+  --color-light-mid-mint-2: rgb(var(--color-light-mid-mint-2-rgb));
+
+  --color-dark-pink: rgb(var(--color-dark-pink-rgb));
+  --color-dark-swap-bg: rgb(var(--color-dark-swap-bg-rgb));
+  --color-dark-popup-bg: rgb(var(--color-dark-popup-bg-rgb));
+  --color-dark-pink-hover: rgb(var(--color-dark-pink-hover-rgb));
+  --color-dark-empty-state: rgb(var(--color-dark-empty-state-rgb));
+  --color-dark-green-key: rgb(var(--color-dark-green-key-rgb));
+  --color-dark-primary: rgb(var(--color-dark-primary-rgb));
+  --color-dark-primary-hover: rgb(var(--color-dark-primary-hover-rgb));
+  --color-dark-mid-mint: rgb(var(--color-dark-mid-mint-rgb));
+  --color-dark-mid-mint-2: rgb(var(--color-dark-mid-mint-2-rgb));
+  --color-dark-mid-mint-25: rgb(var(--color-dark-mid-mint-25-rgb));
+  --color-dark-mid-mint-3: rgb(var(--color-dark-mid-mint-3-rgb));
+  --color-dark-mid-mint-4: rgb(var(--color-dark-mid-mint-4-rgb));
+
+  --color-light-background: rgb(var(--color-light-background-rgb));
+  --color-light-foreground: rgb(var(--color-light-foreground-rgb));
+  --color-dark-background: rgb(var(--color-dark-background-rgb));
+  --color-dark-foreground: rgb(var(--color-dark-foreground-rgb));
+
+  --color-default-100: rgb(var(--color-default-100-rgb));
+  --color-default-200: rgb(var(--color-default-200-rgb));
+  --color-default-300: rgb(var(--color-default-300-rgb));
+  --color-default-400: rgb(var(--color-default-400-rgb));
+  --color-default-500: rgb(var(--color-default-500-rgb));
+  --color-default-600: rgb(var(--color-default-600-rgb));
+  --color-default-700: rgb(var(--color-default-700-rgb));
+  --color-default-800: rgb(var(--color-default-800-rgb));
+  --color-default-900: rgb(var(--color-default-900-rgb));
+
+  --color-secondary: rgb(var(--color-secondary-rgb));
+  --color-danger: rgb(var(--color-danger-rgb));
+  --color-warning: rgb(var(--color-warning-rgb));
+
+  --color-light-primary-100-rgb: var(
+    --color-light-light-mint-rgb
+  ); /* #E5FAFA */
+  --color-light-primary-200-rgb: var(--color-light-mid-mint-rgb); /* #CCF9F7 */
+  --color-light-primary-500-rgb: var(--color-light-primary-rgb); /* #00C9CC */
+
+  /* ===== (NEW) Resolved CSS colors for primary scale ===== */
+  --color-primary-100: rgb(var(--color-light-primary-100-rgb));
+  --color-primary-200: rgb(var(--color-light-primary-200-rgb));
+  --color-primary-500: rgb(var(--color-light-primary-500-rgb));
+
+  /* ===== Semantic defaults (light) ===== */
   --color-background: var(--color-light-background);
   --color-foreground: var(--color-light-foreground);
   --color-primary: var(--color-light-primary);
-  --color-primary-foreground: 255 255 255;
+  --color-primary-foreground: rgb(255 255 255);
 
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  /* scale의 500을 DEFAULT로 연결 */
+  --color-default: rgb(var(--color-default-500-rgb));
+
+  /* --- secondary DEFAULT & foreground --- */
+  --color-secondary-foreground-rgb: 255 255 255; /* #FFFFFF (가독용) */
+  --color-secondary-foreground: rgb(var(--color-secondary-foreground-rgb));
+
+  /* --- danger DEFAULT & foreground(선택) --- */
+  --color-danger-foreground-rgb: 255 255 255; /* #FFFFFF */
+  --color-danger-foreground: rgb(var(--color-danger-foreground-rgb));
+
+  /* --- warning DEFAULT & foreground --- */
+  --color-warning-foreground-rgb: 255 255 255; /* #FFFFFF */
+  --color-warning-foreground: rgb(var(--color-warning-foreground-rgb));
+
+  /* --- (옵션) success 그룹을 primary와 동일하게 쓰려면: --- */
+  --color-success-100-rgb: var(--color-light-light-mint-rgb);
+  --color-success-200-rgb: var(--color-light-mid-mint-rgb);
+  --color-success-500-rgb: var(--color-light-primary-rgb);
+
+  --color-success-100: rgb(var(--color-success-100-rgb));
+  --color-success-200: rgb(var(--color-success-200-rgb));
+  --color-success-500: rgb(var(--color-success-500-rgb));
+  --color-success: rgb(var(--color-success-500-rgb)); /* DEFAULT */
+  --color-success-foreground-rgb: 255 255 255;
+  --color-success-foreground: rgb(var(--color-success-foreground-rgb));
 }
 
-/* === Tailwind v4 의미 토큰 매핑 (light 기본) === */
+/* ──────────────── Semantic switch ──────────────── */
 :root {
-  /* semantic colors used by classes like bg-background, text-foreground, bg-primary... */
   --color-background: var(--color-light-background);
   --color-foreground: var(--color-light-foreground);
   --color-primary: var(--color-light-primary);
-  --color-primary-foreground: 255 255 255; /* white */
+  --color-primary-foreground: rgb(255 255 255);
 }
-
-/* dark 모드에서 의미 토큰 덮어쓰기 */
 .dark {
   --color-background: var(--color-dark-background);
   --color-foreground: var(--color-dark-foreground);
   --color-primary: var(--color-dark-primary);
-  --color-primary-foreground: 20 25 42; /* 필요시 조정 (#14192A) */
+  --color-primary-foreground: rgb(20 25 42); /* 필요 시 조정 */
 }
 
-/* 전역 텍스트 컬러 */
+/* (선택) body 기본 글자색을 의미 토큰으로 */
 body {
-  color: rgb(var(--foreground-rgb));
+  color: var(--color-foreground);
 }
 
-/* ===== 유틸/컴포넌트 ===== */
+/* ──────────────── Utilities / Components ──────────────── */
 
 /* v4 권장: @utility로 커스텀 유틸 정의 */
 @utility text-balance {
@@ -135,7 +197,6 @@ body {
 @utility btn-mint-colors {
   @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
 }
-/* hover 상태는 선택자로 유지 (가장 호환성 좋음) */
 .btn-mint-colors:hover,
 .btn-mint-colors[data-hover="true"] {
   @apply bg-light-primary-hover opacity-100 dark:bg-dark-primary-hover;
@@ -147,6 +208,15 @@ body {
 .btn-light-colors:hover,
 .btn-light-colors[data-hover="true"] {
   @apply bg-default-200 opacity-100 dark:bg-default-100;
+}
+
+@utility btn-size-40 {
+  @apply h-10 min-h-10 inline-flex items-center gap-1 px-3 py-1 max-sm:px-1;
+}
+
+/* 라벨 텍스트(16/30) 고정 */
+@utility btn-label-16-30 {
+  @apply text-[16px] leading-[30px] font-medium;
 }
 
 /* svg fill */
@@ -161,7 +231,7 @@ body {
   @apply [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none;
 }
 
-/* 조합형 (JSX에서 className으로 붙여도 되고, 다른 CSS에서 @apply 해도 됨) */
+/* 조합형 */
 .btn-mint {
   @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
 }
