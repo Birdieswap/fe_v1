@@ -39,9 +39,6 @@ export function middleware(req: NextRequest) {
     "raw.githubusercontent.com",
   ];
 
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-csp-nonce", nonce);
-
   // ─────────────────────────────────────────────────────────────
   // 스크립트: dev는 eval/inline 허용, prod는 nonce 기반
   // ─────────────────────────────────────────────────────────────
@@ -92,6 +89,10 @@ export function middleware(req: NextRequest) {
   ];
 
   const csp = cspParts.join("; ");
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-csp-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
 
   const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("Content-Security-Policy", csp);
