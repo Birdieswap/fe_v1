@@ -48,8 +48,9 @@ export function middleware(req: NextRequest) {
         "'self'",
         `'nonce-${nonce}'`,
         ,
-        "'strict-dynamic'",
-        "'wasm-unsafe-eval'",
+        "'unsafe-inline'",
+        // "'strict-dynamic'",
+        // "'wasm-unsafe-eval'",
       ].join(" ");
 
   // ─────────────────────────────────────────────────────────────
