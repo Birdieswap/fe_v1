@@ -110,7 +110,7 @@ export default function AmountInput({
           layout
           className={clsx(
             "mb-6 flex max-h-32 w-full flex-col gap-4 rounded-2xl px-3 py-4",
-            "bg-default-100 dark:bg-dark_swap_bg",
+            "bg-default-100 dark:bg-dark-swap-bg",
             "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
             "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5"
           )}

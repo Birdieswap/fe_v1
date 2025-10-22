@@ -10,7 +10,7 @@ span.switch-wrapper {
   @apply flex w-12 h-6 px-0 py-0;
   @apply bg-default-400 dark:bg-default-500;
   @apply group-data-[selected=true]:bg-primary;
-  @apply group-data-[selected=true]:dark:bg-dark_green_key;
+  @apply group-data-[selected=true]:dark:bg-dark-green-key;
 }
 
 /* md 미만(≤767px)에서 w-10 적용 (max-md:w-10 대체) */

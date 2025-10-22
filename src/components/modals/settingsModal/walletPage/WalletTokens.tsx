@@ -142,7 +142,7 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
     >
       {tokens.length === 0 ? (
         <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyToken className="fill-light-mid-mint-2 dark:fill-dark_empty_state" />
+          <Icons.WalletEmptyToken className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             No tokens yet.
           </span>

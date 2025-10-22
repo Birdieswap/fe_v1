@@ -55,7 +55,7 @@ function ReferralDisplay() {
           </Button>
         </div>
       </div>
-      <div className="text-[11px] text-light-primary dark:text-dark_green_key">
+      <div className="text-[11px] text-light-primary dark:text-dark-green-key">
         Join our referral program : share, invite, and be rewarded.
       </div>
     </div>
@@ -153,7 +153,7 @@ export default function RewardsReferral() {
         <ReferralDisplay />
 
         <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark_empty_state" />
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             You have no Referral rewards to claim
           </span>

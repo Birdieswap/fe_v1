@@ -97,7 +97,7 @@ export default function SortOptions({
       itemClasses={{
         base: clsx(
           "box-border rounded-none border-1 border-b-0 first:rounded-t-xl last:rounded-b-xl last:border-b-1 w-[109px] h-[38px] text-[14px]",
-          "border-default-300 bg-background dark:border-default-100 dark:bg-dark_swap_bg",
+          "border-default-300 bg-background dark:border-default-100 dark:bg-dark-swap-bg",
           "data-[selected=true]:border-default-300 data-[selected=true]:bg-default-100",
           "data-[hover=true]:border-default-300 data-[hover=true]:bg-default-200",
           "data-[selectable=true]:focus:border-default-300 data-[selectable=true]:focus:bg-default-100",
