@@ -10,9 +10,9 @@ export const SwapFormContainer: React.FC<
   return (
     <div
       className={clsx(
-        "group flex w-full flex-col gap-1.5 rounded-2xl bg-default-100 py-4 pl-3 pr-4 transition-colors dark:bg-dark_swap_bg",
+        "group flex w-full flex-col gap-1.5 rounded-2xl bg-default-100 py-4 pl-3 pr-4 transition-colors dark:bg-dark-swap-bg",
         "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
-        "dark:focus-within:bg-dark_swap_bg dark:hover:bg-popup_bg dark:group-hover:bg-popup_bg dark:group-focus:bg-dark_swap_bg dark:group-focus-visible:bg-dark_swap_bg",
+        "dark:focus-within:bg-dark-swap-bg dark:hover:bg-popup-bg dark:group-hover:bg-popup-bg dark:group-focus:bg-dark-swap-bg dark:group-focus-visible:bg-dark-swap-bg",
         className,
       )}
       {...props}

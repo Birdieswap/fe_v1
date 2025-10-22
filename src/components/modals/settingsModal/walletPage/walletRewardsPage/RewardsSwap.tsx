@@ -59,7 +59,7 @@ function SwapDisplay() {
           </Button>
         </div>
       </div>
-      <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+      <div className="text-[11px] text-light-primary dark:text-dark-green-key">
         Prefer not to share rewards with a referrer? Opt out anytime.
       </div>
     </div>
@@ -158,7 +158,7 @@ export default function RewardsSwap() {
       >
         {!isSelfReferral ? <SwapDisplay /> : null}
         <div className="flex grow flex-col items-center justify-center gap-4">
-          <Icons.WalletEmptyReward className="fill-light_mid_mint_2 dark:fill-dark_empty_state" />
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
           <span className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             You have no Swap rewards to claim
           </span>

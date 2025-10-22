@@ -196,29 +196,37 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function Providers({ children }: PropsWithChildren) {
+export default function Providers({
+  children,
+  nonce,
+}: PropsWithChildren<{ nonce?: string }>) {
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <AssetsContextProvider>
-          <RainbowKitProvider
-            initialChain={sepolia}
-            locale="en"
-            showRecentTransactions={true}
-            theme={theme}
-          >
-            <HeroUIProvider>
-              <ThemeProvider enableSystem attribute="class">
+    <ThemeProvider
+      attribute="class"
+      enableSystem
+      defaultTheme="system"
+      nonce={nonce}
+    >
+      <WagmiProvider config={wagmiConfig}>
+        <QueryClientProvider client={queryClient}>
+          <AssetsContextProvider>
+            <RainbowKitProvider
+              initialChain={sepolia}
+              locale="en"
+              showRecentTransactions={true}
+              theme={theme}
+            >
+              <HeroUIProvider>
                 <ReferralProvider>
                   <WalletContextProvider>
                     <SettingsProvider>{children}</SettingsProvider>
                   </WalletContextProvider>
                 </ReferralProvider>
-              </ThemeProvider>
-            </HeroUIProvider>
-          </RainbowKitProvider>
-        </AssetsContextProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+              </HeroUIProvider>
+            </RainbowKitProvider>
+          </AssetsContextProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </ThemeProvider>
   );
 }

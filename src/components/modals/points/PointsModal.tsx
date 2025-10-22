@@ -74,7 +74,7 @@ export default function PointsModal({
             <p className="text-[15px] text-default-700">
               Earn <b>Birdieswap Points</b> with every action.
             </p>
-            <p className="pt-1 text-[22px] font-bold tracking-tight text-light_pink dark:text-dark_pink">
+            <p className="pt-1 text-[22px] font-bold tracking-tight text-light-pink dark:text-dark-pink">
               Start earning now.
             </p>
           </div>
@@ -84,7 +84,7 @@ export default function PointsModal({
           </div>
 
           <div className="mt-2 text-center">
-            <p className="text-[32px] font-bold  text-light_primary dark:text-dark_primary">
+            <p className="text-[32px] font-bold  text-light-primary dark:text-dark-primary">
               “Coming Soon”
             </p>
           </div>

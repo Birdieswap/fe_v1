@@ -41,7 +41,7 @@ function TabSelector(props: {
         "flex h-9 border-1 text-center text-[14px] font-normal md:w",
         "border-default-400 bg-transparent text-default-600 data-[hover=true]:bg-default-400/20",
         "dark:border-default-100 dark:text-default-400 data-[hover=true]:opacity-100 ",
-        "data-[selected=true]:border-light_primary dark:data-[selected=true]:border-dark_green_key data-[selected=true]:bg-light_primary dark:data-[selected=true]:bg-dark_green_key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white"
+        "data-[selected=true]:border-light-primary dark:data-[selected=true]:border-dark-green-key data-[selected=true]:bg-light-primary dark:data-[selected=true]:bg-dark-green-key  data-[selected=true]:text-white  dark:data-[selected=true]:text-white"
       )}
       data-selected={props.value === props.selected}
       //radius="none"
@@ -70,7 +70,7 @@ function SwapDisplay({
   return (
     <div
       className={cn(
-        "flex h-auto min-h-[86px] w-full mt-2 px-4 py-2 rounded-lg bg-light_pink/10 dark:bg-dark_pink/50 max-sm:min-h-[40px]",
+        "flex h-auto min-h-[86px] w-full mt-2 px-4 py-2 rounded-lg bg-light-pink/10 dark:bg-dark-pink/50 max-sm:min-h-[40px]",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start"
       )}
@@ -99,7 +99,7 @@ function SwapDisplay({
             </Button>
           </div>
         </div>
-        <div className="text-[11px] text-light_pink dark:text-dark_pink">
+        <div className="text-[11px] text-light-pink dark:text-dark-pink">
           Prefer not to share rewards with a referrer? Opt out anytime.
         </div>
       </div>
@@ -133,7 +133,7 @@ function WalletDisplay({
   return (
     <div
       className={cn(
-        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark_mid_mint max-sm:h-auto max-sm:min-h-[84px]",
+        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-2 dark:bg-dark-mid-mint max-sm:h-auto max-sm:min-h-[84px]",
         "flex-col items-stretch gap-0",
         "max-sm:flex-col max-sm:gap-1 max-sm:py-1 max-sm:items-start"
       )}
@@ -204,7 +204,7 @@ function WalletDisplay({
             </Button>
           </div>
         </div>
-        <div className="text-[11px] text-light_primary dark:text-dark_green_key">
+        <div className="text-[11px] text-light-primary dark:text-dark-green-key">
           Join our referral program : share, invite, and be rewarded.
         </div>
       </div>
@@ -272,7 +272,7 @@ function MobileReferralAccordion({ ReferralLink }: { ReferralLink: string }) {
         )}
         onClick={() => setOpen((v) => !v)}
       >
-        <div className="text-left text-[11px] text-light_primary dark:text-dark_green_key">
+        <div className="text-left text-[11px] text-light-primary dark:text-dark-green-key">
           Join our referral program : share, invite, and be rewarded.
         </div>
 

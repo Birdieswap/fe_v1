@@ -71,7 +71,7 @@ export default function MaxSlippagePopover(props: {
         as={motion.div}
         {...defaultTransition}
         className={clsx(
-          "dark:border-1 dark:border-default-900 dark:bg-dark_popup_bg",
+          "dark:border-1 dark:border-default-900 dark:bg-dark-popup-bg",
         )}
       >
         <motion.div
@@ -149,15 +149,15 @@ export default function MaxSlippagePopover(props: {
                     "w-[110px] border-1",
                     "transition-colors",
                     "border-default-500 bg-background",
-                    "dark:border-default-900 dark:bg-dark_swap_bg",
+                    "dark:border-default-900 dark:bg-dark-swap-bg",
                     "data-[hover=true]:border-default-500",
                     "dark:data-[hover=true]:border-default-500",
                     "data-[hover=true]:bg-background",
-                    "dark:data-[hover=true]:bg-dark_swap_bg",
+                    "dark:data-[hover=true]:bg-dark-swap-bg",
                     "data-[focus=true]:bg-background",
-                    "dark:data-[focus=true]:bg-dark_swap_bg",
+                    "dark:data-[focus=true]:bg-dark-swap-bg",
                     "data-[focus-within=true]:bg-background",
-                    "dark:data-[focus-within=true]:bg-dark_swap_bg",
+                    "dark:data-[focus-within=true]:bg-dark-swap-bg",
                     "data-[focus=true]:border-default-500",
                     "data-[focus-within=true]:border-default-500",
                     "dark:data-[focus=true]:border-default-500",

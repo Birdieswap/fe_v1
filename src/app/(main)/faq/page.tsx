@@ -19,7 +19,7 @@ function Title({ text, searchText }: { text: string; searchText: string }) {
   return (
     <span>
       {text.slice(0, index)}
-      <span className="font-semibold text-light_primary dark:text-dark_primary">
+      <span className="font-semibold text-light-primary dark:text-dark-primary">
         {text.slice(index, index + searchText.length)}
       </span>
       {text.slice(index + searchText.length)}
@@ -111,7 +111,7 @@ export default function FaqPage() {
           indicator:
             "text-default-700 rotate-180 data-[open=true]:rotate-0 data-[open=false]:rotate-180",
           content:
-            "bg-default-100 dark:bg-dark_popup_bg text-[15px] font-normal px-6 py-4 text-foreground",
+            "bg-default-100 dark:bg-dark-popup-bg text-[15px] font-normal px-6 py-4 text-foreground",
         }}
         showDivider={false}
         style={{ padding: "0px" }}
