@@ -243,10 +243,10 @@ jobs:
           node-version: 20
           cache: "npm"
 
-      - name: Create summarize-sarif.js
+      - name: Create summarize-sarif.cjs
         run: |
           mkdir -p scripts
-          cat > scripts/summarize-sarif.js <<'EOF'
+          cat > scripts/summarize-sarif.cjs <<'EOF'
           const fs = require('fs');
           const path = require('path');
           const args = require('node:process').argv.slice(2);
@@ -346,7 +346,7 @@ jobs:
       - name: Create appendix HTML generator
         run: |
           mkdir -p scripts
-          cat > scripts/sarif-appendix-html.js <<'EOF'
+          cat > scripts/sarif-appendix-html.cjs <<'EOF'
           const fs = require('fs');
 
           function esc(s){return String(s||'').replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));}
@@ -389,7 +389,7 @@ jobs:
 
       - name: Create summary HTML
         run: |
-          node scripts/summarize-sarif.js \
+          node scripts/summarize-sarif.cjs \
             --in sarif_in \
             --combined combined.sarif \
             --zapBaselineDir zap_baseline \
@@ -397,7 +397,7 @@ jobs:
             --out summary.html
 
       - name: Build appendix HTML from SARIF
-        run: node scripts/sarif-appendix-html.js
+        run: node scripts/sarif-appendix-html.cjs
 
       - name: Build final combined HTML
         run: |
