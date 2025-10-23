@@ -1,4 +1,3 @@
-
 export function buildUrl(
   pathname: string, // "Transactions" | "CurrentUserRewards" | ...
   params?: Record<string, string | number | undefined>
@@ -8,14 +7,25 @@ export function buildUrl(
   const base = `/api/realkimp/${normalized}`;
   const sp = new URLSearchParams();
 
-  const MODE = (process.env.NEXT_PUBLIC_OPERATION_MODE ?? "").trim().toLowerCase();
-  const DEV = MODE ? MODE === "dev" : (process.env.NODE_ENV !== "production");
+  const MODE = (process.env.NEXT_PUBLIC_OPERATION_MODE ?? "")
+    .trim()
+    .toLowerCase();
+  const DEV = MODE ? MODE === "dev" : process.env.NODE_ENV !== "production";
 
-
-  const merged: Record<string, string | number | undefined> = { ...(params ?? {}) };
+  const merged: Record<string, string | number | undefined> = {
+    ...(params ?? {}),
+  };
 
   // 🔸 dev일 때, 위 대상 엔드포인트에 한해서만 chainId=0 덮어쓰기
-  if (DEV && ["Transactions","CurrentUserRewards","SwapRewards","ReferralRewards"].includes(normalized)) {
+  if (
+    DEV &&
+    [
+      "Transactions",
+      "CurrentUserRewards",
+      "SwapRewards",
+      "ReferralRewards",
+    ].includes(normalized)
+  ) {
     merged.chainId = 0;
   }
 
@@ -27,7 +37,8 @@ export function buildUrl(
       const t = val.trim();
       if (!t) return undefined;
       const low = t.toLowerCase();
-      if (low === "undefined" || low === "null" || low === "nan") return undefined;
+      if (low === "undefined" || low === "null" || low === "nan")
+        return undefined;
 
       if (key === "blockHeight" || key === "chainId") {
         const n = Number(t);
