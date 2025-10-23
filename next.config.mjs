@@ -78,6 +78,19 @@ const nextConfig = {
 
     return config;
   },
+  async rewrites() {
+    return [
+      {
+        source: "/api/realkimp/:path*",
+        destination: "https://realkimp.com/birdieswap/:path*",
+      },
+    ];
+  },
+
+  // 이건 비워두세요 (같은 경로에 redirect 있으면 안 됨)
+  async redirects() {
+    return [];
+  },
 
   async headers() {
     return [
