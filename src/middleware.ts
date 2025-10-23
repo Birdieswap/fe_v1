@@ -53,10 +53,12 @@ export function middleware(req: NextRequest) {
   //           prod에서도 unsafe-inline 허용(대신 'self'로 출처 제한)
   //      * nonce를 모든 <style>에 주입할 수 있다면 elem을 'nonce'로 바꿔도 됨
   // ─────────────────────────────────────────────────────────────
-  const styleSrcElem = isDev
-    ? ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ")
-    : ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ");
-  const styleSrcAttr = isDev ? "'unsafe-inline'" : "'self'";
+  const styleSrcElem = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
+  ].join(" ");
+  const styleSrcAttr = "'unsafe-inline'";
 
   const cspParts: string[] = [
     "default-src 'self'",
@@ -72,6 +74,7 @@ export function middleware(req: NextRequest) {
     // 기존 style-src는 제거하고 elem/attr로 분리
     `style-src-elem ${styleSrcElem}`,
     `style-src-attr ${styleSrcAttr}`,
+    `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
 
     // 글꼴/이미지
     "font-src 'self' https://fonts.gstatic.com data:",
