@@ -101,7 +101,10 @@ function isDevOrigin(origin: string | null) {
 
 // 리다이렉트 허용할 안전한 GET 엔드포인트만
 function isSafeRedirectTarget(tail: string) {
-  return /^(currentuserpoints|transactions|apr\/|consent(\/|$))/i.test(tail);
+  // transactions, points 등도 허용
+  return /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(
+    tail
+  );
 }
 
 // ⬇️ context를 any로 받아 런타임 params 사용
