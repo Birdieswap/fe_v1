@@ -25,29 +25,21 @@ export default async function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const isDev = process.env.NODE_ENV !== "production";
   const reqHeaders = await headers();
-  const nonce = isDev
-    ? undefined
-    : (reqHeaders.get("x-csp-nonce") ?? undefined);
-
-  const APP_ENV =
-    process.env.NEXT_PUBLIC_APP_ENV ??
-    (process.env.NODE_ENV === "production" ? "production" : "development");
+  const headerNonce = reqHeaders.get("x-csp-nonce") ?? undefined;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={clsx(inter.className)}>
         <script
-          {...(!isDev ? { nonce } : {})}
+          {...(!isDev ? { nonce: headerNonce ?? undefined } : {})}
           dangerouslySetInnerHTML={{
             __html: `
-              // Lit dev-mode 경고 비활성화
               window.litDisableDevMode = true;
-              // (옵션) 번들 경고도 숨김
               window.litDisableBundleWarning = true;
             `,
           }}
         />
-        <Providers nonce={nonce}>
+        <Providers nonce={headerNonce}>
           <div className="relative flex min-h-screen flex-col bg-background antialiased">
             <TransactionContextProvider>{children}</TransactionContextProvider>
           </div>
