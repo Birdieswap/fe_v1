@@ -19,7 +19,6 @@ import { NetworkInfo } from "@/types/NetworkInfo";
 
 import { WalletIcon } from "../selectNetworkAndWallet/SelectWalletMenu";
 
-import WalletRewards from "./walletPage/WalletRewards";
 import WalletTransactions from "./walletPage/WalletTransactions";
 import WalletTokens from "./walletPage/WalletTokens";
 import { useReferral } from "@/app/ReferralContextProvider";
