@@ -133,7 +133,7 @@ export default function RiskConsentModalHost() {
   const safeResolveAndReset = (ok: boolean, fromEvent = false) => {
     dbg("riskHost:safeResolve", { ok, fromEvent });
 
-    // ⛔️ 내부(사용자 취소)에서만 close 이벤트를 1회 발행
+    //  내부(사용자 취소)에서만 close 이벤트를 1회 발행
     if (!ok && !fromEvent) {
       try {
         window.dispatchEvent(new Event(CLOSE_RISK_CONSENT_EVENT));
@@ -256,11 +256,11 @@ export default function RiskConsentModalHost() {
             <StaticConsentContent />
 
             {/* 에러 메시지 표시 */}
-            {errMsg && (
+            {/* {errMsg && (
               <div className="mt-3 rounded-md border border-danger-300 bg-danger-50 px-3 py-2 text-danger-700 text-sm">
                 {errMsg}
               </div>
-            )}
+            )} */}
 
             <div className="flex gap-3 justify-end pt-2">
               <ThemedButton

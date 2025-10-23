@@ -16,6 +16,8 @@ import type {
 } from "@/types/consent";
 import { openRiskConsentModal } from "@/components/modals/RiskConsentModalHost";
 
+const DEBUG = process.env.NEXT_PUBLIC_DEBUG === "1";
+
 export type VerifyConsentMode = "interactive" | "silent";
 
 export type VerifyConsentResult =
@@ -102,30 +104,27 @@ export async function verifyConsentFlow(
     // 1) 서버 동의 상태 조회 (silent/interactive 공통)
     let resp: CheckResponse | null = null;
     try {
+      if (DEBUG) console.debug("[consent] apiCheck start", { address });
       resp = await apiCheck(address);
     } catch (e) {
-      // prod에서 check가 막혀도 interactive로 진행할 수 있게 함
-      console.error(
-        "[consent] apiCheck error (will proceed to interactive)",
-        e
-      );
+      if (DEBUG)
+        console.error("[consent] apiCheck error (proceed interactively)", e);
     }
     if (aborted()) return "cancelled";
 
     if (resp?.response && resp?.result && resp?.userConsent) {
-      console.debug("[consent] already-consented (server)");
+      if (DEBUG) console.debug("[consent] already-consented (server)");
       return "already-consented";
     }
 
     // silent 모드면 모달 없이 종료
     if (mode === "silent") {
-      console.debug("[consent] silent mode → no modal, cancelling");
+      if (DEBUG) console.debug("[consent] silent mode → cancel");
       return "cancelled";
     }
-
     if (aborted()) return "cancelled";
 
-    // 2) 모달 열고 onConfirm에서 initiate → sign → verify 수행
+    // 2) 모달 열고 initiate → sign → verify
     await new Promise((r) => setTimeout(r, 10));
     await new Promise((r) =>
       requestAnimationFrame(() => requestAnimationFrame(r))
@@ -136,17 +135,18 @@ export async function verifyConsentFlow(
         if (aborted()) throw new Error("aborted");
 
         // (a) initiate
-        console.debug("[consent] initiate...");
+        if (DEBUG) console.debug("[consent] initiate...");
         const init = await apiInitiate({
           address,
           chainId,
           type: "initialConsent",
         });
         if (!init?.response || !init?.result) {
-          console.error("[consent] initiate_failed payload", init);
+          if (DEBUG) console.error("[consent] initiate_failed payload", init);
           throw new Error("initiate_failed");
         }
-        console.debug("[consent] initiate ok", { digest: init.digest });
+        if (DEBUG)
+          console.debug("[consent] initiate ok", { digest: init.digest });
         if (aborted()) throw new Error("aborted");
 
         // (b) payload 정규화
@@ -164,20 +164,22 @@ export async function verifyConsentFlow(
         if (aborted()) throw new Error("aborted");
 
         // (c) 서명
-        console.debug("[consent] signing eip712", {
-          address,
-          chainId,
-          domain,
-          primaryType: "Consent",
-        });
+        if (DEBUG)
+          console.debug("[consent] signing eip712", {
+            address,
+            chainId,
+            domain,
+            primaryType: "Consent",
+          });
         const signature = await signTypedData(config, {
-          account: address as `0x${string}`, // ✅ 명시
+          account: address as `0x${string}`, // 명시
           domain: domain as TypedDataDomain,
           types: types as unknown as TypedData,
           primaryType: "Consent",
           message: messageNorm as unknown as Record<string, unknown>,
         });
-        console.debug("[consent] signed", { len: signature?.length });
+        if (DEBUG)
+          console.debug("[consent] signed", { len: signature?.length });
 
         // (d) 로컬 검증
         const ok = await verifyTypedData({
@@ -189,10 +191,9 @@ export async function verifyConsentFlow(
           signature,
         });
         if (!ok) {
-          console.error("[consent] client_verify_failed");
+          if (DEBUG) console.error("[consent] client_verify_failed");
           throw new Error("client_verify_failed");
         }
-
         if (aborted()) throw new Error("aborted");
 
         // (e) digest 비교(선택)
@@ -202,17 +203,16 @@ export async function verifyConsentFlow(
           primaryType: "Consent",
           message: messageNorm as unknown as Record<string, unknown>,
         });
-        if (recomputed !== init.digest) {
+        if (recomputed !== init.digest && DEBUG) {
           console.warn("[consent] digest mismatch", {
             recomputed,
             serverDigest: init.digest,
           });
         }
-
         if (aborted()) throw new Error("aborted");
 
-        // (f) 서버 verify (nonce는 원본 타입 echo)
-        console.debug("[consent] calling apiVerify");
+        // (f) 서버 verify
+        if (DEBUG) console.debug("[consent] calling apiVerify");
         const body: VerifyRequest = {
           address,
           chainId,
@@ -224,26 +224,24 @@ export async function verifyConsentFlow(
         };
         const v = await apiVerify(body);
         if (!v?.response || !v?.result) {
-          console.error("[consent] server_verify_failed", v);
+          if (DEBUG) console.error("[consent] server_verify_failed", v);
           throw new Error(v?.message || "server_verify_failed");
         }
-        console.debug("[consent] server_verify_ok");
+        if (DEBUG) console.debug("[consent] server_verify_ok");
 
         if (aborted()) throw new Error("aborted");
 
-        // (g) 로컬 proof 저장 (선택)
+        // (g) 로컬 proof 저장
         const policyHash = await computePolicyHash(
           (messageNorm as any).statement,
           (messageNorm as any).version
         );
-
         const normalizedPayload: NormalizedEIP712Payload = {
           types,
           domain,
           primaryType: "Consent",
           message: messageNorm,
         };
-
         await saveLocalProof({
           address: address.toLowerCase() as `0x${string}`,
           chainId,
@@ -258,18 +256,16 @@ export async function verifyConsentFlow(
       },
     });
 
-    // 모달 닫힘/거부
     if (!confirmed) {
-      console.debug("[consent] modal closed/cancelled");
+      if (DEBUG) console.debug("[consent] modal closed/cancelled");
       return "cancelled";
     }
 
-    // 여기까지 왔으면 이번에 서명 완료
-    console.debug("[consent] verified-now");
+    if (DEBUG) console.debug("[consent] verified-now");
     return "verified-now";
   } catch (err) {
     if ((err as Error)?.message === "aborted") return "cancelled";
-    console.error("[verifyConsentFlow] failed", err);
+    if (DEBUG) console.error("[verifyConsentFlow] failed", err);
     return "failed";
   }
 }

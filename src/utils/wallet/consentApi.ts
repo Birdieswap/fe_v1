@@ -5,19 +5,20 @@ import type {
   VerifyResponse,
 } from "@/types/consent";
 
-const BASE_GET_DEFAULT = "/api/realkimp/Consent";
+const BASE_GET_DEFAULT = "https://realkimp.com/birdieswap/Consent";
 // ✅ prod에서 env로 업스트림 고정하지 말고, 우선 프록시를 쓰자
 const BASE_GET = (
   process.env.NEXT_PUBLIC_CONSENT_GET_BASE ?? BASE_GET_DEFAULT
 ).replace(/\/$/, "");
 
-console.log("[consentApi] BASE_GET =", BASE_GET);
+const DEBUG = process.env.NEXT_PUBLIC_DEBUG === "1";
+
 // POST는 업스트림 직접 호출
 const BASE_POST = "https://realkimp.com/birdieswap/Consent";
 
 function absGet(path: string) {
-  if (path.startsWith("http")) return path;
-  return BASE_GET + path; // path는 /Check, /Initiate 등 슬래시 포함 기준
+  // path는 '/Check/', '/Initiate/' 형태로 전달됨
+  return `${BASE_GET}${path}`;
 }
 
 async function parseJsonSafe<T>(res: Response): Promise<T> {
@@ -39,24 +40,28 @@ export async function apiCheck(address: string): Promise<CheckResponse> {
 
   const res = await fetch(url.toString(), {
     method: "GET",
-    credentials: "include", // 세션/쿠키 필요한 경우
-    cache: "no-store", // Vercel/브라우저 캐시 회피
+    credentials: "include", // cf_clearance 등
+    cache: "no-store", // 캐시 회피
+    mode: "cors",
     headers: {
-      Accept: "application/json",
+      // 업스트림이 text/javascript로 주더라도 JSON 본문은 파싱 가능
+      Accept: "application/json, text/javascript;q=0.9, */*;q=0.8",
     },
   }).catch((e) => {
-    console.error("[consentApi] check network error", e);
+    if (DEBUG) console.error("[consentApi] check network error", e);
     throw e;
   });
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(
-      "[consentApi] check failed",
-      res.status,
-      res.statusText,
-      body.slice(0, 300)
-    );
+    if (DEBUG) {
+      console.error(
+        "[consentApi] check failed",
+        res.status,
+        res.statusText,
+        body.slice(0, 300)
+      );
+    }
     throw new Error(`CHECK_${res.status}`);
   }
   return parseJsonSafe<CheckResponse>(res);
@@ -76,33 +81,38 @@ export async function apiInitiate(params: {
   url.searchParams.set("type", params.type ?? "initialConsent");
   url.searchParams.set("_ts", Date.now().toString()); // 캐시 버스터
 
+  if (DEBUG) console.debug("[consentApi] GET", url.toString());
+
   const res = await fetch(url.toString(), {
     method: "GET",
     credentials: "include",
     cache: "no-store",
+    mode: "cors",
     headers: {
-      Accept: "application/json",
+      Accept: "application/json, text/javascript;q=0.9, */*;q=0.8",
     },
   }).catch((e) => {
-    console.error("[consentApi] initiate network error", e);
+    if (DEBUG) console.error("[consentApi] initiate network error", e);
     throw e;
   });
 
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(
-      "[consentApi] initiate failed",
-      res.status,
-      res.statusText,
-      body.slice(0, 300)
-    );
+    if (DEBUG) {
+      console.error(
+        "[consentApi] initiate failed",
+        res.status,
+        res.statusText,
+        body.slice(0, 300)
+      );
+    }
     throw new Error(`INIT_${res.status}`);
   }
   return parseJsonSafe<InitiateResponseWire>(res);
 }
 
 export async function apiVerify(body: VerifyRequest): Promise<VerifyResponse> {
-  console.log("[apiVerify] raw body object:", body);
+  if (DEBUG) console.debug("[apiVerify] raw body object:", body);
 
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(body)) {
@@ -110,32 +120,34 @@ export async function apiVerify(body: VerifyRequest): Promise<VerifyResponse> {
     else params.append(k, String(v));
   }
   const encoded = params.toString();
-  console.log("[apiVerify] encoded body:", encoded.slice(0, 500));
+  if (DEBUG) console.debug("[apiVerify] encoded body:", encoded.slice(0, 500));
 
   const url = `${BASE_POST}/Verify/index.php`;
   const res = await fetch(url, {
     method: "POST",
     credentials: "include", // cf_clearance 등 쿠키 필요
-    cache: "no-store", // 캐시 회피
+    cache: "no-store",
     mode: "cors",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
-      Accept: "application/json",
+      Accept: "application/json, text/javascript;q=0.9, */*;q=0.8",
     },
     body: encoded,
   }).catch((e) => {
-    console.error("[consentApi] verify network error", e);
+    if (DEBUG) console.error("[consentApi] verify network error", e);
     throw e;
   });
 
   if (!res.ok) {
     const text = await res.text().catch(() => "");
-    console.error(
-      "[consentApi] verify failed",
-      res.status,
-      res.statusText,
-      text.slice(0, 500)
-    );
+    if (DEBUG) {
+      console.error(
+        "[consentApi] verify failed",
+        res.status,
+        res.statusText,
+        text.slice(0, 500)
+      );
+    }
     throw new Error(`VERIFY_${res.status}: ${text || "no body"}`);
   }
   return parseJsonSafe<VerifyResponse>(res);
