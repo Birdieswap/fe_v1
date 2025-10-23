@@ -55,7 +55,7 @@ export function middleware(req: NextRequest) {
   // ─────────────────────────────────────────────────────────────
   const styleSrcElem = isDev
     ? ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ")
-    : ["'self'", `'nonce-${nonce}'`, "https://fonts.googleapis.com"].join(" ");
+    : ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"].join(" ");
   const styleSrcAttr = isDev ? "'unsafe-inline'" : "'self'";
 
   const cspParts: string[] = [
