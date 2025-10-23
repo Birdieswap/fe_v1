@@ -9,18 +9,43 @@ export const runtime = "nodejs";
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
+// ─────────────────────────────────────────────────────────────
+// Cloudflare가 좋아하는(?) 브라우저형 헤더 세트
+// ─────────────────────────────────────────────────────────────
+function browserLikeHeaders(baseUA?: string) {
+  const ua =
+    baseUA ||
+    // 크롬계 기본 UA (정적 문자열이라도 OK)
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+
+  return {
+    "user-agent": ua,
+    accept: "application/json, text/plain, */*",
+    "accept-language": "en-US,en;q=0.9,ko;q=0.8",
+    "accept-encoding": "gzip, deflate, br",
+    // fetch metadata
+    "sec-fetch-site": "same-origin",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+    // client hints (있으면 가산점, 없어도 무방)
+    "sec-ch-ua":
+      '"Chromium";v="124", "Google Chrome";v="124", "Not:A-Brand";v="99"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"macOS"',
+    // 캐시/프록시 관련
+    pragma: "no-cache",
+    "cache-control": "no-cache",
+  };
+}
+
 /** 업스트림으로 안전하게 전달할 헤더 구성 (Consent 계열은 쿠키/오리진 보존) */
 function safeUpstreamHeaders(req: Request, tail: string) {
   const h = new Headers();
 
-  // 공통
-  h.set("accept", "application/json, text/plain, */*");
-  h.set("user-agent", req.headers.get("user-agent") ?? "BirdieswapProxy/1.0");
-  h.set("accept-encoding", "identity");
-  const acceptLang = req.headers.get("accept-language");
-  if (acceptLang) h.set("accept-language", acceptLang);
+  const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
+  Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
-  // 원격 IP/프로토콜 전달
+  // 원 IP 전달(가능하면)
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
@@ -31,23 +56,42 @@ function safeUpstreamHeaders(req: Request, tail: string) {
 
   // 기본적으로 민감 헤더 제거
   h.delete("host");
-  h.delete("origin");
-  h.delete("referer");
-  h.delete("cookie");
   h.delete("authorization");
 
-  // ✅ Consent/* 경로는 Cloudflare 통과에 쿠키/오리진 필요할 수 있어 보존
-  const isConsentPath = /^consent(\/|$)/i.test(tail);
-  if (isConsentPath) {
-    const origin = req.headers.get("origin");
-    const referer = req.headers.get("referer");
-    const cookie = req.headers.get("cookie"); // cf_clearance 등
-    if (origin) h.set("origin", origin);
-    if (referer) h.set("referer", referer);
+  // ✅ Cloudflare가 Origin/Referer 없다고 의심할 수 있음 → 주요 엔드포인트는 보존/주입
+  const needsHumanLike =
+    /^(currentuserpoints|consent(\/|$)|apr\/|points?)/i.test(tail);
+
+  const origin = req.headers.get("origin") || "https://birdieswap.com";
+  const referer = req.headers.get("referer") || "https://birdieswap.com/";
+
+  if (needsHumanLike) {
+    h.set("origin", origin);
+    h.set("referer", referer);
+
+    // 쿠키(cf_clearance 등) 있으면 전달
+    const cookie = req.headers.get("cookie");
     if (cookie) h.set("cookie", cookie);
+  } else {
+    // 그 외 경로는 과도한 노출 방지
+    h.delete("cookie");
   }
 
   return h;
+}
+
+// Cloudflare 챌린지/차단 HTML인지 감지 (타이틀/문구 기반)
+function looksLikeCFChallenge(status: number, text: string) {
+  if (status === 403 || status === 503) {
+    const t = text.toLowerCase();
+    return (
+      t.includes("<title>just a moment") ||
+      t.includes("cf-chl") ||
+      t.includes("enable javascript and cookies to continue") ||
+      t.includes("cloudflare")
+    );
+  }
+  return false;
 }
 
 // ⬇️ context를 any로 받아 타입 에러 회피 + 런타임 params 사용
@@ -94,7 +138,6 @@ export async function GET(req: Request, context?: any) {
   );
 
   const tried: string[] = [];
-  let lastResp: Response | null = null;
 
   for (const baseUrl of candidates) {
     const u = new URL(baseUrl);
@@ -106,17 +149,31 @@ export async function GET(req: Request, context?: any) {
         method: "GET",
         headers: safeUpstreamHeaders(req, tail), // ✅ tail 전달
         cache: "no-store",
-        redirect: "follow",
+        redirect: "manual",
         signal,
       })
     ).catch((e) => new Response(String(e), { status: 502 }));
 
-    const ct = r.headers.get("content-type") || "";
-    const looksJsonByCT =
-      ct.includes("application/json") || u.pathname.endsWith(".json");
+    if (r.status >= 300 && r.status < 400) {
+      const location = r.headers.get("location") || "";
+      return NextResponse.json(
+        {
+          ok: false,
+          status: r.status,
+          tried,
+          redirectTo: location.slice(0, 500),
+        },
+        { status: 200 }
+      );
+    }
 
-    // 1) 스트림 패스스루
-    if (r.ok && r.body && looksJsonByCT) {
+    const ct = r.headers.get("content-type") || "";
+
+    // JSON 스트림 패스스루
+    if (
+      r.ok &&
+      (ct.includes("application/json") || u.pathname.endsWith(".json"))
+    ) {
       const out = pickProxyResponseHeaders(r);
       out.delete("content-encoding");
       out.delete("transfer-encoding");
@@ -125,61 +182,43 @@ export async function GET(req: Request, context?: any) {
       out.set("content-type", "application/json; charset=utf-8");
       out.set("x-upstream-url", u.toString());
       out.set("x-upstream-tried", tried.join(" | "));
-
-      // ✅ Set-Cookie 전달 (환경에 따라 getSetCookie가 없을 수 있어 fallback)
-      const getSetCookie = (r.headers as any).getSetCookie?.bind(r.headers) as
-        | (() => string[])
-        | undefined;
-      const setCookies: string[] = getSetCookie ? getSetCookie() : [];
-      for (const sc of setCookies) out.append("set-cookie", sc);
-
       return new NextResponse(r.body, { status: 200, headers: out });
     }
 
-    // 2) 본문 스니핑
-    try {
-      const text = await r.clone().text();
-      const looksJsonByBody = /^[\s\r\n]*[\{\[]/.test(text);
-      if (r.ok && looksJsonByBody) {
-        const out = pickProxyResponseHeaders(r);
-        out.delete("content-encoding");
-        out.delete("transfer-encoding");
-        out.delete("content-length");
-        out.set("cache-control", "no-store, max-age=0");
-        out.set("content-type", "application/json; charset=utf-8");
-        out.set("x-upstream-url", u.toString());
-        out.set("x-upstream-tried", tried.join(" | "));
-
-        const getSetCookie = (r.headers as any).getSetCookie?.bind(
-          r.headers
-        ) as (() => string[]) | undefined;
-        const setCookies: string[] = getSetCookie ? getSetCookie() : [];
-        for (const sc of setCookies) out.append("set-cookie", sc);
-
-        return new NextResponse(text, { status: 200, headers: out });
-      }
-    } catch {
-      // ignore and try next
+    // 본문 스니핑
+    const text = await r
+      .clone()
+      .text()
+      .catch(() => "");
+    if (r.ok && /^[\s\r\n]*[\{\[]/.test(text)) {
+      const out = pickProxyResponseHeaders(r);
+      out.delete("content-encoding");
+      out.delete("transfer-encoding");
+      out.delete("content-length");
+      out.set("cache-control", "no-store, max-age=0");
+      out.set("content-type", "application/json; charset=utf-8");
+      out.set("x-upstream-url", u.toString());
+      out.set("x-upstream-tried", tried.join(" | "));
+      return new NextResponse(text, { status: 200, headers: out });
     }
 
-    lastResp = r;
-  }
-
-  if (lastResp) {
-    const text = await lastResp.text().catch(() => "");
-    return NextResponse.json(
-      {
-        ok: false,
-        status: lastResp.status,
-        tried,
-        bodyPreview: text.slice(0, 2000),
-      },
-      { status: 200 }
-    );
+    // CF 챌린지 페이지 탐지 → 즉시 설명과 함께 반환
+    if (looksLikeCFChallenge(r.status, text)) {
+      return NextResponse.json(
+        {
+          ok: false,
+          status: r.status,
+          tried,
+          bodyPreview: text.slice(0, 1000),
+          reason: "cloudflare_challenge",
+        },
+        { status: 200 }
+      );
+    }
   }
 
   return NextResponse.json(
-    { ok: false, error: "upstream error", tried },
+    { ok: false, error: "upstream error", tried: candidates },
     { status: 200 }
   );
 }
