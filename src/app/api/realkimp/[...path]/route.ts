@@ -15,74 +15,58 @@ export const dynamic = "force-dynamic";
 function browserLikeHeaders(baseUA?: string) {
   const ua =
     baseUA ||
-    // 크롬계 기본 UA (정적 문자열이라도 OK)
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 
+  // 서버-투-서버에 최소 헤더만: accept / accept-language / accept-encoding / ua
   return {
     "user-agent": ua,
     accept: "application/json, text/plain, */*",
     "accept-language": "en-US,en;q=0.9,ko;q=0.8",
     "accept-encoding": "gzip, deflate, br",
-    // fetch metadata
-    "sec-fetch-site": "cross-site",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-dest": "empty",
-    // client hints (있으면 가산점, 없어도 무방)
-    "sec-ch-ua":
-      '"Chromium";v="124", "Google Chrome";v="124", "Not:A-Brand";v="99"',
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": '"macOS"',
-    // 캐시/프록시 관련
     pragma: "no-cache",
     "cache-control": "no-cache",
   };
 }
 
-/** 업스트림으로 안전하게 전달할 헤더 구성 (Consent 계열은 쿠키/오리진 보존) */
+/** 업스트림으로 전달할 헤더 (브라우저 흉내는 최소한만, dev/prod Origin 그대로) */
 function safeUpstreamHeaders(req: Request, tail: string) {
   const h = new Headers();
 
+  // 기본 브라우저형(최소)
   const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
   Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
-  // 업스트림이 리다이렉트 URL을 만들 때 https로 인지하게 강제
-  h.set("host", "realkimp.com");
-  h.set("x-forwarded-host", "realkimp.com");
-  h.set("x-forwarded-proto", "https");
+  // 요청 기준으로 origin/referrer 계산
+  const reqOrigin = req.headers.get("origin");
+  const siteOrigin = reqOrigin || new URL(req.url).origin; // dev/prod 모두 해당 도메인
+  const reqReferer = req.headers.get("referer") || `${siteOrigin}/`;
 
-  // 원 IP 전달(가능하면)
+  const needsHumanLike =
+    /^(currentuserpoints|consent(\/|$)|apr\/|points?)/i.test(tail);
+
+  if (needsHumanLike) {
+    h.set("origin", siteOrigin);
+    h.set("referer", reqReferer);
+    const cookie = req.headers.get("cookie"); // cf_clearance 등
+    if (cookie) h.set("cookie", cookie);
+  } else {
+    h.delete("cookie");
+  }
+
+  // 원 IP 전달 (가능하면)
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
     "";
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
 
-  const proto = req.headers.get("x-forwarded-proto");
-  if (proto) h.set("x-forwarded-proto", proto);
+  // 업스트림이 http로 오판하지 않도록 https 고정
+  h.set("x-forwarded-proto", "https");
+  h.set("x-forwarded-host", "realkimp.com");
 
-  // 기본적으로 민감 헤더 제거
-  h.delete("host");
+  // ⚠️ host/authorization 건드리지 않음 (프록시/플랫폼에 맡김)
   h.delete("authorization");
 
-  // ✅ Cloudflare가 Origin/Referer 없다고 의심할 수 있음 → 주요 엔드포인트는 보존/주입
-  const needsHumanLike =
-    /^(currentuserpoints|consent(\/|$)|apr\/|points?)/i.test(tail);
-
-  const origin = req.headers.get("origin") || "https://birdieswap.com";
-  const referer = req.headers.get("referer") || "https://birdieswap.com/";
-
-  if (needsHumanLike) {
-    h.set("origin", origin);
-    h.set("referer", referer);
-
-    // 쿠키(cf_clearance 등) 있으면 전달
-    const cookie = req.headers.get("cookie");
-    if (cookie) h.set("cookie", cookie);
-  } else {
-    // 그 외 경로는 과도한 노출 방지
-    h.delete("cookie");
-  }
-  h.delete("authorization");
   return h;
 }
 
