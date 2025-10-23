@@ -45,12 +45,18 @@ function safeUpstreamHeaders(req: Request, tail: string) {
   const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
   Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
+  // 업스트림이 리다이렉트 URL을 만들 때 https로 인지하게 강제
+  h.set("host", "realkimp.com");
+  h.set("x-forwarded-host", "realkimp.com");
+  h.set("x-forwarded-proto", "https");
+
   // 원 IP 전달(가능하면)
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
     "";
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
+
   const proto = req.headers.get("x-forwarded-proto");
   if (proto) h.set("x-forwarded-proto", proto);
 
@@ -76,7 +82,7 @@ function safeUpstreamHeaders(req: Request, tail: string) {
     // 그 외 경로는 과도한 노출 방지
     h.delete("cookie");
   }
-
+  h.delete("authorization");
   return h;
 }
 
@@ -129,6 +135,7 @@ export async function GET(req: Request, context?: any) {
     new Set(
       [
         `${UPSTREAM}/${tail}`,
+        `${UPSTREAM}/${tail}/`,
         !tail.endsWith(".json") ? `${UPSTREAM}/${tail}.json` : null,
         id ? `${UPSTREAM}/${id}.json` : null,
         id ? `${UPSTREAM}/${id}` : null,
@@ -144,15 +151,28 @@ export async function GET(req: Request, context?: any) {
     u.search = url.search; // 쿼리 그대로 유지
     tried.push(u.toString());
 
-    const r = await withTimeout(12_000, (signal) =>
+    let r = await withTimeout(12_000, (signal) =>
       fetch(u, {
         method: "GET",
         headers: safeUpstreamHeaders(req, tail), // ✅ tail 전달
         cache: "no-store",
-        redirect: "manual",
+        redirect: "follow",
         signal,
       })
     ).catch((e) => new Response(String(e), { status: 502 }));
+
+    try {
+      const finalUrl = (r as any).url as string | undefined;
+      if (finalUrl && finalUrl.startsWith("http://realkimp.com/")) {
+        const httpsUrl = finalUrl.replace(/^http:\/\//, "https://");
+        r = await fetch(httpsUrl, {
+          method: "GET",
+          headers: safeUpstreamHeaders(req, tail),
+          cache: "no-store",
+          redirect: "follow",
+        });
+      }
+    } catch {}
 
     if (r.status >= 300 && r.status < 400) {
       const location = r.headers.get("location") || "";
