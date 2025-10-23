@@ -2,9 +2,9 @@ name: Security Suite (ZAP + CodeQL + Semgrep + Trivy + OSV -> 1 HTML/PDF)
 
 on:
   push:
-    branches: [main, master, dev_fe]
+    branches: [main, master] #dev_fe]
   pull_request:
-    branches: [main, master, dev_fe]
+    branches: [main, master] #dev_fe]
   schedule:
     - cron: "0 18 * * 0" # 매주 월 03:00 KST 근처
   workflow_dispatch:
