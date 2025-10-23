@@ -225,9 +225,6 @@ export function useAccountWalletData(
   return useMemo(
     () => ({
       transactions: accTxs, // 누적된 결과 반환
-      currentUserReward: undefined,
-      swapRewards: undefined,
-      referralRewards: undefined,
       earliestBlock,
 
       isLoading,
