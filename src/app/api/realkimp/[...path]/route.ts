@@ -24,7 +24,7 @@ function browserLikeHeaders(baseUA?: string) {
     "accept-language": "en-US,en;q=0.9,ko;q=0.8",
     "accept-encoding": "gzip, deflate, br",
     // fetch metadata
-    "sec-fetch-site": "same-origin",
+    "sec-fetch-site": "cross-site",
     "sec-fetch-mode": "cors",
     "sec-fetch-dest": "empty",
     // client hints (있으면 가산점, 없어도 무방)
@@ -131,16 +131,24 @@ export async function GET(req: Request, context?: any) {
   const m = tail.match(/^(\d+)(?:\.json)?$/);
   const id = m ? m[1] : null;
 
+  const ORIGINS = [
+    "https://realkimp.com/birdieswap",
+    "https://realkimp.io/birdieswap",
+  ];
+
   const candidates = Array.from(
     new Set(
-      [
-        `${UPSTREAM}/${tail}`,
-        `${UPSTREAM}/${tail}/`,
-        !tail.endsWith(".json") ? `${UPSTREAM}/${tail}.json` : null,
-        id ? `${UPSTREAM}/${id}.json` : null,
-        id ? `${UPSTREAM}/${id}` : null,
-        id ? `${UPSTREAM}/chains/${id}.json` : null,
-      ].filter(Boolean) as string[]
+      ORIGINS.flatMap(
+        (base) =>
+          [
+            `${base}/${tail}`,
+            `${base}/${tail}/`,
+            !tail.endsWith(".json") ? `${base}/${tail}.json` : null,
+            id ? `${base}/${id}.json` : null,
+            id ? `${base}/${id}` : null,
+            id ? `${base}/chains/${id}.json` : null,
+          ].filter(Boolean) as string[]
+      )
     )
   );
 
