@@ -10,7 +10,7 @@ export function middleware(req: NextRequest) {
     // 자기 자신
     "'self'",
     // dev 전용
-    "http://localhost:3000",
+    ...(isDev ? ["http://localhost:3000"] : []),
     // RPC & L2
     "https://*.infura.io",
     "https://*.g.alchemy.com",
@@ -62,6 +62,7 @@ export function middleware(req: NextRequest) {
     "default-src 'self'",
     "base-uri 'self'",
     "block-all-mixed-content",
+    "upgrade-insecure-requests",
     "form-action 'self'",
     "frame-ancestors 'self'",
     "object-src 'none'",
