@@ -1,3 +1,4 @@
+// src/app/api/realkimp/[...path]/route.ts
 import { NextResponse } from "next/server";
 import { pickProxyResponseHeaders } from "@/utils/proxy";
 import { withTimeout } from "@/utils/timeout";
@@ -8,15 +9,12 @@ export const runtime = "nodejs";
 export const revalidate = 0;
 export const dynamic = "force-dynamic";
 
-// 업스트림 후보(우선순위대로)
 const ORIGINS = [
   "https://realkimp.com/birdieswap",
   "https://realkimp.io/birdieswap",
 ];
 
-// ─────────────────────────────────────────────────────────────
-// 최소 헤더 세트 (서버-투-서버)
-// ─────────────────────────────────────────────────────────────
+// 최소 서버-투-서버 헤더
 function browserLikeHeaders(baseUA?: string) {
   const ua =
     baseUA ||
@@ -31,25 +29,23 @@ function browserLikeHeaders(baseUA?: string) {
   };
 }
 
-/** 업스트림으로 전달할 헤더 (브라우저 흉내 최소, dev/prod Origin/Referer 유지) */
+/** 업스트림으로 전달할 헤더 (브라우저 흉내 최소, origin/referrer는 가능한 선에서 유지) */
 function safeUpstreamHeaders(req: Request, tail: string) {
   const h = new Headers();
-
   const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
   Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
-  // 요청 기준으로 origin/referrer 계산 (SSR엔 거의 없음)
+  // 요청 기준으로 origin/referrer 계산 (SSR이면 거의 없음)
   const reqOrigin = req.headers.get("origin");
-  const siteOrigin = reqOrigin || new URL(req.url).origin;
+  const siteOrigin = reqOrigin || inferOriginFromReq(req); // ← 추정 origin 사용
   const reqReferer = req.headers.get("referer") || `${siteOrigin}/`;
 
-  // 사람 사용 흔적이 필요한 엔드포인트만 세팅
   const needsHumanLike =
     /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(tail);
 
   if (needsHumanLike) {
-    h.set("origin", siteOrigin);
-    h.set("referer", reqReferer);
+    if (siteOrigin) h.set("origin", siteOrigin);
+    if (reqReferer) h.set("referer", reqReferer);
     const cookie = req.headers.get("cookie"); // cf_clearance 등
     if (cookie) h.set("cookie", cookie);
   } else {
@@ -63,14 +59,48 @@ function safeUpstreamHeaders(req: Request, tail: string) {
     "";
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
 
-  // 업스트림이 http로 오판하지 않도록
+  // 업스트림이 https로 인지하도록
   h.set("x-forwarded-proto", "https");
   h.set("x-forwarded-host", "realkimp.com");
 
-  // 프록시/플랫폼에 맡김
   h.delete("authorization");
-
   return h;
+}
+
+// ── dev origin 판별 (Origin 헤더가 없어도 host로 추정) ─────────────
+function inferOriginFromReq(req: Request): string {
+  // 우선순위: Origin → Referer → X-Forwarded-Host/Proto → Host
+  const o = req.headers.get("origin");
+  if (o) return o;
+  const ref = req.headers.get("referer");
+  if (ref) {
+    try {
+      return new URL(ref).origin;
+    } catch {}
+  }
+  const proto = (req.headers.get("x-forwarded-proto") || "https").replace(
+    /:$/,
+    ""
+  );
+  const xfHost = req.headers.get("x-forwarded-host");
+  const host = xfHost || req.headers.get("host") || "";
+  if (host) return `${proto}://${host}`;
+  // 마지막 fallback (로컬)
+  return "http://localhost:3000";
+}
+
+function isDevOrigin(originLike: string | null) {
+  if (!originLike) return false;
+  try {
+    const h = new URL(originLike).hostname.toLowerCase();
+    // birdieswap-dev.vercel.app 및 프리뷰 서브도메인 대응
+    return (
+      h === "birdieswap-dev.vercel.app" ||
+      h.endsWith(".birdieswap-dev.vercel.app")
+    );
+  } catch {
+    return false;
+  }
 }
 
 // Cloudflare 챌린지/차단 HTML 탐지
@@ -87,21 +117,9 @@ function looksLikeCFChallenge(status: number, text: string) {
   return false;
 }
 
-// dev 도메인(origin)인지
-function isDevOrigin(origin: string | null) {
-  if (!origin) return false;
-  try {
-    const u = new URL(origin);
-    // birdieswap-dev.vercel.app 및 프리뷰 서브도메인 포함
-    return /(^|\.)birdieswap-dev\.vercel\.app$/i.test(u.hostname);
-  } catch {
-    return false;
-  }
-}
-
-// 리다이렉트 허용할 안전한 GET 엔드포인트만
+// 리다이렉트 허용할 안전한 GET 엔드포인트
 function isSafeRedirectTarget(tail: string) {
-  // transactions, points 등도 허용
+  // ⚠️ 꼭 transactions 포함!
   return /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(
     tail
   );
@@ -158,7 +176,7 @@ export async function GET(req: Request, context?: any) {
 
   for (const baseUrl of candidates) {
     const u = new URL(baseUrl);
-    u.search = url.search; // 쿼리 그대로 유지
+    u.search = url.search; // 쿼리 유지
     tried.push(u.toString());
 
     let r = await withTimeout(12_000, (signal) =>
@@ -185,7 +203,7 @@ export async function GET(req: Request, context?: any) {
       }
     } catch {}
 
-    // 3xx 리다이렉트는 디버그 용으로 그대로 반환
+    // 3xx → 디버그 정보로 반환
     if (r.status >= 300 && r.status < 400) {
       const location = r.headers.get("location") || "";
       return NextResponse.json(
@@ -217,7 +235,7 @@ export async function GET(req: Request, context?: any) {
       return new NextResponse(r.body, { status: 200, headers: out });
     }
 
-    // 본문이 JSON처럼 보이면 텍스트로 전달
+    // 본문이 JSON처럼 보이면 그대로 전달
     const text = await r
       .clone()
       .text()
@@ -234,16 +252,16 @@ export async function GET(req: Request, context?: any) {
       return new NextResponse(text, { status: 200, headers: out });
     }
 
-    // ⬇️ CF 챌린지 감지 → dev에서만 업스트림으로 307 리다이렉트 폴백
+    // CF 챌린지 감지 → dev에서만 307 리다이렉트 폴백
     if (looksLikeCFChallenge(r.status, text)) {
-      const origin = req.headers.get("origin");
+      // Origin이 없을 수도 있으니, 추정 origin으로 dev 판단
+      const originLike = req.headers.get("origin") || inferOriginFromReq(req);
       const allowRedirect =
         req.method === "GET" &&
-        isDevOrigin(origin) &&
+        isDevOrigin(originLike) &&
         isSafeRedirectTarget(tail);
 
       if (allowRedirect) {
-        // 브라우저가 CORS preflight + 직접 GET 하도록 유도
         return new NextResponse(null, {
           status: 307, // Temporary Redirect (메서드 유지)
           headers: {
@@ -255,7 +273,7 @@ export async function GET(req: Request, context?: any) {
         });
       }
 
-      // dev가 아니거나 비안전 엔드포인트면 그대로 에러 JSON
+      // dev가 아니거나 비안전 엔드포인트면 설명 JSON
       return NextResponse.json(
         {
           ok: false,
