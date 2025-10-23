@@ -11,7 +11,7 @@ const BASE_GET = (
   process.env.NEXT_PUBLIC_CONSENT_GET_BASE ?? BASE_GET_DEFAULT
 ).replace(/\/$/, "");
 
-console.debug("[consentApi] BASE_GET =", BASE_GET);
+console.log("[consentApi] BASE_GET =", BASE_GET);
 // POST는 업스트림 직접 호출
 const BASE_POST = "https://realkimp.com/birdieswap/Consent";
 
