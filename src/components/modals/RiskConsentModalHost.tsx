@@ -77,23 +77,13 @@ export default function RiskConsentModalHost() {
   const [isOpen, setIsOpen] = useState(false);
   const [onConfirm, setOnConfirm] = useState<OnConfirm | null>(null);
 
+  const [submitting, setSubmitting] = useState(false);
+  const [errMsg, setErrMsg] = useState<string | null>(null);
+
   useEffect(() => {
     (window as any)[HOST_READY_FLAG] = true;
     (window as any).__RISK_HOST_Z = 9999;
     dbg("riskHost:mounted", { ua: navigator.userAgent });
-
-    // ★ 강제 오픈 훅(디버그용)
-    // (window as any).__forceConsentModal = (label = "manual") => {
-    //   dbg("riskHost:forceCall", { label });
-    //   window.dispatchEvent(
-    //     new CustomEvent(OPEN_RISK_CONSENT_EVENT, {
-    //       detail: {
-    //         resolve: (ok: boolean) =>
-    //           console.log("[RiskModal][force] resolved:", ok),
-    //       },
-    //     } as any)
-    //   );
-    // };
 
     // === [ADD] 전역 오프너: 이벤트가 유실될 때 직접 호출 경로 확보 ===
     (window as any)[HOST_OPEN_FN] = (detail: OpenEventDetail) => {
@@ -111,6 +101,8 @@ export default function RiskConsentModalHost() {
       } catch {}
       resolvedRef.current = false;
 
+      setErrMsg(null); // 🔹 새 오픈 시 에러 초기화
+      setSubmitting(false);
       setOnConfirm(() => onConfirm ?? null);
       setResolver(() => resolve);
       setIsOpen(true);
@@ -263,21 +255,49 @@ export default function RiskConsentModalHost() {
           <div className="flex-1 overflow-y-auto p-6 [-webkit-overflow-scrolling:touch]">
             <StaticConsentContent />
 
+            {/* 에러 메시지 표시 */}
+            {errMsg && (
+              <div className="mt-3 rounded-md border border-danger-300 bg-danger-50 px-3 py-2 text-danger-700 text-sm">
+                {errMsg}
+              </div>
+            )}
+
             <div className="flex gap-3 justify-end pt-2">
               <ThemedButton
                 variant="MINT"
+                isDisabled={submitting}
                 onPress={async () => {
                   dbg("riskHost:pressSign"); // [DBG]
                   try {
+                    setErrMsg(null);
+                    setSubmitting(true);
                     await onConfirm?.();
+                    // ✅ 여기까지 왔으면 initiate → sign → verify 성공
                     safeResolveAndReset(true);
-                  } catch {
-                    dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
-                    safeResolveAndReset(false);
+                  } catch (e: any) {
+                    // ❗️닫지 말고 에러를 보여주고 멈춰두기
+                    const msg =
+                      e?.message ||
+                      (typeof e === "string" ? e : "Something went wrong.");
+                    dbg("riskHost:onConfirmError", { msg, raw: String(e) });
+                    setErrMsg(msg);
+                  } finally {
+                    setSubmitting(false);
                   }
                 }}
+                // onPress={async () => {
+                //   dbg("riskHost:pressSign"); // [DBG]
+                //   try {
+                //     await onConfirm?.();
+                //     safeResolveAndReset(true);
+                //   } catch {
+                //     dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
+                //     safeResolveAndReset(false);
+                //   }
+                // }}
               >
-                Sign
+                {/* Sign */}
+                {submitting ? "Signing..." : "Sign"}
               </ThemedButton>
             </div>
             <div className="h-2" />
@@ -314,7 +334,7 @@ export function openRiskConsentModal(arg: {
 export async function openRiskConsentModal(
   arg: OnConfirm | { onConfirm?: OnConfirm }
 ): Promise<boolean> {
-  const detail = typeof arg === "function" ? { onConfirm: arg } : arg ?? {};
+  const detail = typeof arg === "function" ? { onConfirm: arg } : (arg ?? {});
   dbg("riskHost:openFn:start"); // [DBG]
 
   // 1) 호스트 준비까지 대기 (인앱에서 특히 중요)

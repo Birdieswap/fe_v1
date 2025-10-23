@@ -69,7 +69,7 @@ export default function ClientHUD() {
                 .join(" "),
             });
             // 너무 길어지지 않게 제한
-            const MAX = 300; // 최근 300개만 유지 (원하면 500 등으로)
+            const MAX = 1000; // 최근 1000개만 유지 (원하면 500 등으로)
             if (arr.length > MAX) arr.splice(0, arr.length - MAX);
             sessionStorage.setItem(KEY, JSON.stringify(arr));
           } catch {}
@@ -100,11 +100,15 @@ export default function ClientHUD() {
 
         (window as any).__dumpConsentLogs = () => {
           try {
-            const arr: any[] = JSON.parse(sessionStorage.getItem(KEY) || "[]");
+            const raw = sessionStorage.getItem(KEY) || "[]";
+            const arr: any[] = JSON.parse(raw);
             console.table(arr);
             return arr;
           } catch (e) {
-            console.error("dumpLogs fail", e);
+            console.error("dumpLogs fail (resetting)", e);
+            try {
+              sessionStorage.removeItem(KEY);
+            } catch {}
             return [];
           }
         };
