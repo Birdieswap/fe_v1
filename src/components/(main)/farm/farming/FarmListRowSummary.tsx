@@ -15,10 +15,11 @@ import { CryptoTokenIcons } from "../FarmListTable";
 
 import Components from "./listRowSummary/components";
 import suffixNumbers from "@/utils/suffixNumbers";
-import { forwardRef, useContext, useMemo, useRef } from "react";
+import { forwardRef, useContext, useMemo } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import { Spacer } from "@heroui/react";
+import DonutRatio from "./common/DonutRatio";
 
 // 상단 import 아래 유틸 함수 추가
 const toNum = (v: any): number | undefined => {
@@ -58,6 +59,9 @@ export function LoadingPulse({
 
 type Props = {
   balance?: BigDecimal;
+  lpBalance?: BigDecimal;
+  stakedBalance?: BigDecimal;
+  gridCols: string;
   isActive: boolean;
   onClick: () => void;
   item: Farm;
@@ -67,7 +71,18 @@ type Props = {
 };
 
 export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
-  { balance, item, isActive, onClick, apy, tvl, price }: Props,
+  {
+    balance,
+    lpBalance,
+    stakedBalance,
+    gridCols,
+    item,
+    isActive,
+    onClick,
+    apy,
+    tvl,
+    price,
+  }: Props,
   ref
 ) {
   const stakeToken = item.wip_stakeToken;
@@ -91,12 +106,12 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
     const arr: any[] | undefined = Array.isArray(S?.apr)
       ? S.apr
       : Array.isArray(S?.aprs)
-      ? S.aprs
-      : Array.isArray(S?.data)
-      ? S.data
-      : Array.isArray(S)
-      ? S
-      : undefined;
+        ? S.aprs
+        : Array.isArray(S?.data)
+          ? S.data
+          : Array.isArray(S)
+            ? S
+            : undefined;
 
     if (arr) {
       const hit = arr.find(
@@ -138,12 +153,12 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
     const arr: any[] | undefined = Array.isArray(S?.apr)
       ? S.apr
       : Array.isArray(S?.aprs)
-      ? S.aprs
-      : Array.isArray(S?.data)
-      ? S.data
-      : Array.isArray(S)
-      ? S
-      : undefined;
+        ? S.aprs
+        : Array.isArray(S?.data)
+          ? S.data
+          : Array.isArray(S)
+            ? S
+            : undefined;
 
     if (arr) {
       const hit = arr.find(
@@ -175,138 +190,169 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
       layout="position"
       {...defaultTransition}
       className={clsx(
-        "grid origin-top grid-cols-subgrid items-center min-h-[120px] sm:min-h-[72px] justify-center",
-        "border-t border-default-400 dark:border-default-900",
-        "[&:nth-child(2)]:dark:border-default-400",
-        "md:col-span-6 md:px-6 cursor-pointer",
-        "max-md:col-span-3 max-md:row-span-2 max-md:px-4",
+        // 💡 모바일=2열, 데스크탑=전달된 grid 템플릿
+        "col-span-full",
+        "grid items-center min-h-[120px] sm:min-h-[72px] md:px-6 max-md:px-4 border-t border-default-300 dark:border-default-800 cursor-pointer",
+        "max-md:grid-cols-[64px_1fr]",
+        gridCols,
         "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
       )}
       style={{ scrollMarginTop: "calc(var(--nav-h, 64px) + 8px)" }}
       onClick={onClick}
     >
-      <motion.div
-        layout
+      {/* ---------- [모바일] 왼쪽: 아이콘 + 심볼(아래) ---------- */}
+      <div
         className={clsx(
-          "md:col-span-2 md:grid md:grid-cols-subgrid md:items-center md:justify-center",
-          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:gap-3 max-md:py-4"
+          // 모바일: 왼쪽 첫 컬럼
+          "max-md:col-span-1 max-md:row-span-2",
+          // 데스크탑: 첫 컬럼으로 동작
+          "md:[grid-column:1/2]"
         )}
       >
-        <motion.div layout>
-          <div className="flex items-center gap-2">
-            {item.type === FarmType.PAIR ? (
-              <CryptoTokenIcons profiles={input} />
-            ) : (
-              <CryptoTokenIcons profiles={input} />
-            )}
-          </div>
-        </motion.div>
-        <motion.div layout className="md:py-4">
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-col gap-0.5 text-sm">
-              <div className="flex flex-row font-semibold min-w-[140px] text-foreground">
-                {isBirdieLPFarm(stakeToken)
-                  ? stakeToken.swap.input
-                      .map((token) => token.input.symbol)
-                      .join(" - ")
-                  : stakeToken.input.symbol}
-              </div>
-              <div className="bleak flex flex-row gap-2 text-xs font-medium text-default-600">
-                {poolDescription ? (
-                  <>{poolDescription}</>
-                ) : (
-                  <LoadingPulse w="w-20" />
-                )}
-              </div>
-              {/* <div className="flex flex-row items-center font-medium text-default-800 dark:text-default-500">
-                <Icons.BirdRate
-                  className="size-4 fill-default-800 dark:fill-default-500"
-                  fillRule="evenodd"
-                />
-                <Components.Price isLoading={!price} value={price} />
-              </div> */}
+        <div className="flex max-md:flex-col md:flex-row items-start md:items-center gap-2">
+          <CryptoTokenIcons profiles={input} />
+          {/* 모바일에서 아이콘 아래로 내려가도록 flex-col */}
+          <div className="flex min-w-0 flex-col md:ml-2">
+            <div className="truncate font-semibold text-foreground">
+              {isBirdieLPFarm(stakeToken)
+                ? stakeToken.swap.input.map((t) => t.input.symbol).join(" - ")
+                : stakeToken.input.symbol}
+            </div>
+            <div className="bleak text-xs font-medium text-default-600">
+              {poolDescription ?? <LoadingPulse w="w-20" />}
             </div>
           </div>
-        </motion.div>
-      </motion.div>
-      <motion.div
-        layout
-        className={clsx(
-          "md:col-span-3 md:grid md:grid-cols-subgrid md:items-center md:justify-center",
-          "max-md:col-span-1 max-md:flex max-md:flex-col max-md:items-end max-md:gap-3"
-        )}
-      >
-        <motion.div layout className="flex flex-row items-center gap-2">
-          <span className="pt-px text-[11px] font-medium text-default-600 md:hidden">
-            APY(%)
-          </span>
-          <Components.Apy isLoading={apyIsLoading} value={apy} />
-        </motion.div>
-        <motion.div layout className="flex flex-row items-center gap-2">
-          <span className="pt-px text-[11px] font-medium text-default-600 md:hidden">
-            TVL($)
-          </span>
-          <Components.Tvl isLoading={tvl == null} tvl={tvl ? tvl : null} />
-        </motion.div>
-        <motion.div
-          layout
-          className="flex flex-col items-end gap-1 text-right text-sm font-semibold"
-        >
-          <motion.div
-            layout
-            className="flex flex-row items-center gap-2 text-right"
-          >
-            <span className="pt-px text-[11px] font-medium text-default-600 md:hidden">
-              BAL
-            </span>
-            <span className="text-sm font-semibold max-md:font-medium">
-              <p>
-                {!account.isConnected && "Connect Wallet"}
-                {account.isConnected && !isBalanceAvailable && (
-                  <LoadingPulse w="w-16" />
-                )}
-                {account.isConnected &&
-                  isBalanceAvailable &&
-                  balance
-                    .roundToDecimals(
-                      5
-                      // item.wip_stakeToken?.displayDecimals ??
-                      //   item.wip_stakeToken?.decimals ??
-                      //   3
-                    )
-                    .toPrecisionString(true, true)}
-              </p>
-            </span>
-          </motion.div>
-          <p className="font-medium text-default-700 max-md:text-xs md:text-sm">
-            {!account.isConnected && "Connect Wallet"}
-            {account.isConnected &&
-              (!isBalanceAvailable ? (
-                <LoadingPulse w="w-20" />
-              ) : price ? (
-                "$" +
-                suffixNumbers(
-                  balance.mul(price).roundToDecimals(2),
-                  0,
-                  2,
-                  false,
-                  false
-                )
-              ) : (
-                <LoadingPulse w="w-20" />
-              ))}
-          </p>
-        </motion.div>
-      </motion.div>
-      <motion.div
-        layout
-        className="flex items-center justify-center max-md:pl-3 md:pl-6"
-      >
+        </div>
+      </div>
+
+      {/* ---------- [데스크탑] APY / TVL / BAL (기존 2~4컬럼) ---------- */}
+
+      <div className="hidden md:flex items-center justify-end text-right pr-2 md:[grid-column:2/3]">
+        <Components.Apy isLoading={apyIsLoading} value={apy} />
+      </div>
+
+      <div className="hidden md:flex items-center justify-end text-right pr-2 md:[grid-column:3/4]">
+        <Components.Tvl isLoading={tvl == null} tvl={tvl ? tvl : null} />
+      </div>
+
+      <div className="hidden md:flex flex-col items-end text-right gap-1 pr-1 md:[grid-column:4/5]">
+        <div className="text-sm font-semibold">
+          {!account.isConnected ? (
+            "Connect Wallet"
+          ) : !isBalanceAvailable ? (
+            <LoadingPulse w="w-16" />
+          ) : (
+            balance.roundToDecimals(5).toPrecisionString(true, true)
+          )}
+        </div>
+        <div className="font-medium text-default-700">
+          {!account.isConnected ? (
+            "Connect Wallet"
+          ) : !isBalanceAvailable ? (
+            <LoadingPulse w="w-20" />
+          ) : price ? (
+            "$" +
+            suffixNumbers(
+              balance.mul(price).roundToDecimals(2),
+              0,
+              2,
+              false,
+              false
+            )
+          ) : (
+            <LoadingPulse w="w-20" />
+          )}
+        </div>
+      </div>
+
+      <div className="hidden md:flex items-center justify-end gap-4 md:[grid-column:5/6]">
+        <DonutRatio
+          lp={lpBalance}
+          staked={stakedBalance}
+          total={balance}
+          size={40}
+          stroke={5}
+          title="Staked vs LP"
+        />
         <Arrow
           className="rotate-0 transition-transform data-[active=true]:rotate-180"
           data-active={isActive}
         />
-      </motion.div>
+      </div>
+
+      {/* ---------- [모바일] 오른쪽: 120px 높이, APY/TVL/BAL 세로 등간격 + 도넛/화살표 ---------- */}
+      <div className="md:hidden max-md:col-span-1 grid grid-cols-[1fr_auto] items-center gap-x-2">
+        {/* ◀︎ 왼쪽: APY / TVL / BAL 스택 (120px에 등간격) */}
+        <div className="flex h-[120px] flex-col items-end justify-around">
+          {/* APY */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-default-600">
+              APY(%)
+            </span>
+            <Components.Apy isLoading={apyIsLoading} value={apy} />
+          </div>
+
+          {/* TVL */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-default-600">
+              TVL($)
+            </span>
+            <Components.Tvl isLoading={tvl == null} tvl={tvl ? tvl : null} />
+          </div>
+
+          {/* BAL (값 + $값은 붙어서) */}
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-medium text-default-600">
+              BAL
+            </span>
+            <div className="flex flex-col items-end leading-tight">
+              <span className="text-sm font-semibold">
+                {!account.isConnected ? (
+                  "Connect Wallet"
+                ) : !isBalanceAvailable ? (
+                  <LoadingPulse w="w-16" />
+                ) : (
+                  balance.roundToDecimals(5).toPrecisionString(true, true)
+                )}
+              </span>
+              <span className="text-[12px] text-default-700">
+                {!account.isConnected ? (
+                  "Connect Wallet"
+                ) : !isBalanceAvailable ? (
+                  <LoadingPulse w="w-20" />
+                ) : price ? (
+                  "$" +
+                  suffixNumbers(
+                    balance.mul(price).roundToDecimals(2),
+                    0,
+                    2,
+                    false,
+                    false
+                  )
+                ) : (
+                  <LoadingPulse w="w-20" />
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* ▶︎ 오른쪽: Donut + Arrow (세로 가운데) */}
+        <div className="flex items-center gap-2 shrink-0 pl-2">
+          <DonutRatio
+            lp={lpBalance}
+            staked={stakedBalance}
+            total={balance}
+            size={40}
+            stroke={5}
+            title="Staked vs LP"
+          />
+          <Arrow
+            className="rotate-0 transition-transform data-[active=true]:rotate-180"
+            data-active={isActive}
+          />
+        </div>
+      </div>
     </motion.div>
   );
 });

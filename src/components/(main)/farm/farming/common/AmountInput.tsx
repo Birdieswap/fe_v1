@@ -47,6 +47,7 @@ export default function AmountInput({
   tokenPrice: tokenPriceProp,
   price: price,
   panel,
+  nativeToggle,
 }: {
   amount: BigDecimal | null;
   balance: BigDecimal | null;
@@ -61,6 +62,7 @@ export default function AmountInput({
   tokenPrice?: BigDecimal | null;
   price: BigDecimal | null;
   panel?: "start" | "stop";
+  nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
 }) {
   const { assetValues } = useContext(AssetsContext);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
@@ -172,6 +174,25 @@ export default function AmountInput({
               <p className="text-xl max-[375px]:text-lg font-semibold">
                 {token.symbol}
               </p>
+              {/* ✅ 16x16 'C' 토글 버튼 */}
+              {nativeToggle && (
+                <button
+                  type="button"
+                  onClick={nativeToggle.onToggle}
+                  disabled={isDisabled}
+                  aria-label={`Switch to ${nativeToggle.value === "ETH" ? "WETH" : "ETH"}`}
+                  title="Change ETH/WETH"
+                  className={clsx(
+                    "inline-flex items-center justify-center rounded-[4px] border text-[10px] leading-none",
+                    "border-default-600",
+                    "dark:border-default-700",
+                    "disabled:opacity-50 disabled:pointer-events-none"
+                  )}
+                  style={{ width: 16, height: 16 }}
+                >
+                  C
+                </button>
+              )}
             </div>
           </div>
           <div className="flex w-full flex-row items-center gap-2 px-1 text-sm max-[375px]:text-[10px]">

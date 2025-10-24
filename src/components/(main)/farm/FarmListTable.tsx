@@ -29,20 +29,21 @@ type FarmStatus = {
   tvl: BigDecimal | null;
   MyBalance: BigDecimal | null;
   price: BigDecimal | null; // 표시용으로 Row에 직접 넘길 때 사용
+  lpBalance?: BigDecimal | null;
+  stakedBalance?: BigDecimal | null;
+  totalBalance?: BigDecimal | null;
 };
 
 export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
   return (
-    <div className="flex w-20 flex-row-reverse items-center justify-end">
-      {[...profiles].reverse().map((token) =>
+    <div className="flex -space-x-1 items-center shrink-0">
+      {profiles.map((token, i) =>
         token.iconSrc ? (
           <Image
             key={token.symbol}
             alt={token.symbol}
             className="size-9 rounded-full"
-            classNames={{
-              wrapper: "mr-[-6px]",
-            }}
+            classNames={{ wrapper: "" }}
             src={token.iconSrc}
           />
         ) : (
@@ -96,17 +97,24 @@ export default function FarmListTable({
   const lpBalanceMap = balances?.lpVaultBalances?.balanceMap as
     | Map<`0x${string}`, BigDecimal>
     | undefined;
+  // 상단 맵 추출부 근처에 추가
+  const stakedByInput = balances?.stakedBalances?.byInputTokenAddress as
+    | Map<`0x${string}`, { token: any; value: BigDecimal }>
+    | undefined;
 
-  const getFarmBalance = useCallback(
-    (address: `0x${string}`): BigDecimal | null => {
-      if (!address) return null;
-      const s = singleBalanceMap?.get(address);
-      if (s) return s;
-      const l = lpBalanceMap?.get(address);
-      if (l) return l;
-      return null;
+  const getFarmBalances = useCallback(
+    (address: `0x${string}`) => {
+      if (!address) return { lp: null, staked: null, total: null };
+
+      const lp =
+        lpBalanceMap?.get(address) ?? singleBalanceMap?.get(address) ?? null;
+      const staked =
+        stakedByInput?.get(address.toLowerCase() as any)?.value ?? null;
+      const total = lp && staked ? lp.add(staked) : (lp ?? staked ?? null);
+
+      return { lp, staked, total };
     },
-    [singleBalanceMap, lpBalanceMap]
+    [singleBalanceMap, lpBalanceMap, stakedByInput]
   );
 
   useEffect(() => {
@@ -114,7 +122,6 @@ export default function FarmListTable({
 
     setFarmStatusMap((prev) => {
       let next = prev;
-
       for (const farm of FarmList) {
         const address = farm.wip_stakeToken.addresses?.[chainId] as
           | `0x${string}`
@@ -124,24 +131,26 @@ export default function FarmListTable({
         const apy = apyMap.get(address) ?? BigDecimal.ZERO();
         const tvl = tvlMap.get(address) ?? null;
         const price = priceMap.get(address) ?? null;
-        const balance = getFarmBalance(address);
 
-        const MyBalance = balance && price ? balance.mul(price) : null;
+        const { lp, staked, total } = getFarmBalances(address);
+        const MyBalance = total && price ? total.mul(price) : null;
 
         next = {
           ...next,
           [address]: {
             apy,
             tvl,
+            price,
             MyBalance,
-            price, // Row에 직접 내려줄 용도
+            lpBalance: lp,
+            stakedBalance: staked,
+            totalBalance: total,
           },
         };
       }
-
       return next;
     });
-  }, [chainId, apyMap, tvlMap, priceMap, getFarmBalance]);
+  }, [chainId, apyMap, tvlMap, priceMap, getFarmBalances]);
 
   const updatedFarmList = useMemo(() => {
     return FarmList.map((farm) => {
@@ -165,6 +174,9 @@ export default function FarmListTable({
         apy: toNum(stat?.apy), // number
         tvl: toNum(stat?.tvl), // number
         MyBalance: toNum(stat?.MyBalance), // number
+        lpBalance: stat?.lpBalance,
+        stakedBalance: stat?.stakedBalance,
+        totalBalance: stat?.totalBalance,
       };
     });
   }, [chainId, farmStatusMap]);
@@ -208,10 +220,14 @@ export default function FarmListTable({
           return item.tags?.includes(FarmTag.LP);
         case Filter.STABLE:
           return item.tags?.includes(FarmTag.STABLE);
-        case Filter.MY_FARM:
-          return BigDecimal.ZERO().lt(
-            getFarmBalance(item.wip_stakeToken.addresses?.[chainId]) ?? 0
-          );
+        case Filter.MY_FARM: {
+          const addr = item.wip_stakeToken.addresses?.[chainId] as
+            | `0x${string}`
+            | undefined;
+          if (!addr) return false;
+          const { total } = getFarmBalances(addr);
+          return total ? BigDecimal.ZERO().lt(total) : false;
+        }
         default:
           return false;
       }
@@ -529,17 +545,21 @@ export default function FarmListTable({
     []
   );
 
+  const GRID_COLS =
+    // [Crypto, APY, TVL, YourBalance(숫자+달러), Donut+Arrow]
+    "md:grid-cols-[minmax(200px,1.5fr)_minmax(150px,1.2fr)_minmax(150px,1.7fr)_minmax(230px,2fr)_120px]";
+
   return (
     <motion.div
       className={clsx(
-        "container grid origin-top items-center justify-center gap-x-1",
-        "md:grid-cols-[2fr_4.5fr_2fr_2fr_3fr_72px]",
+        "container grid origin-top items-center justify-center gap-x-2",
+        GRID_COLS,
         "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}
       layout={false}
       // transition={{ delay: -0.2 }}
     >
-      <FarmListTableHeader />
+      <FarmListTableHeader gridCols={GRID_COLS} />
       {sortedItems.map((item) => {
         const address = item.wip_stakeToken.addresses?.[chainId] as
           | `0x${string}`
@@ -550,28 +570,19 @@ export default function FarmListTable({
         const tvl = tvlMap?.get(address) ?? null;
         const price = priceMap?.get(address) ?? null;
 
-        const balance = getFarmBalance(address) ?? undefined;
-
-        // console.log(
-        //   "farmListTable address",
-        //   item,
-        //   address,
-        //   "apy",
-        //   apy,
-        //   "tvl",
-        //   tvl,
-        //   "price",
-        //   price
-        // );
+        const { lp, staked, total } = getFarmBalances(address);
 
         return (
           <FarmListTableRow
             key={address}
             item={item}
-            balance={balance}
             apy={apy}
             tvl={tvl}
             price={price}
+            balance={total ?? undefined}
+            lpBalance={lp ?? undefined}
+            stakedBalance={staked ?? undefined}
+            gridCols={GRID_COLS}
             activeFullName={activeFullName}
             onRowClick={(full, addr) => handleRowToggle(full, addr)}
             attachRef={registerRowRef}
