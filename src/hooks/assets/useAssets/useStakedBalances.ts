@@ -1,8 +1,7 @@
 "use client";
 
-import { useContext, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useReadContracts } from "wagmi";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import { BigDecimal } from "@/types/BigDecimal";
 import type { ContractFunctionParameters } from "viem";
@@ -24,21 +23,44 @@ export type StakedBalanceEntry = {
 };
 
 export default function useStakedBalances(params: {
-  aprList: any[];                   // ← 주입
-  address?: Address;                // ← 주입(상위 useAccount에서)
+  aprList: any[]; // ← 주입
+  address?: Address; // ← 주입(상위 useAccount에서)
 }) {
   const { aprList, address } = params;
 
+  // aprList에서 진짜로 필요한 필드만 추출해 "안정 키" 생성
+  //   - 정렬까지 해서 순서 변화(정렬되지 않은 map→array 등)도 무시
+  const aprKey = useMemo(() => {
+    const keyArr = (Array.isArray(aprList) ? aprList : []).map((e) => ({
+      c: (e?.contractAddress ?? "").toLowerCase(),
+      s: (e?.staking?.contractAddress ?? "").toLowerCase(),
+      sym: (e?.staking?.stakingToken ?? e?.symbol ?? "BLP").toString(),
+    }));
+    keyArr.sort((a, b) =>
+      a.c === b.c
+        ? a.s === b.s
+          ? a.sym.localeCompare(b.sym)
+          : a.s.localeCompare(b.s)
+        : a.c.localeCompare(b.c)
+    );
+    return JSON.stringify(keyArr);
+  }, [aprList]);
+
+  // aprKey를 deps로 사용 → aprList가 동일 구조면 재계산 안 함
   const availableTokens: StakedToken[] = useMemo(() => {
-    return (Array.isArray(aprList) ? aprList : [])
+    const source = Array.isArray(aprList) ? aprList : [];
+    return source
       .filter((e) => {
         const addr = e?.staking?.contractAddress ?? "";
         return !!addr && /^0x[0-9a-fA-F]{40}$/.test(addr);
       })
       .map((e) => {
         const inputAddr = (e?.contractAddress ?? "").toLowerCase() as Address;
-        const poolAddr  = (e?.staking?.contractAddress ?? "").toLowerCase() as Address;
-        const stakingTokenSymbol = e?.staking?.stakingToken ?? e?.symbol ?? "BLP";
+        const poolAddr = (
+          e?.staking?.contractAddress ?? ""
+        ).toLowerCase() as Address;
+        const stakingTokenSymbol =
+          e?.staking?.stakingToken ?? e?.symbol ?? "BLP";
         return {
           fullName: `Staked ${stakingTokenSymbol}`,
           inputTokenAddress: inputAddr,
@@ -48,7 +70,7 @@ export default function useStakedBalances(params: {
           iconSrc: "tokens/sblp-token.svg",
         } as StakedToken;
       });
-  }, [aprList]);
+  }, [aprKey]); // ← aprList 대신 aprKey 사용
 
   const balanceArgs: ContractFunctionParameters<
     typeof birdieswap_staking_abi,

@@ -216,7 +216,10 @@ function ExtraRewardInfoRow(props: {
       <Button
         size="sm"
         className={clsx(
-          "btn-mint h-[28px] w-[72px] rounded-md text-sm font-semibold"
+          "btn-mint h-[28px] w-[72px] rounded-md text-sm font-semibold",
+          "disabled:bg-default-300 disabled:text-default-600",
+          "dark:disabled:bg-dark-popup-bg dark:disabled:text-default-400",
+          "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait"
         )}
         isLoading={false}
         isDisabled={!canClaim || isPending || isWaiting}

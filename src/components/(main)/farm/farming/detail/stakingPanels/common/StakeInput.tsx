@@ -75,7 +75,7 @@ export default function StakeInput({
           layout
           className={clsx(
             "mb-2 flex max-h-32 w-full flex-col gap-4 rounded-lg px-2 py-1",
-            "bg-default-100 dark:bg-dark_swap_bg",
+            "bg-default-100 dark:bg-dark-swap-bg",
             "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
             "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5"
           )}
@@ -120,7 +120,7 @@ export default function StakeInput({
                 className={clsx(
                   "h-[24px] min-w-fit rounded-md border-1 px-2.5 text-xs",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark_mid_mint_4 dark:bg-dark_mid_mint_4 dark:text-background"
+                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {

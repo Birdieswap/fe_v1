@@ -38,7 +38,7 @@ function Container({
 function TokenName(props: PropsWithChildren<{ isActive: boolean }>) {
   return (
     <p
-      className="text-default-500 transition-colors group-hover:text-default-700 data-[selected=true]:text-primary data-[selected=true]:group-hover:text-light_primary_hover dark:text-default-700 dark:group-hover:text-default-300 data-[selected=true]:dark:text-dark_primary data-[selected=true]:dark:group-hover:text-dark_primary_hover"
+      className="text-default-500 transition-colors group-hover:text-default-700 data-[selected=true]:text-primary data-[selected=true]:group-hover:text-light-primary-hover dark:text-default-700 dark:group-hover:text-default-300 data-[selected=true]:dark:text-dark-primary data-[selected=true]:dark:group-hover:text-dark-primary-hover"
       data-selected={props.isActive}
     >
       {props.children}
@@ -150,14 +150,14 @@ export default function PairSlider({
       >
         <svg fill="none" height="16" viewBox="0 0 16 16" width="16">
           <circle
-            className="fill-primary transition-[fill] group-data-[hover=true]:fill-light_primary_hover dark:fill-dark_primary group-data-[hover=true]:dark:fill-dark_primary_hover"
+            className="fill-primary transition-[fill] group-data-[hover=true]:fill-light-primary-hover dark:fill-dark-primary group-data-[hover=true]:dark:fill-dark-primary-hover"
             cx="8"
             cy="8"
             r="8"
           />
           <circle className="fill-background" cx="8" cy="8" r="6" />
           <circle
-            className="fill-primary transition-[fill] group-data-[hover=true]:fill-light_primary_hover dark:fill-dark_primary group-data-[hover=true]:dark:fill-dark_primary_hover"
+            className="fill-primary transition-[fill] group-data-[hover=true]:fill-light-primary-hover dark:fill-dark-primary group-data-[hover=true]:dark:fill-dark-primary-hover"
             cx="8"
             cy="8"
             r="3"

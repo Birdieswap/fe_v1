@@ -11,21 +11,29 @@ import {
 } from "@/const/presenceTransition";
 import { BigDecimal } from "@/types/BigDecimal";
 
-import { PairStartPanel } from "./pairPanels/PairStartPanel";
-import { SingleStartPanel } from "./singlePanels/SingleStartPanel";
-import { PairStopPanel } from "./pairPanels/PairStopPanel";
-import { SingleStopPanel } from "./singlePanels/SingleStopPanel";
+import { PairStartPanel } from "./detail/pairPanels/PairStartPanel";
+import { SingleStartPanel } from "./detail/singlePanels/SingleStartPanel";
+import { PairStopPanel } from "./detail/pairPanels/PairStopPanel";
+import { SingleStopPanel } from "./detail/singlePanels/SingleStopPanel";
 import EarningsPanel from "./detail/EarningsPanel";
 import PanelButtons from "./detail/PanelButtons";
+import FarmingPanels from "./detail/FarmingPanels";
+import StakingPanels from "./detail/StakingPanels";
 
 export default function FarmDetail({
   item,
   selectedRow,
   price,
+  lpBalance,
+  stakedBalance,
+  totalBalance,
 }: {
   item: Farm;
   selectedRow: string | null;
   price: BigDecimal | null;
+  lpBalance?: BigDecimal;
+  stakedBalance?: BigDecimal;
+  totalBalance?: BigDecimal;
 }) {
   const [selectedPanel, setSelectedPanel] = useState<"START" | "STOP">("START");
   const isActive = selectedRow === item.wip_stakeToken.fullName;
@@ -52,49 +60,17 @@ export default function FarmDetail({
           )}
           data-selected={isActive}
         >
-          <motion.div
-            layout={false}
-            {...defaultTransition}
-            className="flex h-full grow basis-10 flex-col"
-          >
-            <motion.div
-              layout={false}
-              {...defaultTransition}
-              className="flex h-12 flex-row"
-            >
-              <PanelButtons.Start
-                selectedPanel={selectedPanel}
-                setSelectedPanel={setSelectedPanel}
-              />
-              <PanelButtons.Stop
-                selectedPanel={selectedPanel}
-                setSelectedPanel={setSelectedPanel}
-              />
-            </motion.div>
+          {/* 왼쪽: Start/Stop 패널 묶음 */}
+          <FarmingPanels item={item} price={price} />
 
-            <AnimatePresence initial={false}>
-              {item.type === FarmType.PAIR &&
-                (selectedPanel === "START" ? (
-                  <PairStartPanel item={item} price={price} />
-                ) : (
-                  <PairStopPanel item={item} price={price} />
-                ))}
-              {item.type === FarmType.SINGLE &&
-                (selectedPanel === "START" ? (
-                  <SingleStartPanel item={item} />
-                ) : (
-                  <SingleStopPanel item={item} price={price} />
-                ))}
-            </AnimatePresence>
-          </motion.div>
-          <motion.div
-            layout={false}
-            {...defaultTransition}
-            className="flex h-full grow basis-0 flex-col"
-          >
-            <h2 className=" text-base font-semibold pl-2">Information</h2>
-            <EarningsPanel item={item} selectedRow={selectedRow} />
-          </motion.div>
+          {/* 오른쪽: 정보 패널 */}
+          <StakingPanels
+            item={item}
+            selectedRow={selectedRow}
+            lpBalance={lpBalance}
+            stakedBalance={stakedBalance}
+            totalBalance={totalBalance}
+          />
         </motion.div>
       )}
     </AnimatePresence>

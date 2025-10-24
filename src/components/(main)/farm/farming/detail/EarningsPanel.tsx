@@ -20,9 +20,8 @@ import Icons from "@/assets/icons/icons";
 import clsx from "clsx";
 import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
 import { BigDecimal } from "@/types/BigDecimal";
-import StakeDetail from "./earningsPanel/StakeDetail";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
-import { LoadingPulse } from "./earningsPanel/stakingPanels/common/LoadingPulse";
+import { LoadingPulse } from "./stakingPanels/common/LoadingPulse";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -315,7 +314,7 @@ export default function EarningsPanel({
           </div>
         )}
       </div>
-      {canRenderStakeDetail && (
+      {/* {canRenderStakeDetail && (
         <>
           <div className="mb-3 pl-2">
             <SectionHeader>Unlock more benefits</SectionHeader>
@@ -326,7 +325,7 @@ export default function EarningsPanel({
             matched={matched}
           />
         </>
-      )}
+      )} */}
 
       {selectedStakeRow && (
         <VaultInfoModal
