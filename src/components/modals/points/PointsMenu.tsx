@@ -31,8 +31,14 @@ export default function PointsMenu({
         <div>{trigger}</div>
       </PopoverTrigger>
 
-      <PopoverContent className="gap-0 border-default-200 bg-background p-0 dark:border-1 dark:border-default-100 dark:bg-dark-popup-bg mt-2 -ml-3">
-        <PointsPanel variant="popover" />
+      <PopoverContent className="gap-0 bg-background -py-1 dark:bg-dark-popup-bg mt-2 -mx-2.5">
+        <div className="relative w-[396px] max-w-[446px] p-6">
+          <PointsPanel
+            variant="popover"
+            showClose
+            onClose={() => setOpenGlobal(false)}
+          />
+        </div>
       </PopoverContent>
     </Popover>
   );

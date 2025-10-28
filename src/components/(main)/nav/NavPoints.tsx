@@ -9,7 +9,7 @@ import {
   NavbarItem,
   useDisclosure,
 } from "@heroui/react";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import PointsMenu from "@/components/modals/points/PointsMenu";
 import PointsPanel from "@/components/modals/points/PointsPanel";
@@ -52,6 +52,8 @@ export default function NavPoints() {
     </Button>
   );
 
+  const [open, setOpen] = useState(false);
+
   return (
     <>
       {/* 데스크탑: Popover + 트리거 (한 번만) */}
@@ -74,7 +76,7 @@ export default function NavPoints() {
           className="h-9 px-0 [&_[data-slot=content]]:px-0"
           onPress={disclosure.onOpen} // 모달 열기
         >
-          <Icons.PointIcon />
+          <Icons.PointIcon className="h-6 w-6" />
         </Button>
       </NavbarItem>
 

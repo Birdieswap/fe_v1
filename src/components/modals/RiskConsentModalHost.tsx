@@ -5,6 +5,8 @@ import { ModalContent, ModalBody, Checkbox, Link } from "@heroui/react";
 import ModalBase from "../atoms/ModalBase";
 import ThemedButton from "../atoms/ThemedButton";
 import { dbg } from "@/debug/dbg";
+import Icons from "@/assets/icons/icons";
+import ModalCloseButton from "../atoms/ModalCloseButton";
 
 export const OPEN_RISK_CONSENT_EVENT = "app/riskConsentModal/open";
 export const CLOSE_RISK_CONSENT_EVENT = "app/riskConsentModal/close";
@@ -26,46 +28,59 @@ const RISK_URL = "https://docs.birdieswap.com/security/general-risks";
 
 function StaticConsentContent() {
   return (
-    <div className="text-base leading-6 space-y-3 max-h-[55vh] overflow-auto p-3">
-      <h1 className="text-xl font-semibold pb-3">
-        Get started with Birdieswap!
-      </h1>
-      <p className="pb-3">
-        Before continuing, please review and agree to the following documents:
-      </p>
-      <ul className="list-disc pl-5 pb-3 space-y-3">
-        <li>
-          <Link
-            href={TERMS_URL}
-            target="_blank"
-            className="text-default-600 underline"
-          >
-            Terms of Service
-          </Link>
-        </li>
-        <li>
-          <Link
-            href={PRIVACY_URL}
-            target="_blank"
-            className="text-default-600 underline"
-          >
-            Privacy Policy
-          </Link>
-        </li>
-        <li>
-          <Link
-            href={RISK_URL}
-            target="_blank"
-            className="text-default-600 underline"
-          >
-            Risk disclosure
-          </Link>
-        </li>
-      </ul>
-      <p>
-        Birdieswap is a decentralized protocol. By continuing, you acknowledge
-        usage at your own risk.
-      </p>
+    <div className="flex flex-col items-center max-h-[55vh] overflow-auto px-4 py-6 space-y-6">
+      {/* 상단: 로고 + 제목 */}
+      <div className="flex flex-col items-center text-center gap-6">
+        <Icons.Birdie56 className="w-14 h-14" />
+        <h1 className="text-[20px] font-sans font-semibold leading-[24px] text-foreground">
+          Get started with Birdieswap!
+        </h1>
+      </div>
+
+      {/* 하단: 안내문 + 리스트 + 문구 */}
+      <div className="flex flex-col items-start font-sans text-left gap-6 w-full px-2">
+        <div>
+          <p className="font-regular text-[16px] leading-[20px] text-foreground">
+            Before continuing, please review and agree to the following
+            documents:
+          </p>
+
+          <ul className="list-disc pl-5 mt-6 font-medium text-[14px] leading-[20px] text-foreground">
+            <li className="pb-4">
+              <Link
+                href={TERMS_URL}
+                target="_blank"
+                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+              >
+                Terms of Service
+              </Link>
+            </li>
+            <li className="pb-4">
+              <Link
+                href={PRIVACY_URL}
+                target="_blank"
+                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+              >
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
+              <Link
+                href={RISK_URL}
+                target="_blank"
+                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+              >
+                Risk disclosure
+              </Link>
+            </li>
+          </ul>
+        </div>
+
+        <p className="font-regular text-[16px] leading-[18px] text-foreground">
+          Birdieswap is a decentralized protocol. By continuing, you acknowledge
+          usage at your own risk.
+        </p>
+      </div>
     </div>
   );
 }
@@ -225,13 +240,13 @@ export default function RiskConsentModalHost() {
       }
       isDismissable={false}
       hideCloseButton={false}
+      closeButton={<ModalCloseButton />}
       placement="bottom"
       classNames={{
         backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
         wrapper: "items-end justify-center",
         base: "m-0 max-h-[85vh] overflow-hidden", // base엔 max-h + overflow-hidden
         body: "p-0 h-full flex flex-col", // 내부에서만 스크롤
-        closeButton: "pointer-events-auto z-[2] w-9 h-9 text-foreground",
       }}
       isOpen={isOpen}
       motionProps={{
@@ -262,7 +277,7 @@ export default function RiskConsentModalHost() {
               </div>
             )} */}
 
-            <div className="flex gap-3 justify-end pt-2">
+            <div className="flex gap-3 justify-end ">
               <ThemedButton
                 variant="MINT"
                 isDisabled={submitting}
@@ -285,22 +300,12 @@ export default function RiskConsentModalHost() {
                     setSubmitting(false);
                   }
                 }}
-                // onPress={async () => {
-                //   dbg("riskHost:pressSign"); // [DBG]
-                //   try {
-                //     await onConfirm?.();
-                //     safeResolveAndReset(true);
-                //   } catch {
-                //     dbg("riskHost:onConfirmError", { e: String() }); // [DBG]
-                //     safeResolveAndReset(false);
-                //   }
-                // }}
               >
                 {/* Sign */}
                 {submitting ? "Signing..." : "Sign"}
               </ThemedButton>
             </div>
-            <div className="h-2" />
+            <div className="h-0" />
           </div>
         </ModalBody>
       </ModalContent>

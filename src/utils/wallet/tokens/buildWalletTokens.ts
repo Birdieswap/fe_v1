@@ -1,26 +1,30 @@
-
 import { BigDecimal } from "@/types/BigDecimal";
 import { bdToNumber, format2, isZeroBD } from "./calcBigdecimal";
 import { buildAddressToMetaMap, AddressedMeta } from "./buildAddressMetaMaps";
 import { getUsdPriceFromChainlink } from "./calcWithChainLink";
 
-
 export type WalletTokenInfo = {
-  type? : string; 
+  type?: string;
   address?: string;
   name: string;
-  amount: string;  
+  amount: string;
   src?: string;
-  usdAmount: string; 
+  usdAmount: string;
 };
 
 type Registries = {
-  tokens: Record<string, AddressedMeta & { symbol: string; fullName: string; iconSrc?: string }>;
+  tokens: Record<
+    string,
+    AddressedMeta & { symbol: string; fullName: string; iconSrc?: string }
+  >;
   //singleVaults: Record<string, AddressedMeta & { fullName: string; iconSrc?: string }>;
-  lpVaults: Record<string, AddressedMeta & { fullName: string; iconSrc?: string }>;
+  lpVaults: Record<
+    string,
+    AddressedMeta & { fullName: string; iconSrc?: string }
+  >;
 };
 
-type AssetsLike = {
+export type AssetsLike = {
   assetValues?: {
     chainLinkPriceMap?: Map<string, { price: BigDecimal }>;
   };
@@ -28,9 +32,9 @@ type AssetsLike = {
     tokenBalances?: { balanceMap?: Map<string, BigDecimal> };
     singleVaultBalances?: { balanceMap?: Map<string, BigDecimal> };
     lpVaultBalances?: { balanceMap?: Map<string, BigDecimal> };
-    stakedBalances? : {
-      byInputTokenAddress?: {balanceMap?: Map<string, BigDecimal> },
-      byStakingPoolAddress?: {balanceMap?: Map<string, BigDecimal> }
+    stakedBalances?: {
+      byInputTokenAddress?: { balanceMap?: Map<string, BigDecimal> };
+      byStakingPoolAddress?: { balanceMap?: Map<string, BigDecimal> };
     };
   };
   farmValues?: {
@@ -78,7 +82,7 @@ export function buildWalletTokens(
 
       out.push({
         type: "LP",
-        address : addr,
+        address: addr,
         name: fullName ?? "LP Vault",
         amount: format2(amountNum, 5),
         src: iconSrc,
@@ -88,34 +92,34 @@ export function buildWalletTokens(
   }
 
   // 2) stakedtoken
-  const stakedMap =
-  assets?.balances?.stakedBalances?.byInputTokenAddress as Map<
-    string,
-    {
-      token?: {
-        fullName?: string;
-        inputTokenAddress?: string;
-        stakingPoolAddress?: string;
-        decimals?: number;
-        iconSrc?: string;
-      };
-      value?: BigDecimal;
-    }
-  > | undefined;
-  ; 
+  const stakedMap = assets?.balances?.stakedBalances?.byInputTokenAddress as
+    | Map<
+        string,
+        {
+          token?: {
+            fullName?: string;
+            inputTokenAddress?: string;
+            stakingPoolAddress?: string;
+            decimals?: number;
+            iconSrc?: string;
+          };
+          value?: BigDecimal;
+        }
+      >
+    | undefined;
   if (stakedMap instanceof Map) {
     stakedMap.forEach((entry, addrRaw) => {
       const addr = String(addrRaw).toLowerCase();
-      
+
       const tokenMeta = entry?.token ?? {};
       const balBD = entry?.value;
 
-      if (!(balBD instanceof BigDecimal)) return;           // 값 없음
-      if (isZeroBD(balBD)) return;      
-      
+      if (!(balBD instanceof BigDecimal)) return; // 값 없음
+      if (isZeroBD(balBD)) return;
+
       const displayName = tokenMeta.fullName;
       const iconSrc = tokenMeta.iconSrc;
-      
+
       const priceBD = farmPriceMapLC?.get(addrRaw) ?? null;
       const amountNum = bdToNumber(balBD);
       const priceNum = bdToNumber(priceBD);
@@ -123,8 +127,8 @@ export function buildWalletTokens(
       // console.log("buildWalletTokens addr",addr,farmPriceMap, priceBD)
 
       out.push({
-        type : "staked",
-        address : addrRaw,
+        type: "staked",
+        address: addrRaw,
         name: displayName as string,
         amount: format2(amountNum, 5),
         src: iconSrc,
@@ -145,26 +149,24 @@ export function buildWalletTokens(
       const { fullName, iconSrc, symbol } = meta as any;
       if (!symbol) return;
 
-      const priceBD = getUsdPriceFromChainlink(chainLinkPriceMap as any, symbol);
+      const priceBD = getUsdPriceFromChainlink(
+        chainLinkPriceMap as any,
+        symbol
+      );
       const amountNum = bdToNumber(balBD);
       const priceNum = bdToNumber(priceBD);
       const usdNum = amountNum * priceNum;
 
       out.push({
         type: "token",
-        address : addr,
+        address: addr,
         name: fullName ?? symbol,
         amount: format2(amountNum, 5),
         src: iconSrc,
-        usdAmount: format2(usdNum,2),
+        usdAmount: format2(usdNum, 2),
       });
     });
   }
-  
-  
-  
-
-  
 
   return out;
 }

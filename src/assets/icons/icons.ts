@@ -1,6 +1,7 @@
 import Arrow from "./arrow.svg";
 import ArrowRL from "./arrow-rl.svg";
 import BirdRate from "./birdrate.svg";
+import Birdie56 from "./Birdie-56.svg";
 import Close from "./close.svg";
 import Dropdown from "./dropdown.svg";
 import Error from "./error.svg";
@@ -8,6 +9,7 @@ import Gas from "./gas.svg";
 import Info from "./info.svg";
 import Lock from "./lock.svg";
 import Menu from "./menu.svg";
+import Minus from "./minus.svg";
 import PiggyBankStartOn from "./piggybank-start-on.svg";
 import PiggyBankStartOnDark from "./piggybank-start-on-dark.svg";
 import PiggyBankStartOff from "./piggybank-start-off.svg";
@@ -16,6 +18,7 @@ import PiggyBankStopOn from "./piggybank-stop-on.svg";
 import PiggyBankStopOnDark from "./piggybank-stop-on-dark.svg";
 import PiggyBankStopOff from "./piggybank-stop-off.svg";
 import PiggyBankStopOffDark from "./piggybank-stop-off-dark.svg";
+import Rocket from "./Rocket.svg";
 import ChangeArrow from "./change-arrow.svg";
 import Search from "./search.svg";
 import SocialDiscord from "./social-discord.svg";
@@ -73,6 +76,7 @@ export const Icons = {
   Arrow,
   ArrowRL,
   BirdRate,
+  Birdie56,
   ChangeArrow,
   Close,
   Dropdown,
@@ -81,6 +85,7 @@ export const Icons = {
   Info,
   Lock,
   Menu,
+  Minus,
   PiggyBankStartOn,
   PiggyBankStartOnDark,
   PiggyBankStartOff,
@@ -89,6 +94,7 @@ export const Icons = {
   PiggyBankStopOnDark,
   PiggyBankStopOff,
   PiggyBankStopOffDark,
+  Rocket,
   StakeOn,
   StakeOnDark,
   StakeOff,
