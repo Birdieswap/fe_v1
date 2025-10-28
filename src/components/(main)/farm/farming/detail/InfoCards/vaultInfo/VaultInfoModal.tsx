@@ -13,11 +13,11 @@ import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-import VaultInfoIcon from "./vaultInfoIcon.svg";
-import { VaultRowItem } from "../../EarningsPanel";
+import type { VaultRowItem } from "../../../../../farm/farming/FarmDetail";
 import { useChainId } from "wagmi";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
+import Icons from "@/assets/icons/icons";
 
 const toNum = (v: unknown) => {
   const n = typeof v === "bigint" ? Number(v) : Number(v ?? NaN);
@@ -61,12 +61,12 @@ export default function VaultInfoModal({
   const titleText = isStakeVault(src)
     ? "Staking information"
     : (src as any)?.type === "single" || (src as any)?.type === "dual"
-    ? "Farming information"
-    : "Information";
+      ? "Farming information"
+      : "Information";
 
   const nameText = isStakeVault(src)
     ? `Birdieswap ${src.stakingToken} Staking`
-    : (src as any)?.name ?? "—";
+    : ((src as any)?.name ?? "—");
 
   const noticeText = (src as any)?.notice as string | undefined;
 
@@ -110,7 +110,7 @@ export default function VaultInfoModal({
         <ModalContent>
           <ModalHeader className="px-0 pb-3">
             <div className="flex flex-row items-center gap-1">
-              <VaultInfoIcon className="[&>path]:themed-fill-primary" />
+              <Icons.VaultInfoIcon className="fill-primary text-background                " />
               <div className="flex flex-col gap-1 pl-1">
                 <h1 className="text-sm font-semibold text-foreground">
                   {titleText}

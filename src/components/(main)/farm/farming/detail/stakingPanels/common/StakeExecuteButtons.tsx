@@ -6,8 +6,8 @@ import { ThemedButtonVariant } from "@/components/atoms/ThemedButton";
 
 import StakeApproveButtonsContainer from "./StakeApproveButtonsContainer";
 import StakeApproveButton from "./StakeApproveButton";
-import FarmStartErrorMessages from "./FarmStartErrorMessages";
 import StakeConfirmButton from "./StakeConfirmButton";
+import StakeErrorMessages from "./stakeErrorMessages";
 
 export function StakeExecuteButtons({
   isConnected,
@@ -33,11 +33,7 @@ export function StakeExecuteButtons({
     isConnected && tokenStatuses.some((v) => v.isApproved == false);
 
   return (
-    <motion.div
-      layout
-      {...defaultTransition}
-      className="flex w-full flex-col gap-2"
-    >
+    <motion.div layout {...defaultTransition} className="flex w-full flex-col">
       <StakeApproveButtonsContainer isVisible={isApproveVisible}>
         {isApproveVisible &&
           tokenStatuses
@@ -64,7 +60,9 @@ export function StakeExecuteButtons({
         variant={variant}
         onPress={execute}
       />
-      {/* <FarmStartErrorMessages tokenStatuses={tokenStatuses} /> */}
+      <div className="min-h-[38px]">
+        <StakeErrorMessages tokenStatuses={tokenStatuses} />
+      </div>
     </motion.div>
   );
 }

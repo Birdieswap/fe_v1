@@ -1,0 +1,14 @@
+<svg width="36" height="36" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      /* 바깥 원은 부모 fill 상속, 'i'는 부모 color(currentColor) 사용 */
+      .outer { fill: inherit; }
+      .i     { fill: currentColor; }
+    </style>
+  </defs>
+
+  <circle class="outer" cx="18" cy="18" r="15"/>
+  <circle class="i i-dot" cx="18" cy="12" r="2.25"/>
+  <rect class="i i-bar" x="16.5" y="16.5" width="3" height="9" rx="1.5"/>
+</svg>
+

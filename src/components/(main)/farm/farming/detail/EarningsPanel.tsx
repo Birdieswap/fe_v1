@@ -4,8 +4,8 @@ import { Farm } from "@/types/FarmListTableRowProps";
 
 import { SectionHeader } from "../common/SectionHeader";
 
-import VaultInfo from "./earningsPanel/VaultInfo";
-import RewardInfoRow from "./earningsPanel/RewardInfoRow";
+import VaultInfo from "./InfoCards/VaultInfo";
+import RewardInfoRow from "./InfoCards/RewardInfoRow";
 import { useState, useMemo, useContext, useCallback } from "react";
 import { useChainId } from "wagmi";
 import { AssetsContext } from "@/app/AssetsContextProvider";
@@ -18,7 +18,7 @@ import {
 } from "@/app/AssetsContextProvider";
 import Icons from "@/assets/icons/icons";
 import clsx from "clsx";
-import VaultInfoModal from "./earningsPanel/vaultInfo/VaultInfoModal";
+import VaultInfoModal from "./InfoCards/vaultInfo/VaultInfoModal";
 import { BigDecimal } from "@/types/BigDecimal";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 import { LoadingPulse } from "./stakingPanels/common/LoadingPulse";

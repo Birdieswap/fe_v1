@@ -20,12 +20,14 @@ export default function StakingPanels({
   lpBalance,
   stakedBalance,
   totalBalance,
+  price,
 }: {
   item: Farm;
   selectedRow: string | null;
   lpBalance?: BigDecimal;
   stakedBalance?: BigDecimal;
   totalBalance?: BigDecimal;
+  price?: BigDecimal | null;
 }) {
   // --- EarningsPanel에서 하던 matched 계산을 이곳으로 이동 ---
   const chainId = useChainId();
@@ -170,34 +172,34 @@ export default function StakingPanels({
         />
       </motion.div>
 
-      <motion.div className="rounded-b-xl bg-background px-4 py-4">
-        <AnimatePresence initial={false}>
-          {selectedPanel === "STAKE" ? (
-            <StakePanel
-              key="stake"
-              item={item}
-              matched={matched}
-              lpBalance={lpBalance}
-              stakedBalance={stakedBalance}
-              totalBalance={totalBalance}
-            />
-          ) : (
-            <UnStakePanel
-              key="unstake"
-              item={item}
-              lpBalance={lpBalance}
-              stakedBalance={stakedBalance}
-              totalBalance={totalBalance}
-              matched={matched}
-              presetMaxToken={presetMaxRef.current ? applyToken : undefined}
-              onPresetApplied={() => {
-                presetMaxRef.current = false;
-                applyAndCleanUrl();
-              }}
-            />
-          )}
-        </AnimatePresence>
-      </motion.div>
+      <AnimatePresence initial={false} mode="wait">
+        {selectedPanel === "STAKE" ? (
+          <StakePanel
+            key="stake"
+            item={item}
+            matched={matched}
+            lpBalance={lpBalance}
+            stakedBalance={stakedBalance}
+            totalBalance={totalBalance}
+            price={price}
+          />
+        ) : (
+          <UnStakePanel
+            key="unstake"
+            item={item}
+            lpBalance={lpBalance}
+            stakedBalance={stakedBalance}
+            totalBalance={totalBalance}
+            price={price}
+            matched={matched}
+            presetMaxToken={presetMaxRef.current ? applyToken : undefined}
+            onPresetApplied={() => {
+              presetMaxRef.current = false;
+              applyAndCleanUrl();
+            }}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

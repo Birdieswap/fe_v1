@@ -176,22 +176,26 @@ export default function AmountInput({
               </p>
               {/* ✅ 16x16 'C' 토글 버튼 */}
               {nativeToggle && (
-                <button
+                <Button
                   type="button"
-                  onClick={nativeToggle.onToggle}
-                  disabled={isDisabled}
+                  isIconOnly
+                  radius="full"
+                  variant="light"
+                  onPress={nativeToggle.onToggle}
+                  isDisabled={isDisabled}
                   aria-label={`Switch to ${nativeToggle.value === "ETH" ? "WETH" : "ETH"}`}
                   title="Change ETH/WETH"
-                  className={clsx(
-                    "inline-flex items-center justify-center rounded-[4px] border text-[10px] leading-none",
-                    "border-default-600",
-                    "dark:border-default-700",
-                    "disabled:opacity-50 disabled:pointer-events-none"
-                  )}
-                  style={{ width: 16, height: 16 }}
+                  className="
+                    min-w-0 size-8 p-0
+                    bg-transparent shadow-none
+                    data-[hover=true]:bg-transparent
+                    data-[pressed=true]:bg-transparent
+                    data-[disabled=true]:bg-transparent
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+                  "
                 >
-                  C
-                </button>
+                  <Icons.Change />
+                </Button>
               )}
             </div>
           </div>

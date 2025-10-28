@@ -60,7 +60,9 @@ export function ExecuteButtons({
         variant={variant}
         onPress={execute}
       />
-      <FarmStartErrorMessages tokenStatuses={tokenStatuses} />
+      <div className="min-h-[38px]">
+        <FarmStartErrorMessages tokenStatuses={tokenStatuses} />
+      </div>
     </motion.div>
   );
 }

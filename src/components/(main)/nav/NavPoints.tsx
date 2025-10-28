@@ -11,12 +11,12 @@ import {
 } from "@heroui/react";
 import { useContext, useMemo } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
-import { GiCosmicEgg } from "react-icons/gi";
 import PointsMenu from "@/components/modals/points/PointsMenu";
 import PointsPanel from "@/components/modals/points/PointsPanel";
 import { LoadingPulse } from "../farm/farming/FarmListRowSummary";
 import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
+import Icons from "@/assets/icons/icons";
 
 export default function NavPoints() {
   const disclosure = useDisclosure(); // 공용 오픈 상태
@@ -36,10 +36,10 @@ export default function NavPoints() {
   const desktopTrigger = (
     <Button
       variant="light"
-      className="h-9 rounded-lg min-w-0 p-0 gap-2 [&_[data-slot=content]]:px-0"
+      className="h-9 rounded-lg min-w-0 p-1 gap-2 [&_[data-slot=content]]:px-0"
       onPress={disclosure.onOpen} // Popover 열기
     >
-      <GiCosmicEgg size="1.5em" />
+      <Icons.PointIcon className="h-6 w-6" />
       <div className="flex max-w-[148px] flex-col items-center mx-0 px-0">
         <span className="text-md font-semibold">
           {isPointsLoading || total == null ? (
@@ -74,7 +74,7 @@ export default function NavPoints() {
           className="h-9 px-0 [&_[data-slot=content]]:px-0"
           onPress={disclosure.onOpen} // 모달 열기
         >
-          <GiCosmicEgg size="1.5em" />
+          <Icons.PointIcon />
         </Button>
       </NavbarItem>
 

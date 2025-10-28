@@ -47,7 +47,7 @@ export default function FarmingPanels({
       </motion.div>
 
       {/* 패널 내용 */}
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="wait">
         {item.type === FarmType.PAIR &&
           (selectedPanel === "START" ? (
             <PairStartPanel key="pair-start" item={item} price={price} />
