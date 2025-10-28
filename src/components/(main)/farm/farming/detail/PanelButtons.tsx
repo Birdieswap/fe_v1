@@ -61,10 +61,10 @@ export function PanelButtonStake({ selectedPanel, setSelectedPanel }: Props) {
         value="STAKE"
       >
         <div className="relative size-6">
-          <Icons.PiggyBankStartOn className="absolute inset-0 block transition-opacity group-data-[selected=false]:opacity-0 dark:hidden" />
-          <Icons.PiggyBankStartOnDark className="absolute inset-0 hidden transition-opacity group-data-[selected=false]:opacity-0 dark:block" />
-          <Icons.PiggyBankStartOff className="absolute inset-0 block transition-opacity group-data-[selected=true]:opacity-0 dark:hidden" />
-          <Icons.PiggyBankStartOffDark className="absolute inset-0 hidden transition-opacity group-data-[selected=true]:opacity-0 dark:block" />
+          <Icons.StakeOn className="absolute inset-0 block transition-opacity group-data-[selected=false]:opacity-0 dark:hidden" />
+          <Icons.StakeOnDark className="absolute inset-0 hidden transition-opacity group-data-[selected=false]:opacity-0 dark:block" />
+          <Icons.StakeOff className="absolute inset-0 block transition-opacity group-data-[selected=true]:opacity-0 dark:hidden" />
+          <Icons.StakeOffDark className="absolute inset-0 hidden transition-opacity group-data-[selected=true]:opacity-0 dark:block" />
         </div>
         Stake
       </PanelButtonBase>
@@ -82,10 +82,10 @@ export function PanelButtonUnstake({ selectedPanel, setSelectedPanel }: Props) {
         value="UNSTAKE"
       >
         <div className="relative size-6">
-          <Icons.PiggyBankStopOn className="absolute inset-0 block transition-opacity group-data-[selected=false]:opacity-0 dark:hidden" />
-          <Icons.PiggyBankStopOnDark className="absolute inset-0 hidden transition-opacity group-data-[selected=false]:opacity-0 dark:block" />
-          <Icons.PiggyBankStopOff className="absolute inset-0 block transition-opacity group-data-[selected=true]:opacity-0 dark:hidden" />
-          <Icons.PiggyBankStopOffDark className="absolute inset-0 hidden transition-opacity group-data-[selected=true]:opacity-0 dark:block" />
+          <Icons.UnstakeOn className="absolute inset-0 block transition-opacity group-data-[selected=false]:opacity-0 dark:hidden" />
+          <Icons.UnstakeOnDark className="absolute inset-0 hidden transition-opacity group-data-[selected=false]:opacity-0 dark:block" />
+          <Icons.UnstakeOff className="absolute inset-0 block transition-opacity group-data-[selected=true]:opacity-0 dark:hidden" />
+          <Icons.UnstakeOffDark className="absolute inset-0 hidden transition-opacity group-data-[selected=true]:opacity-0 dark:block" />
         </div>
         Unstake
       </PanelButtonBase>

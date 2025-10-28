@@ -9,6 +9,7 @@ import {
 } from "@heroui/react";
 import Link from "next/link";
 
+import BirdieLogoBeta from "@/assets/BirdieLogoBeta.svg";
 import BirdieLogo from "@/assets/logo.svg";
 import BirdieLogoMobile from "@/assets/logo-mobile.svg";
 import Icons from "@/assets/icons/icons";
@@ -40,7 +41,8 @@ export default function NavbarImpl() {
             }
           }}
         >
-          <BirdieLogo className="hidden text-foreground lg:block" />
+          {/* <BirdieLogo className="hidden text-foreground lg:block" /> */}
+          <BirdieLogoBeta className="hidden text-foreground lg:block" />
           <BirdieLogoMobile className="block lg:hidden" />
         </Link>
       </NavbarBrand>

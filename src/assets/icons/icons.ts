@@ -55,7 +55,19 @@ import Wallet from "./wallet.svg";
 import WalletEmptyReferralRewards from "./Wallet-empty-ReferralRewards.svg";
 import WalletEmptySwapRewards from "./Wallet-empty-SwapRewards.svg";
 import Subtract from "./Subtract.svg";
-import PointEgg from "./point-egg.svg"
+import PointEgg from "./point-egg.svg";
+import StakeOn from "./stake-on.svg";
+import StakeOnDark from "./stake-on-dark.svg";
+import StakeOff from "./stake-off.svg";
+import StakeOffDark from "./stake-off-dark.svg";
+import UnstakeOn from "./unstake-on.svg";
+import UnstakeOnDark from "./unstake-on-dark.svg";
+import UnstakeOff from "./unstake-off.svg";
+import UnstakeOffDark from "./unstake-off-dark.svg";
+import VaultInfoIcon from "./vaultInfoIcon.svg";
+import Change from "./change.svg";
+import StakedToken from "./Staked-token.svg";
+import PointIcon from "./point-icon.svg";
 
 export const Icons = {
   Arrow,
@@ -77,6 +89,14 @@ export const Icons = {
   PiggyBankStopOnDark,
   PiggyBankStopOff,
   PiggyBankStopOffDark,
+  StakeOn,
+  StakeOnDark,
+  StakeOff,
+  StakeOffDark,
+  UnstakeOn,
+  UnstakeOnDark,
+  UnstakeOff,
+  UnstakeOffDark,
   Search,
   SocialDiscord,
   SocialMedium,
@@ -94,6 +114,7 @@ export const Icons = {
   ThemeDark,
   ThemeLight,
   ToolbarBack,
+  VaultInfoIcon,
   WalletArrowRU,
   WalletArrowRU20,
   WalletCopy,
@@ -116,6 +137,9 @@ export const Icons = {
   WalletTxOk,
   Wallet,
   PointEgg,
+  Change,
+  StakedToken,
+  PointIcon,
 };
 
 export default Icons;

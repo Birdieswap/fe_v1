@@ -3,6 +3,12 @@
 import { useEffect, useMemo, useRef } from "react";
 import { StakeExecuteButtons } from "./common/StakeExecuteButtons";
 
+import {
+  StakeFiller,
+  StakePanelContainer,
+  StakePanelHeader,
+  StakeSectionHeader,
+} from "@/components/atoms/stakePanelBase";
 import { BigDecimal } from "@/types/BigDecimal";
 import type { StakeTokenStatus } from "@/hooks/farm/StakeTokenStatus";
 import StakingAmountInput from "./StakingAmountInput";
@@ -14,6 +20,9 @@ import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { LoadingPulse } from "./common/LoadingPulse";
+import { motion } from "framer-motion";
+import BalanceRatioCard from "./common/BalanceRatioCard";
+import { defaultTransition } from "@/const/presenceTransition";
 
 export default function UnStakePanel({
   item,
@@ -21,6 +30,7 @@ export default function UnStakePanel({
   lpBalance,
   stakedBalance,
   totalBalance,
+  price,
   presetMaxToken,
   onPresetApplied,
 }: {
@@ -29,6 +39,7 @@ export default function UnStakePanel({
   lpBalance?: BigDecimal;
   stakedBalance?: BigDecimal;
   totalBalance?: BigDecimal;
+  price?: BigDecimal | null;
   presetMaxToken?: number;
   onPresetApplied?: () => void;
 }) {
@@ -161,33 +172,36 @@ export default function UnStakePanel({
   ]);
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex w-full flex-low justify-between items-center text-xs px-1">
-        <div className="flex items-center gap-1">
-          {/* <FaRegArrowAltCircleDown />
-          <div>Amount to Unstake</div> */}
-        </div>
-        <div className="flex items-center">
-          {isBalanceReady ? (
-            <>Staked Balance&nbsp;{balanceText}</>
-          ) : (
-            <LoadingPulse w="w-20" />
-          )}
-        </div>
-      </div>
-      <StakingAmountInput
-        amount={state.amount}
-        setAmount={(v: BigDecimal) => state.setAmount(v)}
-        setMaxAmount={state.setMaxAmount}
-        isInsolvency={state.isInsolvency}
-        isDisabled={
-          state.isPending || !state.isConnected || state.isWrongNetwork
-        }
-        isApproved={true} // 항상 승인됨으로 표시
-        isActive
-        token={inputToken}
-        panel="unstake"
-      />
+    <StakePanelContainer layoutId="stake-unstake">
+      <motion.div
+        layout={false}
+        {...defaultTransition}
+        className="flex w-full flex-col"
+      >
+        <BalanceRatioCard
+          balanceText={balanceText}
+          isBalanceReady={isBalanceReady}
+          staked={stakedBalance}
+          lp={lpBalance}
+          total={totalBalance}
+        />
+        <StakingAmountInput
+          amount={state.amount}
+          balance={balanceBD}
+          price={price}
+          setAmount={(v: BigDecimal) => state.setAmount(v)}
+          setMaxAmount={state.setMaxAmount}
+          isInsolvency={state.isInsolvency}
+          isDisabled={
+            state.isPending || !state.isConnected || state.isWrongNetwork
+          }
+          isApproved={true} // 항상 승인됨으로 표시
+          isActive
+          token={inputToken}
+          panel="unstake"
+        />
+      </motion.div>
+      <StakeFiller />
 
       <StakeExecuteButtons
         isConnected={state.isConnected}
@@ -199,15 +213,6 @@ export default function UnStakePanel({
         tokenStatuses={tokenStatusesApproved}
         variant="PINK"
       />
-      {matched?.staking?.contractAddress && (
-        <ExtraRewardsInfo
-          staking={{
-            contractAddress: matched.staking.contractAddress as `0x${string}`,
-            extraRewards: matched.staking.extraRewards ?? [],
-          }}
-          className="mt-3"
-        />
-      )}
-    </div>
+    </StakePanelContainer>
   );
 }

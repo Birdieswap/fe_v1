@@ -32,7 +32,7 @@ const nextConfig = {
   },
 
   webpack(config, { isServer, dev }) {
-    // ✅ dev에서 파일시스템 캐시 대신 메모리 캐시 → ENOENT 방지
+    //  dev에서 파일시스템 캐시 대신 메모리 캐시 → ENOENT 방지
     if (dev) {
       config.cache = { type: "memory" }; // 필요시 false도 가능
     }
