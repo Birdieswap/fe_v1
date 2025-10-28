@@ -8,9 +8,13 @@ import { useChainId } from "wagmi";
 import Icons from "@/assets/icons/icons";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import tokensList from "@/const/contracts/tokens/tokens";
-import singleVaultsList from "@/const/contracts/tokens/singleVaults";
+// import singleVaultsList from "@/const/contracts/tokens/singleVaults";
 import lpVaultsList from "@/const/contracts/tokens/lpVaults";
-import { buildWalletTokens } from "@/utils/wallet/tokens/buildWalletTokens";
+import {
+  buildWalletTokens,
+  type AssetsLike,
+} from "@/utils/wallet/tokens/buildWalletTokens";
+import type { BigDecimal } from "@/types/BigDecimal";
 import { useRouter } from "next/navigation";
 import { findSymbolByAddress } from "@/utils/assets/getTokenSymbol";
 
@@ -24,6 +28,84 @@ export type WalletTokenInfo = {
   src?: string;
   usdAmount: string;
 };
+
+type NonU<T> = NonNullable<T>;
+type StakedBalancesShape = NonU<NonU<AssetsLike["balances"]>["stakedBalances"]>;
+
+/**
+ * Utility: cast Map keys to string to satisfy AssetsLike
+ */
+function castMapToStringKey<V>(
+  m?: Map<any, V> | null
+): Map<string, V> | undefined {
+  if (!m) return undefined;
+  if (m instanceof Map) {
+    const out = new Map<string, V>();
+    for (const [k, v] of m.entries()) out.set(String(k), v);
+    return out;
+  }
+  return undefined;
+}
+
+/**
+ * Adapter: AssetsContext value -> AssetsLike expected by buildWalletTokens
+ * NOTE: We keep the structure minimal and cast where the upstream types diverge.
+ */
+function toAssetsLike(total: any): AssetsLike {
+  // Some codebases expose balances directly on context, others under .balances
+  const b = total?.balances ?? total;
+
+  // Try to discover farm price map if present somewhere else
+  const farmPriceMap = (total?.farmValues?.priceMap ??
+    total?.prices ??
+    b?.prices) as Map<any, BigDecimal> | undefined;
+
+  const stakedByInput = b?.stakedBalances?.byInputTokenAddress as
+    | Map<any, any>
+    | undefined;
+
+  const stakedBalances: StakedBalancesShape = {
+    // buildWalletTokens 내부는 Map 자체를 읽어들이므로 Map을 그대로 넣습니다.
+    // 타입 정의만 살짝 빗나가 있어 캐스팅으로 정리
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    byInputTokenAddress: stakedByInput
+      ? (new Map(
+          Array.from(stakedByInput.entries()).map(([k, v]) => [String(k), v])
+        ) as any)
+      : undefined,
+    byStakingPoolAddress: undefined,
+  };
+
+  const assetsLike: AssetsLike = {
+    assetValues: {
+      chainLinkPriceMap: undefined,
+    },
+    balances: {
+      tokenBalances: {
+        balanceMap: castMapToStringKey<BigDecimal>(
+          b?.tokenBalances?.balanceMap
+        ),
+      },
+      singleVaultBalances: {
+        balanceMap: castMapToStringKey<BigDecimal>(
+          b?.singleVaultBalances?.balanceMap
+        ),
+      },
+      lpVaultBalances: {
+        balanceMap: castMapToStringKey<BigDecimal>(
+          b?.lpVaultBalances?.balanceMap
+        ),
+      },
+      // --- 여기도 StakedBalancesShape을 그대로 할당 ---
+      stakedBalances,
+    },
+    farmValues: {
+      priceMap: castMapToStringKey<BigDecimal | null>(farmPriceMap),
+    },
+  };
+
+  return assetsLike;
+}
 
 function WalletTokenItem(props: WalletTokenInfo & { onClick?: () => void }) {
   return (
@@ -69,15 +151,18 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
   const router = useRouter();
 
   const tokens = useMemo<WalletTokenInfo[]>(() => {
-    return buildWalletTokens(
-      total,
-      {
-        tokens: tokensList as any,
-        lpVaults: lpVaultsList as any,
-        // singleVaults: singleVaultsList as any,
-      },
-      chainId
-    ) as WalletTokenInfo[];
+    const assetsLike = toAssetsLike(total);
+    return (
+      (buildWalletTokens(
+        assetsLike,
+        {
+          tokens: tokensList as any,
+          lpVaults: lpVaultsList as any,
+          // singleVaults: singleVaultsList as any,
+        },
+        chainId
+      ) as WalletTokenInfo[]) ?? []
+    );
   }, [total, chainId]);
 
   const handleClick = useCallback(
@@ -93,8 +178,8 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
                     findSymbolByAddress(t.address as string, chainId) as string
                   )}`
                 : t.type === "LP"
-                ? `/farm?open=${t.address}&stakePanel=stake`
-                : `/farm?open=${t.address}&stakePanel=unstake&unstakeAmount=max`;
+                  ? `/farm?open=${t.address}&stakePanel=stake`
+                  : `/farm?open=${t.address}&stakePanel=unstake&unstakeAmount=max`;
 
             const curr =
               typeof window !== "undefined"
@@ -105,7 +190,7 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
             const isSamePath = !!curr && curr.pathname === next.pathname;
 
             if (isSamePath && curr) {
-              // ✅ 같은 경로면 라우터 대신 URL만 교체 + 해당 페이지용 이벤트 발행
+              // 같은 경로면 라우터 대신 URL만 교체 + 해당 페이지용 이벤트 발행
               curr.search = next.search;
               window.history.replaceState(
                 window.history.state,
@@ -119,10 +204,10 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
                   : "swap:query-updated";
               window.dispatchEvent(new CustomEvent(evt));
             } else {
-              // ✅ 다른 경로면 라우터로 이동 (스크롤 금지)
+              // 다른 경로면 라우터로 이동 (스크롤 금지)
               router.push(href, { scroll: false });
             }
-          }, 160); // 오버레이 닫힘 애니메이션과 겹치지 않게 살짝 대기
+          }, 160);
         });
       } catch (e) {
         console.error("WalletToken click failed:", e);
@@ -130,8 +215,6 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
     },
     [router, chainId, onClose]
   );
-
-  console.log("walletTokens. tokens", tokens);
 
   return (
     <div
@@ -154,7 +237,7 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
           </h2>
           {tokens.map((token) => (
             <WalletTokenItem
-              key={token.name}
+              key={`${token.name}-${token.address ?? ""}`}
               amount={token.amount}
               name={token.name}
               src={token.src}
