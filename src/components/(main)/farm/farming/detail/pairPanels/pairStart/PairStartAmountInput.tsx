@@ -31,13 +31,28 @@ export default function PairStartAmountInput({
     state.setAmount(v, index);
   };
 
-  const setMaxAmount = state.setMaxAmount;
+  const mode = (state.nativeMode?.[index] ?? "ETH") as "ETH" | "WETH";
+
+  // ✅ MAX: 표시 잔고(displayBalances) 기준, ETH면 가스 버퍼 차감
+  const handleMax = () => {
+    const base = balance ?? BigDecimal.ZERO();
+
+    if (mode === "ETH") {
+      // 네트워크/가스 상황에 맞게 버퍼 조정 가능
+      const buffer = new BigDecimal("0.003");
+      const spendable = base.sub(buffer);
+      state.setAmount(spendable.gt(0) ? spendable : BigDecimal.ZERO(), index);
+    } else {
+      // WETH는 전액 사용
+      state.setAmount(base, index);
+    }
+  };
 
   const isEthLike = input?.symbol === "ETH" || input?.symbol === "WETH";
 
   const nativeToggle = isEthLike
     ? {
-        value: (state.nativeMode?.[index] ?? "ETH") as "ETH" | "WETH",
+        value: mode,
         onToggle: () => {
           state.setNativeMode?.((prev) => {
             const next = [...(prev ?? [])] as ("ETH" | "WETH" | null)[];
@@ -59,7 +74,8 @@ export default function PairStartAmountInput({
         isDisabled={false}
         isInsolvency={isImpermanentInsolvency}
         setAmount={setAmount}
-        setMaxAmount={setMaxAmount}
+        // 기존 state.setMaxAmount 대신, 인덱스/모드 반영한 로컬 핸들러
+        setMaxAmount={handleMax}
         token={input}
         price={price}
         panel="start"
