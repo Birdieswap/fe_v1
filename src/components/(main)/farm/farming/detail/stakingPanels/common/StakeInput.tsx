@@ -95,7 +95,7 @@ export default function StakeInput({
 
   const iconSrc =
     panel === "unstake"
-      ? "/tokens/staked-blp-token.svg"
+      ? "/tokens/sblp-token.svg"
       : (token?.iconSrc ?? undefined); // 필요하면 기본 fallback 추가 가능
 
   const iconAlt =
