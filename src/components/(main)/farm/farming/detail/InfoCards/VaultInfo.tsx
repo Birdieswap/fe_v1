@@ -1,13 +1,20 @@
 import clsx from "clsx";
 import { useDisclosure } from "@heroui/react";
 
-import { Vault } from "@/types/FarmListTableRowProps";
+import { AprVault, StakeVault } from "@/app/AssetsContextProvider";
 
 import VaultInfoModal from "./vaultInfo/VaultInfoModal";
-import { VaultRowItem } from "../EarningsPanel";
 import Icons from "@/assets/icons/icons";
 import { useCallback, useRef } from "react";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
+
+export type VaultRowItem = {
+  kind: "vault" | "staking";
+  name: string;
+  rawName: string;
+  apy: number;
+  aprSource: AprVault | StakeVault;
+};
 
 export default function VaultInfo({
   item,
