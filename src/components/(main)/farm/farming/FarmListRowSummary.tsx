@@ -184,6 +184,10 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
   const apyIsLoading =
     apy == null || apyNum === undefined || (apyNum === 0 && !hasAprEntry);
 
+  //=== Booster_Icon 관련
+
+  const flag = ["BitterSweet", "BlueViole", "SteelPink"];
+
   return (
     <motion.div
       ref={ref}
@@ -228,7 +232,30 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
       {/* ---------- [데스크탑] APY / TVL / BAL (기존 2~4컬럼) ---------- */}
 
       <div className="hidden md:flex items-center justify-end text-right pr-2 md:[grid-column:2/3]">
-        <Components.Apy isLoading={apyIsLoading} value={apy} />
+        <div className="flex-col items-end justify-center gap-1.5">
+          <Components.Apy isLoading={apyIsLoading} value={apy} />
+          {/* Booster 아이콘들 (뒤에서부터 겹침) */}
+          <div className="relative mt-1 h-4">
+            {/* 이전과 동일한 겹침 규칙 유지 */}
+            <div className="isolate flex -space-x-9 ">
+              {flag.map((name, i) => {
+                const IconComponent =
+                  Icons[`boost${name}` as keyof typeof Icons];
+                if (!IconComponent) return null;
+
+                return (
+                  <div
+                    key={i}
+                    // 기본 z-index는 0(=DOM 순서대로 겹침), hover 때만 위로
+                    className="relative z-0 hover:z-10 transition-transform duration-150 hover:scale-105"
+                  >
+                    <IconComponent />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="hidden md:flex items-center justify-end text-right pr-2 md:[grid-column:3/4]">

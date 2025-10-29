@@ -30,6 +30,7 @@ export default function PairStartAmountInput({
   const setAmount = (v: BigDecimal) => {
     state.setAmount(v, index);
   };
+
   const setMaxAmount = state.setMaxAmount;
 
   const isEthLike = input?.symbol === "ETH" || input?.symbol === "WETH";
