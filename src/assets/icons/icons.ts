@@ -2,6 +2,17 @@ import Arrow from "./arrow.svg";
 import ArrowRL from "./arrow-rl.svg";
 import BirdRate from "./birdrate.svg";
 import Birdie56 from "./Birdie-56.svg";
+import boostBitterSweet from "./booster_BitterSweet.svg";
+import boostBlueViole from "./booster_BlueViole.svg";
+import boostGoGreen from "./booster_GoGreen.svg";
+import boostRazzleDazzleRose from "./booster_RazzleDazzleRose.svg";
+import boostSteelPink from "./booster_SteelPink.svg";
+import boostDarkJungleGreenLetter from "./booster_DarkJungleGreen_Letter.svg";
+import boostElectricPurpleLetter from "./booster_ElectricPurple_Letter.svg";
+import boostMediumSeaGreenLetter from "./booster_MediumSeaGreen_Letter.svg";
+import boostOriolesOrangeLetter from "./booster_OriolesOrange_Letter.svg";
+import boostShockingPinkLetter from "./booster_ShockingPink_Letter.svg";
+
 import Close from "./close.svg";
 import Dropdown from "./dropdown.svg";
 import Error from "./error.svg";
@@ -77,6 +88,16 @@ export const Icons = {
   ArrowRL,
   BirdRate,
   Birdie56,
+  boostBitterSweet,
+  boostBlueViole,
+  boostGoGreen,
+  boostRazzleDazzleRose,
+  boostSteelPink,
+  boostDarkJungleGreenLetter,
+  boostElectricPurpleLetter,
+  boostMediumSeaGreenLetter,
+  boostOriolesOrangeLetter,
+  boostShockingPinkLetter,
   ChangeArrow,
   Close,
   Dropdown,
