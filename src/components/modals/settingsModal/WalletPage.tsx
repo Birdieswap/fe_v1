@@ -436,7 +436,7 @@ export default function WalletPage(props: {
             {!isSelfReferral ? (
               <SwapDisplay address={account?.address} />
             ) : null}
-            <div className="flex w-full flex-row justify-start gap-3 border-b-1 border-default-300 pb-3 pt-4 dark:border-default-900 max-sm:pb-4">
+            <div className="flex w-full flex-row justify-start gap-3 border-b-1 border-default-300 pb-3 pt-4 dark:border-default-100 max-sm:pb-4">
               <TabSelector
                 name="Assets"
                 selected={tab}
