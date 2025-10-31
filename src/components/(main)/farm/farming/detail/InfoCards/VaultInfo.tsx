@@ -50,7 +50,7 @@ export default function VaultInfo({
           className={clsx(
             "font-medium text-default-800",
             "group-hover:text-foreground",
-            "dark:text-default-700 group-hover:dark:text-default-500",
+            "dark:text-default-200 group-hover:dark:text-default-500",
             "transition-colors"
           )}
         >
@@ -59,7 +59,7 @@ export default function VaultInfo({
         <Icons.Info
           className={clsx(
             "fill-default-500 group-hover:fill-default-700",
-            "dark:fill-default-800 dark:group-hover:fill-default-600",
+            "dark:fill-default-300 dark:group-hover:fill-default-600",
             "transition-[fill]"
           )}
           fillRule="evenodd"

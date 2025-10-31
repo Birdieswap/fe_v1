@@ -193,12 +193,12 @@ export default function SwapFormAmount({
             <Icons.SwapTokenArrow />
           </Button>
         </div>
-        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm max-[375px]:text-[10px] text-default-800">
+        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm max-[375px]:text-[10px] text-default-800 dark:text-default-300">
           <span className="grow">{token ? `$${dollarAmount}` : ""}</span>
           <BalanceDisplay balance={balance} token={token} />
           {type === "sell" && (
             <Button
-              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-semibold dark:border-dark-mid-mint dark:bg-dark-mid-mint max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]"
+              className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-sans font-semibold dark:text-background  dark:border-dark-mid-mint dark:bg-dark-mid-mint max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]"
               size="sm"
               onPress={() => setAmount(balance.toPrecisionString(true, false))}
             >

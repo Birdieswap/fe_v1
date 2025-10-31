@@ -107,7 +107,7 @@ export default function FaqPage() {
         className="px-0"
         itemClasses={{
           title: "text-[15px] font-medium",
-          trigger: "py-5 border-b border-default-400",
+          trigger: "py-5 border-b border-default-400 dark:border-default-100",
           indicator:
             "text-default-700 rotate-180 data-[open=true]:rotate-0 data-[open=false]:rotate-180",
           content:

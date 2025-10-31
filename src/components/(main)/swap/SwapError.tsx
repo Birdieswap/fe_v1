@@ -11,9 +11,9 @@ export default function SwapError({ children }: { children: ReactNode }) {
     <motion.div
       {...presenceTransition}
       className={cn(
-        "flex flex-row items-center gap-1",
-        "w-full rounded-[4px] border-1 border-danger bg-danger/[0.07] px-3 py-1 text-sm font-medium text-danger",
-        "transition-opacity",
+        "flex flex-row items-center gap-1 mb-4",
+        "w-full rounded-[4px] border-1 border-danger dark:border-[#FF3F3F] bg-danger/[0.07] dark:bg-[#FF3F3F]/[0.1] px-3 py-1 text-sm font-medium text-danger dark:text-[#FF3F3F]",
+        "transition-opacity"
       )}
     >
       {children}

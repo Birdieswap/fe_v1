@@ -70,7 +70,7 @@ export default function PointsPanel({
         </div>
 
         {/* 청록 카피 */}
-        <p className="font-sans text-[16px] font-regular text-primary dark:text-dark-green-key">
+        <p className="font-sans text-[16px] font-regular  text-primary dark:text-dark-green-key">
           Supply, swap, and invite friends to get points.
         </p>
 
@@ -79,7 +79,7 @@ export default function PointsPanel({
 
         {/* 하단 안내 + 로켓(20×20) */}
         <div className="text-left text-foreground">
-          <p className="font-sans font-regular text-[16px] leading-[24px] px-4">
+          <p className="font-sans font-regular text-[16px] leading-[24px] px-4 max-sm:px-0">
             The full details of our Points Program are coming soon.
             {/* ↓ 여기부터는 절대 줄바꿈 금지 */}
             <span className="whitespace-nowrap inline-flex items-center">

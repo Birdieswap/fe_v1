@@ -213,7 +213,7 @@ body {
 }
 
 @utility btn-mint-colors {
-  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key dark:text-foreground;
 }
 .btn-mint-colors:hover,
 .btn-mint-colors[data-hover="true"] {
@@ -251,7 +251,7 @@ body {
 
 /* 조합형 */
 .btn-mint {
-  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key dark:text-foreground;
 }
 .btn-mint[data-hover="true"],
 .btn-mint:hover {

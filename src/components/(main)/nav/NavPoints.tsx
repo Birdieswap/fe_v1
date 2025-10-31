@@ -81,7 +81,7 @@ export default function NavPoints() {
       </NavbarItem>
 
       <ModalBase
-        className="mt-2 pt-6 sm:hidden"
+        className="mt-2 pt-14 sm:hidden"
         classNames={{
           wrapper: "items-end justify-center",
           base: "m-0 max-h-[75vh] overflow-hidden",
@@ -112,17 +112,7 @@ export default function NavPoints() {
       >
         <ModalContent className="h-full">
           <ModalBody className="p-0 h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              {/* 헤더 */}
-              <div className="px-6 pt-5 pb-2">
-                <p className="text-[14px] font-semibold leading-5 text-default-700">
-                  Birdieswap Point
-                </p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-                  {isPointsLoading || total == null ? "—" : totalFormatted}
-                </p>
-              </div>
-
+            <div className="flex-1 px-6 py-4 overflow-y-auto">
               {/* 본문 패널: 모달에서는 가득/반응형 */}
               <PointsPanel variant="modal" />
 

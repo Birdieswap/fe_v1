@@ -10,7 +10,7 @@ export function FarmListTableHeader({ gridCols }: { gridCols: string }) {
       {...defaultTransition}
       className={clsx(
         "col-span-full",
-        "grid origin-top p-6 max-md:hidden",
+        "grid origin-top p-6 max-md:hidden max-md:border-b-0 border-b border-default-400 dark:border-default-600",
         gridCols // ✅ 로우와 동일한 grid-template-columns
       )}
     >

@@ -26,7 +26,7 @@ function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
           "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent"
         ),
         input:
-          "text-[30px] font-bold leading-[36px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+          "text-[30px] max-[376px]:text-[24px] font-bold max-[376px]:font-semibold leading-[36px] max-[376px]:leading-[30px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
       }}
       min={0}
       step="0.000000000000000001"
@@ -124,7 +124,7 @@ export default function AmountInput({
                 isDisabled={isDisabled}
                 classNames={{
                   input:
-                    "text-[30px] max-[375px]:text-[22px] font-bold leading-[36px] max-[375px]:leading-[28px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+                    "text-[30px] max-[376px]:text-[20px] font-bold leading-[36px] max-[376px]:leading-[24px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
                   inputWrapper:
                     "h-11 min-h-11 bg-transparent p-1 shadow-none data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
                 }}
@@ -152,10 +152,10 @@ export default function AmountInput({
             </div>
             <div className="flex shrink-0 flex-row items-center gap-2 px-1">
               {isApproved ? (
-                <div className="size-6 max-[375px]:size-5" />
+                <div className="size-6 max-[376px]:size-4" />
               ) : (
                 <Icons.Lock
-                  className="fill-default-800 dark:fill-default-700"
+                  className="fill-default-800 dark:fill-default-300 max-[376px]:h-4 max-[376px]:w-4"
                   fillRule="evenodd"
                 />
               )}
@@ -167,11 +167,11 @@ export default function AmountInput({
                   src={token.iconSrc}
                   width={36}
                   classNames={{
-                    img: "max-[375px]:h-7 max-[375px]:w-7",
+                    img: "max-[376px]:h-6 max-[376px]:w-6",
                   }}
                 />
               )}
-              <p className="text-xl max-[375px]:text-lg font-semibold">
+              <p className="text-xl max-[376px]:text-base font-semibold max-[376px]:font-medium">
                 {token.symbol}
               </p>
               {/* ✅ 16x16 'C' 토글 버튼 */}
@@ -199,27 +199,27 @@ export default function AmountInput({
               )}
             </div>
           </div>
-          <div className="flex w-full flex-row items-center gap-2 px-1 text-sm max-[375px]:text-[10px]">
-            <div className="grow text-default-800">
+          <div className="flex w-full flex-row items-center gap-2 px-1 text-sm max-[376px]:text-[10px]">
+            <div className="grow text-default-800 dark:text-default-300">
               <p>${dollarAmount ?? "0"}</p>
             </div>
             <div className="flex flex-row items-center gap-2">
               <div className="flex flex-col items-end">
                 <div className="flex flex-row justify-end gap-1.5 self-start">
-                  <span className="text-right max-[375px]:text-[10px] font-semibold text-default-900 dark:text-default-800">
+                  <span className="text-right max-[376px]:text-[10px] font-semibold text-default-900 dark:text-default-200">
                     {isSmall ? "BAL" : "Balance"}
                   </span>
-                  <span className="max-[375px]:text-[10px] text-default-800 dark:text-default-700">
+                  <span className="max-[376px]:text-[10px] text-default-800 dark:text-default-300">
                     {balanceStr ?? "..."}
                   </span>
                 </div>
-                <p className="max-[375px]:text-[10px] self-end text-default-800 dark:text-default-700">
+                <p className="max-[376px]:text-[10px] self-end text-default-800 dark:text-default-300">
                   ${dollarBalance ?? "0"}
                 </p>
               </div>
               <Button
                 className={clsx(
-                  "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[375px]:rounded-lg max-[375px]:h-[24px] max-[375px]:px-1.5 max-[375px]:text-[10px]",
+                  "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[376px]:rounded-lg max-[376px]:h-[24px] max-[376px]:px-1.5 max-[376px]:text-[10px]",
                   "border-default-600 bg-primary-200 font-semibold",
                   "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
                 )}
