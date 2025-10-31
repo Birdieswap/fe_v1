@@ -142,7 +142,7 @@ export default function FarmDetail({
           exit={{ height: 0, opacity: 0, transition: EXIT }}
           style={{ overflow: "hidden", willChange: "height, opacity" }}
           className={clsx(
-            "flex w-full flex-col gap-4 overflow-hidden border-b-1 border-default-400 bg-default-100 px-4 py-6 dark:border-default-900 dark:bg-dark-popup-bg",
+            "flex w-full flex-col gap-4 overflow-hidden  px-4 py-6 dark:bg-dark-popup-bg",
             "md:col-span-6",
             "max-md:col-span-3 max-md:row-span-2"
           )}
