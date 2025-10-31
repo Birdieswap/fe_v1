@@ -68,7 +68,7 @@ function SwapDisplay({
     <div
       className={cn(
         "flex h-auto min-h-[86px] mt-4 mx-3 px-4 py-3 rounded-lg max-sm:min-h-[40px] border-1 border-[#FF0000] dark:border-[#FF3F3F]",
-        "w-full",
+        "max-sm:w-full",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start"
       )}
