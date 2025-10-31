@@ -28,7 +28,7 @@ const RISK_URL = "https://docs.birdieswap.com/security/general-risks";
 
 function StaticConsentContent() {
   return (
-    <div className="flex flex-col items-center max-h-[55vh] overflow-auto px-4 py-6 space-y-6">
+    <div className="flex flex-col items-center max-h-[55vh] overflow-auto px-4 max-sm:px-0 py-6 space-y-6">
       {/* 상단: 로고 + 제목 */}
       <div className="flex flex-col items-center text-center gap-6">
         <Icons.Birdie56 className="w-14 h-14" />
