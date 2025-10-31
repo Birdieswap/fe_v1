@@ -1,13 +1,23 @@
 "use client";
 
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import Icons from "@/assets/icons/icons";
+import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
+import clsx from "clsx";
 import { useContext } from "react";
+ModalCloseButton;
 
 export default function PointsPanel({
   variant = "popover",
+  className,
+  showClose = false, // 상단 우측 X 표시 여부
+  onClose,
 }: {
   variant?: "popover" | "modal";
+  className?: string;
+  showClose?: boolean;
+  onClose?: () => void;
 }) {
   const isPopover = variant === "popover";
   const { userPoints } = useContext(AssetsContext);
@@ -26,56 +36,71 @@ export default function PointsPanel({
   );
 
   return (
-    <div
-      className={
-        isPopover
-          ? "px-4 py-4 w-[320px] sm:w-[360px]" // 팝오버: 고정 폭
-          : "px-6 sm:px-8 py-4 w-full" // 모달: 가득, 반응형 패딩
-      }
-    >
-      {/* 상단 요약 */}
-      <div className="mb-3 px-1 text-left text-xl font-bold text-foreground">
-        <h2>🎉 Earn Your Points</h2>
-      </div>
-      <div className="rounded-2xl border border-default-200/70 p-4 dark:border-default-100/60">
-        <p className="mb-2 text-base font-medium text-primary">
-          Your have earned
+    <div className={clsx("relative", className)}>
+      {/* 필요할 때만 X 버튼(24×24) 표시 */}
+      {showClose && (
+        <ModalCloseButton
+          onPress={onClose}
+          className="absolute left-[324px] top-[-40px]"
+        />
+      )}
+
+      {/* 본문: 패딩/폭 없음 → 래퍼에서 제어 */}
+      <div className="flex flex-col mt-6 space-y-6">
+        {/* 헤더: 아이콘(48) + 타이틀 */}
+        <div className="flex items-center gap-4">
+          <Icons.PointIcon className="w-12 h-12" /> {/* 48×48 */}
+          <h2 className="font-sans text-[20px] font-semibold leading-[28px] text-foreground">
+            Earn Your Points
+          </h2>
+        </div>
+
+        {/* 서브 타이틀 */}
+        <p className="text-base font-semibold text-foreground">
+          You have earned
         </p>
 
-        <div className="flex flex-col gap-2 text-[15px] text-foreground">
-          <div className="flex items-center justify-between">
-            <span>Farm</span>
-            <span className="font-semibold tabular-nums">
-              {stakingPoint} points
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Swap</span>
-            <span className="font-semibold tabular-nums">
-              {swapPoint} points
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span>Referral</span>
-            <span className="font-semibold tabular-nums">
-              {referralPoint} points
-            </span>
+        {/* 획득 내역 카드 */}
+        <div className="rounded-[12px] bg-default-100 px-4 py-3 dark:bg-background">
+          <div className="flex flex-col gap-2 text-[16px] font-sans text-foreground">
+            <Row label="Farm" value={stakingPoint} />
+            <Row label="Swap" value={swapPoint} />
+            <Row label="Referral" value={referralPoint} />
           </div>
         </div>
-      </div>
 
-      {/* 카피 */}
-      <div className="mt-6 space-y-1 text-center">
-        <p className="text-[15px] text-default-700">
-          Supply, swap, and invite friends
+        {/* 청록 카피 */}
+        <p className="font-sans text-[16px] font-regular  text-primary dark:text-dark-green-key">
+          Supply, swap, and invite friends to get points.
         </p>
-        <p className="text-[15px] text-default-700">to get points.</p>
-      </div>
 
-      <div className="mt-5 text-center text-foreground">
-        <p className="text-[15px]">The full details of our Points Program</p>
-        <p className="text-[15px]">are coming soon. Stay tuned! 🚀</p>
+        {/* 구분선 */}
+        <div className="h-px bg-default-500 dark:bg-default-200" />
+
+        {/* 하단 안내 + 로켓(20×20) */}
+        <div className="text-left text-foreground">
+          <p className="font-sans font-regular text-[16px] leading-[24px] px-4 max-sm:px-0">
+            The full details of our Points Program are coming soon.
+            {/* ↓ 여기부터는 절대 줄바꿈 금지 */}
+            <span className="whitespace-nowrap inline-flex items-center">
+              Stay tuned!
+              <Icons.Rocket className="w-5 h-5 ml-2 translate-y-[1px]" />
+            </span>
+          </p>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-foreground font-regular">{label}</span>
+      <span className="tabular-nums">
+        <span className="font-medium">{value ?? 0}</span>
+        <span className="text-foreground font-regular">points</span>
+      </span>
     </div>
   );
 }

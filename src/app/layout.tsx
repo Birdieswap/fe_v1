@@ -12,7 +12,11 @@ import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
-const inter = Inter({ subsets: ["latin"], preload: false });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter", // CSS 변수로 노출
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Birdieswap",
@@ -28,7 +32,7 @@ export default async function RootLayout({
   const headerNonce = reqHeaders.get("x-csp-nonce") ?? undefined;
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={clsx(inter.className)}>
         <script
           {...(!isDev ? { nonce: headerNonce ?? undefined } : {})}

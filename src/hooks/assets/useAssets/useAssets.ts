@@ -1,23 +1,19 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useAccount, useBalance, useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추가
+import { useAccount, useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추가
 
 import useAccountBalances from "./useAccountBalances";
 import { useAssetValues } from "./useAssetValues";
 
-
 import { FarmList } from "@/const/farmInfo";
 import { calcFarmOnce, FarmCalc } from "@/utils/farm/calcFarmOnce";
 import { BigDecimal } from "@/types/BigDecimal";
-import {
-  prefetchFarmData,
-} from "@/utils/farm/farmDataCache";
+import { prefetchFarmData } from "@/utils/farm/farmDataCache";
 import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
   EContractType,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
-import useStakedBalances from "./useStakedBalances";
 
 type FarmValuesRecord = Record<
   string,
@@ -35,7 +31,9 @@ type FarmRawSingle = {
   fullName?: string;
   iconSrc?: string;
   input: [any]; // farm.input 그대로
-  totalUnderlyingToken: [{ address: `0x${string}` | null; value: BigDecimal | null }];
+  totalUnderlyingToken: [
+    { address: `0x${string}` | null; value: BigDecimal | null },
+  ];
   totalSupply: BigDecimal | null;
 };
 
@@ -50,7 +48,7 @@ type FarmRawLP = {
   input: [any, any]; // farm.swap.input[0], [1]
   totalUnderlyingToken: [
     { address: `0x${string}` | null; value: BigDecimal | null },
-    { address: `0x${string}` | null; value: BigDecimal | null }
+    { address: `0x${string}` | null; value: BigDecimal | null },
   ];
   totalSupply: BigDecimal | null;
 };
@@ -109,53 +107,68 @@ function toScaled1e18FromDecimalString(s: string | null | undefined): bigint {
 
 const TargetBlockTime = 24 * 60 * 60; // seconds
 const annualBlockQty = Math.floor((365 * 24 * 60 * 60) / TargetBlockTime); // 정수
-const SCALE_DECIMALS = 1e18;
 
 export default function useAssets() {
   // 1) 여기서만 훅 호출 (고정 순서)
-  const {address} = useAccount();
+  const { address } = useAccount();
 
   const chainId = useChainId();
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
-  const baseBalances = useAccountBalances();
-  const pointsQ =useAccountPoints(address);
+  const [aprDataState, setAprDataState] = useState<any | null>(null);
+  // apr 데이터 캐시용 ref (rerender를 억제하기 위해 useRef로 보관)
+  const aprDataRef = useRef<any | null>(null);
+
+  const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
+  const baseBalances = useAccountBalances(aprList);
+
+  const pointsQ = useAccountPoints(address);
 
   // 2) FarmList에서 현재 체인 주소 확정
   const farms = useMemo(() => {
-    return FarmList
-      .map((f) => {
-        const farm = f?.wip_stakeToken as IBirdieSingleFarm | IBirdieLPFarm | undefined;
-        const address = farm?.addresses?.[chainId] as `0x${string}` | undefined;
-        return { farm, address };
-      })
-      .filter((x): x is { farm: NonNullable<typeof x.farm>; address: `0x${string}` } => {
+    return FarmList.map((f) => {
+      const farm = f?.wip_stakeToken as
+        | IBirdieSingleFarm
+        | IBirdieLPFarm
+        | undefined;
+      const address = farm?.addresses?.[chainId] as `0x${string}` | undefined;
+      return { farm, address };
+    }).filter(
+      (
+        x
+      ): x is { farm: NonNullable<typeof x.farm>; address: `0x${string}` } => {
         try {
-          return !!x.address && /^0x[0-9a-fA-F]+$/.test(x.address) && BigInt(x.address) !== BigInt(0);
+          return (
+            !!x.address &&
+            /^0x[0-9a-fA-F]+$/.test(x.address) &&
+            BigInt(x.address) !== BigInt(0)
+          );
         } catch {
           return false;
         }
-      });
+      }
+    );
   }, [chainId]);
 
   // console.log("useAssets farms", farms);
 
-    // 2) 결과를 Map으로 관리
+  // 2) 결과를 Map으로 관리
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());
-  const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(new Map());
-  const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(new Map());
-  
+  const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(
+    new Map()
+  );
+  const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(
+    new Map()
+  );
+
   const [farmRawMap, setFarmRawMap] = useState<Map<string, FarmRaw>>(new Map());
-    // aprData (raw parsed data) — 한 번만 fetch하고 forceRefresh 시 초기화
-  const [aprDataState, setAprDataState] = useState<any | null>(null);
-    // apr 데이터 캐시용 ref (rerender를 억제하기 위해 useRef로 보관)
-  const aprDataRef = useRef<any | null>(null);
+  // aprData (raw parsed data) — 한 번만 fetch하고 forceRefresh 시 초기화
 
   const [refreshIndex, setRefreshIndex] = useState(0);
 
-  const refetch = useCallback(() => setRefreshIndex(i => i + 1), []);
-  
+  const refetch = useCallback(() => setRefreshIndex((i) => i + 1), []);
+
   // 이전 출력 스냅샷(ref)도 Map으로 유지
   const lastOutputsRef = useRef<{
     apyMap: Map<string, BigDecimal>;
@@ -172,7 +185,9 @@ export default function useAssets() {
     const arr: string[] = [];
     assetValues.chainLinkPriceMap.forEach((v, k) => {
       // v.price.toString() + 메타로 버전화
-      arr.push(`${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`);
+      arr.push(
+        `${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`
+      );
     });
     return arr.sort().join("|");
   }, [assetValues.chainLinkPriceMap]);
@@ -180,7 +195,9 @@ export default function useAssets() {
   const uniswapVersion = useMemo(() => {
     const arr: string[] = [];
     assetValues.uniswapPriceMap.forEach((v, k) => {
-      arr.push(`${k}:${v.baseBalance?.toString?.() ?? "0"}:${v.quoteBalance?.toString?.() ?? "0"}`);
+      arr.push(
+        `${k}:${v.baseBalance?.toString?.() ?? "0"}:${v.quoteBalance?.toString?.() ?? "0"}`
+      );
     });
     return arr.sort().join("|");
   }, [assetValues.uniswapPriceMap]);
@@ -197,56 +214,36 @@ export default function useAssets() {
     baseBalances.lpVaultBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
+    const stakedByInput = (baseBalances as any)?.stakedBalances
+      ?.byInputTokenAddress as Map<string, { value: any }> | undefined;
+    if (stakedByInput) {
+      stakedByInput.forEach((entry, k) => {
+        arr.push(`staked:${k}:${entry?.value?.toString?.() ?? "0"}`);
+      });
+    }
     return arr.sort().join("|");
-  }, [baseBalances.tokenBalances.balanceMap, baseBalances.singleVaultBalances.balanceMap, baseBalances.lpVaultBalances.balanceMap]);
+  }, [
+    baseBalances.tokenBalances.balanceMap,
+    baseBalances.singleVaultBalances.balanceMap,
+    baseBalances.lpVaultBalances.balanceMap,
+    (baseBalances as any)?.stakedBalances?.byInputTokenAddress,
+  ]);
 
-  const aprList = useMemo(() => (aprDataState?.apr ?? []), [aprDataState]);
-  const stakedBalances = useStakedBalances({ aprList, address });
-  
-  const balances = useMemo(() => {
-    const mergedIsFetching =
-      baseBalances.isFetching || Boolean((stakedBalances as any)?.query?.isFetching);
-
-    const mergedRefetch = async () => {
-      const calls: Array<Promise<any>> = [];
-      calls.push(baseBalances.tokenBalances.query.refetch?.() ?? Promise.resolve());
-      calls.push(baseBalances.singleVaultBalances.query.refetch?.() ?? Promise.resolve());
-      calls.push(baseBalances.lpVaultBalances.query.refetch?.() ?? Promise.resolve());
-      if ((stakedBalances as any)?.query?.refetch) {
-        calls.push((stakedBalances as any).query.refetch());
-      }
-      await Promise.all(calls);
-    };
-
-    return {
-      ...baseBalances,
-      stakedBalances,           
-      isFetching: mergedIsFetching,
-      query: {
-        refetch: mergedRefetch, 
-        isFetching: mergedIsFetching,
-      },
-    };
-  }, [baseBalances, stakedBalances]);
+  // ✅ useAccountBalances가 이미 통합해줌 → 그대로 패스스루
+  const balances = baseBalances;
 
   const refetchAll = useCallback(async () => {
     await Promise.all([
       assetValues?.uniswapBaseTokenData?.refetch(),
       assetValues?.uniswapQuoteTokenData?.refetch(),
       assetValues?.chainLinkData?.refetch(),
-      baseBalances?.lpVaultBalances.query.refetch(),
-      baseBalances?.singleVaultBalances.query.refetch(),
-      baseBalances?.tokenBalances.query.refetch(),
-      (stakedBalances as any)?.query?.refetch?.(),
+      balances?.query?.refetch?.(),
     ]);
   }, [
     assetValues?.uniswapBaseTokenData?.refetch,
     assetValues?.uniswapQuoteTokenData?.refetch,
     assetValues?.chainLinkData?.refetch,
-    baseBalances?.lpVaultBalances.query.refetch,
-    baseBalances?.singleVaultBalances.query.refetch,
-    baseBalances?.tokenBalances.query.refetch,
-    stakedBalances,
+    balances?.query?.refetch,
   ]);
 
   // [수정] 강제 재계산 도우미 (refetch 후 refreshIndex bump)
@@ -259,8 +256,8 @@ export default function useAssets() {
       setRefreshIndex((i) => i + 1);
     }
   }, [refetchAll]);
-  
-    useEffect(() => {
+
+  useEffect(() => {
     let cancelled = false;
 
     async function run() {
@@ -272,7 +269,11 @@ export default function useAssets() {
           setPriceMap(new Map());
           // Data는 유지해도 무방하나, 초기 화면 단순화를 위해 null로
           setAprDataState(null);
-          lastOutputsRef.current = { apyMap: new Map(), tvlMap: new Map(), priceMap: new Map() };
+          lastOutputsRef.current = {
+            apyMap: new Map(),
+            tvlMap: new Map(),
+            priceMap: new Map(),
+          };
         }
         return;
       }
@@ -284,7 +285,11 @@ export default function useAssets() {
 
       for (const { farm, address } of farms) {
         try {
-          const { apy, tvl, price }: FarmCalc = await calcFarmOnce(client, farm as any, assetValues);
+          const { apy, tvl, price }: FarmCalc = await calcFarmOnce(
+            client,
+            farm as any,
+            assetValues
+          );
           nextApy.set(address, apy);
           nextTvl.set(address, tvl);
           nextPrice.set(address, price);
@@ -318,7 +323,9 @@ export default function useAssets() {
         try {
           let data: any | null = null;
           try {
-            const res = await fetch(`/apr/${chainIdStr}`, { cache: "no-store" });
+            const res = await fetch(`/apr/${chainIdStr}`, {
+              cache: "no-store",
+            });
             data = await res.json();
           } catch {
             // fallback
@@ -337,7 +344,11 @@ export default function useAssets() {
       }
 
       // d) APY 오버레이: aprDataRef가 있으면 오버레이 계산
-      if (aprDataRef.current && aprDataRef.current.apr && Array.isArray(aprDataRef.current.apr)) {
+      if (
+        aprDataRef.current &&
+        aprDataRef.current.apr &&
+        Array.isArray(aprDataRef.current.apr)
+      ) {
         const list = aprDataRef.current.apr as any[];
         // compositeKey -> apy(decimal number)
         const apyByComposite = new Map<string, number>();
@@ -346,16 +357,20 @@ export default function useAssets() {
           const rawCid = (entry?.chainId ?? "").toString().trim();
           const cid = rawCid === "0" ? chainId : Number(rawCid);
           const addr: string | undefined = entry?.contractAddress;
-          const vaults: any[] = Array.isArray(entry?.vaults) ? entry.vaults : [];
+          const vaults: any[] = Array.isArray(entry?.vaults)
+            ? entry.vaults
+            : [];
           if (!cid || !addr || vaults.length < 1) continue;
 
           const SUM_LIMIT = BigInt(4644420100000000000);
-          const APY_CAP_PERCENT = 99.99999; 
+          const APY_CAP_PERCENT = 99.99999;
 
-          let sum = BigInt(0);               // apr_7d (정수문자열, 18 decimals)
+          let sum = BigInt(0); // apr_7d (정수문자열, 18 decimals)
           for (let i = 0; i < Math.min(3, vaults.length); i++) {
             const s = vaults[i]?.apr7d ?? "0";
-            try { sum += BigInt(s); } catch {}
+            try {
+              sum += BigInt(s);
+            } catch {}
           }
 
           // console.log("useAssets vault apr7d", vaults.map(v=>v.apr7d), "sum", sum.toString(), "addr", addr)
@@ -367,22 +382,32 @@ export default function useAssets() {
           if (extraList.length > 0) {
             // price: 해당 엔트리 contractAddress의 가격(BigDecimal)을 1e18 스케일로 변환
             const pBD = nextPrice.get(addr as `0x${string}`);
-            const priceScaled = toScaled1e18FromDecimalString(pBD?.toString?.());
+            const priceScaled = toScaled1e18FromDecimalString(
+              pBD?.toString?.()
+            );
 
             if (priceScaled > BigInt(0)) {
               for (const er of extraList) {
                 // 주: 원 필드명이 dailyRewardPerTokenX18 (x18 스케일)
-                const rawX18 = er?.dailyRewardPerTokenX18 ?? er?.dailyRewardPerTokkenX18 ?? "0";
+                const rawX18 =
+                  er?.dailyRewardPerTokenX18 ??
+                  er?.dailyRewardPerTokkenX18 ??
+                  "0";
                 const decimals = Number(er?.decimals ?? 18);
                 let dailyX18 = BigInt(0);
-                try { dailyX18 = BigInt(rawX18); } catch { dailyX18 = BigInt(0); }
+                try {
+                  dailyX18 = BigInt(rawX18);
+                } catch {
+                  dailyX18 = BigInt(0);
+                }
 
                 if (dailyX18 <= BigInt(0)) continue;
                 const denomPow = BigInt(10) ** BigInt(Math.max(0, decimals));
 
                 // extraScaled = floor( (dailyX18 / 10^decimals) * 365 / price ) × 1e18
                 // = floor( dailyX18 * 365 * 1e18 / (10^decimals * priceScaled) )
-                const numerator   = dailyX18 * BigInt(365) * BigInt(10) ** BigInt(18);
+                const numerator =
+                  dailyX18 * BigInt(365) * BigInt(10) ** BigInt(18);
                 const denominator = denomPow * priceScaled;
                 if (denominator === BigInt(0)) continue;
 
@@ -406,7 +431,6 @@ export default function useAssets() {
           }
           // console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
 
-
           apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);
           //console.log("useAssets apyByComposite", apyByComposite)
         }
@@ -426,7 +450,6 @@ export default function useAssets() {
             }
           }
         }
-        
       }
 
       if (cancelled) return;
@@ -439,22 +462,39 @@ export default function useAssets() {
 
       const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
       const tvlChangedFinal = tvlChanged; // 위에서 계산
-      const priceChanged = !shallowEqualNormalized(lastPriceNorm, nextPriceNorm);
+      const priceChanged = !shallowEqualNormalized(
+        lastPriceNorm,
+        nextPriceNorm
+      );
 
       if (apyChanged) setApyMap(nextApy);
       if (tvlChangedFinal) setTvlMap(nextTvl);
       if (priceChanged) setPriceMap(nextPrice);
 
       if (apyChanged || tvlChangedFinal || priceChanged) {
-        lastOutputsRef.current = { apyMap: nextApy, tvlMap: nextTvl, priceMap: nextPrice };
+        lastOutputsRef.current = {
+          apyMap: nextApy,
+          tvlMap: nextTvl,
+          priceMap: nextPrice,
+        };
       }
     }
 
     run();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // 가격/밸런스/유니스왑 버전 + farms + refreshIndex 변화 시 run
-  }, [client, farms, chainLinkVersion, uniswapVersion, balancesVersion, refreshIndex, chainId]);
+  }, [
+    client,
+    farms,
+    chainLinkVersion,
+    uniswapVersion,
+    balancesVersion,
+    refreshIndex,
+    chainId,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -481,11 +521,16 @@ export default function useAssets() {
       // } catch {}
 
       // 개별 타임아웃 유틸 (멈춤 탐지)
-      const withTimeout = <T,>(p: Promise<T>, ms: number, label: string) =>
+      const withTimeout = <T>(p: Promise<T>, ms: number, label: string) =>
         new Promise<T>((resolve, reject) => {
           const t = setTimeout(() => reject(new Error(`timeout:${label}`)), ms);
-          p.then((v) => { clearTimeout(t); resolve(v); })
-           .catch((e) => { clearTimeout(t); reject(e); });
+          p.then((v) => {
+            clearTimeout(t);
+            resolve(v);
+          }).catch((e) => {
+            clearTimeout(t);
+            reject(e);
+          });
         });
 
       // 모든 팜 병렬 실행 (개별 12초 타임아웃)
@@ -504,13 +549,17 @@ export default function useAssets() {
           console.debug("[farmRaw] prefetch done", tag, {
             liq: Array.isArray(liquidity)
               ? "LP-4tuple"
-              : (liquidity ? "Single-BD" : "null"),
-            supply: !!totalSupply
+              : liquidity
+                ? "Single-BD"
+                : "null",
+            supply: !!totalSupply,
           });
 
           if (farm.type === "BirdieSingle") {
             const underlyingAddr =
-              (farm as IBirdieSingleFarm)?.input?.addresses?.[chainId] as `0x${string}` | undefined ?? null;
+              ((farm as IBirdieSingleFarm)?.input?.addresses?.[chainId] as
+                | `0x${string}`
+                | undefined) ?? null;
 
             next.set(address, {
               type: farm.type,
@@ -520,27 +569,31 @@ export default function useAssets() {
               displayDecimals: (farm as any).displayDecimals,
               fullName: (farm as any).fullName,
               iconSrc: (farm as any).iconSrc,
-              input: [ (farm as IBirdieSingleFarm).input ],
+              input: [(farm as IBirdieSingleFarm).input],
               totalUnderlyingToken: [
-                { address: underlyingAddr, value: (liquidity as BigDecimal | null) ?? null },
+                {
+                  address: underlyingAddr,
+                  value: (liquidity as BigDecimal | null) ?? null,
+                },
               ],
               totalSupply: (totalSupply as BigDecimal | null) ?? null,
             } as FarmRawSingle);
           } else {
-            const [addr0, val0, addr1, val1] =
-              (Array.isArray(liquidity)
+            const [addr0, val0, addr1, val1] = (
+              Array.isArray(liquidity)
                 ? (liquidity as [
                     `0x${string}` | null,
                     BigDecimal | null,
                     `0x${string}` | null,
-                    BigDecimal | null
+                    BigDecimal | null,
                   ])
-                : [null, null, null, null]) as [
-                `0x${string}` | null,
-                BigDecimal | null,
-                `0x${string}` | null,
-                BigDecimal | null
-              ];
+                : [null, null, null, null]
+            ) as [
+              `0x${string}` | null,
+              BigDecimal | null,
+              `0x${string}` | null,
+              BigDecimal | null,
+            ];
 
             const inputs = [
               (farm as IBirdieLPFarm)?.swap?.input?.[0],
@@ -583,7 +636,9 @@ export default function useAssets() {
     }
 
     runFarmRaw();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [client, farms, chainId, refreshIndex]);
 
   // 4) farmValues 안에 세 Map을 그대로 넣어서 노출
@@ -594,7 +649,7 @@ export default function useAssets() {
       priceMap, // Map
     };
   }, [apyMap, tvlMap, priceMap]);
- // 9) refetchAll: 기존과 동일
+  // 9) refetchAll: 기존과 동일
 
   const assets = useMemo(
     () => ({
@@ -610,10 +665,22 @@ export default function useAssets() {
 
       refetchAll,
       forceRefresh, //추가
-      isFetching: assetValues.isFetching || balances.isFetching || pointsQ.isLoading,
+      isFetching:
+        assetValues.isFetching || balances.isFetching || pointsQ.isLoading,
     }),
-    [assetValues, balances, farmValues, aprDataState, farmRawMap, refetchAll, forceRefresh, assetValues.isFetching, balances.isFetching, pointsQ.data,
-    pointsQ.isLoading,],
+    [
+      assetValues,
+      balances,
+      farmValues,
+      aprDataState,
+      farmRawMap,
+      refetchAll,
+      forceRefresh,
+      assetValues.isFetching,
+      balances.isFetching,
+      pointsQ.data,
+      pointsQ.isLoading,
+    ]
   );
   console.log("useAssets assets", assets);
 

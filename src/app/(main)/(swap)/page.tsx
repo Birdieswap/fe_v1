@@ -21,7 +21,7 @@ export default function SwapPage() {
         )}
       >
         <section className="flex w-full flex-row items-center gap-1">
-          <h1 className="grow text-base font-semibold text-default-800 dark:text-default-400">
+          <h1 className="grow text-base font-semibold text-default-800 dark:text-default-600">
             SWAP
           </h1>
           <MaxSlippageSection />

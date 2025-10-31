@@ -27,14 +27,30 @@ export default function SettingsModal() {
 
   return (
     <Fragment>
-      <Button
-        className="wallet-btn"
-        variant="light"
-        onPress={() => disclosure.onOpen()}
-      >
-        <WalletIcon provider={selectedProvider} />
-        <span>{addressDisplay}</span>
-      </Button>
+      {/* 데스크톱 전용 */}
+      <div className="hidden sm:block">
+        <Button
+          variant="light"
+          onPress={disclosure.onOpen}
+          className="wallet-btn"
+        >
+          <WalletIcon provider={selectedProvider} />
+          <span>{addressDisplay}</span>
+        </Button>
+      </div>
+
+      {/* 모바일 전용 — 아이콘만 */}
+      <div className="sm:hidden">
+        <Button
+          variant="light"
+          isIconOnly
+          onPress={disclosure.onOpen}
+          className="h-10 w-10 min-w-10 rounded-full p-1 border-0 bg-transparent"
+        >
+          <WalletIcon provider={selectedProvider} />
+        </Button>
+      </div>
+
       <Modal
         hideCloseButton
         classNames={{

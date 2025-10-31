@@ -31,6 +31,10 @@
    이렇게 두 계층을 모두 제공합니다.
 */
 @theme {
+  --font-sans:
+    var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol";
   /* ===== Light (RGB base) ===== */
   --color-light-pink-rgb: 248 61 151; /* #F83D97 */
   --color-light-pink-hover-rgb: 242 10 122; /* #F20A7A */
@@ -170,12 +174,26 @@
   --color-foreground: var(--color-light-foreground);
   --color-primary: var(--color-light-primary);
   --color-primary-foreground: rgb(255 255 255);
+  --color-lp: var(--color-default-200);
+  --color-accent-logo: var(--color-light-primary);
 }
 .dark {
   --color-background: var(--color-dark-background);
   --color-foreground: var(--color-dark-foreground);
   --color-primary: var(--color-dark-primary);
   --color-primary-foreground: rgb(20 25 42); /* 필요 시 조정 */
+  --color-lp: var(--color-default-800);
+  --color-accent-logo: var(--color-dark-green-key);
+
+  --color-default-100: rgb(var(--color-default-900-rgb));
+  --color-default-200: rgb(var(--color-default-800-rgb));
+  --color-default-300: rgb(var(--color-default-700-rgb));
+  --color-default-400: rgb(var(--color-default-600-rgb));
+  --color-default-500: rgb(var(--color-default-500-rgb)); /* 중앙값은 동일 */
+  --color-default-600: rgb(var(--color-default-400-rgb));
+  --color-default-700: rgb(var(--color-default-300-rgb));
+  --color-default-800: rgb(var(--color-default-200-rgb));
+  --color-default-900: rgb(var(--color-default-100-rgb));
 }
 
 /* (선택) body 기본 글자색을 의미 토큰으로 */
@@ -195,7 +213,7 @@ body {
 }
 
 @utility btn-mint-colors {
-  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key dark:text-foreground;
 }
 .btn-mint-colors:hover,
 .btn-mint-colors[data-hover="true"] {
@@ -233,7 +251,7 @@ body {
 
 /* 조합형 */
 .btn-mint {
-  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key;
+  @apply bg-light-primary text-primary-foreground dark:bg-dark-green-key dark:text-foreground;
 }
 .btn-mint[data-hover="true"],
 .btn-mint:hover {

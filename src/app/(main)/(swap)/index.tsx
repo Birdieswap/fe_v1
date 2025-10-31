@@ -178,7 +178,7 @@ export default function SwapIndex() {
               setToAmount("");
             }}
           >
-            <Icons.ChangeArrow className="fill-foreground" />
+            <Icons.ChangeArrow className="fill-foreground dark:fill-default-600" />
           </button>
         </div>
         <SwapFormAmount

@@ -6,9 +6,12 @@ import { Dispatch, SetStateAction } from "react";
 import { Config } from "wagmi";
 import { Client, PublicClient } from "viem";
 import { WriteContractMutate } from "wagmi/query";
-import { ICurrency, IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
+import {
+  ICurrency,
+  IBirdieSingleFarm,
+} from "@/const/contracts/types/tokenTypes";
 import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
-import { useAccountBalancesReturnType } from "@/hooks/assets/useAssets/useAccountBalances";
+import { UseAccountBalancesReturnType } from "@/hooks/assets/useAssets/useAccountBalances";
 import { BigDecimal } from "@/types/BigDecimal";
 import { TransactionContextType } from "@/app/TransactionContextProvider";
 
@@ -27,7 +30,7 @@ export interface UseSwapTokensProps {
   isPendingWriteContract: boolean;
   isFetchingAssets: boolean;
   assetValues?: useAssetValuesReturnType;
-  balances?: useAccountBalancesReturnType;
+  balances?: UseAccountBalancesReturnType;
   setPriceImpact?: Dispatch<SetStateAction<BigDecimal | undefined>>;
   maxSlippage?: number; // 0~1 범위(예: 0.005 = 0.5%)
   isTyping: boolean;
@@ -39,8 +42,8 @@ export interface UseSwapTokensReturn {
   isLoadingFrom: boolean;
   isLoadingTo: boolean;
   swapPool: any | null;
-  exchangeRate: string;     // from→to 환율 표시 문자열 (기존과 동일)
-  rExchangeRate: string;    // to→from 역환율 표시 문자열 (기존과 동일)
+  exchangeRate: string; // from→to 환율 표시 문자열 (기존과 동일)
+  rExchangeRate: string; // to→from 역환율 표시 문자열 (기존과 동일)
   setToTokenAmountWithGuard: (n: SetStateAction<string>) => void;
   setFromTokenAmountWithGuard: (n: SetStateAction<string>) => void;
   swap: () => Promise<void>;
@@ -49,7 +52,12 @@ export interface UseSwapTokensReturn {
   isApprovePending: boolean;
   isPending: boolean;
   isZeroAmount: boolean;
-  updateAmount: (newAmount: string, side: "in" | "out", withToToken?: ICurrency, withFromToken?: ICurrency) => Promise<void>;
+  updateAmount: (
+    newAmount: string,
+    side: "in" | "out",
+    withToToken?: ICurrency,
+    withFromToken?: ICurrency
+  ) => Promise<void>;
 }
 
 export type Addr = `0x${string}` | null;

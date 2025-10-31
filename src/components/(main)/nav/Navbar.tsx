@@ -9,8 +9,10 @@ import {
 } from "@heroui/react";
 import Link from "next/link";
 
+import BirdieLogoBeta from "@/assets/BirdieLogoBeta.svg";
 import BirdieLogo from "@/assets/logo.svg";
 import BirdieLogoMobile from "@/assets/logo-mobile.svg";
+import BirdieLogoBetaMobile from "@/assets/BirdieLogoBetaMobile.svg";
 import Icons from "@/assets/icons/icons";
 
 import { NavbarLink } from "./NavbarLink";
@@ -25,7 +27,7 @@ export default function NavbarImpl() {
     <Navbar
       className="gap-4 bg-background lg:gap-10"
       classNames={{
-        wrapper: "justify-start gap-4 lg:gap-10 max-w-full py-3",
+        wrapper: "max-sm:px-4 justify-start gap-4 lg:gap-10 max-w-full py-3",
         content: "gap-1",
       }}
       position="sticky"
@@ -40,8 +42,10 @@ export default function NavbarImpl() {
             }
           }}
         >
-          <BirdieLogo className="hidden text-foreground lg:block" />
-          <BirdieLogoMobile className="block lg:hidden" />
+          {/* <BirdieLogo className="hidden text-foreground lg:block" /> */}
+          <BirdieLogoBeta className="hidden text-foreground lg:block" />
+          {/* <BirdieLogoMobile className="block lg:hidden" /> */}
+          <BirdieLogoBetaMobile className="block lg:hidden" />
         </Link>
       </NavbarBrand>
 

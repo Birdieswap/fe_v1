@@ -45,22 +45,48 @@ button.connect-btn:hover {
 }
 
 button.connect-btn {
-  /* @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
-  @apply min-w-0 max-w-max min-h-min max-h-max;
-  @apply flex flex-row items-center gap-1 px-3 py-1; */
-  @apply btn-size-40;
-  /* 모양/색 */
-  @apply rounded-2xl bg-light-primary dark:bg-dark-green-key;
+  @apply btn-size-40 rounded-2xl bg-light-primary dark:bg-dark-green-key flex items-center justify-center;
 }
 
+/* hover/focus 상태 */
+button[data-hover="true"].connect-btn,
+button.connect-btn:hover {
+  @apply bg-light-primary-hover opacity-100 dark:bg-dark-primary-hover;
+}
+
+/* 활성 상태 */
 button[aria-expanded="true"].connect-btn {
   @apply bg-light-primary dark:bg-dark-green-key opacity-100;
 }
 
+/* 내부 아이콘/텍스트 */
 button.connect-btn > span {
-  /* @apply font-medium text-[16px] leading-[30px] text-background
-         max-sm:text-[14px] max-sm:leading-[24px]; */
-  @apply btn-label-16-30 text-background;
-  /* 좁은 화면에서만 살짝 축소하고 싶다면 유지 */
-  @apply max-sm:text-[14px] max-sm:leading-[24px];
+  @apply btn-label-16-30 text-background max-sm:text-[14px] max-sm:leading-[24px];
+}
+
+/* ✅ 모바일 전용 (sm 이하): 24px 원형 아이콘 버튼으로 변경 */
+@media (max-width: 639px) {
+  button.connect-btn {
+    /* 기본 토큰(예: btn-size-40) 완전 무효화 */
+    @apply !w-7 !h-7 !p-0 !rounded-md !flex !items-center !justify-center;
+    /* HeroUI의 min/max width/height 상쇄 */
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+    line-height: 1 !important;
+    /* 배경 유지 */
+    @apply bg-light-primary dark:bg-dark-green-key;
+  }
+
+  /* 내부 텍스트(있다면) 숨김: 아이콘만 남기기 */
+  button.connect-btn > span {
+    @apply hidden;
+  }
+
+  /* Hover 색상 유지(옵션) */
+  button[data-hover="true"].connect-btn,
+  button.connect-btn:hover {
+    @apply bg-light-primary-hover dark:bg-dark-primary-hover;
+  }
 }

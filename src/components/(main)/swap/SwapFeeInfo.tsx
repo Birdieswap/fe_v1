@@ -11,7 +11,6 @@ import { BigDecimal } from "@/types/BigDecimal";
 
 import { useSwapContext } from "./SwapProvider";
 import SwapError from "./SwapError";
-import { RiTokenSwapLine } from "react-icons/ri";
 import { useReferral } from "@/app/ReferralContextProvider";
 import { useAccount } from "wagmi";
 import { isEthOnlyOneSide, isWrapPair } from "@/utils/swap/swapMode";
@@ -131,8 +130,9 @@ export default function SwapFeeInfo() {
               </span>
               <div className="flex flex-row items-center gap-0.5">
                 <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
-                  {swapPool && <RiTokenSwapLine className="h-4 w-4" />}
+                  {swapPool && <Icons.PointIcon className="h-5 w-5" />}
                 </div>
+
                 <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function SwapFeeInfo() {
       <AnimatePresence>
         {!isWrap && priceImpact && priceImpact.abs().gt(0.05) && (
           <SwapError>
-            <Icons.Error />
+            <Icons.Error className="dark:fill-[#ff3f3f]" />
             <span>
               High price impact! More than{" "}
               {priceImpact?.abs().mul(100).toFixed(2) ?? "-"}% drop!
@@ -164,26 +164,31 @@ export default function SwapFeeInfo() {
           >
             <div
               className={clsx(
-                "grid w-full grid-cols-2 grid-rows-4 gap-2 text-sm font-normal",
+                "grid w-full grid-cols-2 grid-rows-4 gap-2 text-sm font-sans",
                 "[&>*]:flex [&>*]:flex-row [&>*]:items-center [&>*]:gap-1",
                 "[&>*:nth-child(even)]:justify-self-end",
-                "[&>*:nth-child(even)]:text-foreground",
-                "[&>*:nth-child(odd)]:text-default-700"
+                "text-foreground"
               )}
             >
-              <span>Max slippage</span>
+              <span className="text-default-700 dark:text-default-300">
+                Max slippage
+              </span>
               <span>
                 {isWrap
                   ? `0%`
                   : maxSlippage === "auto"
-                  ? `Auto(0.5%)`
-                  : `${maxSlippage}%`}
+                    ? `Auto(0.5%)`
+                    : `${maxSlippage}%`}
               </span>
-              <span>Price Impact</span>
+              <span className="text-default-700 dark:text-default-300">
+                Price Impact
+              </span>
               <span>
                 {isWrap ? `0%` : `-${priceImpact?.abs().mul(100).toFixed(2)}%`}
               </span>
-              <span>Fee ({feeTier}%)</span>
+              <span className="text-default-700 dark:text-default-300">
+                Fee ({feeTier}%)
+              </span>
               <span>
                 {fromAmount && fromPrice
                   ? (() => {
@@ -198,9 +203,11 @@ export default function SwapFeeInfo() {
                     })()
                   : ""}
               </span>
-              <span>Swap Reward</span>
+              <span className="text-default-700 dark:text-default-300">
+                Swap Point
+              </span>
               <span>
-                <RiTokenSwapLine className="h-4 w-4" />
+                <Icons.PointIcon className="h-5 w-5" />
                 {fromAmount && fromPrice
                   ? (() => {
                       // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보

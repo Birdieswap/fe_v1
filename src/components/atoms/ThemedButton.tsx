@@ -66,29 +66,6 @@ function ThemedButtonComponent(
         // 4) 🔥 비활성 오버라이드 — 항상 맨 마지막에!
         disabledFix
       )}
-      // isDisabled={props.isDisabled ?? props.disabled}
-      // {...{ ...props, className: undefined, variant: undefined, ref }}
-      // className={clsx(
-      //   "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl text-lg font-semibold",
-      //   "data-[disabled=true]:bg-default-300 data-[disabled=true]:text-default-600",
-      //   "dark:data-[disabled=true]:bg-dark-popup-bg dark:data-[disabled=true]:text-default-400",
-      //   "aria-[disabled=true]:bg-default-300 aria-[disabled=true]:text-default-600",
-      //   "dark:aria-[disabled=true]:bg-dark-popup-bg dark:aria-[disabled=true]:text-default-400",
-      //   "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",
-      //   props.variant === "MINT" && "btn-mint",
-      //   props.variant === "LIGHT" && [
-      //     "text-light-primary dark:text-dark-green-key",
-      //     "bg-transparent",
-      //     "data-[hover=true]:bg-transparent data-[hover=true]:text-light-primary-hover dark:data-[hover=true]:text-dark-primary-hover",
-      //   ],
-      //   props.variant === "PINK" && [
-      //     "text-warning-foreground",
-      //     "bg-light-pink dark:bg-dark-pink",
-      //     "data-[hover=true]:bg-light-pink-hover dark:data-[hover=true]:bg-dark-pink-hover",
-      //     "hover:bg-light-pink-hover dark:hover:bg-dark-pink-hover",
-      //   ],
-      //   props.className
-      // )}
     />
   );
 }
