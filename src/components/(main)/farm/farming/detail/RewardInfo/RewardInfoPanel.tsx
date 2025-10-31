@@ -145,7 +145,7 @@ export default function RewardInfoPanel({
               "data-[disabled=true]:pointer-events-none"
             )}
           >
-            Birdieswap Point
+            Point
           </Button>
         </div>
       </div>
