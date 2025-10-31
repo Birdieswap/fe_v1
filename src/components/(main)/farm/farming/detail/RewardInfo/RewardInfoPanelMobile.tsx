@@ -111,7 +111,7 @@ export default function RewardInfoPanelMobile({
       <div className={clsx(ROW_BASE, "gap-2 py-2 rounded-md")}>
         {/* 2~7: 아이콘 + 심볼 (한 셀, flex gap-2) */}
         <div className={LEFT_GROUP}>
-          <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full">
+          <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
             <Icons.PointIcon className="h-full w-full fill-primary text-background" />
           </div>
           <p className="text-[14px] font-semibold truncate">Point</p>
@@ -257,12 +257,12 @@ function ExtraRewardClaimRowMobile({
     <div className={clsx(ROW_BASE, "gap-2 py-2 rounded-md")}>
       {/* 2~7: 아이콘 + 심볼 (한 셀, flex gap-2) */}
       <div className={LEFT_GROUP}>
-        <div className="relative h-5 w-5 shrink-0 overflow-hidden rounded-full">
+        <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
           <Image
             src={`/tokens/${reward.symbol}.svg`}
             alt={reward.symbol}
             fill
-            sizes="20px"
+            sizes="24px"
           />
         </div>
         <span className="text-[14px] font-semibold truncate">

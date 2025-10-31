@@ -202,6 +202,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
         // 💡 모바일=2열, 데스크탑=전달된 grid 템플릿
         "col-span-full",
         "grid items-center min-h-[120px] sm:min-h-[72px] md:px-6 max-md:px-4 border-b border-default-400 dark:border-default-100 cursor-pointer",
+        isActive && "!border-b-0",
         "max-md:grid-cols-[64px_1fr]",
         gridCols,
         "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
