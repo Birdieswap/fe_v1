@@ -1,0 +1,372 @@
+import {
+  Divider,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  useDisclosure,
+} from "@heroui/react";
+import Link from "next/link";
+import { Fragment, useMemo } from "react";
+
+import ModalBase from "@/components/atoms/ModalBase";
+import ModalCloseButton from "@/components/atoms/ModalCloseButton";
+import ThemedButton from "@/components/atoms/ThemedButton";
+
+import type { VaultRowItem } from "../../../../../farm/farming/FarmDetail";
+import { useChainId } from "wagmi";
+import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
+import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
+import Icons from "@/assets/icons/icons";
+
+const toNum = (v: unknown) => {
+  const n = typeof v === "bigint" ? Number(v) : Number(v ?? NaN);
+  return Number.isFinite(n) ? n : NaN;
+};
+
+const isStakeVault = (s: any): s is { stakingToken: string } =>
+  s && typeof s === "object" && "stakingToken" in s;
+
+const isAprVaultSingle = (
+  s: any
+): s is { singleVaultContract: string; singleStrategyContract: string } =>
+  s &&
+  typeof s === "object" &&
+  "singleVaultContract" in s &&
+  "singleStrategyContract" in s;
+
+const isAprVaultDual = (
+  s: any
+): s is { dualVaultContract: string; dualStrategyContract: string } =>
+  s &&
+  typeof s === "object" &&
+  "dualVaultContract" in s &&
+  "dualStrategyContract" in s;
+
+export default function VaultInfoModal({
+  item,
+  disclosure,
+  onJustClosed,
+}: {
+  item: VaultRowItem;
+  disclosure: ReturnType<typeof useDisclosure>;
+  onJustClosed?: () => void;
+}) {
+  const { isOpen, onOpen, onOpenChange, onClose } = disclosure;
+
+  const chainId = useChainId();
+  const explorerURL = getBlockExplorerUrl(chainId);
+  const src = item.aprSource;
+
+  const titleText = isStakeVault(src)
+    ? "Staking information"
+    : (src as any)?.type === "single" || (src as any)?.type === "dual"
+      ? "Farming information"
+      : "Information";
+
+  const nameText = isStakeVault(src)
+    ? `Birdieswap ${src.stakingToken} Staking`
+    : ((src as any)?.name ?? "—");
+
+  const noticeText = (src as any)?.notice as string | undefined;
+
+  const underlyingText = isStakeVault(src)
+    ? "Birdieswap"
+    : (src as any)?.underlyingProtocolText;
+
+  const underlyingUrl = isStakeVault(src)
+    ? undefined
+    : (src as any)?.underlyingProtocolUrl;
+
+  const lastHarvestSec = useMemo(() => toNum((src as any)?.lastHarvest), [src]);
+
+  const timeAgoText = useMemo(() => {
+    if (!Number.isFinite(lastHarvestSec) || lastHarvestSec <= 0) return;
+    return getTimeAgoLinux(String(lastHarvestSec));
+  }, [lastHarvestSec]);
+
+  const handleOpenChange = (nextOpen?: boolean) => {
+    if (nextOpen === false) onJustClosed?.();
+    onOpenChange();
+  };
+
+  return (
+    <Fragment>
+      <ModalBase
+        isOpen={isOpen}
+        onOpenChange={handleOpenChange}
+        onClose={() => {
+          onJustClosed?.();
+          onClose();
+        }}
+        className="p-6"
+        classNames={{
+          wrapper: "items-end sm:items-center",
+        }}
+        closeButton={<ModalCloseButton />}
+        scrollBehavior="outside"
+        isDismissable
+      >
+        <ModalContent>
+          <ModalHeader className="px-0 pb-3">
+            <div className="flex flex-row items-center gap-1">
+              <Icons.VaultInfoIcon className="fill-primary text-background                " />
+              <div className="flex flex-col gap-1 pl-1">
+                <h1 className="text-sm font-semibold text-foreground">
+                  {titleText}
+                </h1>
+                <p className="text-sm font-normal text-default-800">
+                  {nameText}
+                </p>
+                {Number.isFinite(lastHarvestSec) &&
+                  lastHarvestSec > 0 &&
+                  timeAgoText && (
+                    <p className="text-sm font-normal text-default-500 dark:text-default-300">
+                      {`Harvested ${timeAgoText} ago`}
+                    </p>
+                  )}
+              </div>
+            </div>
+          </ModalHeader>
+          <Divider />
+          <ModalBody className="px-0 py-3">
+            {noticeText && (
+              <>
+                <h2 className="text-sm text-foreground">
+                  <span className="font-medium">{noticeText}</span>
+                </h2>
+                <Divider />
+              </>
+            )}
+            <div className="flex flex-col gap-4 break-all">
+              {/* Underlying 정보 */}
+              <div className="flex flex-col gap-1.5 text-sm">
+                <h2 className="text-sm text-foreground">
+                  <span className="font-medium">Underlying protocol: </span>
+                  <span className="font-normal">{underlyingText || "—"}</span>
+                </h2>
+                {typeof underlyingUrl === "string" &&
+                  underlyingUrl.length > 0 && (
+                    <Link
+                      className="text-xs underline transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={underlyingUrl}
+                      target="_blank"
+                    >
+                      <p>{underlyingUrl}</p>
+                    </Link>
+                  )}
+              </div>
+
+              {isAprVaultSingle(src) ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Vault contract :
+                    </h2>
+                    <Link
+                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={`${explorerURL}/address/${src.singleVaultContract}`}
+                      target="_blank"
+                    >
+                      <p>{src.singleVaultContract}</p>
+                    </Link>
+                  </div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={`${explorerURL}/address/${src.singleStrategyContract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.singleStrategyContract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : isAprVaultDual(src) ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Vault contract :
+                    </h2>
+                    <Link
+                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={`${explorerURL}/address/${src.dualVaultContract}`}
+                      target="_blank"
+                    >
+                      <p>{src.dualVaultContract}</p>
+                    </Link>
+                  </div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={`${explorerURL}/address/${src.dualStrategyContract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.dualStrategyContract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : isStakeVault(src) ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Staking contract :
+                    </h2>
+                    <Link
+                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      href={`${explorerURL}/address/${src.contractAddress}`}
+                      target="_blank"
+                    >
+                      <p>{src.contractAddress}</p>
+                    </Link>
+                  </div>
+                  {src.extraRewards?.map((er, idx) => {
+                    const addr = er?.contractAddress;
+                    if (!addr) return null; // 주소 없으면 스킵
+                    const label = er?.symbol || er?.name || `#${idx + 1}`;
+
+                    return (
+                      <div key={addr} className="flex flex-col gap-2.5 pb-2">
+                        <h2 className="text-sm font-medium text-foreground">
+                          Extra reward token contract : {label}
+                        </h2>
+                        <Link
+                          key={addr || idx}
+                          className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                          href={`${explorerURL}/address/${addr}`}
+                          target="_blank"
+                        >
+                          <p className="break-all">
+                            {addr}
+                            <span className="ml-2 text-[11px] text-default-500"></span>
+                          </p>
+                        </Link>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </ModalBody>
+
+          <ModalFooter className="p-0">
+            <ThemedButton variant="MINT" onPress={onClose}>
+              Close
+            </ThemedButton>
+          </ModalFooter>
+        </ModalContent>
+      </ModalBase>
+    </Fragment>
+  );
+}
+
+/* <div className="flex flex-col gap-4 break-all">
+              <div className="flex flex-col gap-1.5 text-sm">
+                <h2 className="text-sm text-foreground">
+                  <span className="font-medium">Underlying protocol: </span>
+                  <span className="font-normal">
+                    {src.underlyingProtocolText}
+                  </span>
+                </h2>
+                {typeof src.underlyingProtocolUrl === "string" && (
+                  <Link
+                    className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 underline transition-colors hover:text-default-800"
+                    href={src.underlyingProtocolUrl}
+                    target="_blank"
+                  >
+                    <p>{src.underlyingProtocolUrl}</p>
+                  </Link>
+                )}
+              </div>
+              {"singleVaultContract" in src &&
+              "singleStrategyContract" in src ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Vault contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.singleVaultContract}`}
+                      target="_blank"
+                    >
+                      <p>{src.singleVaultContract}</p>
+                    </Link>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.singleStrategyContract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.singleStrategyContract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : "dualVaultContract" in src &&
+                "dualStrategyContract" in src ? (
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Vault contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dualVaultContract}`}
+                      target="_blank"
+                    >
+                      <p>{src.dualVaultContract}</p>
+                    </Link>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Strategy contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dualStrategyContract}#code`}
+                      target="_blank"
+                    >
+                      <p>{src.dualStrategyContract}</p>
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                // ── ③ REWARD (컨트랙트 정보 없을 수 있음) ───────────────
+                <div>
+                  <div className="flex flex-col gap-2.5 pb-2">
+                    <h2 className="text-sm font-medium text-foreground">
+                      Reward token contract :
+                    </h2>
+                    <Link
+                      className="text-xs text-default-500 dark:text-default-200 dark:hover:text-default-400 transition-colors hover:text-default-800"
+                      href={`${explorerURL}/address/${src.dualVaultContract}`}
+                      target="_blank"
+                    >
+                      <p>{src.dualVaultContract}</p>
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ModalBody>
+          <ModalFooter className="p-0">
+            <ThemedButton variant="MINT" onPress={onClose}>
+              Close
+            </ThemedButton>
+          </ModalFooter>
+        </ModalContent>
+      </ModalBase>
+    </Fragment>
+  );
+} */

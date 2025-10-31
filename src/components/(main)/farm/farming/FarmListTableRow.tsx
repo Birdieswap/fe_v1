@@ -1,14 +1,4 @@
-import {
-  Dispatch,
-  Fragment,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useLayoutEffect, useMemo, useRef } from "react";
 
 import { Farm } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -19,6 +9,9 @@ import FarmListRowSummary from "./FarmListRowSummary";
 type Props = {
   item: Farm;
   balance?: BigDecimal;
+  lpBalance?: BigDecimal; //  추가
+  stakedBalance?: BigDecimal;
+  gridCols: string;
   onRowClick: (fullName: string, address: `0x${string}`) => void;
   activeFullName: string | null;
   chainId: number;
@@ -45,6 +38,9 @@ function getNearestScrollParent(
 export default function FarmListTableRow({
   item,
   balance,
+  lpBalance,
+  stakedBalance,
+  gridCols,
   onRowClick,
   activeFullName,
   chainId,
@@ -128,17 +124,27 @@ export default function FarmListTableRow({
   return (
     <Fragment key={item.wip_stakeToken.fullName}>
       <FarmListRowSummary
-        apy={apy}
-        balance={balance}
-        isActive={isActive}
+        ref={summaryRef}
         item={item}
+        isActive={isActive}
+        onClick={onClick}
+        gridCols={gridCols}
+        apy={apy}
         tvl={tvl}
         price={price}
-        onClick={onClick}
-        ref={summaryRef}
+        balance={balance} // 총합
+        lpBalance={lpBalance}
+        stakedBalance={stakedBalance}
       />
 
-      <FarmDetail item={item} selectedRow={activeFullName} price={price} />
+      <FarmDetail
+        item={item}
+        selectedRow={activeFullName}
+        price={price}
+        lpBalance={lpBalance}
+        stakedBalance={stakedBalance}
+        totalBalance={balance}
+      />
     </Fragment>
   );
 }

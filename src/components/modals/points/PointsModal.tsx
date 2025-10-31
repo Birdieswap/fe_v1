@@ -42,7 +42,7 @@ export default function PointsModal({
       }}
     >
       <ModalContent>
-        <ModalHeader className="px-6 pt-5 pb-0">
+        {/* <ModalHeader className="px-6 pt-5 pb-0">
           <div className="w-full">
             <p className="text-[14px] font-semibold leading-5 text-default-500">
               Birdieswap Point
@@ -51,7 +51,7 @@ export default function PointsModal({
               {totalFormatted}
             </p>
           </div>
-        </ModalHeader>
+        </ModalHeader> */}
 
         <ModalBody className="px-3 pb-6">
           {/* 상단 요약 (하드코딩 값은 이후 userPoints로 바꿀 예정) */}

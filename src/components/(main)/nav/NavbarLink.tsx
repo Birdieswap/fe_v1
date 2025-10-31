@@ -43,7 +43,7 @@ export function NavbarLinkItem({
         "max-md:py-4 sm:px-2 lg:px-4",
         "data-[active=true]:text-light-primary",
         "data-[active=true]:hover:text-light-primary-hover",
-        "dark:data-[active=true]:text-dark-primary",
+        "dark:data-[active=true]:text-dark-green-key",
         "dark:data-[active=true]:hover:text-dark-primary-hover"
       )}
       isActive={isActive}

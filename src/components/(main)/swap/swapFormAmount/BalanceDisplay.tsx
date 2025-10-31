@@ -22,8 +22,8 @@ export default function BalanceDisplay({
   }, []);
 
   return (
-    <span className="flex flex-row gap-1.5">
-      <span className="font-semibold max-[375px]:text-[10px]">
+    <span className="flex flex-row gap-1.5 text-default-800 dark:text-default-300">
+      <span className="font-semibold max-[375px]:text-[10px] text-default-900 dark:text-default-200">
         {isSmall ? "BAL" : "Balance"}
       </span>
       {suffixNumbers(balance, 100_000, displayDecimals, true, true)}

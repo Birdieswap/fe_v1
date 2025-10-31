@@ -30,7 +30,7 @@ export default function SelectWalletModal() {
         className="connect-btn"
         onPress={() => setIsConnectModalOpen(true)}
       >
-        <Icons.Wallet className="stroke-background" />
+        <Icons.Wallet className="w=5 h=5 stroke-background" />
         {/* <span>Connect Wallet</span> */}
       </Button>
       <ModalBase

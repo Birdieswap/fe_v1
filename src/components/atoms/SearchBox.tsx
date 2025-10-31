@@ -19,7 +19,7 @@ function SearchBoxComponent(
         inputWrapper: clsx(
           "h-9 min-h-9 border-1 p-0",
           "border-default-400 bg-default-100",
-          "dark:border-default-900 dark:bg-dark-popup-bg",
+          "dark:border-default-100 dark:bg-dark-popup-bg",
           "group-data-[focus=true]:bg-default-100",
           "dark:group-data-[focus=true]:bg-dark-popup-bg",
           "group-data-[focus-within=true]:bg-default-100",
@@ -41,7 +41,7 @@ function SearchBoxComponent(
           isIconOnly
           className={clsx(
             "flex h-full w-12 items-center justify-center rounded-e-full",
-            "bg-default-500 dark:bg-default-700",
+            "bg-default-500 dark:bg-default-300",
             "group-data-[focus=true]:bg-light-primary group-data-[focus=true]:hover:bg-light-primary-hover",
             "group-data-[focus-within=true]:bg-light-primary group-data-[focus-within=true]:hover:bg-light-primary-hover",
             "dark:group-data-[focus=true]:bg-dark-primary dark:group-data-[focus=true]:hover:bg-dark-primary-hover",

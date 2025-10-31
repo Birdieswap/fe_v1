@@ -9,14 +9,14 @@ import {
   NavbarItem,
   useDisclosure,
 } from "@heroui/react";
-import { useContext, useMemo } from "react";
+import { useContext, useMemo, useState } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
-import { GiCosmicEgg } from "react-icons/gi";
 import PointsMenu from "@/components/modals/points/PointsMenu";
 import PointsPanel from "@/components/modals/points/PointsPanel";
 import { LoadingPulse } from "../farm/farming/FarmListRowSummary";
 import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
+import Icons from "@/assets/icons/icons";
 
 export default function NavPoints() {
   const disclosure = useDisclosure(); // 공용 오픈 상태
@@ -36,10 +36,10 @@ export default function NavPoints() {
   const desktopTrigger = (
     <Button
       variant="light"
-      className="h-9 rounded-lg min-w-0 p-0 gap-2 [&_[data-slot=content]]:px-0"
+      className="h-9 rounded-lg min-w-0 p-1 gap-2 [&_[data-slot=content]]:px-0"
       onPress={disclosure.onOpen} // Popover 열기
     >
-      <GiCosmicEgg size="1.5em" />
+      <Icons.PointIcon className="h-6 w-6" />
       <div className="flex max-w-[148px] flex-col items-center mx-0 px-0">
         <span className="text-md font-semibold">
           {isPointsLoading || total == null ? (
@@ -51,6 +51,8 @@ export default function NavPoints() {
       </div>
     </Button>
   );
+
+  const [open, setOpen] = useState(false);
 
   return (
     <>
@@ -74,12 +76,12 @@ export default function NavPoints() {
           className="h-9 px-0 [&_[data-slot=content]]:px-0"
           onPress={disclosure.onOpen} // 모달 열기
         >
-          <GiCosmicEgg size="1.5em" />
+          <Icons.PointIcon className="h-6 w-6" />
         </Button>
       </NavbarItem>
 
       <ModalBase
-        className="mt-2 pt-6 sm:hidden"
+        className="mt-2 pt-14 sm:hidden"
         classNames={{
           wrapper: "items-end justify-center",
           base: "m-0 max-h-[75vh] overflow-hidden",
@@ -110,17 +112,7 @@ export default function NavPoints() {
       >
         <ModalContent className="h-full">
           <ModalBody className="p-0 h-full flex flex-col">
-            <div className="flex-1 overflow-y-auto">
-              {/* 헤더 */}
-              <div className="px-6 pt-5 pb-2">
-                <p className="text-[14px] font-semibold leading-5 text-default-700">
-                  Birdieswap Point
-                </p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-foreground">
-                  {isPointsLoading || total == null ? "—" : totalFormatted}
-                </p>
-              </div>
-
+            <div className="flex-1 px-6 py-4 overflow-y-auto">
               {/* 본문 패널: 모달에서는 가득/반응형 */}
               <PointsPanel variant="modal" />
 

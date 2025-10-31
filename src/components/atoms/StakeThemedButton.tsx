@@ -48,7 +48,7 @@ function StakeThemedButtonComponent(
       }}
       className={clsx(
         // 공통 베이스
-        "!data-[hover=true]:opacity-100 h-[32px] grow rounded-lg text-md font-semibold",
+        "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl text-lg font-semibold",
         "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",
 
         // ✅ 변형(색) — 항상 비활성 오버라이드보다 먼저!

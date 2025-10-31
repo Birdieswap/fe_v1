@@ -1,13 +1,36 @@
 import Arrow from "./arrow.svg";
 import ArrowRL from "./arrow-rl.svg";
 import BirdRate from "./birdrate.svg";
+import Birdie56 from "./Birdie-56.svg";
+import boostBitterSweet from "./booster_BitterSweet.svg";
+import boostBlueViole from "./booster_BlueViole.svg";
+import boostGoGreen from "./booster_GoGreen.svg";
+import boostRazzleDazzleRose from "./booster_RazzleDazzleRose.svg";
+import boostSteelPink from "./booster_SteelPink.svg";
+import boostDarkJungleGreenLetter from "./booster_DarkJungleGreen_Letter.svg";
+import boostElectricPurpleLetter from "./booster_ElectricPurple_Letter.svg";
+import boostMediumSeaGreenLetter from "./booster_MediumSeaGreen_Letter.svg";
+import boostOriolesOrangeLetter from "./booster_OriolesOrange_Letter.svg";
+import boostShockingPinkLetter from "./booster_ShockingPink_Letter.svg";
+
 import Close from "./close.svg";
 import Dropdown from "./dropdown.svg";
 import Error from "./error.svg";
 import Gas from "./gas.svg";
 import Info from "./info.svg";
 import Lock from "./lock.svg";
+import mboostBitterSweet from "./mbooster_BitterSweet.svg";
+import mboostBlueViole from "./mbooster_BlueViole.svg";
+import mboostGoGreen from "./mbooster_GoGreen.svg";
+import mboostRazzleDazzleRose from "./mbooster_RazzleDazzleRose.svg";
+import mboostSteelPink from "./mbooster_SteelPink.svg";
+import mboostDarkJungleGreenLetter from "./mbooster_DarkJungleGreen_Letter.svg";
+import mboostElectricPurpleLetter from "./mbooster_ElectricPurple_Letter.svg";
+import mboostMediumSeaGreenLetter from "./mbooster_MediumSeaGreen_Letter.svg";
+import mboostOriolesOrangeLetter from "./mbooster_OriolesOrange_Letter.svg";
+import mboostShockingPinkLetter from "./mbooster_ShockingPink_Letter.svg";
 import Menu from "./menu.svg";
+import Minus from "./minus.svg";
 import PiggyBankStartOn from "./piggybank-start-on.svg";
 import PiggyBankStartOnDark from "./piggybank-start-on-dark.svg";
 import PiggyBankStartOff from "./piggybank-start-off.svg";
@@ -16,6 +39,7 @@ import PiggyBankStopOn from "./piggybank-stop-on.svg";
 import PiggyBankStopOnDark from "./piggybank-stop-on-dark.svg";
 import PiggyBankStopOff from "./piggybank-stop-off.svg";
 import PiggyBankStopOffDark from "./piggybank-stop-off-dark.svg";
+import Rocket from "./Rocket.svg";
 import ChangeArrow from "./change-arrow.svg";
 import Search from "./search.svg";
 import SocialDiscord from "./social-discord.svg";
@@ -55,12 +79,35 @@ import Wallet from "./wallet.svg";
 import WalletEmptyReferralRewards from "./Wallet-empty-ReferralRewards.svg";
 import WalletEmptySwapRewards from "./Wallet-empty-SwapRewards.svg";
 import Subtract from "./Subtract.svg";
-import PointEgg from "./point-egg.svg"
+import PointEgg from "./point-egg.svg";
+import StakeOn from "./stake-on.svg";
+import StakeOnDark from "./stake-on-dark.svg";
+import StakeOff from "./stake-off.svg";
+import StakeOffDark from "./stake-off-dark.svg";
+import UnstakeOn from "./unstake-on.svg";
+import UnstakeOnDark from "./unstake-on-dark.svg";
+import UnstakeOff from "./unstake-off.svg";
+import UnstakeOffDark from "./unstake-off-dark.svg";
+import VaultInfoIcon from "./vaultInfoIcon.svg";
+import Change from "./change.svg";
+import StakedToken from "./Staked-token.svg";
+import PointIcon from "./point-icon.svg";
 
 export const Icons = {
   Arrow,
   ArrowRL,
   BirdRate,
+  Birdie56,
+  boostBitterSweet,
+  boostBlueViole,
+  boostGoGreen,
+  boostRazzleDazzleRose,
+  boostSteelPink,
+  boostDarkJungleGreenLetter,
+  boostElectricPurpleLetter,
+  boostMediumSeaGreenLetter,
+  boostOriolesOrangeLetter,
+  boostShockingPinkLetter,
   ChangeArrow,
   Close,
   Dropdown,
@@ -68,7 +115,18 @@ export const Icons = {
   Gas,
   Info,
   Lock,
+  mboostBitterSweet,
+  mboostBlueViole,
+  mboostGoGreen,
+  mboostRazzleDazzleRose,
+  mboostSteelPink,
+  mboostDarkJungleGreenLetter,
+  mboostElectricPurpleLetter,
+  mboostMediumSeaGreenLetter,
+  mboostOriolesOrangeLetter,
+  mboostShockingPinkLetter,
   Menu,
+  Minus,
   PiggyBankStartOn,
   PiggyBankStartOnDark,
   PiggyBankStartOff,
@@ -77,6 +135,15 @@ export const Icons = {
   PiggyBankStopOnDark,
   PiggyBankStopOff,
   PiggyBankStopOffDark,
+  Rocket,
+  StakeOn,
+  StakeOnDark,
+  StakeOff,
+  StakeOffDark,
+  UnstakeOn,
+  UnstakeOnDark,
+  UnstakeOff,
+  UnstakeOffDark,
   Search,
   SocialDiscord,
   SocialMedium,
@@ -94,6 +161,7 @@ export const Icons = {
   ThemeDark,
   ThemeLight,
   ToolbarBack,
+  VaultInfoIcon,
   WalletArrowRU,
   WalletArrowRU20,
   WalletCopy,
@@ -116,6 +184,9 @@ export const Icons = {
   WalletTxOk,
   Wallet,
   PointEgg,
+  Change,
+  StakedToken,
+  PointIcon,
 };
 
 export default Icons;
