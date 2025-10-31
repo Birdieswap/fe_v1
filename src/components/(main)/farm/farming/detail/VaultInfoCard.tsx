@@ -85,7 +85,9 @@ export default function VaultInfoCard({
     mobileStaking.dailyPointRateNum > 0;
 
   return (
-    <div className={clsx("flex grow basis-0 flex-col", className)}>
+    <div
+      className={clsx("flex grow basis-0 flex-col min-h-[176px]", className)}
+    >
       <div className="flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
         <div className="flex flex-col gap-4">
           <div className="flex flex-row items-center justify-between pb-4 max-md:pb-0">
