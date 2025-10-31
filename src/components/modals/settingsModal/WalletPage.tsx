@@ -68,28 +68,32 @@ function SwapDisplay({
     <div
       className={cn(
         "flex h-auto min-h-[86px] mt-4 mx-3 px-4 py-3 rounded-lg max-sm:min-h-[40px] border-1 border-[#FF0000] dark:border-[#FF3F3F]",
+        "w-full",
         "flex-col items-start justify-between",
         "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start"
       )}
     >
-      <div className="pt-0 px-0">
+      <div className="pt-0 px-0 w-full">
         <div className="text-[12px] font-light text-foreground pb-1">
           Your Referrer Address
         </div>
-        <div className="flex flex-row w-full justify-between items-center gap-4 pb-3">
-          <div className="text-[12px] font-semibold break-all flex items-center flex-1 min-w-0">
-            {isSelfReferral ? "No Referrer" : referralAddress}
+        <div className="grid w-full grid-cols-[1fr_auto] items-center gap-4 pb-3">
+          {/* 왼쪽: 주소 (여기서 min-w-0 꼭 필요) */}
+          <div className="min-w-0">
+            <span className="text-[12px] font-semibold break-words">
+              {isSelfReferral ? "No Referrer" : referralAddress}
+            </span>
           </div>
-          <div className="shrink-0">
+
+          {/* 오른쪽: 버튼 (항상 오른쪽 끝) */}
+          <div className="justify-self-end">
             <Button
               isIconOnly
               className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
               variant="light"
               isDisabled={isSelfReferral}
               onPress={() => {
-                if (address) {
-                  setReferralAddress(address);
-                }
+                if (address) setReferralAddress(address);
               }}
             >
               <Icons.Minus className="fill-foreground stroke-[#FF0000] dark:stroke-[#FF3F3F]" />
@@ -114,6 +118,8 @@ function WalletDisplay({
   network?: NetworkInfo;
 }) {
   useChains;
+  const [open, setOpen] = useState(false); // 모바일에서만 사용
+
   const address = useMemo(() => {
     if (!wallet?.address) {
       return "0x1234...2341234";
@@ -124,47 +130,159 @@ function WalletDisplay({
 
   const ReferralLink = `https://birdieswap.vercel.app/?ref=${wallet?.address}`;
 
-  const { referralAddress, setReferralAddress } = useReferral();
+  const { referralAddress } = useReferral();
   const isSelfReferral = wallet?.address === referralAddress;
 
   return (
-    <div
-      className={cn(
-        "flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint max-sm:h-auto max-sm:min-h-[84px]",
-        "flex-col items-stretch gap-3",
-        "max-sm:flex-col max-sm:gap-1 max-sm:py-3 max-sm:items-start"
-      )}
-    >
-      <div className="grid w-full items-center gap-2 sm:grid-cols-[1fr_auto] grid-cols-1">
-        {/* 왼쪽 영역 (지갑 아이콘/주소) */}
-        <div className="flex flex-row items-center gap-2 min-w-0">
-          <WalletIcon provider={provider} size="lg" />
-          <div className="flex grow flex-col gap-0 min-w-0">
-            <span className="text-[12px] font-semibold leading-[15px]">
-              {provider?.name ?? "unknown"}
-            </span>
-            <div className="flex flex-row items-center gap-[5px] min-w-0">
-              <span className="text-[15px] font-semibold leading-[18px] truncate">
-                {address}
+    <>
+      {/* ====== 데스크톱(>=sm): 기존 레이아웃 유지 ====== */}
+      <div
+        className={cn(
+          "hidden sm:flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
+          "flex-col items-stretch gap-3"
+        )}
+      >
+        <div className="grid w-full items-center gap-2 sm:grid-cols-[1fr_auto] grid-cols-1">
+          {/* 왼쪽 영역 (지갑 아이콘/주소) */}
+          <div className="flex flex-row items-center gap-2 min-w-0">
+            <WalletIcon provider={provider} size="lg" />
+            <div className="flex grow flex-col gap-0 min-w-0 ">
+              <span className="text-[12px] font-sans font-semibold text-default-900 dark:text-foreground leading-[15px]">
+                {provider?.name ?? "unknown"}
               </span>
-              <Button
-                isIconOnly
-                className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
-                variant="light"
-                onPress={() =>
-                  navigator.clipboard.writeText(wallet?.address ?? "")
-                }
-              >
-                <Icons.WalletCopy className="fill-foreground" />
-              </Button>
+              <div className="flex flex-row items-center gap-[5px] min-w-0">
+                <span className="text-[15px] font-semibold leading-[18px] truncate">
+                  {address}
+                </span>
+                <Button
+                  isIconOnly
+                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+                  variant="light"
+                  onPress={() =>
+                    navigator.clipboard.writeText(wallet?.address ?? "")
+                  }
+                >
+                  <Icons.WalletCopy className="fill-foreground" />
+                </Button>
+              </div>
             </div>
+          </div>
+          {/* 오른쪽 링크: 데스크톱에선 그대로 */}
+          <div className="justify-self-end">
+            <Link
+              className="inline-flex items-center gap-0.5 text-[12px] font-medium leading-[15px] pr-2 mt-2 sm:mt-0"
+              href={
+                (network?.blockExplorer?.url ?? "https://etherscan.io/") +
+                (wallet?.address ? `address/${wallet.address}` : "")
+              }
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <span className="whitespace-nowrap max-[360px]:whitespace-normal">
+                View on
+              </span>
+              <span className="inline-flex items-center gap-0.5 whitespace-nowrap max-[360px]:whitespace-normal break-words">
+                {network?.blockExplorer?.name ?? "Etherscan"}
+              </span>
+              <Icons.WalletArrowRU className="fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" />
+            </Link>
           </div>
         </div>
 
-        {/* 오른쪽 링크: 모바일에선 다음 줄, 항상 오른쪽 끝 고정 */}
-        <div className="justify-self-end">
+        {/* 내부 카드: 데스크톱은 항상 표시 */}
+        <div className="mt-0 py-0 px-0 flex-grow">
+          <div
+            className={
+              "rounded-xl border shadow-sm px-4 py-3 sm:px-4 sm:py-3 mb-3 font-sans bg-white border-default-200 dark:bg-default-100 dark:border-default-100"
+            }
+          >
+            <div className="text-[12px] font-light text-foreground">
+              Your Referral link to share
+            </div>
+
+            <div className="mt-1 flex items-center justify-between gap-4">
+              <div className="group inline-flex items-center gap-1 text-[14px] sm:text-[14px] font-semibold text-foreground break-all">
+                {ReferralLink}
+              </div>
+
+              <div className="shrink-0">
+                <Button
+                  isIconOnly
+                  className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
+                  variant="light"
+                  onPress={() =>
+                    navigator.clipboard.writeText(ReferralLink ?? "")
+                  }
+                  aria-label="Copy referral link"
+                >
+                  <Icons.WalletCopy className="fill-foreground" />
+                </Button>
+              </div>
+            </div>
+            <div className="mt-3 font-regular text-[11px] text-light-primary dark:text-dark-green-key">
+              Join our referral program: share, invite, and be rewarded.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ====== 모바일(<sm): 화살표/Divider/접힘 동작 ====== */}
+      <div
+        className={cn(
+          "sm:hidden flex h-auto w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
+          "flex-col items-stretch gap-0"
+        )}
+      >
+        {/* 헤더 (모바일 전용 2행 그리드) */}
+        <div className="grid w-full items-center gap-2 grid-cols-[1fr_auto] grid-rows-[auto_auto]">
+          {/* 좌측: 아이콘/주소 (row1 col1) */}
+          <div className="flex flex-row items-center gap-2 min-w-0 row-start-1 col-start-1">
+            <WalletIcon provider={provider} size="lg" />
+            <div className="flex grow flex-col gap-0 min-w-0">
+              <span className="text-[12px] font-medium  text-default-900 dark:text-foreground leading-[15px]">
+                {provider?.name ?? "unknown"}
+              </span>
+              <div className="flex flex-row items-center gap-[5px] min-w-0">
+                <span className="text-[15px] font-semibold leading-[18px] truncate">
+                  {address}
+                </span>
+                <Button
+                  isIconOnly
+                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+                  variant="light"
+                  onPress={() =>
+                    navigator.clipboard.writeText(wallet?.address ?? "")
+                  }
+                >
+                  <Icons.WalletCopy className="fill-foreground" />
+                </Button>
+              </div>
+            </div>
+          </div>
+          {/* 우측: 토글 버튼 (row1 col2) */}
+          <div className="row-start-1 col-start-2 justify-self-end">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              aria-controls="wallet-referral-mobile"
+              className="flex h-6 w-6 items-center justify-center rounded-md hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+            >
+              <motion.div
+                animate={{ rotate: open ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+                style={{ transformOrigin: "50% 50%" }}
+              >
+                <Arrow className="[&>*]:fill-default-700 dark:[&>*]:fill-foreground" />
+              </motion.div>
+            </button>
+          </div>
+        </div>
+
+        {/* 링크: 2행 전체 차지 (항상 새 줄) */}
+        <div className="row-start-2 col-span-2 flex pb-3 text-default-900 dark:text-foreground">
           <Link
-            className="inline-flex items-center gap-0.5 text-[12px] font-medium leading-[15px] pr-2 mt-2 sm:mt-0"
+            className="ml-auto inline-flex items-center gap-0.5 text-[12px] font-regular leading-[15px] pr-2 mt-0.5"
             href={
               (network?.blockExplorer?.url ?? "https://etherscan.io/") +
               (wallet?.address ? `address/${wallet.address}` : "")
@@ -172,157 +290,58 @@ function WalletDisplay({
             rel="noopener noreferrer"
             target="_blank"
           >
-            <span className="whitespace-nowrap max-[360px]:whitespace-normal">
-              View on
-            </span>
-            <span className="inline-flex items-center gap-0.5 whitespace-nowrap max-[360px]:whitespace-normal break-words">
+            <span className="whitespace-nowrap">View on</span>
+            <span className="inline-flex items-center gap-0.5 whitespace-nowrap">
               {network?.blockExplorer?.name ?? "Etherscan"}
             </span>
             <Icons.WalletArrowRU className="fill-default-800 stroke-default-800 stroke-[1px] dark:fill-foreground dark:stroke-foreground" />
           </Link>
         </div>
-      </div>
 
-      {/* 데스크톱(≥sm): 내부 카드 */}
-      <div className="mt-0 py-0 px-0 flex-grow hidden sm:block">
-        {/* 내부 카드: 라이트는 white, 다크는 어두운 패널 */}
-        <div
-          className="
-            rounded-xl border shadow-sm px-4 py-3 sm:px-4 sm:py-3 font-sans
-            bg-white border-default-200
-            dark:bg-default-100 dark:border-default-100
-          "
-        >
-          <div className="text-[12px] font-light text-foreground">
-            Your Referral link to share
-          </div>
-
-          {/* 링크 + 복사 버튼 라인 */}
-          <div className="mt-1 flex items-center justify-between gap-4">
-            <div
-              className="
-                group inline-flex items-center gap-1 
-                text-[14px] sm:text-[14px] font-semibold
-                text-foreground break-all
-              "
-            >
-              {ReferralLink}
-              {/* 외부 링크 아이콘 (라이트/다크에 맞게 색상 상속) */}
-            </div>
-
-            <div className="shrink-0">
-              <Button
-                isIconOnly
-                className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
-                variant="light"
-                onPress={() =>
-                  navigator.clipboard.writeText(ReferralLink ?? "")
-                }
-                aria-label="Copy referral link"
-              >
-                <Icons.WalletCopy className="fill-foreground" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="mt-3 font-regular text-[11px] text-light-primary dark:text-dark-green-key">
-            Join our referral program: share, invite, and be rewarded.
-          </div>
-        </div>
-      </div>
-
-      {/* 모바일(<sm): 아코디언 */}
-      <div className="w-full">
-        <MobileReferralAccordion ReferralLink={ReferralLink} />
-      </div>
-    </div>
-  );
-}
-
-function MobileReferralAccordion({ ReferralLink }: { ReferralLink: string }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="sm:hidden w-full">
-      {/* 하얀 카드 컨테이너: 하단 패딩(pb-3) 유지 */}
-      <div
-        className={cn(
-          "rounded-xl border shadow-sm font-sans px-4 pt-3 pb-3",
-          "bg-white border-default-200",
-          "dark:bg-default-800 dark:border-default-700"
-        )}
-      >
-        {/* 1) 펼쳐지는 컨텐츠: 헤더 '위쪽'에 배치 */}
+        {/* 아코디언: Divider 포함해서 접힘 */}
         <AnimatePresence initial={false}>
           {open && (
             <motion.div
-              key="ref-content"
+              key="referral-mobile-wrap"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.22, ease: "easeInOut" }}
-              className="overflow-hidden"
+              className="overflow-hidden w-full"
             >
-              <div className="text-[12px] font-light text-default-700 dark:text-default-300">
-                Your Referral link to share
-              </div>
+              <Divider className="mb-3 border-default-500" />
 
-              {/* 링크 + 복사 버튼 라인 */}
-              <div className="mt-1 flex items-center justify-between gap-4">
-                <div
-                  className="
-                group inline-flex items-center gap-1 
-                text-[12px] sm:text-[12px] font-semibold
-                text-foreground break-all
-                underline-offset-4 hover:underline
-              "
-                >
-                  {ReferralLink}
-                  {/* 외부 링크 아이콘 (라이트/다크에 맞게 색상 상속) */}
+              <div className="rounded-xl border shadow-sm px-4 py-3 mb-3 font-sans bg-white border-default-200 dark:bg-default-100 dark:border-default-100">
+                <div className="text-[12px] font-light text-foreground">
+                  Your Referral link to share
                 </div>
-
-                <div className="shrink-0">
-                  <Button
-                    isIconOnly
-                    className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
-                    variant="light"
-                    onPress={() =>
-                      navigator.clipboard.writeText(ReferralLink ?? "")
-                    }
-                    aria-label="Copy referral link"
-                  >
-                    <Icons.WalletCopy className="fill-foreground" />
-                  </Button>
+                <div className="mt-1 flex items-center justify-between gap-4">
+                  <div className="group inline-flex items-center gap-1 text-[12px] font-semibold text-foreground break-all">
+                    {ReferralLink}
+                  </div>
+                  <div className="shrink-0">
+                    <Button
+                      isIconOnly
+                      className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
+                      variant="light"
+                      onPress={() =>
+                        navigator.clipboard.writeText(ReferralLink ?? "")
+                      }
+                      aria-label="Copy referral link"
+                    >
+                      <Icons.WalletCopy className="fill-foreground" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-3 text-[11px] font-regular text-light-primary dark:text-dark-green-key">
+                  Join our referral program: share, invite, and be rewarded.
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* 2) 헤더(하단 고정): 색상 유지 + 원래 화살표 아이콘 */}
-        <button
-          type="button"
-          className="w-full flex items-center justify-between leading-none"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-        >
-          <div className="text-left text-[11px] text-light-primary dark:text-dark-green-key">
-            Join our referral program : share, invite, and be rewarded.
-          </div>
-
-          {/* 화살표 위치 고정: 크기 고정 + 회전만 */}
-          <div className="w-4 h-4 shrink-0 flex items-center justify-center">
-            <motion.div
-              animate={{ rotate: open ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ transformOrigin: "50% 50%", willChange: "transform" }}
-            >
-              <Arrow className="[&>*]:fill-foreground" />
-            </motion.div>
-          </div>
-        </button>
       </div>
-    </div>
+    </>
   );
 }
 

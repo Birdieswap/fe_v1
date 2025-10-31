@@ -19,6 +19,16 @@ import Error from "./error.svg";
 import Gas from "./gas.svg";
 import Info from "./info.svg";
 import Lock from "./lock.svg";
+import mboostBitterSweet from "./mbooster_BitterSweet.svg";
+import mboostBlueViole from "./mbooster_BlueViole.svg";
+import mboostGoGreen from "./mbooster_GoGreen.svg";
+import mboostRazzleDazzleRose from "./mbooster_RazzleDazzleRose.svg";
+import mboostSteelPink from "./mbooster_SteelPink.svg";
+import mboostDarkJungleGreenLetter from "./mbooster_DarkJungleGreen_Letter.svg";
+import mboostElectricPurpleLetter from "./mbooster_ElectricPurple_Letter.svg";
+import mboostMediumSeaGreenLetter from "./mbooster_MediumSeaGreen_Letter.svg";
+import mboostOriolesOrangeLetter from "./mbooster_OriolesOrange_Letter.svg";
+import mboostShockingPinkLetter from "./mbooster_ShockingPink_Letter.svg";
 import Menu from "./menu.svg";
 import Minus from "./minus.svg";
 import PiggyBankStartOn from "./piggybank-start-on.svg";
@@ -105,6 +115,16 @@ export const Icons = {
   Gas,
   Info,
   Lock,
+  mboostBitterSweet,
+  mboostBlueViole,
+  mboostGoGreen,
+  mboostRazzleDazzleRose,
+  mboostSteelPink,
+  mboostDarkJungleGreenLetter,
+  mboostElectricPurpleLetter,
+  mboostMediumSeaGreenLetter,
+  mboostOriolesOrangeLetter,
+  mboostShockingPinkLetter,
   Menu,
   Minus,
   PiggyBankStartOn,

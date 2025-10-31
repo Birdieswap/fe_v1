@@ -18,6 +18,7 @@ import VaultInfoModal from "./detail/InfoCards/vaultInfo/VaultInfoModal";
 import { AssetsContext, AprEntry } from "@/app/AssetsContextProvider";
 import type { AprVault, StakeVault } from "@/app/AssetsContextProvider";
 import RewardInfoCard from "./detail/RewardInfoCard";
+import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -119,6 +120,18 @@ export default function FarmDetail({
     [disclosure]
   );
 
+  const {
+    price: priceNum,
+    dailyPointRateNum,
+    extraList,
+    showStakingBlock,
+  } = useRewardInfo(item);
+
+  const openStakingModal = useCallback(() => {
+    // 필요하면 여기서 selectedStakeRow 세팅 후 모달 오픈
+    disclosure.onOpen();
+  }, [disclosure]);
+
   return (
     <AnimatePresence initial={false} mode="wait">
       {isActive && (
@@ -157,6 +170,13 @@ export default function FarmDetail({
               rows={combinedRows}
               periodKey={periodKey}
               onOpenModal={handleOpenModal}
+              mobileStaking={{
+                show: showStakingBlock,
+                extraList,
+                dailyPointRateNum,
+                priceNum,
+                onOpen: openStakingModal,
+              }}
             />
 
             {/* RewardInfoCard가 준비되면 여기에 배치하세요 */}

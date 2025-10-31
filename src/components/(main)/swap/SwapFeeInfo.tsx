@@ -142,7 +142,7 @@ export default function SwapFeeInfo() {
       <AnimatePresence>
         {!isWrap && priceImpact && priceImpact.abs().gt(0.05) && (
           <SwapError>
-            <Icons.Error />
+            <Icons.Error className="dark:fill-[#ff3f3f]" />
             <span>
               High price impact! More than{" "}
               {priceImpact?.abs().mul(100).toFixed(2) ?? "-"}% drop!
@@ -164,14 +164,15 @@ export default function SwapFeeInfo() {
           >
             <div
               className={clsx(
-                "grid w-full grid-cols-2 grid-rows-4 gap-2 text-sm font-normal",
+                "grid w-full grid-cols-2 grid-rows-4 gap-2 text-sm font-sans",
                 "[&>*]:flex [&>*]:flex-row [&>*]:items-center [&>*]:gap-1",
                 "[&>*:nth-child(even)]:justify-self-end",
-                "[&>*:nth-child(even)]:text-foreground",
-                "[&>*:nth-child(odd)]:text-default-700"
+                "text-foreground"
               )}
             >
-              <span>Max slippage</span>
+              <span className="text-default-700 dark:text-default-300">
+                Max slippage
+              </span>
               <span>
                 {isWrap
                   ? `0%`
@@ -179,11 +180,15 @@ export default function SwapFeeInfo() {
                     ? `Auto(0.5%)`
                     : `${maxSlippage}%`}
               </span>
-              <span>Price Impact</span>
+              <span className="text-default-700 dark:text-default-300">
+                Price Impact
+              </span>
               <span>
                 {isWrap ? `0%` : `-${priceImpact?.abs().mul(100).toFixed(2)}%`}
               </span>
-              <span>Fee ({feeTier}%)</span>
+              <span className="text-default-700 dark:text-default-300">
+                Fee ({feeTier}%)
+              </span>
               <span>
                 {fromAmount && fromPrice
                   ? (() => {
@@ -198,7 +203,9 @@ export default function SwapFeeInfo() {
                     })()
                   : ""}
               </span>
-              <span>Swap Point</span>
+              <span className="text-default-700 dark:text-default-300">
+                Swap Point
+              </span>
               <span>
                 <Icons.PointIcon className="h-5 w-5" />
                 {fromAmount && fromPrice

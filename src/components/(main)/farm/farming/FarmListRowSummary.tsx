@@ -20,6 +20,7 @@ import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import { Spacer } from "@heroui/react";
 import DonutRatio from "./common/DonutRatio";
+import MobileBarRatio from "./common/MobileBarRatio";
 
 // 상단 import 아래 유틸 함수 추가
 const toNum = (v: any): number | undefined => {
@@ -186,7 +187,11 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
 
   //=== Booster_Icon 관련
 
-  const flag = ["BitterSweet", "BlueViole", "SteelPink"];
+  const flag = [
+    "ShockingPinkLetter",
+    "DarkJungleGreenLetter",
+    "MediumSeaGreenLetter",
+  ];
 
   return (
     <motion.div
@@ -196,7 +201,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
       className={clsx(
         // 💡 모바일=2열, 데스크탑=전달된 grid 템플릿
         "col-span-full",
-        "grid items-center min-h-[120px] sm:min-h-[72px] md:px-6 max-md:px-4 border-t border-default-300 dark:border-default-800 cursor-pointer",
+        "grid items-center min-h-[120px] sm:min-h-[72px] md:px-6 max-md:px-4 border-b border-default-400 dark:border-default-100 cursor-pointer",
         "max-md:grid-cols-[64px_1fr]",
         gridCols,
         "transition-colors hover:bg-default-200 dark:hover:bg-default-100"
@@ -222,7 +227,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                 ? stakeToken.swap.input.map((t) => t.input.symbol).join(" - ")
                 : stakeToken.input.symbol}
             </div>
-            <div className="bleak text-xs font-medium text-default-600">
+            <div className="bleak text-xs font-medium text-default-600 dark:text-default-300">
               {poolDescription ?? <LoadingPulse w="w-20" />}
             </div>
           </div>
@@ -247,7 +252,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                   <div
                     key={i}
                     // 기본 z-index는 0(=DOM 순서대로 겹침), hover 때만 위로
-                    className="relative z-0 hover:z-10 transition-transform duration-150 hover:scale-105"
+                    className="relative z-0 hover:z-10 transition-transform duration-150 hover:scale-105 "
                   >
                     <IconComponent />
                   </div>
@@ -272,7 +277,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
             balance.roundToDecimals(5).toPrecisionString(true, true)
           )}
         </div>
-        <div className="font-medium text-default-700">
+        <div className="font-medium text-default-700 dark:text-default-300">
           {!account.isConnected ? (
             "Connect Wallet"
           ) : !isBalanceAvailable ? (
@@ -313,15 +318,38 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
         <div className="flex h-[120px] flex-col items-end justify-around">
           {/* APY */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-medium text-default-600">
-              APY(%)
-            </span>
+            <div className="flex items-center gap-6">
+              {/* Booster 아이콘들 (뒤에서부터 겹침) */}
+              <span className="relative h-4 flex items-center">
+                {/* 이전과 동일한 겹침 규칙 유지 */}
+                <div className="isolate flex -space-x-9 ">
+                  {flag.map((name, i) => {
+                    const IconComponent =
+                      Icons[`mboost${name}` as keyof typeof Icons];
+                    if (!IconComponent) return null;
+
+                    return (
+                      <div
+                        key={i}
+                        // 기본 z-index는 0(=DOM 순서대로 겹침), hover 때만 위로
+                        className="relative z-0 hover:z-10 transition-transform duration-150 hover:scale-105"
+                      >
+                        <IconComponent />
+                      </div>
+                    );
+                  })}
+                </div>
+              </span>
+              <span className="text-[11px] font-medium text-default-600 dark:text-default-400">
+                APY(%)
+              </span>
+            </div>
             <Components.Apy isLoading={apyIsLoading} value={apy} />
           </div>
 
           {/* TVL */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-medium text-default-600">
+            <span className="text-[11px] font-medium text-default-600 dark:text-default-400">
               TVL($)
             </span>
             <Components.Tvl isLoading={tvl == null} tvl={tvl ? tvl : null} />
@@ -329,7 +357,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
 
           {/* BAL (값 + $값은 붙어서) */}
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-medium text-default-600">
+            <span className="text-[11px] font-medium text-default-600 dark:text-default-400">
               BAL
             </span>
             <div className="flex flex-col items-end leading-tight">
@@ -342,7 +370,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                   balance.roundToDecimals(5).toPrecisionString(true, true)
                 )}
               </span>
-              <span className="text-[12px] text-default-700">
+              <span className="text-[12px] text-default-300">
                 {!account.isConnected ? (
                   "Connect Wallet"
                 ) : !isBalanceAvailable ? (
@@ -365,15 +393,13 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
         </div>
 
         {/* ▶︎ 오른쪽: Donut + Arrow (세로 가운데) */}
-        <div className="flex items-center gap-2 shrink-0 pl-2">
-          <DonutRatio
+        <div className="md:hidden flex flex-col items-center justify-center gap-2 pl-2">
+          <MobileBarRatio
             lp={lpBalance}
             staked={stakedBalance}
             total={balance}
-            size={40}
-            stroke={5}
-            title="Staked vs LP"
           />
+
           <Arrow
             className="rotate-0 transition-transform data-[active=true]:rotate-180"
             data-active={isActive}

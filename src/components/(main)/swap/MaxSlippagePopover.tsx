@@ -24,7 +24,7 @@ export default function MaxSlippagePopover(props: {
   setMaxSlippage: (value: "auto" | number) => void;
 }) {
   const [customSlippage, setCustomSlippage] = useState<string>(
-    props.maxSlippage === "auto" ? "0.5" : props.maxSlippage.toString(),
+    props.maxSlippage === "auto" ? "0.5" : props.maxSlippage.toString()
   );
 
   const [isOpen, setIsOpen] = useState(false);
@@ -64,14 +64,14 @@ export default function MaxSlippagePopover(props: {
           size="sm"
           variant="light"
         >
-          <Icons.Setting className="size-6 fill-default-700 transition-colors group-hover:fill-default-800 dark:group-hover:fill-default-500" />
+          <Icons.Setting className="size-6 fill-default-700 dark:fill-default-300 transition-colors group-hover:fill-default-800 dark:group-hover:fill-default-500" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
         as={motion.div}
         {...defaultTransition}
         className={clsx(
-          "dark:border-1 dark:border-default-900 dark:bg-dark-popup-bg",
+          "dark:border-1 dark:border-default-900 dark:bg-dark-popup-bg"
         )}
       >
         <motion.div
@@ -92,7 +92,7 @@ export default function MaxSlippagePopover(props: {
                 "h-4 min-h-4",
                 "rounded-full",
                 "flex items-center justify-center",
-                "data-[hover=true]:bg-background data-[hover=true]:opacity-100",
+                "data-[hover=true]:bg-background data-[hover=true]:opacity-100"
               )}
               variant="light"
             >
@@ -100,7 +100,7 @@ export default function MaxSlippagePopover(props: {
                 className={clsx(
                   "fill-default-500 group-hover:fill-default-700",
                   "dark:fill-default-500 dark:group-hover:fill-default-700",
-                  "transition-[fill]",
+                  "transition-[fill]"
                 )}
                 fillRule="evenodd"
               />
@@ -161,7 +161,7 @@ export default function MaxSlippagePopover(props: {
                     "data-[focus=true]:border-default-500",
                     "data-[focus-within=true]:border-default-500",
                     "dark:data-[focus=true]:border-default-500",
-                    "dark:data-[focus-within=true]:border-default-500",
+                    "dark:data-[focus-within=true]:border-default-500"
                   ),
                   input: "text-right text-[15px] textfield",
                 }}
@@ -198,7 +198,11 @@ export default function MaxSlippagePopover(props: {
                     e.preventDefault();
 
                     // 빈칸("") 또는 "0" → auto 전환
-                    if (!customSlippage || customSlippage.trim() === "" || customSlippage === "0") {
+                    if (
+                      !customSlippage ||
+                      customSlippage.trim() === "" ||
+                      customSlippage === "0"
+                    ) {
                       props.setMaxSlippage("auto");
                       setCustomSlippage("0.5"); // auto 기본값 표시
                       setIsOpen(false);
