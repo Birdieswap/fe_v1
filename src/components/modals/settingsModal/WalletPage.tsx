@@ -48,7 +48,7 @@ function TabSelector(props: {
       <h2
         className={cn(
           "text-[14px] font-semibold leading-[17px]",
-          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-700"
+          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
         )}
       >
         {props.name}
