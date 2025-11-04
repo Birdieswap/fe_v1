@@ -189,40 +189,79 @@ export default function SwapFeeInfo() {
               <span className="text-default-700 dark:text-default-300">
                 Fee ({feeTier}%)
               </span>
-              <span>
-                {fromAmount && fromPrice
-                  ? (() => {
-                      // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보
-                      const fromBD = new BigDecimal(Number(fromAmount));
-                      const feeTokenBD = fromBD.mul(feeFractionBD); // token 단위의 fee
-                      const feeUSDBD = fromBD.mul(fromPrice).mul(feeFractionBD); // 달러 환산
-                      return `${fromToken?.symbol} ${formatBD(
-                        feeTokenBD,
-                        8
-                      )} ($${formatBD(feeUSDBD, 4)})`;
-                    })()
-                  : ""}
+              <span className="justify-self-end">
+                <span className="grid grid-cols-[1.25rem,1fr] items-start gap-1 text-right">
+                  <span className="col-start-2 row-start-1 min-w-0 tabular-nums">
+                    {fromAmount && fromPrice
+                      ? (() => {
+                          const fromBD = new BigDecimal(Number(fromAmount));
+                          const feeTokenBD = fromBD.mul(feeFractionBD);
+                          const feeUSDBD = fromBD
+                            .mul(fromPrice)
+                            .mul(feeFractionBD);
+                          return (
+                            <>
+                              {fromToken?.symbol} {formatBD(feeTokenBD, 8)}{" "}
+                              <span className="whitespace-nowrap">
+                                (${formatBD(feeUSDBD, 4)})
+                              </span>
+                            </>
+                          );
+                        })()
+                      : ""}
+                  </span>
+                </span>
               </span>
               <span className="text-default-700 dark:text-default-300">
                 Swap Point
               </span>
-              <span>
-                <Icons.PointIcon className="h-5 w-5" />
-                {fromAmount && fromPrice
-                  ? (() => {
-                      // fromAmount may be string or number -> 숫자 기반 생성으로 decimals 확보
-                      const fromBD = new BigDecimal(Number(fromAmount));
-                      const RewardTokenBD = fromBD
-                        .mul(feeFractionBD)
-                        .div(10)
-                        .mul(RewardRatio()); // token 단위의 fee
-                      const RewardUSDBD = RewardTokenBD.mul(fromPrice); // 달러 환산
-                      return `${fromToken?.symbol} ${formatBD(
-                        RewardTokenBD,
-                        8
-                      )} ($${formatBD(RewardUSDBD, 5)})`;
-                    })()
-                  : ""}
+              <span className="justify-self-end">
+                <span
+                  className="
+                    inline-flex
+                    flex-row
+                    items-center
+                    justify-end
+                    gap-1
+                    text-right
+                    max-[320px]:flex-wrap        /* 320px 이하일 때 줄바꿈 허용 */
+                    max-[320px]:gap-x-1          /* 줄 간격 유지 */
+                    max-[320px]:text-[13px]      /* (선택) 좁은 화면에서 폰트 줄이기 */
+                  "
+                >
+                  {/* 아이콘 먼저 */}
+                  <Icons.PointIcon className="h-5 w-5 shrink-0 ml-4" />
+
+                  {/* 텍스트 */}
+                  <span
+                    className="
+                      tabular-nums
+                      leading-tight
+                      whitespace-nowrap
+                      max-[356px]:whitespace-normal /* 줄바꿈 허용 */
+                      max-[321px]:text-right
+                    "
+                  >
+                    {fromAmount && fromPrice
+                      ? (() => {
+                          const fromBD = new BigDecimal(Number(fromAmount));
+                          const RewardTokenBD = fromBD
+                            .mul(feeFractionBD)
+                            .div(10)
+                            .mul(RewardRatio());
+                          const RewardUSDBD = RewardTokenBD.mul(fromPrice);
+                          return (
+                            <>
+                              {fromToken?.symbol} {formatBD(RewardTokenBD, 8)}{" "}
+                              <span className="text-nowrap max-[320px]:block">
+                                (${formatBD(RewardUSDBD, 5)})
+                              </span>
+                            </>
+                          );
+                        })()
+                      : ""}
+                  </span>
+                </span>
               </span>
             </div>
           </motion.div>
