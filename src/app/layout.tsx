@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
@@ -22,7 +22,19 @@ export const metadata: Metadata = {
   title: "Birdieswap",
   description:
     "Birdieswap - Dual staking DeFi service with Uniswap LP and staking solutions",
+  other: {
+    "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
+  },
 };
+
+// export const viewport: Viewport = {
+//   themeColor: [
+//     { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
+//     { media: "(prefers-color-scheme: dark)", color: "#14192A" },
+//   ],
+//   // 선택: 시스템 color-scheme 힌트도 같이 줄 수 있어요
+//   // colorScheme: "dark light",
+// };
 
 export default async function RootLayout({
   children,

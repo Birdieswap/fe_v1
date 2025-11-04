@@ -1,9 +1,9 @@
 "use client";
 
 import { HeroUIProvider } from "@heroui/react";
-import { PropsWithChildren } from "react";
+import { PropsWithChildren, useEffect } from "react";
 import "@rainbow-me/rainbowkit/styles.css";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider, useTheme } from "next-themes";
 import {
   getDefaultConfig,
   RainbowKitProvider,
@@ -39,6 +39,46 @@ import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 import { ReferralProvider } from "./ReferralContextProvider";
 import { http, fallback, webSocket } from "viem";
+
+function ThemeColorMetaSync() {
+  const { theme, resolvedTheme } = useTheme();
+
+  useEffect(() => {
+    // resolvedTheme가 undefined일 때도 html.class로 판단
+    const htmlIsDark = document.documentElement.classList.contains("dark");
+    const mode =
+      (theme === "system" ? resolvedTheme : theme) ??
+      (htmlIsDark ? "dark" : "light");
+
+    const color = mode === "dark" ? "#14192A" : "#FFFFFF";
+
+    // meta 태그 하나만 업데이트
+    let meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "theme-color");
+      document.head.appendChild(meta);
+    }
+
+    meta.setAttribute("content", color);
+    document.documentElement.style.colorScheme = mode;
+
+    // 사파리/iOS 타이밍 보강
+    requestAnimationFrame(() => meta?.setAttribute("content", color));
+    setTimeout(() => meta?.setAttribute("content", color), 0);
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("[ThemeColorMetaSync]", {
+        theme,
+        resolvedTheme,
+        mode,
+        color,
+      });
+    }
+  }, [theme, resolvedTheme]);
+
+  return null;
+}
 
 const sepoliaUrls = [
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
@@ -207,6 +247,7 @@ export default function Providers({
       defaultTheme="system"
       nonce={nonce}
     >
+      <ThemeColorMetaSync />
       <WagmiProvider config={wagmiConfig}>
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
