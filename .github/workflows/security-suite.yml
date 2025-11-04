@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [main, master, dev_fe]
   schedule:
-    - cron: "0 18 * * 0" # 매주 월 03:00 KST 근처
+    - cron: "0 18 * * 0" # 매주 월 03:00 KST 근처(UTC 일 18:00)
   workflow_dispatch:
     inputs:
       zap_target:
@@ -22,20 +22,30 @@ permissions:
   contents: read
   security-events: write
   actions: read
+  pull-requests: read
 
 env:
   ZAP_TARGET_DEFAULT: https://birdieswap-dev.vercel.app
 
 jobs:
+  # ---------------------------- ZAP (DAST) ----------------------------
   zap-baseline:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve ZAP target
-        run: |
-          TARGET="${{ inputs.zap_target != '' && inputs.zap_target || vars.PREVIEW_URL || env.ZAP_TARGET_DEFAULT }}"
-          echo "ZAP_TARGET=$TARGET" >> $GITHUB_ENV
-
       - uses: actions/checkout@v4
+
+      - name: Resolve ZAP target
+        shell: bash
+        run: |
+          if [ -n "${{ inputs.zap_target }}" ]; then
+            TARGET="${{ inputs.zap_target }}"
+          elif [ -n "${{ vars.PREVIEW_URL }}" ]; then
+            TARGET="${{ vars.PREVIEW_URL }}"
+          else
+            TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
+          fi
+          echo "ZAP_TARGET=$TARGET" >> "$GITHUB_ENV"
+
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         continue-on-error: true
@@ -43,6 +53,7 @@ jobs:
           target: ${{ env.ZAP_TARGET }}
           cmd_options: "-j -m 5 -T 120"
           allow_issue_writing: false
+
       - name: Upload ZAP Baseline reports
         uses: actions/upload-artifact@v4
         with:
@@ -56,10 +67,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Resolve ZAP target
+        shell: bash
         run: |
-          TARGET="${{ inputs.zap_target != '' && inputs.zap_target || vars.PREVIEW_URL || env.ZAP_TARGET_DEFAULT }}"
-          echo "ZAP_TARGET=$TARGET" >> $GITHUB_ENV
+          if [ -n "${{ inputs.zap_target }}" ]; then
+            TARGET="${{ inputs.zap_target }}"
+          elif [ -n "${{ vars.PREVIEW_URL }}" ]; then
+            TARGET="${{ vars.PREVIEW_URL }}"
+          else
+            TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
+          fi
+          echo "ZAP_TARGET=$TARGET" >> "$GITHUB_ENV"
 
       - name: ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.12.0
@@ -69,6 +88,7 @@ jobs:
           cmd_options: "-j -m 5"
           docker_name: "ghcr.io/zaproxy/zaproxy:stable"
           allow_issue_writing: false
+
       - name: Upload ZAP Full reports
         uses: actions/upload-artifact@v4
         with:
@@ -78,53 +98,83 @@ jobs:
             report_json.json
           if-no-files-found: warn
 
+  # ---------------------------- CodeQL ----------------------------
   codeql:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      # security-events: write  # Code Scanning으로 바로 업로드하려면 해제하고 analyze의 upload 사용
+    env:
+      CODEQL_EXTRACTOR_JAVASCRIPT_INSTALL_NODE_MODULES: "false"
     steps:
       - uses: actions/checkout@v4
+
       - name: Download CodeQL CLI
+        shell: bash
         run: |
           curl -L -o codeql.zip https://github.com/github/codeql-cli-binaries/releases/latest/download/codeql-linux64.zip
           unzip -q codeql.zip -d /opt
-          echo "/opt/codeql" >> $GITHUB_PATH
+          echo "/opt/codeql" >> "$GITHUB_PATH"
+
       - name: Create CodeQL DB (no build)
         run: |
           /opt/codeql/codeql database create codeql-db \
-            --language=javascript --source-root=.
+            --language=javascript \
+            --source-root=.
+
       - name: Run CodeQL Analysis -> SARIF
         run: |
           /opt/codeql/codeql database analyze codeql-db \
             javascript-code-scanning.qls \
             --format=sarifv2.1.0 \
             --output=codeql.sarif || true
-      - uses: actions/upload-artifact@v4
+
+      - name: Ensure SARIF exists (even if empty)
+        shell: bash
+        run: |
+          if [ ! -s codeql.sarif ]; then
+            cat > codeql.sarif <<'JSON'
+            {"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}
+            JSON
+          fi
+
+      - name: Upload CodeQL SARIF artifact (for aggregate job)
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-codeql-${{ github.run_id }}-${{ github.run_attempt }}
           path: codeql.sarif
           if-no-files-found: error
 
+  # ---------------------------- Semgrep ----------------------------
   semgrep:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install Semgrep
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-pip
           pip3 install semgrep
+
       - name: Run Semgrep
         run: |
           semgrep scan --config=p/javascript --exclude node_modules --sarif -o semgrep.sarif || true
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Semgrep SARIF
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-semgrep-${{ github.run_id }}-${{ github.run_attempt }}
           path: semgrep.sarif
           if-no-files-found: error
 
+  # ---------------------------- SCA: Trivy (FS) ----------------------------
   trivy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Trivy FS scan
         uses: aquasecurity/trivy-action@0.24.0
         with:
@@ -132,93 +182,359 @@ jobs:
           format: sarif
           output: trivy.sarif
           ignore-unfixed: true
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload Trivy FS SARIF
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-trivy-${{ github.run_id }}-${{ github.run_attempt }}
           path: trivy.sarif
           if-no-files-found: error
 
+  # ---------------------------- SCA: OSV ----------------------------
   osv:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Install OSV-Scanner
         run: |
           sudo apt-get update
           sudo apt-get install -y golang-go
           export GOBIN=/usr/local/bin
           go install github.com/google/osv-scanner/cmd/osv-scanner@latest
+
       - name: Run OSV
         run: |
           osv-scanner --format sarif --output osv.sarif --skip-git . || true
-      - uses: actions/upload-artifact@v4
+
+      - name: Upload OSV SARIF
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-osv-${{ github.run_id }}-${{ github.run_attempt }}
           path: osv.sarif
           if-no-files-found: error
 
+  # ---------------------------- IaC: tfsec + Checkov ----------------------------
   tfsec:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: aquasecurity/tfsec-action@v1.0.3
+
+      - name: Run tfsec (SARIF)
+        uses: aquasecurity/tfsec-action@v1.0.3
         with:
+          working_directory: .
+          format: sarif
           additional_args: >-
-            --format sarif
             --out tfsec.sarif
-            .
-      - uses: actions/upload-artifact@v4
+          soft_fail: false
+
+      - name: Upload tfsec SARIF
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-tfsec-${{ github.run_id }}-${{ github.run_attempt }}
           path: tfsec.sarif
+          if-no-files-found: error
+
+  checkov:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Checkov (IaC)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: .
+          output_file_path: checkov.sarif
+          output_format: sarif
+          quiet: true
+        continue-on-error: true
+
+      - name: Upload Checkov SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-checkov-${{ github.run_id }}-${{ github.run_attempt }}
+          path: checkov.sarif
           if-no-files-found: warn
 
+  # ---------------------------- Dockerfile lint ----------------------------
   hadolint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: |
-          HDL=v2.12.0
-          sudo wget -O /usr/local/bin/hadolint \
-            https://github.com/hadolint/hadolint/releases/download/${HDL}/hadolint-Linux-x86_64
-          sudo chmod +x /usr/local/bin/hadolint
-          hadolint -f sarif Dockerfile > hadolint.sarif || true
-      - uses: actions/upload-artifact@v4
+
+      - name: Hadolint (if Dockerfile exists)
+        shell: bash
+        run: |
+          if [ -f Dockerfile ]; then
+            HDL=v2.12.0
+            sudo wget -O /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/${HDL}/hadolint-Linux-x86_64"
+            sudo chmod +x /usr/local/bin/hadolint
+            hadolint -f sarif Dockerfile > hadolint.sarif || true
+          else
+            echo '{"version":"2.1.0","runs":[]}' > hadolint.sarif
+
+      - name: Upload Hadolint SARIF
+        uses: actions/upload-artifact@v4
         with:
           name: sarif-hadolint-${{ github.run_id }}-${{ github.run_attempt }}
           path: hadolint.sarif
           if-no-files-found: warn
 
+    # ---------------------------- Build container + Image scans ----------------------------
+  container_build_and_scan:
+    runs-on: ubuntu-latest
+    needs: [hadolint]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image (if Dockerfile exists)
+        id: build
+        shell: bash
+        run: |
+          if [ -f Dockerfile ]; then
+            IMAGE="ghcr.io/${{ github.repository_owner }}/$(basename "$GITHUB_REPOSITORY"):${{ github.sha }}"
+            echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+            echo "will_build=true" >> "$GITHUB_OUTPUT"
+            docker build -t "$IMAGE" .
+          else
+            echo "will_build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install syft & grype
+        if: steps.build.outputs.will_build == 'true'
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM (CycloneDX JSON)
+        if: steps.build.outputs.will_build == 'true'
+        run: |
+          syft "$IMAGE" -o cyclonedx-json > sbom.json
+
+      - name: Scan SBOM with grype -> JSON
+        if: steps.build.outputs.will_build == 'true'
+        run: |
+          grype sbom:sbom.json -o json > grype.json || true
+
+      - name: Convert grype JSON -> SARIF (safe)
+        if: steps.build.outputs.will_build == 'true'
+        shell: bash
+        run: |
+          # 파이썬 파일로 저장 (닫는 PY는 반드시 맨 왼쪽!)
+          cat > grype_to_sarif.py <<'PY'
+          import json, sys
+
+          sarif = {
+            "version": "2.1.0",
+            "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+            "runs": [{
+              "tool": {"driver": {"name": "grype"}},
+              "results": []
+            }]
+          }
+
+          try:
+            with open("grype.json", "r", encoding="utf-8") as f:
+              data = json.load(f)
+            for m in data.get("matches", []):
+              v = (m.get("vulnerability") or {})
+              art = (m.get("artifact") or {})
+              vid = v.get("id") or "UNKNOWN"
+              sev = (v.get("severity") or "UNKNOWN").upper()
+              pkg = art.get("name") or "artifact"
+              level = "error" if sev in ("CRITICAL", "HIGH") else "warning"
+              sarif["runs"][0]["results"].append({
+                "ruleId": vid,
+                "level": level,
+                "message": {"text": f"{vid} on {pkg} ({sev})"}
+              })
+          except Exception as e:
+            print(f"[grype->sarif] parse warning: {e}", file=sys.stderr)
+
+          with open("grype.sarif", "w", encoding="utf-8") as f:
+            json.dump(sarif, f)
+          PY
+          python3 grype_to_sarif.py
+
+      - name: Trivy Image scan -> SARIF
+        if: steps.build.outputs.will_build == 'true'
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: image
+          image-ref: ${{ env.IMAGE }}
+          format: sarif
+          output: trivy-image.sarif
+          ignore-unfixed: true
+
+      - name: Dockle (container best-practices)
+        if: steps.build.outputs.will_build == 'true'
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            goodwithtech/dockle:v0.4.14 -f sarif "$IMAGE" > dockle.sarif || true
+
+      - name: Upload image scan artifacts
+        if: steps.build.outputs.will_build == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-scans-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            sbom.json
+            grype.json
+            grype.sarif
+            trivy-image.sarif
+            dockle.sarif
+          if-no-files-found: warn
+
+  # ---------------------------- Package manager audits ----------------------------
+  pm_audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Node.js setup (if JS project)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: npm audit (if package-lock.json)
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts || true
+            npm audit --json > npm-audit.json || true
+          else
+            echo '{}' > npm-audit.json
+          fi
+
+      - name: yarn audit (if yarn.lock)
+        shell: bash
+        run: |
+          if [ -f yarn.lock ]; then
+            corepack enable || true
+            yarn install --immutable || true
+            yarn audit --json > yarn-audit.json || true
+          else
+            echo '{}' > yarn-audit.json
+          fi
+
+      - name: pnpm audit (if pnpm-lock.yaml)
+        shell: bash
+        run: |
+          if [ -f pnpm-lock.yaml ]; then
+            corepack enable || true
+            pnpm install --frozen-lockfile || true
+            pnpm audit --json > pnpm-audit.json || true
+          else
+            echo '{}' > pnpm-audit.json
+          fi
+
+      - name: Convert *-audit.json -> SARIF (simple)
+        run: |
+          python3 - <<'PY'
+          import json, glob
+          sarif = {
+            "version":"2.1.0",
+            "$schema":"https://json.schemastore.org/sarif-2.1.0.json",
+            "runs":[{"tool":{"driver":{"name":"package-audit"}},"results":[]}]
+          }
+          advisories = []
+          for f in glob.glob("*-audit.json"):
+            try:
+              d = json.load(open(f))
+              # npm v7+ summary 형태
+              if isinstance(d.get("advisories"), dict):
+                advisories.extend(d["advisories"].values())
+              # yarn/pnpm 등 형태
+              vulns = d.get("vulnerabilities")
+              if isinstance(vulns, dict):
+                for items in vulns.values():
+                  if isinstance(items, list):
+                    advisories.extend(items)
+            except Exception:
+              pass
+
+          for a in advisories:
+            rid = str(a.get("id") or a.get("advisoryId") or a.get("module_name") or "pkg-advisory")
+            sev = str(a.get("severity") or a.get("severitySource") or "UNKNOWN")
+            pkg = str(a.get("module_name") or a.get("package") or "package")
+            lvl = "error" if sev.lower() in ("critical","high") else "warning"
+            sarif["runs"][0]["results"].append({"ruleId":rid,"level":lvl,"message":{"text":f"{rid} on {pkg} ({sev})"}})
+
+          open("package-audit.sarif","w").write(json.dumps(sarif))
+          PY
+
+      - name: Upload package-audit SARIF
+        uses: actions/upload-artifact@v4
+        with:
+          name: sarif-pm-audit-${{ github.run_id }}-${{ github.run_attempt }}
+          path: package-audit.sarif
+          if-no-files-found: warn
+
+  # ---------------------------- Dependency Review (PR only) ----------------------------
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  # ---------------------------- Aggregate / HTML / PDF ----------------------------
   aggregate:
     runs-on: ubuntu-latest
     if: always()
     needs:
-      [zap-baseline, zap-full, codeql, semgrep, trivy, osv, tfsec, hadolint]
+      - zap-baseline
+      - zap-full
+      - codeql
+      - semgrep
+      - trivy
+      - osv
+      - tfsec
+      - checkov
+      - hadolint
+      - container_build_and_scan
+      - pm_audit
     steps:
       - uses: actions/checkout@v4
-      - name: Download all SARIF artifacts
+
+      - name: Download SARIF artifacts (sarif-*)
         uses: actions/download-artifact@v4
         with:
           pattern: sarif-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: sarif_in
           merge-multiple: true
+
+      - name: Download container scan artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: container-scans-${{ github.run_id }}-${{ github.run_attempt }}
+          path: sarif_in
+        continue-on-error: true
+
       - name: Merge SARIFs
         run: |
           sudo apt-get update && sudo apt-get install -y dotnet-sdk-8.0 jq wkhtmltopdf
           dotnet tool install --global Sarif.Multitool
           export PATH="$PATH:$HOME/.dotnet/tools"
-          files=(sarif_in/*.sarif)
+          shopt -s nullglob
+          files=(sarif_in/**/*.sarif sarif_in/*.sarif)
           if [ ${#files[@]} -gt 0 ]; then
             sarif merge "${files[@]}" --output-file combined.sarif --log ForceOverwrite || true
           else
             jq -n '{version:"2.1.0", "$schema":"https://json.schemastore.org/sarif-2.1.0.json", runs:[]}' > combined.sarif
           fi
+
       - name: Simple HTML summary
         run: |
           echo "<h1>Birdieswap Security Report</h1><p>Combined SARIF results</p>" > summary.html
+
       - name: Build PDF
         run: |
           wkhtmltopdf --enable-local-file-access summary.html combined.pdf || touch combined.pdf
+
       - name: Upload combined results
         uses: actions/upload-artifact@v4
         with:
@@ -227,3 +543,22 @@ jobs:
             combined.sarif
             summary.html
             combined.pdf
+
+  # ---------------------------- Upload to Code Scanning UI ----------------------------
+  upload-to-code-scanning:
+    runs-on: ubuntu-latest
+    needs: [aggregate]
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: security-merged-${{ github.run_id }}-${{ github.run_attempt }}
+          path: out
+
+      - name: Upload merged SARIF to Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: out/combined.sarif
