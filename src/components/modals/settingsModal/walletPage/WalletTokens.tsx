@@ -1,5 +1,4 @@
 "use client";
-
 import { cn } from "@heroui/react";
 import Image from "next/image";
 import { Fragment, useCallback, useContext, useMemo } from "react";
@@ -17,6 +16,7 @@ import {
 import type { BigDecimal } from "@/types/BigDecimal";
 import { useRouter } from "next/navigation";
 import { findSymbolByAddress } from "@/utils/assets/getTokenSymbol";
+import { getAddress } from "viem";
 
 export type WalletTokenType = "LP" | "staked" | "token";
 
@@ -35,18 +35,45 @@ type StakedBalancesShape = NonU<NonU<AssetsLike["balances"]>["stakedBalances"]>;
 /**
  * Utility: cast Map keys to string to satisfy AssetsLike
  */
-function castMapToStringKey<V>(
-  m?: Map<any, V> | null
-): Map<string, V> | undefined {
-  if (!m) return undefined;
-  if (m instanceof Map) {
-    const out = new Map<string, V>();
-    for (const [k, v] of m.entries()) out.set(String(k), v);
-    return out;
+function normalizeKey(k: any) {
+  const s = String(k);
+  // 0x40자 주소면 체크섬으로 통일. 주소가 아니면 그냥 문자열
+  if (/^0x[0-9a-fA-F]{40}$/.test(s)) {
+    try {
+      return getAddress(s);
+    } catch {
+      return s.toLowerCase();
+    }
   }
-  return undefined;
+  return s;
 }
 
+// function castMapToStringKey<V>(
+//   m?: Map<any, V> | null
+// ): Map<string, V> | undefined {
+//   if (!m) return undefined;
+//   if (m instanceof Map) {
+//     const out = new Map<string, V>();
+//     for (const [k, v] of m.entries()) out.set(String(k), v);
+//     return out;
+//   }
+//   return undefined;
+// }
+function castMapToStringKey<V>(
+  m?: Map<any, V> | Record<string, V> | null
+): Map<string, V> | undefined {
+  if (!m) return undefined;
+  const out = new Map<string, V>();
+
+  if (m instanceof Map) {
+    for (const [k, v] of m.entries()) out.set(normalizeKey(k), v);
+  } else if (typeof m === "object") {
+    for (const [k, v] of Object.entries(m)) out.set(normalizeKey(k), v as V);
+  } else {
+    return undefined;
+  }
+  return out;
+}
 /**
  * Adapter: AssetsContext value -> AssetsLike expected by buildWalletTokens
  * NOTE: We keep the structure minimal and cast where the upstream types diverge.
@@ -54,6 +81,7 @@ function castMapToStringKey<V>(
 function toAssetsLike(total: any): AssetsLike {
   // Some codebases expose balances directly on context, others under .balances
   const b = total?.balances ?? total;
+  console.log("walletTokens", total);
 
   // Try to discover farm price map if present somewhere else
   const farmPriceMap = (total?.farmValues?.priceMap ??
@@ -76,9 +104,20 @@ function toAssetsLike(total: any): AssetsLike {
     byStakingPoolAddress: undefined,
   };
 
+  const chainLinkPriceMapSrc =
+    total?.assetValues?.chainLinkPriceMap ??
+    total?.chainLinkPriceMap ??
+    b?.chainLinkPriceMap;
+
+  const chainLinkPriceMap =
+    castMapToStringKey<BigDecimal>(chainLinkPriceMapSrc);
+
   const assetsLike: AssetsLike = {
     assetValues: {
-      chainLinkPriceMap: undefined,
+      chainLinkPriceMap: chainLinkPriceMap as unknown as Map<
+        string,
+        { price: BigDecimal }
+      >,
     },
     balances: {
       tokenBalances: {
