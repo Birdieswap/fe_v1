@@ -52,23 +52,38 @@ function inferOriginFromReq(req: Request): string {
 
 function safeUpstreamHeaders(req: Request, tail: string) {
   const h = new Headers();
-  const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
-  Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
+  // 브라우저스러운 기본 헤더
+  h.set(
+    "user-agent",
+    req.headers.get("user-agent") ||
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+  );
+  h.set("accept", "application/json, text/plain, */*");
+  h.set("accept-language", "en-US,en;q=0.9,ko;q=0.8");
+  h.set("accept-encoding", "gzip, deflate, br");
+  h.set("pragma", "no-cache");
+  h.set("cache-control", "no-cache");
+
+  // 🔸 이 엔드포인트들은 CF가 Origin/Referer를 강하게 본다고 가정
   const needsHumanLike =
     /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(tail);
 
   if (needsHumanLike) {
-    const siteOrigin = req.headers.get("origin") || inferOriginFromReq(req);
-    const ref = req.headers.get("referer") || `${siteOrigin}/`;
-    if (siteOrigin) h.set("origin", siteOrigin);
-    if (ref) h.set("referer", ref);
-    const cookie = req.headers.get("cookie");
-    if (cookie) h.set("cookie", cookie);
+    // ❗️업스트림 기준으로 Origin/Referer를 'realkimp.com'로 통일
+    h.set("origin", "https://realkimp.com");
+    h.set(
+      "referer",
+      `https://realkimp.com/birdieswap/${tail.replace(/\/+$/, "")}/`
+    );
+
+    // 쿠키는 원칙적으로 제거(서버→업스트림 전달 불필요/위험)
+    h.delete("cookie");
   } else {
     h.delete("cookie");
   }
 
+  // 원 IP 전달(가능하면)
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
@@ -76,6 +91,9 @@ function safeUpstreamHeaders(req: Request, tail: string) {
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
 
   h.set("x-forwarded-proto", "https");
+  // ❌ 이 값은 제거 (호스트를 강제로 바꾸면 CF가 더 의심)
+  h.delete("x-forwarded-host");
+
   h.delete("authorization");
   return h;
 }
@@ -122,23 +140,28 @@ export async function GET(req: Request, context?: any) {
     // 🔥 후보 URL: .json 우선 + CORS 프록시 후보까지
     const candidates = Array.from(
       new Set(
-        [
-          ...UPSTREAMS.flatMap((base) => {
-            const arr: (string | null)[] = [];
-            if (!tail.endsWith(".json")) arr.push(`${base}/${tail}.json`);
-            else arr.push(`${base}/${tail}`);
-            arr.push(`${base}/${tail}/`);
-            if (!tail.endsWith(".json")) arr.push(`${base}/${tail}`);
-            if (id) {
-              arr.push(`${base}/${id}.json`);
-              arr.push(`${base}/${id}`);
-              arr.push(`${base}/chains/${id}.json`);
-            }
-            return arr;
-          }),
-          // 👉 서버에서도 마지막에 CORS 프록시 경유 시도 (데모 한정)
-          ...UPSTREAMS.map((base) => `${CORS_PROXY}${base}/${tail}.json`),
-        ].filter(Boolean) as string[]
+        UPSTREAMS.flatMap((base) => {
+          const arr: string[] = [];
+
+          // 항상 트레일링 슬래시 우선
+          arr.push(`${base}/${tail}/`);
+
+          // 그 다음 확장자 없는 원본
+          arr.push(`${base}/${tail}`);
+
+          // 마지막으로 .json
+          arr.push(`${base}/${tail}.json`);
+
+          // 숫자 id 케이스도 동일 우선순위로
+          if (id) {
+            arr.push(`${base}/${id}/`);
+            arr.push(`${base}/${id}`);
+            arr.push(`${base}/${id}.json`);
+            arr.push(`${base}/chains/${id}.json`);
+          }
+
+          return arr;
+        })
       )
     );
 
