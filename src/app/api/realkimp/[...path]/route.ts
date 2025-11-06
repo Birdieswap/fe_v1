@@ -1,3 +1,4 @@
+// src/app/api/realkimp/[...path]/route.ts
 import { NextResponse } from "next/server";
 import { pickProxyResponseHeaders } from "@/utils/proxy";
 import { withTimeout } from "@/utils/timeout";
@@ -55,10 +56,10 @@ function safeUpstreamHeaders(req: Request, tail: string) {
   const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
   Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
-  // 필요한 엔드포인트에 한해 최소한의 human-like 헤더 부여
-  const needsHumanLike =
-    /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(tail);
-  if (needsHumanLike) {
+  const isDev = process.env.NODE_ENV !== "production";
+
+  if (isDev) {
+    // ✅ 개발 환경: 인증 깨짐 방지를 위해 쿠키/오리진/리퍼러를 통째로 전달
     const siteOrigin = req.headers.get("origin") || inferOriginFromReq(req);
     const ref = req.headers.get("referer") || `${siteOrigin}/`;
     if (siteOrigin) h.set("origin", siteOrigin);
@@ -66,7 +67,21 @@ function safeUpstreamHeaders(req: Request, tail: string) {
     const cookie = req.headers.get("cookie");
     if (cookie) h.set("cookie", cookie);
   } else {
-    h.delete("cookie");
+    // ⛑ 운영 환경: 필요한 엔드포인트에만 최소 전달 (원래 로직 유지)
+    const needsHumanLike =
+      /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(
+        tail
+      );
+    if (needsHumanLike) {
+      const siteOrigin = req.headers.get("origin") || inferOriginFromReq(req);
+      const ref = req.headers.get("referer") || `${siteOrigin}/`;
+      if (siteOrigin) h.set("origin", siteOrigin);
+      if (ref) h.set("referer", ref);
+      const cookie = req.headers.get("cookie");
+      if (cookie) h.set("cookie", cookie);
+    } else {
+      h.delete("cookie");
+    }
   }
 
   // best-effort 원 IP
@@ -77,7 +92,8 @@ function safeUpstreamHeaders(req: Request, tail: string) {
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
 
   h.set("x-forwarded-proto", "https");
-  h.set("x-forwarded-host", "realkimp.com");
+  // ❌ 도메인 강제 지정은 리다이렉트/보안체크를 꼬이게 할 수 있으므로 제거
+  // h.set("x-forwarded-host", "realkimp.com");
   h.delete("authorization");
 
   return h;
@@ -97,10 +113,9 @@ function looksLikeCFChallenge(status: number, text: string) {
 }
 
 /* ───────────────────────────────────────────────────────────────
- * Route
+ * Core handler (모든 메서드가 이 함수를 사용)
  * ─────────────────────────────────────────────────────────────── */
-
-export async function GET(req: Request, context?: any) {
+async function handle(req: Request, context?: any) {
   const url = new URL(req.url);
 
   // 1) App Router params
@@ -148,6 +163,31 @@ export async function GET(req: Request, context?: any) {
 
   const tried: string[] = [];
 
+  // 요청 메서드/바디 준비
+  const method = req.method.toUpperCase();
+
+  // OPTIONS 프리플라이트는 바로 204
+  if (method === "OPTIONS") {
+    const res = new NextResponse(null, { status: 204 });
+    if (process.env.NODE_ENV !== "production") {
+      res.headers.set("Access-Control-Allow-Origin", "*");
+      res.headers.set(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,DELETE,OPTIONS,HEAD"
+      );
+      res.headers.set("Access-Control-Allow-Headers", "*");
+    }
+    return res;
+  }
+
+  let body: BodyInit | undefined = undefined;
+  if (method !== "GET" && method !== "HEAD") {
+    const buf = await req.arrayBuffer().catch(() => null);
+    if (buf && buf.byteLength > 0) body = Buffer.from(buf);
+    // Content-Type 유지
+    // (fetch가 알아서 넘기지만, 필요시 여기서 헤더 설정 가능)
+  }
+
   for (const baseUrl of candidates) {
     const u = new URL(baseUrl);
     u.search = url.search;
@@ -155,8 +195,9 @@ export async function GET(req: Request, context?: any) {
 
     let r = await withTimeout(12_000, (signal) =>
       fetch(u, {
-        method: "GET",
+        method,
         headers: safeUpstreamHeaders(req, tail),
+        body,
         cache: "no-store",
         redirect: "follow",
         signal,
@@ -169,8 +210,9 @@ export async function GET(req: Request, context?: any) {
       if (finalUrl && finalUrl.startsWith("http://realkimp.com/")) {
         const httpsUrl = finalUrl.replace(/^http:\/\//, "https://");
         r = await fetch(httpsUrl, {
-          method: "GET",
+          method,
           headers: safeUpstreamHeaders(req, tail),
+          body,
           cache: "no-store",
           redirect: "follow",
         });
@@ -183,8 +225,9 @@ export async function GET(req: Request, context?: any) {
       if (/^http:\/\/realkimp\.com\//i.test(loc)) {
         const httpsUrl = loc.replace(/^http:\/\//i, "https://");
         r = await fetch(httpsUrl, {
-          method: "GET",
+          method,
           headers: safeUpstreamHeaders(req, tail),
+          body,
           cache: "no-store",
           redirect: "follow",
         });
@@ -196,7 +239,7 @@ export async function GET(req: Request, context?: any) {
 
     const ct = r.headers.get("content-type") || "";
 
-    // JSON 스트림 패스스루
+    // JSON 스트림 패스스루 (상태코드 유지)
     if (
       r.ok &&
       (ct.includes("application/json") || u.pathname.endsWith(".json"))
@@ -210,10 +253,10 @@ export async function GET(req: Request, context?: any) {
       out.set("content-type", "application/json; charset=utf-8");
       out.set("x-upstream-url", u.toString());
       out.set("x-upstream-tried", tried.join(" | "));
-      return new NextResponse(r.body, { status: 200, headers: out });
+      return new NextResponse(r.body, { status: r.status, headers: out });
     }
 
-    // 본문이 JSON처럼 보이면 그대로 전달
+    // 본문이 JSON처럼 보이면 그대로 전달 (상태코드 유지)
     const text = await r
       .clone()
       .text()
@@ -228,7 +271,7 @@ export async function GET(req: Request, context?: any) {
       out.set("content-type", "application/json; charset=utf-8");
       out.set("x-upstream-url", u.toString());
       out.set("x-upstream-tried", tried.join(" | "));
-      return new NextResponse(text, { status: 200, headers: out });
+      return new NextResponse(text, { status: r.status, headers: out });
     }
 
     // Cloudflare 챌린지/차단 → 외부로는 절대 리다이렉트하지 않음
@@ -264,4 +307,26 @@ export async function GET(req: Request, context?: any) {
     { ok: false, error: "upstream_error", tried: candidates },
     { status: 502 }
   );
+}
+
+/* ───────────────────────────────────────────────────────────────
+ * HTTP method exports (모두 공용 핸들러 사용)
+ * ─────────────────────────────────────────────────────────────── */
+export async function GET(req: Request, ctx?: any) {
+  return handle(req, ctx);
+}
+export async function POST(req: Request, ctx?: any) {
+  return handle(req, ctx);
+}
+export async function PUT(req: Request, ctx?: any) {
+  return handle(req, ctx);
+}
+export async function DELETE(req: Request, ctx?: any) {
+  return handle(req, ctx);
+}
+export async function HEAD(req: Request, ctx?: any) {
+  return handle(req, ctx);
+}
+export async function OPTIONS(req: Request, ctx?: any) {
+  return handle(req, ctx);
 }
