@@ -42,8 +42,8 @@ export default function NavbarImpl() {
             }
           }}
         >
-          {/* <BirdieLogo className="hidden text-foreground lg:block" /> */}
-          <BirdieLogoBeta className="hidden text-foreground lg:block" />
+          <BirdieLogo className="hidden text-foreground lg:block" />
+          {/* <BirdieLogoBeta className="hidden text-foreground lg:block" /> */}
           {/* <BirdieLogoMobile className="block lg:hidden" /> */}
           <BirdieLogoBetaMobile className="block lg:hidden" />
         </Link>
@@ -64,7 +64,7 @@ export default function NavbarImpl() {
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}
-        <NavPoints />
+        {/* <NavPoints /> */}
         <NavbarConnect />
       </NavbarContent>
 

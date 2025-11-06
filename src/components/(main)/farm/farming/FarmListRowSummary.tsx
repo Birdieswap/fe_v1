@@ -187,10 +187,10 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
 
   //=== Booster_Icon 관련
 
-  const flag = [
-    "ShockingPinkLetter",
-    "DarkJungleGreenLetter",
-    "MediumSeaGreenLetter",
+  const flag: string[] = [
+    // "ShockingPinkLetter",
+    // "DarkJungleGreenLetter",
+    // "MediumSeaGreenLetter",
   ];
 
   return (
@@ -240,9 +240,9 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
       <div className="hidden md:flex items-center justify-end text-right pr-2 md:[grid-column:2/3]">
         <div className="flex-col items-end justify-center gap-1.5">
           <Components.Apy isLoading={apyIsLoading} value={apy} />
-          {/* Booster 아이콘들 (뒤에서부터 겹침) */}
-          <div className="relative mt-1 h-4">
-            {/* 이전과 동일한 겹침 규칙 유지 */}
+
+          {/* <div className="relative mt-1 h-4">
+           
             <div className="isolate flex -space-x-9 ">
               {flag.map((name, i) => {
                 const IconComponent =
@@ -260,7 +260,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                 );
               })}
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 
