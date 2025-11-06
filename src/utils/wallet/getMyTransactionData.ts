@@ -42,10 +42,22 @@ export async function getMyTransactionData(
   try {
     console.log("[tx fetch] GET", url);
 
+    // const res = await fetch(url, {
+    //   method: "GET",
+    //   signal,
+    //   credentials: "omit",
+    // })
     const res = await fetch(url, {
       method: "GET",
       signal,
-      credentials: "omit",
+      // 같은 오리진(/api/...) 프록시 호출이므로 쿠키를 포함시켜야 함
+      // (same-origin 또는 include 중 택1)
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: {
+        // 명시해두면 일부 CDN이 더 잘 통과
+        accept: "application/json, text/plain, */*",
+      },
     }).catch((e) => {
       console.error("[tx fetch] network error(fetch):", e);
       throw new Error("NETWORK_ERROR");
