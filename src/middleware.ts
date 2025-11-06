@@ -1,43 +1,65 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// 모든 경로에 적용 (원래값 유지)
 export const config = { matcher: ["/:path*"] };
 
 export function middleware(req: NextRequest) {
   const isDev = process.env.NODE_ENV !== "production";
-  const nonce = "dev-nonce"; // dev에서도 혹시 쓰는 곳 있으면 호환용
+  const nonce = isDev ? "dev-nonce" : crypto.randomUUID().replace(/-/g, "");
 
-  const requestHeaders = new Headers(req.headers);
-  requestHeaders.set("x-csp-nonce", nonce);
-
-  const res = NextResponse.next({ request: { headers: requestHeaders } });
-
-  if (isDev) {
-    // ─────────────────────────────────────────────────────────────
-    // ✅ 테스트(개발) 환경: 모든 보안 헤더 완전히 제거
-    //    - CSP 미설정
-    //    - Report-Only도 미설정
-    //    - HSTS, X-Frame-Options, X-Content-Type-Options 등 미설정
-    // ─────────────────────────────────────────────────────────────
-    res.headers.delete("Content-Security-Policy");
-    res.headers.delete("Content-Security-Policy-Report-Only");
-    res.headers.delete("Strict-Transport-Security");
-    res.headers.delete("X-Content-Type-Options");
-    res.headers.delete("Referrer-Policy");
-    res.headers.delete("X-Frame-Options");
-    res.headers.delete("Permissions-Policy");
-    res.headers.set("x-csp-debug", "disabled-in-dev");
-    return res;
-  }
-
-  // ─────────────────────────────────────────────────────────────
-  // ⛑ 운영 환경: 기존 보안 헤더 유지 (필요 시 아래 블록을 당신의 기존 값으로 교체)
-  // ─────────────────────────────────────────────────────────────
-  const scriptSrc = [
+  const CONNECT_DOMAINS: string[] = [
+    // 자기 자신
     "'self'",
-    `'nonce-${crypto.randomUUID().replace(/-/g, "")}'`,
-    "'strict-dynamic'",
+    // dev 전용
+    ...(isDev ? ["http://localhost:3000"] : []),
+    // RPC & L2
+    "https://*.infura.io",
+    "https://*.g.alchemy.com",
+    "https://sepolia.drpc.org",
+    "https://mainnet.base.org",
+    "https://arb1.arbitrum.io",
+    // 외부 API
+    "https://api.coingecko.com",
+    "https://cdn.rainbowkit.com",
+    "https://raw.githubusercontent.com",
+    // 지갑 관련
+    "https://*.walletconnect.com",
+    "https://pulse.walletconnect.org",
+    "https://api.web3modal.org",
+    "https://cca-lite.coinbase.com",
+    // 프로젝트 API
+    "https://realkimp.com",
+    "https://realkimp.io",
+  ];
+
+  const IMG_DOMAINS: string[] = [
+    "images.ctfassets.net",
+    "assets.coingecko.com",
+    "ipfs.io",
+    "cdn.rainbowkit.com",
+    "raw.githubusercontent.com",
+  ];
+
+  // ─────────────────────────────────────────────────────────────
+  // 스크립트: dev는 eval/inline 허용, prod는 nonce 기반
+  // ─────────────────────────────────────────────────────────────
+  const scriptSrc = isDev
+    ? ["'self'", "'unsafe-eval'", "'unsafe-inline'"].join(" ")
+    : ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"].join(" ");
+
+  // ─────────────────────────────────────────────────────────────
+  // 스타일: elem/attr 분리
+  //   - attr: 지갑 모달 등에서 style 속성 사용 → unsafe-inline 허용 (현실적 해결책)
+  //   - elem: Next/RainbowKit이 만드는 <style> 태그는 nonce가 없으므로
+  //           prod에서도 unsafe-inline 허용(대신 'self'로 출처 제한)
+  //      * nonce를 모든 <style>에 주입할 수 있다면 elem을 'nonce'로 바꿔도 됨
+  // ─────────────────────────────────────────────────────────────
+  const styleSrcElem = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://fonts.googleapis.com",
   ].join(" ");
+  const styleSrcAttr = "'unsafe-inline'";
+
   const cspParts: string[] = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -46,16 +68,35 @@ export function middleware(req: NextRequest) {
     "form-action 'self'",
     "frame-ancestors 'self'",
     "object-src 'none'",
+
     `script-src ${scriptSrc}`,
-    `style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `style-src-attr 'unsafe-inline'`,
+
+    // 기존 style-src는 제거하고 elem/attr로 분리
+    `style-src-elem ${styleSrcElem}`,
+    `style-src-attr ${styleSrcAttr}`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
+
+    // 글꼴/이미지
     "font-src 'self' https://fonts.gstatic.com data:",
-    // 필요 시 img-src/connect-src 등 추가
+    // 지갑 QR / 캔버스 등에서 blob: 이미지가 나올 수 있어 blob: 허용
+    `img-src 'self' data: blob: https: ${IMG_DOMAINS.join(" ")}`,
+
+    // 지갑/WalletConnect가 iframe을 띄울 수 있어 frame-src 추가
+    "frame-src 'self' https://*.walletconnect.com https://verify.walletconnect.com https://*.coinbase.com",
+
+    // HMR / 소켓 / RPC 등
+    `connect-src 'self' ws: wss: https: ${CONNECT_DOMAINS.join(" ")}`,
   ];
+
   const csp = cspParts.join("; ");
 
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-csp-nonce", nonce);
+
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
   res.headers.set("Content-Security-Policy", csp);
+  if (isDev) res.headers.set("x-csp-debug", `nonce:${nonce}`);
+
   res.headers.set(
     "Strict-Transport-Security",
     "max-age=63072000; includeSubDomains; preload"
