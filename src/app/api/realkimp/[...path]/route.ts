@@ -1,3 +1,4 @@
+// src/app/api/realkimp/[...path]/route.ts
 import { NextResponse } from "next/server";
 import { pickProxyResponseHeaders } from "@/utils/proxy";
 import { withTimeout } from "@/utils/timeout";
@@ -13,9 +14,7 @@ const ORIGINS = [
   "https://realkimp.io/birdieswap",
 ];
 
-/* ───────────────────────────────────────────────────────────────
- * Helpers
- * ─────────────────────────────────────────────────────────────── */
+/* ────────────────── Helpers ────────────────── */
 
 function browserLikeHeaders(baseUA?: string) {
   const ua =
@@ -28,6 +27,10 @@ function browserLikeHeaders(baseUA?: string) {
     "accept-encoding": "gzip, deflate, br",
     pragma: "no-cache",
     "cache-control": "no-cache",
+    // Cloudflare가 기대하는 fetch 계열 힌트
+    "sec-fetch-mode": "cors",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-site": "cross-site",
   };
 }
 
@@ -50,26 +53,26 @@ function inferOriginFromReq(req: Request): string {
   return "http://localhost:3000";
 }
 
-function safeUpstreamHeaders(req: Request, tail: string) {
+// ⚠️ 업스트림 URL(u)에 맞춰 Origin/Referer를 세팅하도록 변경
+function buildUpstreamHeaders(req: Request, tail: string, u: URL) {
   const h = new Headers();
   const bl = browserLikeHeaders(req.headers.get("user-agent") || undefined);
   Object.entries(bl).forEach(([k, v]) => h.set(k, v as string));
 
-  // 필요한 엔드포인트에 한해 최소한의 human-like 헤더 부여
+  // dev/prod 모두 공통: 업스트림 기준으로 origin/referrer 설정
+  h.set("origin", u.origin);
+  h.set("referer", `${u.origin}/`);
+
+  // 쿠키 전달: Transactions 등은 세션/쿠키가 필요할 수 있으므로 전달 시도
+  // (동일오리진 프록시 호출이므로 클라 fetch에서 credentials: 'same-origin' 이어야 쿠키가 도착)
   const needsHumanLike =
     /^(currentuserpoints|transactions|apr\/|consent(\/|$)|points?)/i.test(tail);
-  if (needsHumanLike) {
-    const siteOrigin = req.headers.get("origin") || inferOriginFromReq(req);
-    const ref = req.headers.get("referer") || `${siteOrigin}/`;
-    if (siteOrigin) h.set("origin", siteOrigin);
-    if (ref) h.set("referer", ref);
-    const cookie = req.headers.get("cookie");
-    if (cookie) h.set("cookie", cookie);
-  } else {
-    h.delete("cookie");
+  const cookie = req.headers.get("cookie");
+  if (needsHumanLike && cookie) {
+    h.set("cookie", cookie);
   }
 
-  // best-effort 원 IP
+  // 원 IP (best-effort)
   const fwdFor =
     (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() ||
     req.headers.get("cf-connecting-ip") ||
@@ -77,6 +80,7 @@ function safeUpstreamHeaders(req: Request, tail: string) {
   if (fwdFor) h.set("x-forwarded-for", fwdFor);
 
   h.set("x-forwarded-proto", "https");
+  // ❌ CF 판단을 꼬이게 할 수 있으므로 금지
   // h.set("x-forwarded-host", "realkimp.com");
   h.delete("authorization");
 
@@ -96,9 +100,7 @@ function looksLikeCFChallenge(status: number, text: string) {
   return false;
 }
 
-/* ───────────────────────────────────────────────────────────────
- * Route
- * ─────────────────────────────────────────────────────────────── */
+/* ────────────────── Route ────────────────── */
 
 export async function GET(req: Request, context?: any) {
   const url = new URL(req.url);
@@ -126,7 +128,7 @@ export async function GET(req: Request, context?: any) {
     );
   }
 
-  // 숫자 id 감지
+  // id 감지
   const m = tail.match(/^(\d+)(?:\.json)?$/);
   const id = m ? m[1] : null;
 
@@ -156,7 +158,7 @@ export async function GET(req: Request, context?: any) {
     let r = await withTimeout(12_000, (signal) =>
       fetch(u, {
         method: "GET",
-        headers: safeUpstreamHeaders(req, tail),
+        headers: buildUpstreamHeaders(req, tail, u), // ← 업스트림 기준 헤더
         cache: "no-store",
         redirect: "follow",
         signal,
@@ -170,31 +172,41 @@ export async function GET(req: Request, context?: any) {
         const httpsUrl = finalUrl.replace(/^http:\/\//, "https://");
         r = await fetch(httpsUrl, {
           method: "GET",
-          headers: safeUpstreamHeaders(req, tail),
+          headers: buildUpstreamHeaders(req, tail, new URL(httpsUrl)),
           cache: "no-store",
           redirect: "follow",
         });
       }
     } catch {}
 
-    // 3xx를 받은 경우: Location이 http://realkimp.com/* 이면 https로 정규화해 재시도
+    // 3xx http→https 정규화
     if (r.status >= 300 && r.status < 400) {
       const loc = r.headers.get("location") || "";
       if (/^http:\/\/realkimp\.com\//i.test(loc)) {
         const httpsUrl = loc.replace(/^http:\/\//i, "https://");
         r = await fetch(httpsUrl, {
           method: "GET",
-          headers: safeUpstreamHeaders(req, tail),
+          headers: buildUpstreamHeaders(req, tail, new URL(httpsUrl)),
           cache: "no-store",
           redirect: "follow",
         });
       } else {
-        // 그 외 3xx는 다음 후보로 진행
+        // 다른 3xx면 다음 후보 시도
         continue;
       }
     }
 
     const ct = r.headers.get("content-type") || "";
+    const text = await r
+      .clone()
+      .text()
+      .catch(() => "");
+
+    // ✅ CF 챌린지면 "즉시 종료"하지 말고 **다음 후보로 폴백**
+    if (looksLikeCFChallenge(r.status, text)) {
+      // console.warn("CF challenge on", u.toString());
+      continue;
+    }
 
     // JSON 스트림 패스스루
     if (
@@ -205,7 +217,7 @@ export async function GET(req: Request, context?: any) {
       out.delete("content-encoding");
       out.delete("transfer-encoding");
       out.delete("content-length");
-      out.delete("set-cookie"); // 안전 차단
+      out.delete("set-cookie");
       out.set("cache-control", "no-store, max-age=0");
       out.set("content-type", "application/json; charset=utf-8");
       out.set("x-upstream-url", u.toString());
@@ -214,10 +226,6 @@ export async function GET(req: Request, context?: any) {
     }
 
     // 본문이 JSON처럼 보이면 그대로 전달
-    const text = await r
-      .clone()
-      .text()
-      .catch(() => "");
     if (r.ok && /^[\s\r\n]*[\{\[]/.test(text)) {
       const out = pickProxyResponseHeaders(r);
       out.delete("content-encoding");
@@ -231,37 +239,24 @@ export async function GET(req: Request, context?: any) {
       return new NextResponse(text, { status: 200, headers: out });
     }
 
-    // Cloudflare 챌린지/차단 → 외부로는 절대 리다이렉트하지 않음
-    if (looksLikeCFChallenge(r.status, text)) {
-      return NextResponse.json(
-        {
-          ok: false,
-          status: r.status,
-          reason: "cloudflare_challenge",
-          tried,
-          bodyPreview: text.slice(0, 1000),
-        },
-        { status: 502 }
-      );
-    }
-
-    // 비-JSON 응답/오류는 설명 JSON으로 통일
+    // 오류는 설명 JSON
     if (r.status >= 300 || !r.ok) {
-      return NextResponse.json(
-        {
-          ok: false,
-          status: r.status,
-          contentType: ct.slice(0, 120),
-          tried,
-          bodyPreview: text.slice(0, 1000),
-        },
-        { status: r.status === 304 ? 304 : 502 }
-      );
+      // 다음 후보도 남아있으면 계속 시도
+      continue;
     }
   }
 
+  // 모든 후보 실패(혹은 CF 챌린지)
   return NextResponse.json(
-    { ok: false, error: "upstream_error", tried: candidates },
+    {
+      ok: false,
+      status: 502,
+      reason: "upstream_error_or_cloudflare_challenge",
+      tried: ORIGINS.map(
+        (b) =>
+          `${b}/${strip(new URL(req.url).pathname.split("/api/realkimp/")[1] || "")}`
+      ),
+    },
     { status: 502 }
   );
 }
