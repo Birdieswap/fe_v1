@@ -1,35 +1,57 @@
-import { useChainId } from "wagmi";
+// src/utils/points/getCurrentUserPoints.ts
 import { buildUrl } from "../wallet/buildUrl";
 
-export type Address = `0x${string}`
+export type Address = `0x${string}`;
 export type PointsMap = Record<string, string>;
 
 export type CurrentUserPointsResponse = {
   response: boolean;
   result: boolean;
-  chainId: string;          
-  totalPoints: string;      
+  chainId: string;
+  totalPoints: string;
   pointsDetail: {
-    staking: PointsMap;             
-    swapWithReferrals: PointsMap;   
-    referrals: PointsMap;           
+    staking: PointsMap;
+    swapWithReferrals: PointsMap;
+    referrals: PointsMap;
   };
-}
-const isDevLike =
-  (process.env.NEXT_PUBLIC_OPERATION_MODE ?? "").trim().toLowerCase() === "dev" ||
-  (process.env.NEXT_PUBLIC_VERCEL_ENV ?? "").trim().toLowerCase() === "preview";
-
-const toChainIdParam = (id?: number) =>
-  isDevLike ? "0" : (typeof id === "number" ? String(id) : undefined);
+};
 
 export async function getCurrentUserPoints(
   address: Address,
-  opts: { signal?: AbortSignal;} = {}
+  opts: { signal?: AbortSignal } = {}
 ): Promise<CurrentUserPointsResponse> {
   const { signal } = opts;
+
   const url = buildUrl("CurrentUserPoints", { address });
-  // console.log("CurrentUserRewards URL:", url);
-  const res = await fetch(url, { method: "GET", signal, credentials: "omit" });
-  if (!res.ok) throw new Error(`CurrentUserPoints fetch failed: ${res.status}`);
-  return res.json();
+
+  const isProxy = typeof url === "string" && url.startsWith("/api/");
+  const absoluteUrl =
+    isProxy && typeof window !== "undefined"
+      ? new URL(url, window.location.origin).toString()
+      : url;
+
+  const res = await fetch(absoluteUrl, {
+    method: "GET",
+    signal,
+    credentials: "same-origin",
+    cache: "no-store",
+    headers: { accept: "application/json, text/plain, */*" },
+  });
+
+  const ct = res.headers.get("content-type") || "";
+  const raw = await res.text().catch(() => "");
+  if (!res.ok) {
+    console.warn(
+      "[points] non-OK",
+      res.status,
+      res.statusText,
+      raw.slice(0, 300)
+    );
+    throw new Error(`CurrentUserPoints fetch failed: ${res.status}`);
+  }
+  const looksJson =
+    ct.includes("application/json") || /^[\s\r\n]*[\{\[]/.test(raw);
+  if (!looksJson) throw new Error("CurrentUserPoints invalid JSON");
+
+  return JSON.parse(raw) as CurrentUserPointsResponse;
 }
