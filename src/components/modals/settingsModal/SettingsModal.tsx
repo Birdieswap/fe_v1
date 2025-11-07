@@ -45,7 +45,7 @@ export default function SettingsModal() {
           variant="light"
           isIconOnly
           onPress={disclosure.onOpen}
-          className="h-10 w-10 min-w-10 rounded-full p-1 border-0 bg-transparent"
+          className="h-10 w-10 min-w-10 rounded-full p-1 border-0 bg-transparent "
         >
           <WalletIcon provider={selectedProvider} />
         </Button>

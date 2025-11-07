@@ -45,7 +45,7 @@ function StaticConsentContent() {
             documents:
           </p>
 
-          <ul className="list-disc pl-5 mt-6 font-medium text-[14px] leading-[20px] text-default-800 dark:text-default-300">
+          <ul className="list-disc pl-5 mt-6 font-regular text-[14px] leading-[20px] text-default-800 dark:text-default-300">
             <li className="pb-4">
               <Link
                 href={TERMS_URL}

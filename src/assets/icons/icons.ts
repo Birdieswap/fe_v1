@@ -92,7 +92,8 @@ import VaultInfoIcon from "./vaultInfoIcon.svg";
 import Change from "./change.svg";
 import StakedToken from "./Staked-token.svg";
 import PointIcon from "./point-icon.svg";
-
+import WalletStake from "./wallet-stake.svg";
+import WalletUnstake from "./wallet-unstake.svg";
 export const Icons = {
   Arrow,
   ArrowRL,
@@ -183,6 +184,8 @@ export const Icons = {
   WalletTxError,
   WalletTxOk,
   Wallet,
+  WalletStake,
+  WalletUnstake,
   PointEgg,
   Change,
   StakedToken,

@@ -47,17 +47,23 @@ export default function NavbarConnect() {
       {/* 1) NavbarItem엔 트리거만 (모달은 아래 별도 마운트) */}
       {isMobile ? (
         <>
-          <NavbarItem className="h-8">
+          <NavbarItem className="flex items-center h-8">
             {/* 이 컴포넌트가 버튼+모달을 둘 다 렌더한다면, 트리거만 렌더하는 경량버전으로 쪼개는 게 베스트.
                일단 지금 구조 유지하되, 모달 포털을 body로 강제하면 문제 완화됨. */}
             <SelectNetworkModal />
           </NavbarItem>
 
-          <NavbarItem hidden={!isAccountConnected}>
+          <NavbarItem
+            className="flex items-center"
+            hidden={!isAccountConnected}
+          >
             <SettingsModal />
           </NavbarItem>
 
-          <NavbarItem className="pl-1" hidden={isAccountConnected}>
+          <NavbarItem
+            className="flex items-center pl-1"
+            hidden={isAccountConnected}
+          >
             <SelectWalletModal />
           </NavbarItem>
         </>

@@ -21,7 +21,7 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
       {network.iconSrc ? (
         <Image
           alt={network.name}
-          className="size-full rounded-full"
+          className="size-full rounded-full "
           height={24}
           src={network.iconSrc}
           width={24}
@@ -96,9 +96,17 @@ export default function SelectNetworkMenu() {
       classNames={{ content: "z-[1000]" }}
     >
       <PopoverTrigger>
-        <Button isIconOnly radius="full" variant="light">
+        <Button
+          isIconOnly
+          radius="full"
+          variant="light"
+          className="h-8 w-8 min-w-8 rounded-full p-0"
+        >
           {selectedNetwork ? (
-            <div ref={popoverRef}>
+            <div
+              ref={popoverRef}
+              className="flex items-center justify-center h-6 w-6 rounded-full p-0 border-1 bg-white border-default-300 dark:border-default-700"
+            >
               <NetworkIcon network={selectedNetwork} />
             </div>
           ) : (
