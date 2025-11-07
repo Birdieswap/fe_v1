@@ -401,7 +401,7 @@ export default function WalletTransactions() {
             <div className="pb-3 text-center text-default-700">Loading…</div>
           )}
           {endReached && (
-            <div className="pb-3 text-center text-default-700">
+            <div className="pt-2 pb-4 text-center text-xs text-default-500 dark:text-default-100">
               You’ve reached the end of the transaction list.
             </div>
           )}
