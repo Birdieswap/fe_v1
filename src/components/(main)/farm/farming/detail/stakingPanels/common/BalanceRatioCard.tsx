@@ -44,17 +44,20 @@ export default function BalanceRatioCard({
         {...presenceTransition}
       >
         {/* 상단 Balance 영역 */}
-        <div className="flex w-full justify-between items-center font-sans">
+        <div className="w-full font-sans max-[375px]:grid max-[375px]:grid-cols-[1fr_auto] flex justify-between items-start">
+          {/* 왼쪽: Balance */}
           <div className="flex items-center text-[14px] font-semibold text-default-900 dark:text-default-200 gap-1">
             Balance
           </div>
-          <div className="flex items-center gap-1">
+
+          {/* 오른쪽: balance + symbol */}
+          <div className="flex items-center gap-1 justify-end max-[375px]:flex-col max-[375px]:items-end max-[375px]:gap-0">
             {isBalanceReady ? (
               <>
-                <span className="text-[12px] font-medium text-foreground dark:text-default-300">
+                <span className="text-[14px] font-medium text-foreground dark:text-default-300">
                   {balanceText}
                 </span>
-                <span className="text-[10px] font-regular text-foreground dark:text-default-300">
+                <span className="text-[12px] font-regular text-foreground dark:text-default-300 max-[375px]:mt-[2px]">
                   {symbol}
                 </span>
               </>

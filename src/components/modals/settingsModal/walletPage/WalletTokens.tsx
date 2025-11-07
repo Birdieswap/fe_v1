@@ -176,7 +176,7 @@ function WalletTokenItem(props: WalletTokenInfo & { onClick?: () => void }) {
         <span className="text-[14px] max-[375px]:text-[12px] font-semibold leading-[15px] text-foreground">
           {props.amount}
         </span>
-        <span className="text-[12px] max-[375px]:text-[10px] font-bold leading-[14px] text-default-700 dark:text-default-300">
+        <span className="text-[12px] max-[375px]:text-[11px] font-bold leading-[14px] text-default-700 dark:text-default-300">
           $ {props.usdAmount}
         </span>
       </div>

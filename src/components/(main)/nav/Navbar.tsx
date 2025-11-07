@@ -5,6 +5,7 @@ import {
   Navbar,
   NavbarBrand,
   NavbarContent,
+  NavbarItem,
   useDisclosure,
 } from "@heroui/react";
 import Link from "next/link";
@@ -19,9 +20,13 @@ import { NavbarLink } from "./NavbarLink";
 import NavMenu from "./NavMenu";
 import NavbarConnect from "./NavbarConnect";
 import NavPoints from "./NavPoints";
+import { useContext } from "react";
+import { WalletContext } from "@/app/WalletContextProvider";
 
 export default function NavbarImpl() {
   const menuDisclosure = useDisclosure();
+  const { account } = useContext(WalletContext);
+  const isAccountConnected = !!account?.address;
 
   return (
     <Navbar
@@ -42,8 +47,8 @@ export default function NavbarImpl() {
             }
           }}
         >
-          <BirdieLogo className="hidden text-foreground lg:block" />
-          {/* <BirdieLogoBeta className="hidden text-foreground lg:block" /> */}
+          {/* <BirdieLogo className="hidden text-foreground lg:block" /> */}
+          <BirdieLogoBeta className="hidden text-foreground lg:block" />
           {/* <BirdieLogoMobile className="block lg:hidden" /> */}
           <BirdieLogoBetaMobile className="block lg:hidden" />
         </Link>
@@ -64,7 +69,7 @@ export default function NavbarImpl() {
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}
-        {/* <NavPoints /> */}
+        {isAccountConnected && <NavPoints />}
         <NavbarConnect />
       </NavbarContent>
 

@@ -10,6 +10,7 @@ export default function PairStopReceiveAmountBox(props: {
   receiveAmount: BigDecimal[];
   isActive: boolean[];
   displayTokens?: ReadonlyArray<any>;
+  nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
 }) {
   const { receiveAmount, isActive, input, displayTokens } = props;
 
@@ -38,8 +39,16 @@ export default function PairStopReceiveAmountBox(props: {
             ].join(" ")
           }
         >
-          <ReceiveAmountBox amount={receiveAmount[0]} bToken={shown0} />
-          <ReceiveAmountBox amount={receiveAmount[1]} bToken={shown1} />
+          <ReceiveAmountBox
+            amount={receiveAmount[0]}
+            bToken={shown0}
+            nativeToggle={props.nativeToggle}
+          />
+          <ReceiveAmountBox
+            amount={receiveAmount[1]}
+            bToken={shown1}
+            nativeToggle={props.nativeToggle}
+          />
         </motion.div>
       )}
     </AnimatePresence>

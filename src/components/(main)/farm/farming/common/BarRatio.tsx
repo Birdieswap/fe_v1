@@ -117,7 +117,7 @@ export default function BarRatio({
               className={clsx(
                 "text-[12px] font-sans font-medium",
                 isFullStaked
-                  ? "text-primary-foreground" // 그라데이션 위라면 가독성 좋게 흰색 권장
+                  ? "dark:text-primary-foreground text-primary-background" // 그라데이션 위라면 가독성 좋게 흰색 권장
                   : "text-default-600 dark:text-default-200"
               )}
             >

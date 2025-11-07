@@ -1,6 +1,6 @@
 "use client";
 
-import { Image } from "@heroui/react";
+import { Button, Image } from "@heroui/react";
 import { motion } from "framer-motion";
 import { useContext, useMemo } from "react";
 
@@ -10,13 +10,16 @@ import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import suffixNumbers from "@/utils/suffixNumbers";
+import Icons from "@/assets/icons/icons";
 
 export default function ReceiveAmountBox({
   amount,
   bToken: bToken,
+  nativeToggle,
 }: {
   amount: BigDecimal;
   bToken: IBirdieSingleFarm;
+  nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
 }) {
   const { assetValues } = useContext(AssetsContext);
   const activePrice = useMemo(() => {
@@ -52,7 +55,7 @@ export default function ReceiveAmountBox({
   return (
     <motion.div
       {...presenceTransition}
-      className="flex w-full flex-row items-center gap-1.5"
+      className="flex w-full items-center gap-2" // row 기본, 아이템 간격
     >
       <Image
         alt={bToken.input.symbol}
@@ -60,9 +63,37 @@ export default function ReceiveAmountBox({
         src={bToken.input.iconSrc}
         width={24}
       />
-      <p className="grow text-[15px] font-semibold text-foreground">
-        {bToken.input.symbol}
-      </p>
+
+      {/* ⬇️ symbol + toggle 묶음 (이 컨테이너가 grow) */}
+      <div className="flex grow items-center gap-1.5 min-w-0">
+        <p className="text-[15px] font-semibold text-foreground leading-none">
+          {bToken.input.symbol}
+        </p>
+
+        {nativeToggle && ["ETH", "WETH"].includes(bToken.input.symbol) && (
+          <Button
+            type="button"
+            isIconOnly
+            radius="full"
+            variant="light"
+            onPress={nativeToggle.onToggle}
+            aria-label={`Switch to ${nativeToggle.value === "ETH" ? "WETH" : "ETH"}`}
+            title="Change ETH/WETH"
+            className="
+        min-w-0 size-8 p-0
+        bg-transparent shadow-none
+        data-[hover=true]:bg-transparent
+        data-[pressed=true]:bg-transparent
+        data-[disabled=true]:bg-transparent
+        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+      "
+          >
+            <Icons.Change />
+          </Button>
+        )}
+      </div>
+
+      {/* 우측 금액 영역 */}
       <div className="flex flex-col items-end gap-0.5">
         <p className="text-right text-[14px] font-medium leading-[17px] text-foreground">
           {formattedAmount}
