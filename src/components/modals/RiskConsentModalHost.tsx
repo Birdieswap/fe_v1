@@ -45,12 +45,12 @@ function StaticConsentContent() {
             documents:
           </p>
 
-          <ul className="list-disc pl-5 mt-6 font-medium text-[14px] leading-[20px] text-foreground">
+          <ul className="list-disc pl-5 mt-6 font-medium text-[14px] leading-[20px] text-default-800 dark:text-default-300">
             <li className="pb-4">
               <Link
                 href={TERMS_URL}
                 target="_blank"
-                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+                className="text-default-800 dark:text-default-300 underline underline-offset-2 hover:opacity-80"
               >
                 Terms of Service
               </Link>
@@ -59,7 +59,7 @@ function StaticConsentContent() {
               <Link
                 href={PRIVACY_URL}
                 target="_blank"
-                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+                className="text-default-800 dark:text-default-300 underline underline-offset-2 hover:opacity-80"
               >
                 Privacy Policy
               </Link>
@@ -68,7 +68,7 @@ function StaticConsentContent() {
               <Link
                 href={RISK_URL}
                 target="_blank"
-                className=" text-foreground underline underline-offset-2 hover:opacity-80"
+                className="text-default-800 dark:text-default-300 underline underline-offset-2 hover:opacity-80"
               >
                 Risk disclosure
               </Link>

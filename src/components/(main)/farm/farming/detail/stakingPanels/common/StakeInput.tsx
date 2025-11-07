@@ -165,7 +165,7 @@ export default function StakeInput({
                   width={36}
                   src={iconSrc}
                   classNames={{
-                    img: "max-[376px]:h-5 max-[376px]:w-5",
+                    img: "max-[376px]:h-6 max-[376px]:w-6",
                   }}
                 />
               )}

@@ -121,7 +121,7 @@ export default function VaultInfoModal({
                 {Number.isFinite(lastHarvestSec) &&
                   lastHarvestSec > 0 &&
                   timeAgoText && (
-                    <p className="text-sm font-normal text-default-500 dark:text-default-300">
+                    <p className="text-sm font-normal text-default-600 dark:text-default-400">
                       {`Harvested ${timeAgoText} ago`}
                     </p>
                   )}
@@ -148,7 +148,7 @@ export default function VaultInfoModal({
                 {typeof underlyingUrl === "string" &&
                   underlyingUrl.length > 0 && (
                     <Link
-                      className="text-xs underline transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs underline-none transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={underlyingUrl}
                       target="_blank"
                     >
@@ -164,7 +164,7 @@ export default function VaultInfoModal({
                       Vault contract :
                     </h2>
                     <Link
-                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={`${explorerURL}/address/${src.singleVaultContract}`}
                       target="_blank"
                     >
@@ -176,7 +176,7 @@ export default function VaultInfoModal({
                       Strategy contract :
                     </h2>
                     <Link
-                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={`${explorerURL}/address/${src.singleStrategyContract}#code`}
                       target="_blank"
                     >
@@ -191,7 +191,7 @@ export default function VaultInfoModal({
                       Vault contract :
                     </h2>
                     <Link
-                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={`${explorerURL}/address/${src.dualVaultContract}`}
                       target="_blank"
                     >
@@ -203,7 +203,7 @@ export default function VaultInfoModal({
                       Strategy contract :
                     </h2>
                     <Link
-                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={`${explorerURL}/address/${src.dualStrategyContract}#code`}
                       target="_blank"
                     >
@@ -218,7 +218,7 @@ export default function VaultInfoModal({
                       Staking contract :
                     </h2>
                     <Link
-                      className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                      className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                       href={`${explorerURL}/address/${src.contractAddress}`}
                       target="_blank"
                     >
@@ -237,13 +237,13 @@ export default function VaultInfoModal({
                         </h2>
                         <Link
                           key={addr || idx}
-                          className="text-xs transition-colors text-default-500 hover:text-default-800 dark:text-default-200 dark:hover:text-default-400"
+                          className="text-xs transition-colors text-default-600 hover:text-default-800 dark:text-default-400 dark:hover:text-default-600"
                           href={`${explorerURL}/address/${addr}`}
                           target="_blank"
                         >
                           <p className="break-all">
                             {addr}
-                            <span className="ml-2 text-[11px] text-default-500"></span>
+                            <span className="ml-2 text-[11px] text-default-600 dark:text-default-400"></span>
                           </p>
                         </Link>
                       </div>

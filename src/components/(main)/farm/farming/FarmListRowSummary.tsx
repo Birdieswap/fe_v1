@@ -362,7 +362,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
               BAL
             </span>
             <div className="flex flex-col items-end leading-tight">
-              <span className="text-sm font-semibold">
+              <span className="text-sm font-semibold max-md:font-medium">
                 {!account.isConnected ? (
                   "Connect Wallet"
                 ) : !isBalanceAvailable ? (
@@ -371,7 +371,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                   balance.roundToDecimals(5).toPrecisionString(true, true)
                 )}
               </span>
-              <span className="text-[12px] text-default-300">
+              <span className="text-[12px] text-default-700 dark:text-default-300">
                 {!account.isConnected ? (
                   "Connect Wallet"
                 ) : !isBalanceAvailable ? (

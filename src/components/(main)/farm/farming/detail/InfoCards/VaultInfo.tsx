@@ -45,9 +45,12 @@ export default function VaultInfo({
         }
       }}
     >
-      <div className="flex w-full flex-row items-center gap-0.5">
-        <p
+      {/* 이름 + Info 아이콘 그룹 */}
+      {/* ⬅️ 왼쪽: 내용만큼만 차지 (줄바꿈 허용) */}
+      <div className="inline-flex items-center gap-0.5">
+        <span
           className={clsx(
+            "inline whitespace-normal break-words text-[15px] max-[351px]:max-w-[138px]", // 줄바꿈 허용 + 인라인
             "font-medium text-default-800",
             "group-hover:text-foreground",
             "dark:text-default-200 group-hover:dark:text-default-500",
@@ -55,15 +58,29 @@ export default function VaultInfo({
           )}
         >
           {item.name}
-        </p>
-        <Icons.Info
-          className={clsx(
-            "fill-default-500 group-hover:fill-default-700",
-            "dark:fill-default-300 dark:group-hover:fill-default-600",
-            "transition-[fill]"
-          )}
-          fillRule="evenodd"
-        />
+        </span>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            disclosure.onOpen();
+          }}
+          aria-label="Vault info"
+          title="Vault info"
+          className="shrink-0"
+        >
+          <Icons.Info
+            className={clsx(
+              "shrink-0 align-middle",
+              "fill-default-500 group-hover:fill-default-700",
+              "dark:fill-default-300 dark:group-hover:fill-default-600",
+              "transition-[fill]"
+            )}
+            fillRule="evenodd"
+          />
+        </button>
+
         <VaultInfoModal
           disclosure={disclosure}
           item={item}
@@ -72,6 +89,7 @@ export default function VaultInfo({
           }}
         />
       </div>
+
       <div className="grow" />
       <p className="whitespace-nowrap font-normal">
         {item.apy.toFixed(2)}% APR

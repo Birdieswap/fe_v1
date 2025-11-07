@@ -65,7 +65,7 @@ export function PairStopPanel({
         <PairStopAmountInput
           state={state}
           price={price}
-          nativeToggle={nativeToggle}
+          // nativeToggle={nativeToggle}
         />
         <PairStopSummary item={item} state={state} />
       </motion.div>
@@ -74,6 +74,7 @@ export function PairStopPanel({
         isActive={state.isActive}
         receiveAmount={state.receiveAmount}
         displayTokens={state.displayTokens}
+        nativeToggle={nativeToggle}
       />
       <Filler />
       <ExecuteButtons

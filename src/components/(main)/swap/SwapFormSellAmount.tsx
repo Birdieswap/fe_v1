@@ -193,7 +193,7 @@ export default function SwapFormAmount({
             <Icons.SwapTokenArrow />
           </Button>
         </div>
-        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm max-[375px]:text-[10px] text-default-800 dark:text-default-300">
+        <div className="flex w-full flex-row items-center gap-3 pl-1 text-sm max-[375px]:text-[11px] text-default-800 dark:text-default-300">
           <span className="grow">{token ? `$${dollarAmount}` : ""}</span>
           <BalanceDisplay balance={balance} token={token} />
           {type === "sell" && (
