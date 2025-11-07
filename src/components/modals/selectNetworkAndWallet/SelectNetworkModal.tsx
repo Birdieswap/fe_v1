@@ -44,14 +44,16 @@ export default function SelectNetworkModal() {
       <Button
         ref={modalRef}
         isIconOnly
-        className="sm:hidden"
+        className="sm:hidden h-8 w-8 min-w-8 rounded-full p-0"
         radius="full"
         size="sm"
         variant="light"
         onPress={() => setIsNetworkModalOpen(true)}
       >
         {selectedNetwork ? (
-          <NetworkIcon network={selectedNetwork} />
+          <div className="flex items-center justify-center h-6 w-6 rounded-full p-0 border-1 bg-white border-default-300 dark:border-default-700">
+            <NetworkIcon network={selectedNetwork} />
+          </div>
         ) : (
           <span>Select Network</span>
         )}

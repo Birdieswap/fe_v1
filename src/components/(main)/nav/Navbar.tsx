@@ -65,7 +65,10 @@ export default function NavbarImpl() {
       </NavbarContent>
 
       {/* 데스크탑 네트워크 지갑 연결 버튼 */}
-      <NavbarContent className="max-sm:gap-2 gap-2" justify="end">
+      <NavbarContent
+        className="max-sm:gap-2 gap-2 flex items-center"
+        justify="end"
+      >
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}

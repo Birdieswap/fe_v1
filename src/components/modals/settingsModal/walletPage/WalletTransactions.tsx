@@ -163,8 +163,10 @@ function BaseTransactionItem(props: TransactionProps) {
   useEffect(() => {
     const updateSliceLength = () => {
       const width = window.innerWidth;
-      if (width < 375) setSliceLength(30); // iPhone mini 이하
-      else if (width < 440) setSliceLength(36); //iphone x 이하
+      if (width < 375)
+        setSliceLength(30); // iPhone mini 이하
+      else if (width < 440)
+        setSliceLength(36); //iphone x 이하
       // else if (width >= 641) setSliceLength(45); // sm 이상 (tablet, desktop)
       else setSliceLength(45); // 일반
     };
@@ -192,7 +194,7 @@ function BaseTransactionItem(props: TransactionProps) {
       >
         <div className={cn("flex flex-row items-center gap-1.5 w-full")}>
           <div className="flex grow flex-col items-start gap-1 px-1">
-            <h2 className="flex flex-row items-center gap-1 text-[15px] font-medium leading-[18px]">
+            <h2 className="flex flex-row items-center gap-1 text-[15px] font-medium text-foreground leading-[18px]">
               {props.type === TransactionType.SWAP && (
                 <Icons.WalletTitleSwap className="fill-foreground" />
               )}
@@ -206,10 +208,10 @@ function BaseTransactionItem(props: TransactionProps) {
                 <Icons.WalletTitleStopFarm className="fill-foreground stroke-foreground stroke-[0.3px]" />
               )}
               {props.type === TransactionType.STAKING && (
-                <FaRegArrowAltCircleUp />
+                <Icons.WalletStake className="fill-foreground " />
               )}
               {props.type === TransactionType.UNSTAKING && (
-                <FaRegArrowAltCircleDown />
+                <Icons.WalletUnstake className="fill-foreground" />
               )}
               {props.type === TransactionType.CLAIM && <PiHandWithdraw />}
               {title}

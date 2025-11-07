@@ -43,7 +43,7 @@ function ThemedButtonComponent(
       {...{ ...props, className: undefined, variant: undefined, ref }}
       className={clsx(
         // 1) 공통 베이스
-        "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl text-lg font-semibold",
+        "!data-[hover=true]:opacity-100 h-[58px] grow rounded-2xl max-sm:text-[15px] text-lg font-semibold",
         "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait",
 
         // 2) 변형(색) — 항상 오버라이드보다 먼저!
