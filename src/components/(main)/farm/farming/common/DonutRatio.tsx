@@ -19,7 +19,7 @@ export default function DonutRatio({
   stroke = 5,
   title,
 }: Props) {
-  const { r, c, stakedLen, gapLen } = useMemo(() => {
+  const { r, c, stakedLen, gapLen, noTotal, showDot } = useMemo(() => {
     const radius = (size - stroke) / 2;
     const circ = 2 * Math.PI * radius;
 
@@ -31,21 +31,44 @@ export default function DonutRatio({
 
     const lpN = toNum(lp);
     const stN = toNum(staked);
-    const totalN = total ? toNum(total) : Math.max(1e-18, lpN + stN); // 안전한 분모
 
-    const stRatio = Math.max(0, Math.min(1, stN / totalN));
-    const stLen = circ * stRatio;
+    // total 원본값(그릴지/말지 판단용)
+    const totalRaw =
+      total !== undefined && total !== null ? toNum(total) : lpN + stN;
+
+    const noTotal = totalRaw <= 0; // 이 경우엔 아무것도 그리지 않음
+
+    // 분모는 0 회피용으로만 사용 (비율 계산용)
+    const denom = noTotal ? 1 : totalRaw;
+
+    const stRatioRaw = stN / denom;
+    const stRatio = Number.isFinite(stRatioRaw)
+      ? Math.max(0, Math.min(1, stRatioRaw))
+      : 0;
+
+    // staked가 정확히 0이고 total이 존재하는 경우 '점'만 찍을지 여부
+    const showDot = !noTotal && stRatio === 0;
+
+    // 점 길이는 매우 짧게 (round cap 덕에 점처럼 보임)
+    const DOT_LEN = 0.1; // px 단위 경로길이(원둘레 기준). 너무 작으면 브라우저마다 안 보일 수 있어 0.1 권장.
+
+    const stLen = showDot ? DOT_LEN : circ * stRatio;
     const rest = Math.max(0, circ - stLen);
 
-    return { r: radius, c: circ, stakedLen: stLen, gapLen: rest };
+    return {
+      r: radius,
+      c: circ,
+      stakedLen: stLen,
+      gapLen: rest,
+      noTotal,
+      showDot,
+    };
   }, [lp, staked, total, size, stroke]);
 
   const cx = size / 2;
   const cy = size / 2;
 
-  // 12시 기준 + 반시계 방향:
-  //  - rotate(-90, cx, cy): 시작각을 12시로 이동
-  //  - scale(-1,1) with center pivot: 진행을 반시계처럼 보이게
+  // 12시 기준 + 반시계 방향처럼 보이게
   const transform = `translate(${cx} ${cy}) rotate(90) scale(-1 1) translate(${-cx} ${-cy})`;
 
   return (
@@ -55,7 +78,7 @@ export default function DonutRatio({
       viewBox={`0 0 ${size} ${size}`}
       aria-label={title}
     >
-      {/* 트랙 (LP 비중을 표현하는 옅은 색) */}
+      {/* 트랙 */}
       <circle
         cx={cx}
         cy={cy}
@@ -63,25 +86,28 @@ export default function DonutRatio({
         fill="none"
         strokeWidth={stroke}
         className="stroke-[var(--color-default-200)] dark:stroke-[var(--color-default-800)]"
-        // 트랙은 전체 원
-        strokeDasharray={`${c} ${0}`}
-        opacity={1}
+        strokeDasharray={`${c} 0`}
       />
-      {/* Staked 아크 */}
-      <g transform={transform}>
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          className="stroke-[var(--color-primary)]"
-          strokeLinecap="round"
-          // staked 길이 + 나머지 길이
-          strokeDasharray={`${stakedLen} ${gapLen}`}
-          strokeDashoffset={0}
-        />
-      </g>
+
+      {/* Staked 아크:
+          - totalRaw <= 0 이면 아무것도 렌더 X
+          - showDot이면 점처럼 보이는 짧은 dash
+          - 그 외에는 정상 비율 */}
+      {!noTotal && (
+        <g transform={transform}>
+          <circle
+            cx={cx}
+            cy={cy}
+            r={r}
+            fill="none"
+            strokeWidth={stroke}
+            className="stroke-[var(--color-primary)]"
+            strokeLinecap="round"
+            strokeDasharray={`${stakedLen} ${gapLen}`}
+            strokeDashoffset={0}
+          />
+        </g>
+      )}
     </svg>
   );
 }
