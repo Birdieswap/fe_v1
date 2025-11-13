@@ -83,6 +83,8 @@ function ThemeColorMetaSync() {
 const sepoliaUrls = [
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_QUICKNODE,
+  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK,
   "https://sepolia.drpc.org",
 ].filter(Boolean) as string[];
 
@@ -117,31 +119,35 @@ if (
 }
 
 // 2) 로깅 가능한 http 트랜스포트 래퍼 (Transport 타입 의존 X)
-// function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
-//   const baseFactory = http(url, opts);
-//   return ((config: Parameters<typeof baseFactory>[0]) => {
-//     const baseT = baseFactory(config);
-//     return {
-//       ...baseT,
-//       async request(args: any) {
-//         const start = Date.now();
-//         const method = args?.method ?? "unknown_method";
-//         try {
-//           console.info(`[RPC ->] ${url} ${method}`);
-//           const res = await baseT.request(args);
-//           const ms = Date.now() - start;
-//           console.info(`[RPC <-] ${url} ${method} (${ms}ms)`);
-//           return res;
-//         } catch (e) {
-//           const ms = Date.now() - start;
-//           console.warn(`[RPC xx] ${url} ${method} failed in ${ms}ms`, e);
-//           throw e;
-//         }
-//       },
-//     };
-//   }) as typeof baseFactory;
-// }
+function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
+  const baseFactory = http(url, opts);
+  return ((config: Parameters<typeof baseFactory>[0]) => {
+    const baseT = baseFactory(config);
+    return {
+      ...baseT,
+      async request(args: any) {
+        const start = Date.now();
+        const method = args?.method ?? "unknown_method";
+        try {
+          console.info(`[RPC ->] ${url} ${method}`);
+          const res = await baseT.request(args);
+          const ms = Date.now() - start;
+          console.info(`[RPC <-] ${url} ${method} (${ms}ms)`);
+          return res;
+        } catch (e) {
+          const ms = Date.now() - start;
+          console.warn(`[RPC xx] ${url} ${method} failed in ${ms}ms`, e);
+          throw e;
+        }
+      },
+    };
+  }) as typeof baseFactory;
+}
 // ──────────────────────────────────────────────────────────────
+
+// 2) 런타임에 따라 HTTP 팩토리 선택
+const httpMaybeLogged = (url?: string, opts?: Parameters<typeof http>[1]) =>
+  typeof window === "undefined" ? http(url, opts) : httpWithLog(url!, opts);
 
 const chains = [
   sepolia,
@@ -160,21 +166,21 @@ for (const ch of chains) transports[ch.id] = http(); // 기본값
 
 if (sepoliaUrls.length) {
   transports[sepolia.id] = fallback(
-    sepoliaUrls.map((url) => http(url, { timeout: 15_000 })),
+    sepoliaUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
     { rank: false, retryCount: 3, retryDelay: 3000 }
   );
 }
 
 if (baseUrls.length) {
   transports[base_custom.id] = fallback(
-    baseUrls.map((url) => http(url, { timeout: 15_000 })),
+    baseUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
     { rank: false, retryCount: 3, retryDelay: 3000 }
   );
 }
 
 if (arbitrumUrls.length) {
   transports[arbitrum.id] = fallback(
-    arbitrumUrls.map((url) => http(url, { timeout: 15_000 })),
+    arbitrumUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
     { rank: false, retryCount: 3, retryDelay: 3000 }
   );
 }

@@ -33,8 +33,8 @@ export type StopRoute =
 
 // [NEW] override 타입: 슬라이더에 따라 spender(Provider)와 주소를 주입
 type StopSpenderOverride = {
-  stopSpenderProvider?: any;            // stakingProviders.* 객체 (addresses[chainId]를 가짐)
-  stopSpenderAddress?: `0x${string}`;   // 위 provider에서 뽑은 체인별 주소
+  stopSpenderProvider?: any; // stakingProviders.* 객체 (addresses[chainId]를 가짐)
+  stopSpenderAddress?: `0x${string}`; // 위 provider에서 뽑은 체인별 주소
 };
 
 function isWETH(tok: any) {
@@ -47,7 +47,10 @@ function isETH(tok: any) {
   return sym === "ETH";
 }
 
-export default function useFarmStopPanelCommon(item: Farm, override?: StopSpenderOverride) {
+export default function useFarmStopPanelCommon(
+  item: Farm,
+  override?: StopSpenderOverride
+) {
   const base = useFarmPanelCommon(item);
   const {
     client,
@@ -65,22 +68,24 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
   } = base;
 
   const ROUTER_PROVIDER_FALLBACK = useMemo(() => {
-          // stakingProviders에 Router 메타가 없을 때 대비
-          const meta = (stakingProviders as any)?.BIRDIESWAP_Router;
-          return (
-            meta ?? {
-              name: "BIRDIESWAP_Router",
-              addresses: { [chainId]: routerAddress },
-            }
-          );
-        }, [chainId, routerAddress]);
-      
-        // 기본 spender (provider) 주소
-  const ROUTER_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.ROUTER, chainId) ?? ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; 
+    // stakingProviders에 Router 메타가 없을 때 대비
+    const meta = (stakingProviders as any)?.BIRDIESWAP_Router;
+    return (
+      meta ?? {
+        name: "BIRDIESWAP_Router",
+        addresses: { [chainId]: routerAddress },
+      }
+    );
+  }, [chainId, routerAddress]);
 
-  const WRAPPER_ADDRESS =
-    getFromContracts(ADDRESS.WRAPPER, chainId) as `0x${string}` | null;
+  // 기본 spender (provider) 주소
+  const ROUTER_ADDRESS: `0x${string}` | null =
+    getFromContracts(ADDRESS.ROUTER, chainId) ??
+    ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId];
+
+  const WRAPPER_ADDRESS = getFromContracts(ADDRESS.WRAPPER, chainId) as
+    | `0x${string}`
+    | null;
 
   const { allowance, query: allowanceQuery } = useAllowance({
     token: stakeToken,
@@ -92,11 +97,11 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
-    routerAddress: (
-    override?.stopSpenderAddress ??
-    (override?.stopSpenderProvider?.addresses?.[chainId] as `0x${string}` | undefined) ??
-    routerAddress
-  ) as `0x${string}`,
+    routerAddress: (override?.stopSpenderAddress ??
+      (override?.stopSpenderProvider?.addresses?.[chainId] as
+        | `0x${string}`
+        | undefined) ??
+      routerAddress) as `0x${string}`,
     transactionContext,
     refetch: allowanceQuery.refetch,
     writeContract,
@@ -117,7 +122,6 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
           )
         : undefined;
 
-
     // ─────────────────────────────────────────────────────────────────────────────
     // 언더라이잉 토큰 추출 로직 (가장 중요한 부분)
     // BirdieLP: stakeToken.lpPool.input[*].input  → CURRENCY 토큰 배열
@@ -125,7 +129,7 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     // ─────────────────────────────────────────────────────────────────────────────
     const asAny = stakeToken as any;
     const lpInputs: any[] | undefined = asAny?.lpPool?.input; // [{ input: CURRENCY }, { input: CURRENCY }]
-    const singleUnderlying: any | undefined = asAny?.input;    // CURRENCY
+    const singleUnderlying: any | undefined = asAny?.input; // CURRENCY
 
     let underlyingTokens: any[] = [];
     if (Array.isArray(lpInputs) && lpInputs.length > 0) {
@@ -155,8 +159,8 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
     });
 
     return {
-      input: { token: stakeToken, amount: inputAmount },              // BLP 수량
-      output: normalizedOutputs.map((t) => ({ token: t })),           // 실제 수령(ETH/WETH 규칙 반영)
+      input: { token: stakeToken, amount: inputAmount }, // BLP 수량
+      output: normalizedOutputs.map((t) => ({ token: t })), // 실제 수령(ETH/WETH 규칙 반영)
     };
   }
 
@@ -178,16 +182,14 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
       // STOP_FARMING 표시 토큰을 route에 맞게 준비 (핵심 수정)
       const { input, output } = buildStopDisplayTokens(route, blpAmount);
 
-      const transactionProps =
-        ({
-          chainId,
-          transactionType: TransactionType.STOP_FARMING,
-          input,   // 단일 객체
-          output,  // token만 채운 배열 (amount는 handleWriteTransaction에서 채움)
-          address,
-          executorAddress, 
-        } as unknown) as TransactionStatusProps & StopFarmingTransactionProps;
-      
+      const transactionProps = {
+        chainId,
+        transactionType: TransactionType.STOP_FARMING,
+        input, // 단일 객체
+        output, // token만 채운 배열 (amount는 handleWriteTransaction에서 채움)
+        address,
+        executorAddress,
+      } as unknown as TransactionStatusProps & StopFarmingTransactionProps;
 
       const handlers = getWriteTransactionHandlers({
         client,
@@ -200,13 +202,20 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
 
       if (route === "WRAPPER_SINGLE") {
         if (!WRAPPER_ADDRESS) {
-          console.error("[performStop] Missing WRAPPER_ADDRESS for chain:", chainId);
+          console.error(
+            "[performStop] Missing WRAPPER_ADDRESS for chain:",
+            chainId
+          );
           return;
         }
         // wrapper: singleRedeemToETH(bToken, bAmount)
 
-        console.log("useFarmStopPanelCommon WrapperSingleCall",WRAPPER_ADDRESS, stakeTokenAddress ,blpAmount)
-
+        console.log(
+          "useFarmStopPanelCommon WrapperSingleCall",
+          WRAPPER_ADDRESS,
+          stakeTokenAddress,
+          blpAmount
+        );
 
         writeContract(
           {
@@ -233,12 +242,19 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
 
       if (route === "WRAPPER_PAIR") {
         if (!WRAPPER_ADDRESS) {
-          console.error("[performStop] Missing WRAPPER_ADDRESS for chain:", chainId);
+          console.error(
+            "[performStop] Missing WRAPPER_ADDRESS for chain:",
+            chainId
+          );
           return;
         }
         // wrapper: dualRedeemToETH(blpToken, blpAmount)
-        console.log("useFarmStopPanelCommon WrapperPairCall",WRAPPER_ADDRESS,stakeTokenAddress,blpAmount)
-
+        console.log(
+          "useFarmStopPanelCommon WrapperPairCall",
+          WRAPPER_ADDRESS,
+          stakeTokenAddress,
+          blpAmount
+        );
 
         writeContract(
           {
@@ -264,7 +280,11 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
       }
 
       if (route === "ROUTER_SINGLE") {
-        console.log("useFarmStopPanelCommon routerSingleCall",routerAddress,stakeTokenAddress)
+        console.log(
+          "useFarmStopPanelCommon routerSingleCall",
+          routerAddress,
+          stakeTokenAddress
+        );
 
         writeContract(
           {
@@ -290,14 +310,22 @@ export default function useFarmStopPanelCommon(item: Farm, override?: StopSpende
       }
 
       if (route === "ROUTER_PAIR") {
-        console.log("useFarmStopPanelCommon routerPairCall",routerAddress,stakeTokenAddress)
+        console.log(
+          "useFarmStopPanelCommon routerPairCall",
+          routerAddress,
+          stakeTokenAddress
+        );
 
         writeContract(
           {
             address: ROUTER_ADDRESS as `0x${string}`,
             abi: birdieswap_router_abi,
             functionName: "dualRedeem",
-            args: [stakeTokenAddress as `0x${string}`, blpAmount] as any,
+            args: [
+              address,
+              stakeTokenAddress as `0x${string}`,
+              blpAmount,
+            ] as any,
           },
           {
             onError: handlers.onError,

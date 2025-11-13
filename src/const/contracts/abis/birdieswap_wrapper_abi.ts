@@ -1,492 +1,353 @@
 import { Abi } from "viem";
 
 export const birdieswap_wrapper_abi = [
-{
-    "type": "constructor",
-    "inputs": [
+  {
+    type: "constructor",
+    inputs: [
       {
-        "name": "router_",
-        "type": "address",
-        "internalType": "address"
+        name: "configAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "weth_",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "router_",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "eventRelayer_",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: "nonpayable",
   },
   {
-    "type": "receive",
-    "stateMutability": "payable"
+    type: "receive",
+    stateMutability: "payable",
   },
   {
-    "type": "function",
-    "name": "dualDepositWithETH",
-    "inputs": [
+    type: "function",
+    name: "dualDepositWithETH",
+    inputs: [
       {
-        "name": "_underlyingTokenAddress",
-        "type": "address",
-        "internalType": "address"
+        name: "_underlyingTokenAddress",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_underlyingTokenAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_underlyingTokenAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "stateMutability": "payable"
+    stateMutability: "payable",
   },
   {
-    "type": "function",
-    "name": "dualRedeemToETH",
-    "inputs": [
+    type: "function",
+    name: "dualRedeemToETH",
+    inputs: [
       {
-        "name": "_blpTokenAddress",
-        "type": "address",
-        "internalType": "address"
+        name: "_blpTokenAddress",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_blpTokenAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_blpTokenAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "stateMutability": "nonpayable"
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "getRouterAddress",
-    "inputs": [],
-    "outputs": [
+    type: "function",
+    name: "getRouterAddress",
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "getWETHAddress",
-    "inputs": [],
-    "outputs": [
+    type: "function",
+    name: "getVersion",
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "",
+        type: "string",
+        internalType: "string",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "pure",
   },
   {
-    "type": "function",
-    "name": "singleDepositWithETH",
-    "inputs": [],
-    "outputs": [
+    type: "function",
+    name: "getWETHAddress",
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "payable"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "singleRedeemToETH",
-    "inputs": [
+    type: "function",
+    name: "singleDepositWithETH",
+    inputs: [],
+    outputs: [
       {
-        "name": "_bTokenAddress",
-        "type": "address",
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "_bTokenAmount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
     ],
-    "outputs": [
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "singleRedeemToETH",
+    inputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_bTokenAddress",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_bTokenAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "swapToETH",
-    "inputs": [
+    outputs: [
       {
-        "name": "_tokenIn",
-        "type": "address",
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "_feeTier",
-        "type": "uint24",
-        "internalType": "uint24"
-      },
-      {
-        "name": "_amountIn",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_minAmountOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_sqrtPriceLimitX96",
-        "type": "uint160",
-        "internalType": "uint160"
-      },
-      {
-        "name": "_referee",
-        "type": "address",
-        "internalType": "address"
-      }
     ],
-    "outputs": [
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "swapFromETH",
+    inputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_feeTier",
+        type: "uint24",
+        internalType: "uint24",
+      },
+      {
+        name: "_tokenOut",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_minAmountOut",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_sqrtPriceLimitX96",
+        type: "uint160",
+        internalType: "uint160",
+      },
+      {
+        name: "_referrerAddress",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "swapWithETH",
-    "inputs": [
+    outputs: [
       {
-        "name": "_feeTier",
-        "type": "uint24",
-        "internalType": "uint24"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "_tokenOut",
-        "type": "address",
-        "internalType": "address"
-      },
-      {
-        "name": "_minAmountOut",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "_sqrtPriceLimitX96",
-        "type": "uint160",
-        "internalType": "uint160"
-      },
-      {
-        "name": "_referee",
-        "type": "address",
-        "internalType": "address"
-      }
     ],
-    "outputs": [
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "swapToETH",
+    inputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_tokenIn",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_feeTier",
+        type: "uint24",
+        internalType: "uint24",
+      },
+      {
+        name: "_amountIn",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_minAmountOut",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "_sqrtPriceLimitX96",
+        type: "uint160",
+        internalType: "uint160",
+      },
+      {
+        name: "_referrerAddress",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "payable"
-  },
-  {
-    "type": "event",
-    "name": "DualDepositETH",
-    "inputs": [
+    outputs: [
       {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "ethAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "otherToken",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "otherAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "blpTokenAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
+    stateMutability: "nonpayable",
   },
   {
-    "type": "event",
-    "name": "DualRedeemETH",
-    "inputs": [
+    type: "error",
+    name: "BirdieswapWrapperV1__DirectETHTransferNotSupported",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__NoWETHInPair",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__OnlyWETHIsAccepted",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__UnauthorizedAccess",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__UnexpectedETHRefund",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__UnexpectedTokenRefund",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__UnrecognizedContract",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__WETHAsOutputNotSupported",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__WETHIsNotAcceptedAsInput",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__WETHIsNotNativeEthereum",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__WrapperDidNotReceiveTokens",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__ZeroAddressNotAllowed",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__ZeroAmountNotAllowed",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "FailedCall",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "InsufficientBalance",
+    inputs: [
       {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "balance",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "blpToken",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "needed",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "token0Address",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "token0Amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "token1Address",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "token1Amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
   },
   {
-    "type": "event",
-    "name": "SingleDepositETH",
-    "inputs": [
+    type: "error",
+    name: "ReentrancyGuardReentrantCall",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "SafeERC20FailedOperation",
+    inputs: [
       {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "token",
+        type: "address",
+        internalType: "address",
       },
-      {
-        "name": "ethAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "bTokenAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
   },
-  {
-    "type": "event",
-    "name": "SingleRedeemETH",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "bToken",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "wethAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SwapToETH",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "tokenIn",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "tokenInAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "ethOut",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "SwapWithETH",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "ethIn",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "tokenOut",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "amountOut",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__ETHTransferFailed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__NoWETHInPair",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__RouterCallFailed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__WETHisNotNativeEthereum",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__WrapperDidNotReceiveTokens",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__ZeroAddressNotAllowed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapWrapperV1__ZeroAmountNotAllowed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "FailedCall",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "InsufficientBalance",
-    "inputs": [
-      {
-        "name": "balance",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "needed",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
-  },
-  {
-    "type": "error",
-    "name": "SafeERC20FailedOperation",
-    "inputs": [
-      {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  }
 ] as const satisfies Abi;
