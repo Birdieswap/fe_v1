@@ -14,17 +14,15 @@ import getTokenAddress from "../assets/getTokenAddress";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import totalDualUnderlyingTokens from "./totalDualUnderlyingTokens";
 
-
 async function getSingleLiquidity(
   client: PublicClient,
-  farm:IBirdieSingleFarm,
+  farm: IBirdieSingleFarm
 ): Promise<BigDecimal | null> {
-
   const currency = farm.input;
   const chainId = client.chain?.id;
 
   if (!chainId) return null;
-  
+
   const farmAddress = getTokenAddress({
     token: farm,
     chainId,
@@ -44,19 +42,19 @@ async function getSingleLiquidity(
 
   const args: ReadContractParameters<
     typeof birdieswap_router_abi,
-    "totalUnderlyingTokens",
+    "totalUnderlyingBalance",
     [`0x${string}`]
   > = {
     address: routerAddress,
     abi: stakingProviders.BIRDIESWAP_Router.abi,
-    functionName: "totalUnderlyingTokens",
+    functionName: "totalUnderlyingBalance",
     args: [farmAddress as `0x${string}`],
   };
 
   const result = await readContract<
     Chain | undefined,
     typeof birdieswap_router_abi,
-    "totalUnderlyingTokens",
+    "totalUnderlyingBalance",
     [`0x${string}`]
   >(client, args);
 
@@ -68,8 +66,16 @@ async function getSingleLiquidity(
 
 async function getLPLiquidity(
   client: PublicClient,
-  farm: IBirdieLPFarm,
-): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | null> {
+  farm: IBirdieLPFarm
+): Promise<
+  | [
+      `0x${string}` | null,
+      BigDecimal | null,
+      `0x${string}` | null,
+      BigDecimal | null,
+    ]
+  | null
+> {
   const chainId = client.chain?.id;
   // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",farm)
 
@@ -82,10 +88,9 @@ async function getLPLiquidity(
   // console.log("getLiquidity farmAddress!!!!!!!",farm)
   if (!farmAddress) return null;
 
-  const result = await totalDualUnderlyingTokens(
-    client,
-    farm,
-  ) as [`0x${string}`,BigDecimal, `0x${string}`, BigDecimal] | null;
+  const result = (await totalDualUnderlyingTokens(client, farm)) as
+    | [`0x${string}`, BigDecimal, `0x${string}`, BigDecimal]
+    | null;
 
   // console.log("getLiquidity totalDualUnderlyingTokens!!!!!!!",farm, result)
 
@@ -104,25 +109,41 @@ async function getLPLiquidity(
 export async function getLiquidity(
   client: PublicClient,
   farm: IBirdieSingleFarm,
-  assetValues?: useAssetValuesReturnType,
+  assetValues?: useAssetValuesReturnType
 ): Promise<BigDecimal | null>;
 export async function getLiquidity(
   client: PublicClient,
   farm: IBirdieLPFarm,
-  assetValues: useAssetValuesReturnType,
-): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | null>;
+  assetValues: useAssetValuesReturnType
+): Promise<
+  | [
+      `0x${string}` | null,
+      BigDecimal | null,
+      `0x${string}` | null,
+      BigDecimal | null,
+    ]
+  | null
+>;
 export default async function getLiquidity(
   client: PublicClient,
-  farm: IBirdieSingleFarm | IBirdieLPFarm,
-): Promise<[`0x${string}` | null, BigDecimal | null, `0x${string}` | null, BigDecimal | null] | BigDecimal | null> {
+  farm: IBirdieSingleFarm | IBirdieLPFarm
+): Promise<
+  | [
+      `0x${string}` | null,
+      BigDecimal | null,
+      `0x${string}` | null,
+      BigDecimal | null,
+    ]
+  | BigDecimal
+  | null
+> {
   if (!client || !farm) return null;
-  
+
   if (isBirdieSingleFarm(farm)) {
     const liq = await getSingleLiquidity(client, farm);
 
     return liq;
   } else {
-    
     return await getLPLiquidity(client, farm);
   }
 }
