@@ -740,6 +740,7 @@ export function usePairStartPanel(item: FarmPair) {
         abi: birdieswap_router_abi,
         functionName: "dualDeposit",
         args: [
+          address,
           addr0,
           parseUnits(
             tokenStatuses[0].amount?.toString() || "0",
