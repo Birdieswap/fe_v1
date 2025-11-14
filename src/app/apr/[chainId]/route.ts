@@ -1,13 +1,13 @@
-
 import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(_req: Request,) {
+export async function GET(_req: Request) {
   const { pathname } = new URL(_req.url);
   const segments = pathname.replace(/\/$/, "").split("/");
   const chainIdStr = segments[segments.length - 1] || "";
   const id = Number(chainIdStr);
+  console.log("APR fetch chainIdStr", chainIdStr);
 
   // // 기본 유효성 체크
   // if (!Number.isInteger(id) || id <= 0) {
@@ -25,9 +25,15 @@ export async function GET(_req: Request,) {
 
   // 업스트림 실패 시 상태 그대로 전달
   if (!upstreamRes.ok) {
+    const text = await upstreamRes.text().catch(() => "");
     return NextResponse.json(
-      { error: "Upstream fetch failed", statusText: upstreamRes.statusText },
-      { status: upstreamRes.status },
+      {
+        error: "Upstream fetch failed",
+        statusText: upstreamRes.statusText,
+        upstreamStatus: upstreamRes.status,
+        upstreamBody: text,
+      },
+      { status: upstreamRes.status }
     );
   }
 
@@ -36,7 +42,7 @@ export async function GET(_req: Request,) {
   const res = new NextResponse(body, { status: upstreamRes.status });
   res.headers.set(
     "content-type",
-    upstreamRes.headers.get("content-type") || "application/json",
+    upstreamRes.headers.get("content-type") || "application/json"
   );
   res.headers.set("cache-control", "no-store, max-age=0");
   return res;
