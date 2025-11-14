@@ -94,20 +94,26 @@ const nextConfig = {
 
   async headers() {
     return [
-      {
-        source: "/(.*)",
-        headers: securityHeaders,
-      },
-      // (선택) 특정 경로 CORS 허용 예시
       // {
-      //   source: "/api/:path*",
-      //   headers: [
-      //     { key: "Access-Control-Allow-Origin", value: "https://birdieswap-dev.vercel.app" },
-      //     { key: "Vary", value: "Origin" },
-      //     { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
-      //     { key: "Access-Control-Allow-Headers", value: "Content-Type, Authorization" },
-      //   ],
+      //   source: "/(.*)",
+      //   headers: securityHeaders,
       // },
+      // (선택) 특정 경로 CORS 허용 예시
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://birdieswap-dev.vercel.app",
+          },
+          { key: "Vary", value: "Origin" },
+          { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
+        ],
+      },
     ];
   },
 
