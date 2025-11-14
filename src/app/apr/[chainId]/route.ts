@@ -64,6 +64,7 @@ export async function GET(_req: Request) {
         error: "Upstream fetch failed",
         statusText: upstreamRes.statusText,
         upstreamStatus: upstreamRes.status,
+        upstreamBody: text,
       },
       { status: upstreamRes.status }
     );
