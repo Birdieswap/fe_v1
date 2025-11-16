@@ -72,7 +72,7 @@ export default function NavbarImpl() {
         {/* <NavbarItem>
           <ConnectButton />
         </NavbarItem> */}
-        {/* {isAccountConnected && <NavPoints />} */}
+        {isAccountConnected && <NavPoints />}
         <NavbarConnect />
       </NavbarContent>
 
