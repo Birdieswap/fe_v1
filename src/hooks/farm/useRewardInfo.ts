@@ -2,7 +2,7 @@
 import { useAccount, useChainId } from "wagmi";
 import { useContext, useMemo } from "react";
 import { AssetsContext, AprEntry } from "@/app/AssetsContextProvider";
-import { isBirdieLPFarm } from "@/const/contracts/types/tokenTypes";
+
 import type { Farm } from "@/types/FarmListTableRowProps";
 import type { BigDecimal } from "@/types/BigDecimal";
 
@@ -58,6 +58,9 @@ export function useRewardInfo(item: Farm, priceBD?: BigDecimal | null) {
     Boolean(matched?.staking?.contractAddress) &&
     ((Array.isArray(extraList) && extraList.length > 0) ||
       (Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0));
+
+  console.log("useRewardInfo render:", { dailyPointRateNum, price });
+  console.log("matched staking raw:", matched?.staking);
 
   return { price, matched, dailyPointRateNum, extraList, showStakingBlock };
 }

@@ -59,11 +59,13 @@ const BTN_BASE =
 export default function RewardInfoPanelMobile({
   item,
   price: priceBD,
+  points,
   onOpenStakingModal,
   className,
 }: {
   item: Farm;
   price?: BigDecimal | null;
+  points?: string | null;
   onOpenStakingModal?: (row: any) => void;
   className?: string;
 }) {
@@ -121,7 +123,9 @@ export default function RewardInfoPanelMobile({
         <div className={RIGHT_GROUP}>
           <div className="justify-self-end text-right tabular-nums">
             {/* 필요시 포인트 보유량 표기 (현재 0 고정) */}
-            <span className="text-[13px] font-medium">0</span>
+            <span className="text-[13px] font-medium">
+              {Number(points).toFixed(2) ?? "0"}
+            </span>
           </div>
           <Button
             size="sm"
