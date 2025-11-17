@@ -54,11 +54,13 @@ const BTN_BASE =
 export default function RewardInfoPanel({
   item,
   price: priceBD,
+  points,
   onOpenStakingModal,
   className,
 }: {
   item: Farm;
   price?: BigDecimal | null;
+  points?: string | null;
   onOpenStakingModal?: (row: any) => void;
   className?: string;
 }) {
@@ -74,7 +76,7 @@ export default function RewardInfoPanel({
       aprSource: matched.staking,
     });
   }, [matched?.staking, onOpenStakingModal]);
-
+  console.log("RewardInfoPanel render:", extraList);
   if (!showStakingBlock) {
     return (
       <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>
@@ -132,7 +134,9 @@ export default function RewardInfoPanel({
         </span>
         <div className={RIGHT_GROUP}>
           <div className={AMOUNT_INNER}>
-            <p className="font-medium text-sans text-[14px]">0</p>
+            <p className="font-medium text-sans text-[14px]">
+              {Number(points).toFixed(2) ?? "0"}
+            </p>
           </div>
           <Button
             size="sm"
@@ -156,6 +160,7 @@ export default function RewardInfoPanel({
           {extraList.map((er) => (
             <ExtraRewardClaimRow
               key={`${er.symbol}-${er.indexNumber}`}
+              item={item}
               stakingAddress={matched!.staking!.contractAddress as Address}
               stakeUsdPrice={price}
               reward={{
@@ -173,10 +178,12 @@ export default function RewardInfoPanel({
 }
 
 function ExtraRewardClaimRow({
+  item,
   stakingAddress,
   reward,
   stakeUsdPrice,
 }: {
+  item: Farm;
   stakingAddress: Address;
   reward: ExtraReward;
   stakeUsdPrice: number;
@@ -202,6 +209,31 @@ function ExtraRewardClaimRow({
     },
   });
 
+  const {
+    data: totalSupplyRaw,
+    isLoading: isReadingTotal,
+    refetch: refetchTotalSupply,
+  } = useReadContract({
+    address: stakingAddress,
+    abi: birdieswap_staking_abi,
+    functionName: "getTotalSupply",
+    query: {
+      enabled: Boolean(stakingAddress),
+      refetchOnWindowFocus: false,
+    },
+  });
+
+  const totalSupply = useMemo(() => {
+    try {
+      if (!totalSupplyRaw) return 0;
+      return Number(
+        formatUnits(totalSupplyRaw as bigint, item.wip_stakeToken.decimals)
+      );
+    } catch {
+      return 0;
+    }
+  }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
+
   const amountNum = useMemo(() => {
     try {
       const v = (earnedRaw ?? BigInt(0)) as bigint;
@@ -219,14 +251,37 @@ function ExtraRewardClaimRow({
 
   const aprPct = useMemo(() => {
     const base = stakeUsdPrice || 0;
+    const rewardPrice = reward.priceUSD ?? 0;
+
+    // 기본 값들 유효성 체크
     if (base <= 0) return null;
-    const daily =
+    if (!rewardPrice || rewardPrice <= 0) return null;
+    if (!totalSupply || totalSupply <= 0) return null;
+
+    // dailyRewardPerTokenX18는 "1e18 스케일"이라고 가정
+    const dailyRewardPerToken =
       Number(reward.dailyRewardPerTokenX18) /
       1e18 /
-      Math.pow(10, reward.decimals) /
-      base;
-    return daily * 365 * 100;
-  }, [reward.dailyRewardPerTokenX18, reward.decimals, stakeUsdPrice]);
+      Math.pow(10, reward.decimals);
+
+    // 토큰 기준 일일 USD 보상
+    const dailyRewardUsdPerToken = dailyRewardPerToken * rewardPrice;
+
+    // TVL = 스테이킹된 수량 * stakeUsdPrice
+    const tvlUsd = totalSupply * base;
+    if (!Number.isFinite(tvlUsd) || tvlUsd <= 0) return null;
+
+    const dailyRate = dailyRewardUsdPerToken / tvlUsd;
+    if (!Number.isFinite(dailyRate) || dailyRate <= 0) return null;
+
+    return dailyRate * 365 * 100;
+  }, [
+    reward.dailyRewardPerTokenX18,
+    reward.decimals,
+    reward.priceUSD,
+    stakeUsdPrice,
+    totalSupply,
+  ]);
 
   const { writeContract, data: txHash, isPending } = useWriteContract();
   const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
@@ -315,9 +370,10 @@ function ExtraRewardClaimRow({
           size="sm"
           className={clsx(
             BTN_BASE,
-            "disabled:bg-default-300 disabled:text-default-600",
-            "dark:disabled:bg-dark-popup-bg dark:disabled:text-default-400",
-            "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait"
+            "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
+            "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
+            "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
+            "data-[disabled=true]:pointer-events-none"
           )}
           isLoading={false}
           isDisabled={!canClaim || isPending || isWaiting}

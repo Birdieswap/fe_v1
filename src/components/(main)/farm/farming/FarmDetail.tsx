@@ -3,22 +3,22 @@
 import { useState, useMemo, useContext, useCallback } from "react";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
-import { useChainId } from "wagmi";
+import { useChainId, useReadContract } from "wagmi";
 import { useDisclosure } from "@heroui/react";
 
 import { Farm } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
-import { defaultTransition } from "@/const/presenceTransition";
 
 import FarmingPanels from "./detail/FarmingPanels";
 import StakingPanels from "./detail/StakingPanels";
 import VaultInfoCard from "./detail/VaultInfoCard";
 import VaultInfoModal from "./detail/InfoCards/vaultInfo/VaultInfoModal";
+import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 
 import { AssetsContext, AprEntry } from "@/app/AssetsContextProvider";
 import type { AprVault, StakeVault } from "@/app/AssetsContextProvider";
 import RewardInfoCard from "./detail/RewardInfoCard";
-import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
+import { formatUnits } from "viem";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -61,9 +61,9 @@ export default function FarmDetail({
   }, [tab]);
 
   const chainId = useChainId();
-  const { aprDataState, farmValues } = useContext(AssetsContext);
+  const { aprDataState, farmValues, refetchAll } = useContext(AssetsContext);
   const aprList: AprEntry[] = aprDataState?.apr ?? [];
-  const priceMap = farmValues?.priceMap;
+  const priceMap = farmValues?.priceMap; // 필요시 사용
 
   const stakeAddr = item?.wip_stakeToken?.addresses?.[chainId];
   const stakeAddrLower = (stakeAddr ?? "").toLowerCase();
@@ -112,6 +112,7 @@ export default function FarmDetail({
     null
   );
 
+  // Vault 리스트에서 클릭할 때 모달 열기
   const handleOpenModal = useCallback(
     (rowItem: VaultRowItem) => {
       setSelectedStakeRow(rowItem);
@@ -120,17 +121,40 @@ export default function FarmDetail({
     [disclosure]
   );
 
-  const {
-    price: priceNum,
-    dailyPointRateNum,
-    extraList,
-    showStakingBlock,
-  } = useRewardInfo(item);
+  // 모바일 Staking 블록에서 모달 열기 (stakingRow 전달)
+  const handleOpenStakingModal = useCallback(
+    (rowItem: VaultRowItem) => {
+      setSelectedStakeRow(rowItem);
+      disclosure.onOpen();
+    },
+    [disclosure]
+  );
 
-  const openStakingModal = useCallback(() => {
-    // 필요하면 여기서 selectedStakeRow 세팅 후 모달 오픈
-    disclosure.onOpen();
-  }, [disclosure]);
+  const stakingAddress = matched?.staking?.contractAddress;
+  const {
+    data: totalSupplyRaw,
+    isLoading: isReadingTotal,
+    refetch: refetchTotalSupply,
+  } = useReadContract({
+    address: stakingAddress,
+    abi: birdieswap_staking_abi,
+    functionName: "getTotalSupply",
+    query: {
+      enabled: Boolean(stakingAddress),
+      refetchOnWindowFocus: false,
+    },
+  });
+
+  const totalSupply = useMemo(() => {
+    try {
+      if (!totalSupplyRaw) return 0;
+      return Number(
+        formatUnits(totalSupplyRaw as bigint, item.wip_stakeToken.decimals)
+      );
+    } catch {
+      return 0;
+    }
+  }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
 
   return (
     <AnimatePresence initial={false} mode="wait">
@@ -170,20 +194,15 @@ export default function FarmDetail({
               rows={combinedRows}
               periodKey={periodKey}
               onOpenModal={handleOpenModal}
-              mobileStaking={{
-                show: showStakingBlock,
-                extraList,
-                dailyPointRateNum,
-                priceNum,
-                onOpen: openStakingModal,
-              }}
+              item={item} // ⬅️ useRewardInfo용
+              price={price} // ⬅️ useRewardInfo용
+              onOpenStakingModal={handleOpenStakingModal} // ⬅️ 모바일 Staking
             />
 
-            {/* RewardInfoCard가 준비되면 여기에 배치하세요 */}
             <RewardInfoCard
               item={item}
-              price={price} // FarmDetail에서 내려주는 BigDecimal|null
-              onOpenStakingModal={handleOpenModal} // 선택
+              price={price}
+              onOpenStakingModal={handleOpenModal}
             />
           </div>
 

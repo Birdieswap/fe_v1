@@ -1,15 +1,22 @@
-// VaultInfoCard.tsx
 "use client";
 
+import { useMemo } from "react";
 import { Button, Divider } from "@heroui/react";
 import clsx from "clsx";
+
 import { SectionHeader } from "../common/SectionHeader";
 import { LoadingPulse } from "./stakingPanels/common/LoadingPulse";
 import type { VaultRowItem } from "../../../farm/farming/FarmDetail";
 import VaultInfo from "./InfoCards/VaultInfo";
-import Icons from "@/assets/icons/icons"; // ⬅️ 추가
-import { format2 } from "@/utils/wallet/tokens/calcBigdecimal"; // ⬅️ 추가
+import Icons from "@/assets/icons/icons";
+import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 import { BigDecimal } from "@/types/BigDecimal";
+import type { Farm } from "@/types/FarmListTableRowProps";
+import type { StakeVault } from "@/app/AssetsContextProvider";
+import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
+import { useReadContract } from "wagmi";
+import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
+import { formatUnits } from "viem";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -43,19 +50,6 @@ function ButtonSelector(props: {
   );
 }
 
-type MobileStakingProps = {
-  show: boolean;
-  extraList: Array<{
-    symbol: string;
-    displayName: string;
-    dailyRewardPerTokenX18: string | number;
-    decimals: number;
-  }>;
-  dailyPointRateNum: number;
-  priceNum: number; // 스테이킹 토큰 가격
-  onOpen: () => void; // 스테이킹 모달 열기
-};
-
 export default function VaultInfoCard({
   period,
   onChangePeriod,
@@ -64,7 +58,9 @@ export default function VaultInfoCard({
   onOpenModal,
   className,
   title = "Vaults",
-  mobileStaking, // ⬅️ 추가
+  item,
+  price,
+  onOpenStakingModal,
 }: {
   period: Period;
   onChangePeriod: (p: Period) => void;
@@ -73,16 +69,125 @@ export default function VaultInfoCard({
   onOpenModal: (row: VaultRowItem) => void;
   className?: string;
   title?: string;
-  mobileStaking?: MobileStakingProps; // ⬅️ 추가
+  item: Farm;
+  price?: BigDecimal | null;
+  onOpenStakingModal?: (row: VaultRowItem) => void;
 }) {
-  const hasAnyExtra =
-    Array.isArray(mobileStaking?.extraList) &&
-    (mobileStaking?.extraList?.length ?? 0) > 0;
+  // 🔥 여기서만 useRewardInfo 사용 (선택된 FarmDetail 인스턴스에서만)
+  const {
+    price: priceNum,
+    matched,
+    dailyPointRateNum,
+    extraList,
+    showStakingBlock,
+  } = useRewardInfo(item, price);
 
+  const hasAnyExtra = Array.isArray(extraList) && extraList.length > 0;
   const hasPointRate =
-    typeof mobileStaking?.dailyPointRateNum === "number" &&
-    Number.isFinite(mobileStaking.dailyPointRateNum) &&
-    mobileStaking.dailyPointRateNum > 0;
+    Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0;
+
+  // 🔥 Staking용 VaultRowItem 구성
+  const stakingRow: VaultRowItem | null = useMemo(() => {
+    const src = matched?.staking as StakeVault | undefined;
+    if (!src) return null;
+
+    const raw = (src as any)?.[periodKey];
+    const aprNum = raw ? Number(raw) : 0;
+    const pct = aprNum / 1e16;
+
+    return {
+      kind: "staking",
+      name: `Staking - ${src.stakingToken}`,
+      rawName: src.stakingToken,
+      apy: pct,
+      aprSource: src,
+    };
+  }, [matched, periodKey]);
+
+  const stakingAddress = matched?.staking?.contractAddress as
+    | `0x${string}`
+    | undefined;
+
+  // 🔥 staking TVL 계산용 totalSupply
+  const {
+    data: totalSupplyRaw,
+    // isLoading: isReadingTotal,
+    // refetch: refetchTotalSupply,
+  } = useReadContract({
+    address: stakingAddress,
+    abi: birdieswap_staking_abi,
+    functionName: "getTotalSupply",
+    query: {
+      enabled: Boolean(stakingAddress),
+      refetchOnWindowFocus: false,
+    },
+  });
+
+  const totalSupply = useMemo(() => {
+    try {
+      if (!totalSupplyRaw) return 0;
+      return Number(
+        formatUnits(totalSupplyRaw as bigint, item.wip_stakeToken.decimals)
+      );
+    } catch {
+      return 0;
+    }
+  }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
+
+  // ✅ Extra APR 미리 계산: Hooks는 여기서 한 번만 호출
+  const extraAprMap = useMemo(() => {
+    const base = priceNum || 0;
+    const out: Record<string, number | null> = {};
+
+    if (base <= 0 || !totalSupply || totalSupply <= 0) {
+      // 전부 null로 둠
+      for (const er of extraList) {
+        const key = `${er.symbol}-${er.indexNumber}`;
+        out[key] = null;
+      }
+      return out;
+    }
+
+    for (const er of extraList) {
+      const key = `${er.symbol}-${er.indexNumber}`;
+      const rewardPrice = er.priceUSD ?? 0;
+
+      if (!rewardPrice || rewardPrice <= 0) {
+        out[key] = null;
+        continue;
+      }
+
+      const dailyRewardPerToken =
+        Number(er.dailyRewardPerTokenX18) / 1e18 / Math.pow(10, er.decimals);
+
+      const dailyRewardUsdPerToken = dailyRewardPerToken * rewardPrice;
+
+      const tvlUsd = totalSupply * base;
+      if (!Number.isFinite(tvlUsd) || tvlUsd <= 0) {
+        out[key] = null;
+        continue;
+      }
+
+      const dailyRate = dailyRewardUsdPerToken / tvlUsd;
+      if (!Number.isFinite(dailyRate) || dailyRate <= 0) {
+        out[key] = null;
+        continue;
+      }
+
+      out[key] = dailyRate * 365 * 100;
+    }
+
+    return out;
+  }, [extraList, priceNum, totalSupply]);
+
+  console.log("VaultInfoCard render:", {
+    dailyPointRateNum,
+    priceNum,
+    extraList,
+    showStakingBlock,
+    stakingRow,
+    totalSupply,
+  });
 
   return (
     <div
@@ -90,6 +195,7 @@ export default function VaultInfoCard({
     >
       <div className="flex grow basis-0 flex-col gap-4 rounded-2xl bg-background p-4 text-sm">
         <div className="flex flex-col gap-4">
+          {/* 헤더 + 기간 선택 탭 */}
           <div className="flex flex-row items-center justify-between pb-4 max-md:pb-0">
             <SectionHeader>{title}</SectionHeader>
 
@@ -115,6 +221,7 @@ export default function VaultInfoCard({
             </div>
           </div>
 
+          {/* Vault 리스트 */}
           {rows.length > 0 ? (
             <div className="flex flex-col gap-3">
               {rows.map((row, i) => (
@@ -145,19 +252,22 @@ export default function VaultInfoCard({
             </div>
           )}
 
-          {/* ⬇️⬇️ 모바일 전용 Staking 요약 블록 */}
+          {/* 모바일 전용 Staking 요약 블록 */}
           <Divider className="border-default-300 dark:border-default-100 md:hidden" />
-          {mobileStaking?.show && (
+          {showStakingBlock && stakingRow && (
             <div className="flex flex-col gap-3 rounded-2xl bg-background text-sm md:hidden">
+              {/* 클릭 시 모달 오픈 */}
               <div
                 className="flex items-center pb-1 cursor-pointer select-none transition-colors"
                 role="button"
                 tabIndex={0}
-                onClick={mobileStaking.onOpen}
+                onClick={() => {
+                  onOpenStakingModal?.(stakingRow);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    mobileStaking.onOpen();
+                    onOpenStakingModal?.(stakingRow);
                   }
                 }}
               >
@@ -180,6 +290,7 @@ export default function VaultInfoCard({
                 </span>
               </div>
 
+              {/* 포인트 레이트 표시 */}
               <div className="flex w-full flex-row items-center gap-1.5">
                 <p className="font-medium text-default-800 dark:text-default-200">
                   Birdieswap Point
@@ -187,28 +298,21 @@ export default function VaultInfoCard({
                 <div className="grow" />
                 <p className="whitespace-nowrap font-normal">
                   {hasPointRate
-                    ? format2(
-                        mobileStaking.dailyPointRateNum /
-                          (mobileStaking.priceNum || 1) /
-                          1e18,
-                        2
-                      )
+                    ? format2(dailyPointRateNum / (priceNum || 1) / 1e18, 2)
                     : "0.00"}{" "}
                   /$
                 </p>
               </div>
 
+              {/* Extra Rewards */}
               {hasAnyExtra &&
-                mobileStaking.extraList.map((er) => {
-                  const daily =
-                    Number(er.dailyRewardPerTokenX18) /
-                    1e18 /
-                    Math.pow(10, er.decimals) /
-                    (mobileStaking.priceNum || 1);
-                  const aprPct = daily * 365 * 100;
+                extraList.map((er: any) => {
+                  const key = `${er.symbol}-${er.indexNumber}`;
+                  const aprPct = extraAprMap[key] ?? null;
+
                   return (
                     <div
-                      key={er.symbol}
+                      key={key}
                       className="flex w-full flex-row items-center gap-1.5"
                     >
                       <p className="font-medium text-default-800 dark:text-default-200">
@@ -216,14 +320,13 @@ export default function VaultInfoCard({
                       </p>
                       <div className="grow" />
                       <p className="whitespace-nowrap font-normal">
-                        {aprPct.toFixed(2)}% APR
+                        {aprPct == null ? "—" : `${aprPct.toFixed(2)}% APR`}
                       </p>
                     </div>
                   );
                 })}
             </div>
           )}
-          {/* ↑↑↑ 모바일 전용 끝 */}
         </div>
       </div>
     </div>
