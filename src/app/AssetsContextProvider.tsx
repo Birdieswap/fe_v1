@@ -15,10 +15,15 @@ export type FarmValues = {
   tvlMap: Map<string, BigDecimal | null>;
 };
 
+// 추가: SwapPointsDistributionSpeed 타입
+export type SwapPointsDistributionSpeedMap = Record<string, number>;
+// 값이 string 이면 number 대신 string | number 로
+
 export type aprDataState = {
   response: boolean;
   result: boolean;
   apr: AprEntry[];
+  SwapPointsDistributionSpeed?: SwapPointsDistributionSpeedMap; // ✅ 추가
 };
 
 export type AprEntry = {
@@ -72,7 +77,7 @@ export const AssetsContext = createContext<{
   assetValues?: ReturnType<typeof useAssetValues>;
   balances?: ReturnType<typeof useAccountBalances>;
   farmValues?: FarmValues;
-  aprDataState?: aprDataState;
+  aprDataState?: aprDataState | null;
 
   userPoints?: UserPoints | null; // 정확한 타입 있으면 교체
   isPointsLoading?: boolean;

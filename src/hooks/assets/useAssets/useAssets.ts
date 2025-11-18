@@ -14,6 +14,7 @@ import {
   EContractType,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
+import type { aprDataState as AprDataState } from "@/app/AssetsContextProvider";
 
 type FarmValuesRecord = Record<
   string,
@@ -116,9 +117,9 @@ export default function useAssets() {
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
-  const [aprDataState, setAprDataState] = useState<any | null>(null);
+  const [aprDataState, setAprDataState] = useState<AprDataState | null>(null);
   // apr 데이터 캐시용 ref (rerender를 억제하기 위해 useRef로 보관)
-  const aprDataRef = useRef<any | null>(null);
+  const aprDataRef = useRef<AprDataState | null>(null);
 
   const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
   const baseBalances = useAccountBalances(aprList);
