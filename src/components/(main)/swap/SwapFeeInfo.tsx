@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { Button, cn } from "@heroui/react";
 import clsx from "clsx";
 
@@ -12,8 +12,10 @@ import { BigDecimal } from "@/types/BigDecimal";
 import { useSwapContext } from "./SwapProvider";
 import SwapError from "./SwapError";
 import { useReferral } from "@/app/ReferralContextProvider";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId } from "wagmi";
 import { isEthOnlyOneSide, isWrapPair } from "@/utils/swap/swapMode";
+import { AssetsContext } from "@/app/AssetsContextProvider";
+import tokens from "@/const/contracts/tokens/tokens";
 
 export default function SwapFeeInfo() {
   const [open, setOpen] = useState(false);
@@ -34,6 +36,84 @@ export default function SwapFeeInfo() {
   const [showReverse, setShowReverse] = useState(false);
   const { referralAddress } = useReferral();
   const { address } = useAccount();
+  const { aprDataState } = useContext(AssetsContext);
+  const chainId = useChainId();
+
+  const getSwapPointAddress = (
+    token: typeof fromToken,
+    chainId: number
+  ): `0x${string}` | null => {
+    if (!token) return null;
+
+    // ETH → WETH 주소로 치환
+    if (token.symbol === "ETH") {
+      const wethAddress = tokens.WETH?.addresses?.[chainId];
+      if (wethAddress) return wethAddress as `0x${string}`;
+      return null;
+    }
+
+    // 일반 ERC20 토큰 주소
+    const address =
+      typeof token.addresses === "string"
+        ? token.addresses
+        : token.addresses?.[chainId];
+
+    return (address ?? null) as `0x${string}` | null;
+  };
+
+  const swapPointValue = useMemo(() => {
+    if (!aprDataState?.SwapPointsDistributionSpeed || !fromToken) return null;
+
+    // fromToken 구조에 맞게 address 를 꺼내 주세요
+    const tokenAddress = getSwapPointAddress(fromToken, chainId);
+
+    if (!tokenAddress) return null;
+
+    const value = aprDataState.SwapPointsDistributionSpeed[tokenAddress];
+
+    // console.log("swapPointValue in SwapFeeInfo:", tokenAddress, value);
+
+    return value ?? null;
+  }, [aprDataState, fromToken, chainId]);
+
+  // 10^n 을 문자열로 만드는 헬퍼 (예: n=6 -> "1000000")
+  const pow10String = (decimals: number) =>
+    decimals <= 0 ? "1" : "1" + "0".repeat(decimals);
+
+  const estimatedSwapPoints = useMemo(() => {
+    if (swapPointValue == null) return null;
+    if (!fromAmount || !fromToken) return null;
+
+    try {
+      const decimals = fromToken.decimals ?? 18;
+
+      // fromAmount: 이미 위에서 Number(...) 로 쓰고 있지만,
+      // 여기선 문자열 그대로 넣는 편이 BigDecimal 에 안전합니다.
+      const amountBD = new BigDecimal(String(fromAmount));
+
+      const tokenScaleBD = new BigDecimal(pow10String(decimals)); // 10^fromToken.decimals
+      const swapPointBD = new BigDecimal(swapPointValue);
+      const scale1e18BD = new BigDecimal("1000000000000000000"); // 10^18
+
+      const result = amountBD
+        .mul(tokenScaleBD)
+        .mul(swapPointBD)
+        .div(scale1e18BD);
+
+      // 화면에는 깔끔하게 포맷된 문자열로
+      return result.roundToDecimals(4).toPrecisionString(true, false);
+    } catch (e) {
+      console.warn("failed to calc estimatedSwapPoints", e);
+      return null;
+    }
+  }, [swapPointValue, fromAmount, fromToken]);
+
+  // console.log(
+  //   "From Token in SwapFeeInfo:",
+  //   fromToken,
+  //   aprDataState,
+  //   swapPointValue
+  // );
 
   const RewardRatio = () => {
     if (!referralAddress || !address) return 0;
@@ -212,57 +292,44 @@ export default function SwapFeeInfo() {
                   </span>
                 </span>
               </span>
-              <span className="text-default-700 dark:text-default-300">
-                Swap Point
-              </span>
-              <span className="justify-self-end">
-                <span
-                  className="
-                    inline-flex
-                    flex-row
-                    items-center
-                    justify-end
-                    gap-1
-                    text-right
-                    max-[320px]:flex-wrap        /* 320px 이하일 때 줄바꿈 허용 */
-                    max-[320px]:gap-x-1          /* 줄 간격 유지 */
-                    max-[320px]:text-[13px]      /* (선택) 좁은 화면에서 폰트 줄이기 */
-                  "
-                >
-                  {/* 아이콘 먼저 */}
-                  <Icons.PointIcon className="h-5 w-5 shrink-0 ml-4" />
-
-                  {/* 텍스트 */}
-                  <span
-                    className="
-                      tabular-nums
-                      leading-tight
-                      whitespace-nowrap
-                      max-[356px]:whitespace-normal /* 줄바꿈 허용 */
-                      max-[321px]:text-right
-                    "
-                  >
-                    {fromAmount && fromPrice
-                      ? (() => {
-                          const fromBD = new BigDecimal(Number(fromAmount));
-                          const RewardTokenBD = fromBD
-                            .mul(feeFractionBD)
-                            .div(10)
-                            .mul(RewardRatio());
-                          const RewardUSDBD = RewardTokenBD.mul(fromPrice);
-                          return (
-                            <>
-                              {fromToken?.symbol} {formatBD(RewardTokenBD, 8)}{" "}
-                              <span className="text-nowrap max-[320px]:block">
-                                (${formatBD(RewardUSDBD, 5)})
-                              </span>
-                            </>
-                          );
-                        })()
-                      : ""}
+              {estimatedSwapPoints !== null && (
+                <>
+                  <span className="text-default-700 dark:text-default-300">
+                    Estimated Swap Point
                   </span>
-                </span>
-              </span>
+                  <span className="justify-self-end">
+                    <span
+                      className="
+                        inline-flex
+                        flex-row
+                        items-center
+                        justify-end
+                        gap-1
+                        text-right
+                        max-[320px]:flex-wrap
+                        max-[320px]:gap-x-1
+                        max-[320px]:text-[13px]
+                      "
+                    >
+                      {/* 아이콘 */}
+                      <Icons.PointIcon className="h-5 w-5 shrink-0 ml-4" />
+
+                      {/* 텍스트 – SwapPointsDistributionSpeed 의 value 표시 */}
+                      <span
+                        className="
+                          tabular-nums
+                          leading-tight
+                          whitespace-nowrap
+                          max-[356px]:whitespace-normal
+                          max-[321px]:text-right
+                        "
+                      >
+                        {estimatedSwapPoints}
+                      </span>
+                    </span>
+                  </span>
+                </>
+              )}
             </div>
           </motion.div>
         )}
