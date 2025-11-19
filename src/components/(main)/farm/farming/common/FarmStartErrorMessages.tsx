@@ -6,6 +6,7 @@ import Error from "@/assets/icons/error.svg";
 import { presenceTransition } from "@/const/presenceTransition";
 export default function FarmStartErrorMessages({
   tokenStatuses,
+  showDepositLimitInfo,
 }: {
   tokenStatuses: Pick<
     FarmTokenStatus,
@@ -16,14 +17,15 @@ export default function FarmStartErrorMessages({
     | "isActive"
     | "input"
   >[];
+  showDepositLimitInfo?: boolean;
 }) {
   const errorMessages = [
     {
       type: InvalidStatuses.AMOUNT,
       status: tokenStatuses.some(
-        (v) => v.isActive && (!v.amount || v.amount.lte(0)),
+        (v) => v.isActive && (!v.amount || v.amount.lte(0))
       ),
-      message: <p key={`no-amount`}>Enter an amount</p>,
+      message: <p>Enter an amount</p>,
     },
     ...tokenStatuses
       .map((v) => [
@@ -31,7 +33,7 @@ export default function FarmStartErrorMessages({
           type: InvalidStatuses.IMPERMANENT_INSOLVENCY,
           status: v.isImpermanentInsolvency,
           message: (
-            <p key={`${v.input?.symbol}-insolvency`}>
+            <p>
               Enter an amount under{" "}
               {v.impermanentInsolvency?.toPrecisionString(true)}{" "}
               {v.input?.symbol}
@@ -41,11 +43,7 @@ export default function FarmStartErrorMessages({
         {
           type: InvalidStatuses.INSUFFICIENT_BALANCE,
           status: v.isInsufficientBalance,
-          message: (
-            <p key={`${v.input?.symbol}-insufficient`}>
-              Insufficient {v.input?.symbol} balance
-            </p>
-          ),
+          message: <p>Insufficient {v.input?.symbol} balance</p>,
         },
       ])
       .flat(),
@@ -57,6 +55,7 @@ export default function FarmStartErrorMessages({
     <AnimatePresence initial={false}>
       {message && (
         <motion.div
+          key="farm-error"
           layout
           className="mt-4 flex flex-col items-center justify-center text-sm"
           {...presenceTransition}
@@ -67,9 +66,24 @@ export default function FarmStartErrorMessages({
           </div>
         </motion.div>
       )}
+      {/* 🔹 limit 안내 문구: 버튼 하단, 회색 톤 */}
+      {showDepositLimitInfo && (
+        <motion.div
+          key="limit-info"
+          layout
+          className="mt-6 flex flex-col items-center justify-center text-sm"
+          {...presenceTransition}
+        >
+          <p className="text-sm font-sans font-medium text-default-700 dark:text-dark-300">
+            Beta usage limits are currently applied.
+          </p>
+        </motion.div>
+      )}
+
       {message &&
         errorMessages[0]?.type === InvalidStatuses.IMPERMANENT_INSOLVENCY && (
           <motion.div
+            key="insolvency-explain"
             layout
             className="mb-2 mt-6 rounded-2xl border-1 border-default-300 p-4"
             {...presenceTransition}
