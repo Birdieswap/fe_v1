@@ -149,6 +149,61 @@ function httpWithLog(url: string, opts?: Parameters<typeof http>[1]) {
 const httpMaybeLogged = (url?: string, opts?: Parameters<typeof http>[1]) =>
   typeof window === "undefined" ? http(url, opts) : httpWithLog(url!, opts);
 
+/**
+ * urls: [primary1, primary2, ..., lastFallback] 순서
+ * - 마지막 하나는 전부 실패했을 때만 쓰는 최후 fallback
+ * - primary 들은 매 요청마다 랜덤 순서로 시도
+ */
+function makeRandomRpcTransport(
+  urls: string[],
+  opts?: Parameters<typeof http>[1]
+) {
+  if (!urls.length) return http();
+
+  if (urls.length === 1) {
+    // URL 하나만 있으면 그냥 그것만 사용
+    return httpMaybeLogged(urls[0], opts);
+  }
+
+  const primaryUrls = urls.slice(0, -1); // 마지막 제외
+  const lastFallbackUrl = urls[urls.length - 1];
+
+  return ((config: any) => {
+    const primaryTransports = primaryUrls.map((url) =>
+      httpMaybeLogged(url, opts)(config)
+    );
+    const lastTransport = httpMaybeLogged(lastFallbackUrl, opts)(config);
+
+    return {
+      // 첫 번째 transport의 메타 정보 복사 (type, key 등)
+      ...primaryTransports[0],
+      async request(args: any) {
+        // 1) primary 들을 매 요청마다 랜덤 순서로 섞기
+        const shuffled = [...primaryTransports];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+
+        // 2) 랜덤 순서대로 시도
+        let lastError: unknown;
+        for (const t of shuffled) {
+          try {
+            return await t.request(args);
+          } catch (e) {
+            lastError = e;
+          }
+        }
+
+        // 3) 전부 실패하면 마지막 fallback으로 한 번 더 시도
+        return lastTransport.request(args).catch((e: unknown) => {
+          throw e ?? lastError;
+        });
+      },
+    };
+  }) as any;
+}
+
 const chains = [
   sepolia,
   arbitrum,
@@ -164,25 +219,43 @@ const chains = [
 const transports: Record<number, any> = {};
 for (const ch of chains) transports[ch.id] = http(); // 기본값
 
+// if (sepoliaUrls.length) {
+//   transports[sepolia.id] = fallback(
+//     sepoliaUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
+//     { rank: false, retryCount: 3, retryDelay: 3000 }
+//   );
+// }
+
+// if (baseUrls.length) {
+//   transports[base_custom.id] = fallback(
+//     baseUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
+//     { rank: false, retryCount: 3, retryDelay: 3000 }
+//   );
+// }
+
+// if (arbitrumUrls.length) {
+//   transports[arbitrum.id] = fallback(
+//     arbitrumUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
+//     { rank: false, retryCount: 3, retryDelay: 3000 }
+//   );
+// }
+
 if (sepoliaUrls.length) {
-  transports[sepolia.id] = fallback(
-    sepoliaUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
-    { rank: false, retryCount: 3, retryDelay: 3000 }
-  );
+  transports[sepolia.id] = makeRandomRpcTransport(sepoliaUrls, {
+    timeout: 15_000,
+  });
 }
 
 if (baseUrls.length) {
-  transports[base_custom.id] = fallback(
-    baseUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
-    { rank: false, retryCount: 3, retryDelay: 3000 }
-  );
+  transports[base_custom.id] = makeRandomRpcTransport(baseUrls, {
+    timeout: 15_000,
+  });
 }
 
 if (arbitrumUrls.length) {
-  transports[arbitrum.id] = fallback(
-    arbitrumUrls.map((url) => httpMaybeLogged(url, { timeout: 15_000 })),
-    { rank: false, retryCount: 3, retryDelay: 3000 }
-  );
+  transports[arbitrum.id] = makeRandomRpcTransport(arbitrumUrls, {
+    timeout: 15_000,
+  });
 }
 
 // RainbowKit 커넥터
