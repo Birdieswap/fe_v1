@@ -50,7 +50,7 @@ export function PairStartPanel({
   const LIMIT_DEPOSIT_MODE_ON =
     process.env.NEXT_PUBLIC_LIMIT_DEPOSIT_MODE?.toLowerCase() === "on";
 
-  const DEPOSIT_LIMIT_USD = new BigDecimal("1000"); // $1,000
+  const DEPOSIT_LIMIT_USD = new BigDecimal("1010"); // $1,000
 
   // ✅ 이미 예치된 USD (기존 로직 유지: totalBalance * price)
   const existingUsd =
@@ -223,6 +223,8 @@ export function PairStartPanel({
     executeText = "Start Farming";
   }
 
+  const showDepositLimitInfo = LIMIT_DEPOSIT_MODE_ON && isOverDepositLimit;
+
   // 실행 가능 여부: 기존 조건 + 입금 제한
   const isExecutable = state.isStartable && !isOverDepositLimit;
   // ─────────────────────────────────────────────
@@ -262,6 +264,7 @@ export function PairStartPanel({
         isWrongNetwork={state.isWrongNetwork}
         tokenStatuses={state.tokenStatuses}
         variant="MINT"
+        showDepositLimitInfo={showDepositLimitInfo}
       />
     </PanelContainer>
   );

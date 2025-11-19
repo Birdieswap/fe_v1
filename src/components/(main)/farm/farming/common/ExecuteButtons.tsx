@@ -18,6 +18,7 @@ export function ExecuteButtons({
   executeText,
   tokenStatuses,
   variant,
+  showDepositLimitInfo,
 }: {
   isConnected: boolean;
   isExecutable: boolean;
@@ -27,6 +28,7 @@ export function ExecuteButtons({
   executeText: string;
   tokenStatuses: FarmTokenStatus[];
   variant?: ThemedButtonVariant;
+  showDepositLimitInfo?: boolean;
 }) {
   // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
@@ -61,7 +63,10 @@ export function ExecuteButtons({
         onPress={execute}
       />
       <div className="min-h-[38px]">
-        <FarmStartErrorMessages tokenStatuses={tokenStatuses} />
+        <FarmStartErrorMessages
+          tokenStatuses={tokenStatuses}
+          showDepositLimitInfo={showDepositLimitInfo}
+        />
       </div>
     </motion.div>
   );
