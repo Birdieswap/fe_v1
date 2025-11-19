@@ -1,10 +1,8 @@
-
 import type { ICurrency } from "@/const/contracts/types/tokenTypes";
 import * as SwapPoolMod from "@/const/contracts/tokens/swapPool";
 import * as TokensRegMod from "@/const/contracts/tokens/tokens";
 import * as SingleVaultsMod from "@/const/contracts/tokens/singleVaults";
 import * as TokenInfoMod from "@/const/tokenInfo";
-
 
 const lc = (s?: string | null) => (s ? String(s).toLowerCase() : "");
 const isObj = (x: unknown): x is Record<string, unknown> =>
@@ -16,21 +14,42 @@ function isTokenLike(x: any): x is ICurrency {
 const symOf = (t?: ICurrency) => lc((t as any)?.symbol);
 
 // ----- tokenInfo.ts 호환: SwapTokens 배열 / tokens 레지스트리 복원 -----
-function resolveTokenInfo(mod: any): { SwapTokens: ICurrency[]; TokensRegistry: Record<string, ICurrency> } {
+function resolveTokenInfo(mod: any): {
+  SwapTokens: ICurrency[];
+  TokensRegistry: Record<string, ICurrency>;
+} {
   const any = (mod || {}) as any;
   const def = (any.default || {}) as any;
 
   // SwapTokens 후보
-  const arrCands = [any.SwapTokens, def.SwapTokens, any.TOKEN_LIST, def.TOKEN_LIST, any.tokensArray, def.tokensArray];
-  let SwapTokens: ICurrency[] = (arrCands.find((v) => Array.isArray(v)) as ICurrency[]) || [];
+  const arrCands = [
+    any.SwapTokens,
+    def.SwapTokens,
+    any.TOKEN_LIST,
+    def.TOKEN_LIST,
+    any.tokensArray,
+    def.tokensArray,
+  ];
+  let SwapTokens: ICurrency[] =
+    (arrCands.find((v) => Array.isArray(v)) as ICurrency[]) || [];
 
   // tokens 레지스트리 후보
-  const regCands = [any.tokens, def.tokens, any.TOKENS, def.TOKENS, any.registry, def.registry];
-  let TokensRegistry: Record<string, ICurrency> | null = (regCands.find((v) => isObj(v)) as any) || null;
+  const regCands = [
+    any.tokens,
+    def.tokens,
+    any.TOKENS,
+    def.TOKENS,
+    any.registry,
+    def.registry,
+  ];
+  let TokensRegistry: Record<string, ICurrency> | null =
+    (regCands.find((v) => isObj(v)) as any) || null;
 
   // 레지스트리만 있고 배열이 없으면 값들로 배열 구성
   if (!SwapTokens.length && TokensRegistry) {
-    const vals = Object.values(TokensRegistry).filter(isTokenLike) as ICurrency[];
+    const vals = Object.values(TokensRegistry).filter(
+      isTokenLike
+    ) as ICurrency[];
     if (vals.length) SwapTokens = vals;
   }
   // 배열만 있고 레지스트리 없으면 심볼 기반으로 생성
@@ -50,7 +69,15 @@ const { SwapTokens, TokensRegistry } = resolveTokenInfo(TokenInfoMod);
 (function mergeTokensRegistry(mod: any) {
   const any = (mod || {}) as any;
   const def = (any.default || {}) as any;
-  const candidates = [any.tokens, def.tokens, any.TOKENS, def.TOKENS, any.registry, def.registry, any];
+  const candidates = [
+    any.tokens,
+    def.tokens,
+    any.TOKENS,
+    def.TOKENS,
+    any.registry,
+    def.registry,
+    any,
+  ];
   for (const c of candidates) {
     if (!c || typeof c !== "object") continue;
     for (const [k, v] of Object.entries(c)) {
@@ -78,7 +105,8 @@ function buildSingleVaultIndex(mod: any) {
   return idx;
 }
 const SINGLE_VAULT_IDX = buildSingleVaultIndex(SingleVaultsMod);
-const getVaultRecord = (key: any) => (typeof key === "string" ? SINGLE_VAULT_IDX.get(key) : key);
+const getVaultRecord = (key: any) =>
+  typeof key === "string" ? SINGLE_VAULT_IDX.get(key) : key;
 
 // ----- swapPools 수집 (배열/객체/디폴트 모두 지원) -----
 type PoolLike = { input?: any[]; name?: string; id?: string; key?: string };
@@ -92,7 +120,7 @@ function resolveSwapPools(mod: any): Array<PoolLike & { __name?: string }> {
   } else {
     // named object로 들어오는 경우
     for (const [k, v] of Object.entries(raw)) {
-      if (Array.isArray((v as any))) {
+      if (Array.isArray(v as any)) {
         // 배열이면 그 내부 객체들
         for (const p of v as any[]) {
           if (isObj(p)) out.push({ ...(p as any), __name: k });
@@ -144,8 +172,10 @@ function tokensFromUnknown(x: any): ICurrency[] {
     const out: ICurrency[] = [];
     for (const item of cand) {
       if (isTokenLike(item)) out.push(item);
-      else if (typeof item === "string") out.push(...tokensFromUnknown(getVaultRecord(item)));
-      else if (Array.isArray(item) || isObj(item)) out.push(...tokensFromUnknown(item));
+      else if (typeof item === "string")
+        out.push(...tokensFromUnknown(getVaultRecord(item)));
+      else if (Array.isArray(item) || isObj(item))
+        out.push(...tokensFromUnknown(item));
     }
     return out;
   }
@@ -175,27 +205,32 @@ function buildPairList(): ICurrency[][] {
     if (!vA.length || !vB.length) continue;
 
     // 일반화: 교차 조합으로 쌍 구성 (보통 각 1개지만 방어)
-    for (const tA of vA) for (const tB of vB) {
-      if (!isTokenLike(tA) || !isTokenLike(tB)) continue;
-      const sA = symOf(tA);
-      const sB = symOf(tB);
-      if (!sA || !sB) continue;
+    for (const tA of vA)
+      for (const tB of vB) {
+        if (!isTokenLike(tA) || !isTokenLike(tB)) continue;
+        const sA = symOf(tA);
+        const sB = symOf(tB);
+        if (!sA || !sB) continue;
 
-      // 무순서 쌍 dedupe
-      const key = sA < sB ? `${sA}|${sB}` : `${sB}|${sA}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      pairs.push([tA, tB]);
-    }
+        // 무순서 쌍 dedupe
+        const key = sA < sB ? `${sA}|${sB}` : `${sB}|${sA}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        pairs.push([tA, tB]);
+      }
   }
 
   // 만약 swapPool/singleVaults 해석이 전부 실패했다면,
   // 안전장치로 pool 이름(예: ...WETHUSDC)의 접미부에서 심볼 두 개를 파싱해 복원 시도
   if (!pairs.length) {
     const pools = resolveSwapPools(SwapPoolMod);
-    const symbols = Object.keys(TokensRegistry).sort((a, b) => b.length - a.length); // 긴 심볼 우선 매칭
+    const symbols = Object.keys(TokensRegistry).sort(
+      (a, b) => b.length - a.length
+    ); // 긴 심볼 우선 매칭
     for (const p of pools) {
-      const name = String(p?.name || p?.id || p?.key || (p as any)?.__name || "");
+      const name = String(
+        p?.name || p?.id || p?.key || (p as any)?.__name || ""
+      );
       const cap = name.toUpperCase();
       // 접미부에서 두 심볼 추정 (ex: EURCUSDC, CBBTCWETH ...)
       for (let i = 0; i < symbols.length; i++) {
@@ -245,11 +280,17 @@ export function getPartnerTokens(baseToken: ICurrency): ICurrency[] {
   for (const pair of pairs) {
     if (pair.length < 2) continue;
     const [a, b] = pair;
-    const sA = symOf(a), sB = symOf(b);
-    if (sA === target && sB && !seen.has(sB)) { seen.add(sB); out.push(b); }
-    else if (sB === target && sA && !seen.has(sA)) { seen.add(sA); out.push(a); }
+    const sA = symOf(a),
+      sB = symOf(b);
+    if (sA === target && sB && !seen.has(sB)) {
+      seen.add(sB);
+      out.push(b);
+    } else if (sB === target && sA && !seen.has(sA)) {
+      seen.add(sA);
+      out.push(a);
+    }
   }
-  console.log("getAvailableTokens!!!!!! getPartnerTokens PAIRS",pairs,"out",out)
+  // console.log("getAvailableTokens!!!!!! getPartnerTokens PAIRS",pairs,"out",out)
   return out;
 }
 
@@ -262,10 +303,10 @@ export default function getAvailableTokens(baseToken?: ICurrency): ICurrency[] {
   }
   const partners = getPartnerTokens(baseToken);
   const selfSym = symOf(baseToken);
-  const exists = partners.some((t) => symOf(t) === selfSym)
-  
-  console.log("getAvailableTokens!!!!!! getPartnerTokens partners",partners,"exists",exists)
-  
+  const exists = partners.some((t) => symOf(t) === selfSym);
+
+  // console.log("getAvailableTokens!!!!!! getPartnerTokens partners",partners,"exists",exists)
+
   return exists ? partners : [...partners, baseToken];
 }
 

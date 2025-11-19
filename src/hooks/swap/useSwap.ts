@@ -10,16 +10,14 @@ import getTokenAddress from "@/utils/assets/getTokenAddress";
 import tokens from "@/const/contracts/tokens/tokens";
 
 import useBalance from "../useBalance";
-import useTokenAddress from "../useTokenAddress"
+import useTokenAddress from "../useTokenAddress";
 import useChainLinkPrice from "../useChainLinkPrice";
 
 import useSwapTokens from "./useSwap/useSwapTokens";
 
 export default function useSwap() {
   const chainId = useChainId();
-  const [fromToken, setFromToken] = useState<ICurrency | undefined>(
-    tokens.ETH,
-  );
+  const [fromToken, setFromToken] = useState<ICurrency | undefined>(tokens.ETH);
   const [toToken, setToToken] = useState<ICurrency | undefined>(undefined);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
@@ -47,7 +45,7 @@ export default function useSwap() {
   const [isTyping, setIsTyping] = useState(false);
 
   const [priceImpact, setPriceImpact] = useState<BigDecimal | undefined>(
-    undefined,
+    undefined
   );
 
   const tempStuff = useSwapTokens({
@@ -68,57 +66,56 @@ export default function useSwap() {
     balances,
     setPriceImpact,
     maxSlippage: maxSlippage === "auto" ? 0.005 : maxSlippage / 100, // 0.5% when auto
-    isTyping,              // 추가: 입력중 여부
+    isTyping, // 추가: 입력중 여부
     stopTyping: () => setIsTyping(false), // 디바운스 완료시 호출'
   });
 
-const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
-const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
+  const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
+  const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
 
-// CHANGE(필수): fromToken 변경 시 입력값 초기화
-useEffect(() => {
-  const prev = prevFromTokenRef.current;
-  const changed =
-  (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
-  (fromToken?.symbol || fromToken?.fullName || fromToken?.addresses?.[chainId!]);
+  // CHANGE(필수): fromToken 변경 시 입력값 초기화
+  useEffect(() => {
+    const prev = prevFromTokenRef.current;
+    const changed =
+      (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
+      (fromToken?.symbol ||
+        fromToken?.fullName ||
+        fromToken?.addresses?.[chainId!]);
 
- 
-  if (changed) {
-    console.log("[reset] fromToken changed → reset fromAmount/toAmount", {
-      prev: prev?.symbol,
-      next: fromToken?.symbol,
-    });
-    setFromAmount(""); // CHANGE(필수): 초기화
-    setToAmount("");   // CHANGE(필수): 초기화
-  }
+    if (changed) {
+      // console.log("[reset] fromToken changed → reset fromAmount/toAmount", {
+      //   prev: prev?.symbol,
+      //   next: fromToken?.symbol,
+      // });
+      setFromAmount(""); // CHANGE(필수): 초기화
+      setToAmount(""); // CHANGE(필수): 초기화
+    }
 
-  prevFromTokenRef.current = fromToken;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    prevFromTokenRef.current = fromToken;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fromToken, chainId]); // chainId도 키로 넣어 체인 변경 시 처리 일관성 강화
 
   // CHANGE(필수): toToken 변경 시 입력값 초기화
   useEffect(() => {
-  const prev = prevToTokenRef.current;
-  const changed =
-  (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
-  (toToken?.symbol || toToken?.fullName || toToken?.addresses?.[chainId!]);
+    const prev = prevToTokenRef.current;
+    const changed =
+      (prev?.symbol || prev?.fullName || prev?.addresses?.[chainId!]) !==
+      (toToken?.symbol || toToken?.fullName || toToken?.addresses?.[chainId!]);
 
+    if (changed) {
+      // console.log("[reset] toToken changed → reset fromAmount/toAmount", {
+      //   prev: prev?.symbol,
+      //   next: toToken?.symbol,
+      // });
+      setFromAmount(""); // CHANGE(필수): 초기화
+      setToAmount(""); // CHANGE(필수): 초기화
+    }
 
-  if (changed) {
-    console.log("[reset] toToken changed → reset fromAmount/toAmount", {
-      prev: prev?.symbol,
-      next: toToken?.symbol,
-    });
-    setFromAmount(""); // CHANGE(필수): 초기화
-    setToAmount("");   // CHANGE(필수): 초기화
-  }
-
-  prevToTokenRef.current = toToken;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    prevToTokenRef.current = toToken;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toToken, chainId]);
 
-//============================여기까지 토큰 변경시 초기화
-
+  //============================여기까지 토큰 변경시 초기화
 
   function setFromTokenWithGuard(token: ICurrency | undefined) {
     if (!token) {
@@ -134,7 +131,7 @@ useEffect(() => {
     });
 
     if (tokenAddress === fromTokenAddress) return;
-    
+
     // 토큰 스위치 시 PI 리셋
     setPriceImpact(new BigDecimal(0, 18));
 
@@ -217,7 +214,7 @@ useEffect(() => {
 
       const fromAmountBD = new BigDecimal(
         fromAmount || "0",
-        fromToken?.decimals ?? 18,
+        fromToken?.decimals ?? 18
       );
 
       const newToAmount =
@@ -264,7 +261,7 @@ useEffect(() => {
     isPending: tempStuff.isPending,
     isApprovePending: tempStuff.isApprovePending,
     swap: tempStuff.swap,
-    swapPool : tempStuff.swapPool,
+    swapPool: tempStuff.swapPool,
     approve: tempStuff.approve,
     setToTokenWithGuard,
     setFromTokenWithGuard,

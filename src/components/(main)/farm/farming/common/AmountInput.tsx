@@ -48,6 +48,9 @@ export default function AmountInput({
   price: price,
   panel,
   nativeToggle,
+  limitModeOn,
+  normalMaxAmount,
+  limitMaxAmount,
 }: {
   amount: BigDecimal | null;
   balance: BigDecimal | null;
@@ -63,6 +66,9 @@ export default function AmountInput({
   price: BigDecimal | null;
   panel?: "start" | "stop";
   nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
+  limitModeOn?: boolean;
+  normalMaxAmount?: BigDecimal;
+  limitMaxAmount?: BigDecimal;
 }) {
   const { assetValues } = useContext(AssetsContext);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
@@ -225,7 +231,26 @@ export default function AmountInput({
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {
-                  setMaxAmount();
+                  // ✅ 2. limit on 모드일 때: 잔여 금액 기반 limitMaxAmount로 셋팅
+                  if (limitModeOn && limitMaxAmount && limitMaxAmount.gt(0)) {
+                    setAmount(limitMaxAmount);
+                    return;
+                  }
+
+                  // ✅ 1. 일반 모드일 때: 두 토큰 중 달러 환산 balance 작은 쪽 기준 normalMaxAmount
+                  if (
+                    !limitModeOn &&
+                    normalMaxAmount &&
+                    normalMaxAmount.gt(0)
+                  ) {
+                    setAmount(normalMaxAmount);
+                    return;
+                  }
+
+                  // ✅ fallback: 기존 balance 기반 MAX (버퍼 포함)
+                  if (setMaxAmount) {
+                    setMaxAmount();
+                  }
                 }}
               >
                 MAX

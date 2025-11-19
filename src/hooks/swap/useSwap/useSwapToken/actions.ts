@@ -373,7 +373,7 @@ export async function swap(params: {
     const minReceive = receiveAtLeast;
     const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0);
 
-    console.log("wrapper-swapToETH args", sqrtPriceLimitX96);
+    // console.log("wrapper-swapToETH args", sqrtPriceLimitX96);
 
     const hash = await writeWithHandlers({
       address: wrapperAddress,

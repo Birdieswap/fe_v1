@@ -59,8 +59,8 @@ export function useRewardInfo(item: Farm, priceBD?: BigDecimal | null) {
     ((Array.isArray(extraList) && extraList.length > 0) ||
       (Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0));
 
-  console.log("useRewardInfo render:", { dailyPointRateNum, price });
-  console.log("matched staking raw:", matched?.staking);
+  // console.log("useRewardInfo render:", { dailyPointRateNum, price });
+  // console.log("matched staking raw:", matched?.staking);
 
   return { price, matched, dailyPointRateNum, extraList, showStakingBlock };
 }

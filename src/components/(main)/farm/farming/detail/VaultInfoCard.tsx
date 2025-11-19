@@ -180,14 +180,14 @@ export default function VaultInfoCard({
     return out;
   }, [extraList, priceNum, totalSupply]);
 
-  console.log("VaultInfoCard render:", {
-    dailyPointRateNum,
-    priceNum,
-    extraList,
-    showStakingBlock,
-    stakingRow,
-    totalSupply,
-  });
+  // console.log("VaultInfoCard render:", {
+  //   dailyPointRateNum,
+  //   priceNum,
+  //   extraList,
+  //   showStakingBlock,
+  //   stakingRow,
+  //   totalSupply,
+  // });
 
   return (
     <div

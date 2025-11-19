@@ -155,6 +155,7 @@ export default function FarmDetail({
       return 0;
     }
   }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
+  // console.log("FarmDetail item", item, "price", price);
 
   return (
     <AnimatePresence initial={false} mode="wait">
@@ -174,7 +175,11 @@ export default function FarmDetail({
         >
           {/* 상단: Farming / Staking 패널 */}
           <div className="flex w-full gap-4 md:flex-row max-md:flex-col">
-            <FarmingPanels item={item} price={price} />
+            <FarmingPanels
+              item={item}
+              price={price}
+              totalBalance={totalBalance}
+            />
 
             <StakingPanels
               item={item}

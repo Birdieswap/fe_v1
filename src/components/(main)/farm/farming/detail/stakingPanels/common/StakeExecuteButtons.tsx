@@ -28,7 +28,7 @@ export function StakeExecuteButtons({
   tokenStatuses: StakeTokenStatus[];
   variant?: ThemedButtonVariant;
 }) {
-  console.log("tokenStatus", tokenStatuses);
+  // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
     isConnected && tokenStatuses.some((v) => v.isApproved == false);
 
