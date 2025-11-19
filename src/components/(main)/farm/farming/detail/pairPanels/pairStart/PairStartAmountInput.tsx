@@ -9,10 +9,16 @@ export default function PairStartAmountInput({
   state,
   index,
   price,
+  normalMaxAmount,
+  limitMaxAmount,
+  limitModeOn,
 }: {
   state: UsePairStartPanelReturn;
   index: 0 | 1;
   price: BigDecimal | null;
+  normalMaxAmount: BigDecimal;
+  limitMaxAmount: BigDecimal;
+  limitModeOn: boolean;
 }) {
   // [MOD] 표시용 파생값 사용(ETH/WETH 토글 반영)
   const input = state.displayTokens[index];
@@ -33,7 +39,7 @@ export default function PairStartAmountInput({
 
   const mode = (state.nativeMode?.[index] ?? "ETH") as "ETH" | "WETH";
 
-  // ✅ MAX: 표시 잔고(displayBalances) 기준, ETH면 가스 버퍼 차감
+  // MAX: 표시 잔고(displayBalances) 기준, ETH면 가스 버퍼 차감
   const handleMax = () => {
     const base = balance ?? BigDecimal.ZERO();
 
@@ -80,6 +86,9 @@ export default function PairStartAmountInput({
         price={price}
         panel="start"
         nativeToggle={nativeToggle}
+        normalMaxAmount={normalMaxAmount}
+        limitMaxAmount={limitMaxAmount}
+        limitModeOn={limitModeOn}
       />
     </>
   );

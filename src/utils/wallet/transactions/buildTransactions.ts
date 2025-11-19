@@ -2,7 +2,7 @@
 import lpVaultsDefault from "@/const/contracts/tokens/lpVaults";
 import tokensDefault from "@/const/contracts/tokens/tokens";
 import { BigDecimal } from "@/types/BigDecimal";
-import { 
+import {
   TransactionType,
   type TransactionProps,
   type TransactionTokenInfo,
@@ -18,7 +18,11 @@ const toExactTrimmed = (bd: BigDecimal) => bd.toPrecisionString(true, false);
 // ---------- 체인링크 가격 맵 타입 유연 처리 ----------
 type ChainLinkData = {
   base?: { addresses?: Record<number, string> };
-  value?: { base?: { addresses?: Record<number, string> }; price?: any; priceData?: any };
+  value?: {
+    base?: { addresses?: Record<number, string> };
+    price?: any;
+    priceData?: any;
+  };
   price?: any;
   priceData?: any;
 };
@@ -49,9 +53,14 @@ function findPriceMeta(
       lc(item?.base?.addresses?.[chainId]);
     if (!matchAddr || matchAddr !== addrL) continue;
 
-    const price = item?.value?.price ?? item?.value?.priceData ?? item?.price ?? item?.priceData;
+    const price =
+      item?.value?.price ??
+      item?.value?.priceData ??
+      item?.price ??
+      item?.priceData;
     if (!isObj(price)) return null;
-    const val = (price as any).value ?? (price as any).raw ?? (price as any).amount;
+    const val =
+      (price as any).value ?? (price as any).raw ?? (price as any).amount;
     const dec = (price as any).decimals ?? 8;
     if (val == null) return null;
     return { value: BigInt(Number(val)), decimals: Number(dec) };
@@ -64,7 +73,12 @@ function findTokenMetaFromTokens(
   tokenAddress: string,
   chainId: number,
   tokensOverride?: any
-): { symbol: string; decimals: number; iconSrc?: string; address: string } | null {
+): {
+  symbol: string;
+  decimals: number;
+  iconSrc?: string;
+  address: string;
+} | null {
   const addrL = lc(tokenAddress);
   const source = tokensOverride ?? tokensDefault;
   const list: any[] = Array.isArray(source) ? source : Object.values(source);
@@ -92,7 +106,12 @@ function findTokenMetaFromLpVaults(
   tokenAddress: string,
   chainId: number,
   vaultsOverride?: any
-): { symbol: string; decimals: number; address: string; iconSrc?: string } | null {
+): {
+  symbol: string;
+  decimals: number;
+  address: string;
+  iconSrc?: string;
+} | null {
   const addrL = lc(tokenAddress);
   const source = vaultsOverride ?? lpVaultsDefault;
   const list: any[] = Array.isArray(source) ? source : Object.values(source);
@@ -106,10 +125,17 @@ function findTokenMetaFromLpVaults(
     const resolved = typeof byChain === "string" ? byChain : undefined;
     if (resolved && lc(resolved) === addrL) {
       return {
-        symbol: v?.symbol ?? v?.name ?? v?.vaultSymbol ?? v?.tokenSymbol ?? "UNKNOWN",
+        symbol:
+          v?.symbol ?? v?.name ?? v?.vaultSymbol ?? v?.tokenSymbol ?? "UNKNOWN",
         decimals: v?.decimals ?? v?.tokenDecimals ?? 18,
         address: resolved,
-        iconSrc: v?.iconSrc ?? v?.icon ?? v?.logoURI ?? v?.logo ?? v?.image ?? v?.icon_url,
+        iconSrc:
+          v?.iconSrc ??
+          v?.icon ??
+          v?.logoURI ??
+          v?.logo ??
+          v?.image ??
+          v?.icon_url,
       };
     }
   }
@@ -127,10 +153,10 @@ function makeTokenInfo(
   vaultsOverride?: any
 ): TransactionTokenInfo | null {
   const baseMeta = preferLpMeta
-    ? findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride) ??
-      findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride)
-    : findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride) ??
-      findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride);
+    ? (findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride) ??
+      findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride))
+    : (findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride) ??
+      findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride));
 
   if (!baseMeta) return null; // [SAFE] 메타 없으면 null 반환
 
@@ -177,7 +203,9 @@ function extractUnderlyingFromDeposits(d: any): UnderlyingPair[] {
     const addr = item?.underlyingTokenAddress;
     const amt = String(item?.underlyingTokenAmount ?? "0");
     if (typeof addr === "string") out.push({ address: addr, amount: amt });
-    else if (Array.isArray(addr)) for (const a of addr) if (typeof a === "string") out.push({ address: a, amount: amt });
+    else if (Array.isArray(addr))
+      for (const a of addr)
+        if (typeof a === "string") out.push({ address: a, amount: amt });
   }
   return out;
 }
@@ -189,7 +217,9 @@ function extractUnderlyingFromWithdraws(d: any): UnderlyingPair[] {
     const addr = item?.underlyingTokenAddress;
     const amt = String(item?.underlyingTokenAmount ?? "0");
     if (typeof addr === "string") out.push({ address: addr, amount: amt });
-    else if (Array.isArray(addr)) for (const a of addr) if (typeof a === "string") out.push({ address: a, amount: amt });
+    else if (Array.isArray(addr))
+      for (const a of addr)
+        if (typeof a === "string") out.push({ address: a, amount: amt });
   }
   return out;
 }
@@ -209,7 +239,9 @@ export function buildTransactions(
   for (const ev of info) {
     const typeStr: string = String(ev?.type ?? "");
     const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
-    const timestamp: string = String(ev?.blockTimestamp ?? ev?.timestamp ?? "0"); // 초 문자열
+    const timestamp: string = String(
+      ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+    ); // 초 문자열
 
     // ---------- SWAP ----------
     if (typeStr === "Swap" || typeStr === "SWAP") {
@@ -219,8 +251,24 @@ export function buildTransactions(
       const amountIn = d?.amountIn ?? d?.AmountIn;
       const amountOut = d?.amountOut ?? d?.AmountOut;
 
-      const from = makeTokenInfo(tokenInAddr, amountIn, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride);
-      const to = makeTokenInfo(tokenOutAddr, amountOut, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride);
+      const from = makeTokenInfo(
+        tokenInAddr,
+        amountIn,
+        chainId,
+        chainLinkPriceMap,
+        false,
+        tokensOverride,
+        vaultsOverride
+      );
+      const to = makeTokenInfo(
+        tokenOutAddr,
+        amountOut,
+        chainId,
+        chainLinkPriceMap,
+        false,
+        tokensOverride,
+        vaultsOverride
+      );
       if (!from || !to) continue;
 
       txs.push({ type: TransactionType.SWAP, hash, timestamp, from, to });
@@ -228,7 +276,11 @@ export function buildTransactions(
     }
 
     // ---------- START_FARM: SingleDeposit | DualDeposit ----------
-    if (typeStr === "SingleDeposit" || typeStr === "DualDeposit" || typeStr === "START_FARM") {
+    if (
+      typeStr === "SingleDeposit" ||
+      typeStr === "DualDeposit" ||
+      typeStr === "START_FARM"
+    ) {
       const d = ev?.data ?? {};
 
       // [FIX] 우선순위: singleDeposits[*] → bToken0/1 → Token0/1 (레거시)
@@ -236,27 +288,60 @@ export function buildTransactions(
 
       if (fromPairs.length === 0) {
         // bToken0/bToken1 (DualDeposit)
-        const b0Addr = d?.bToken0Address ?? d?.Token0Address ?? d?.token0 ?? d?.token0Address; // [FIX] bToken* 우선
-        const b1Addr = d?.bToken1Address ?? d?.Token1Address ?? d?.token1 ?? d?.token1Address; // [FIX]
-        const b0Amt = d?.bToken0Amount ?? d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
-        const b1Amt = d?.bToken1Amount ?? d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
-        if (b0Addr && b0Amt) fromPairs.push({ address: String(b0Addr), amount: String(b0Amt) });
-        if (b1Addr && b1Amt) fromPairs.push({ address: String(b1Addr), amount: String(b1Amt) });
+        const b0Addr =
+          d?.bToken0Address ??
+          d?.Token0Address ??
+          d?.token0 ??
+          d?.token0Address; // [FIX] bToken* 우선
+        const b1Addr =
+          d?.bToken1Address ??
+          d?.Token1Address ??
+          d?.token1 ??
+          d?.token1Address; // [FIX]
+        const b0Amt =
+          d?.bToken0Amount ?? d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
+        const b1Amt =
+          d?.bToken1Amount ?? d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
+        if (b0Addr && b0Amt)
+          fromPairs.push({ address: String(b0Addr), amount: String(b0Amt) });
+        if (b1Addr && b1Amt)
+          fromPairs.push({ address: String(b1Addr), amount: String(b1Amt) });
       }
 
       const from: TransactionTokenInfo[] = fromPairs
         .map(({ address, amount }) =>
-          makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+          makeTokenInfo(
+            address,
+            amount,
+            chainId,
+            chainLinkPriceMap,
+            false,
+            tokensOverride,
+            vaultsOverride
+          )
         )
         .filter((x): x is TransactionTokenInfo => Boolean(x));
 
       if (from.length === 0) continue; // [SAFE] 표시할 입력 토큰이 없으면 스킵
 
       // LP (to)
-      const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress; // [FIX] bTokenAddress도 수용
-      const lpAmt = d?.blpTokenAmount ?? d?.bTokenAmount ?? d?.lpAmount ?? d?.amountLP; // [FIX]
+      const lpAddr =
+        d?.blpTokenAddress ??
+        d?.bTokenAddress ??
+        d?.lpToken ??
+        d?.lpTokenAddress; // [FIX] bTokenAddress도 수용
+      const lpAmt =
+        d?.blpTokenAmount ?? d?.bTokenAmount ?? d?.lpAmount ?? d?.amountLP; // [FIX]
 
-      const to = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
+      const to = makeTokenInfo(
+        lpAddr,
+        lpAmt,
+        chainId,
+        chainLinkPriceMap,
+        true,
+        tokensOverride,
+        vaultsOverride
+      );
       if (!to) continue;
       delete (to as any).usdAmount; // [SAFE] LP는 usdAmount 보통 없음
 
@@ -265,14 +350,31 @@ export function buildTransactions(
     }
 
     // ---------- STOP_FARM: SingleWithdraw | DualWithdraw ----------
-    if (typeStr === "SingleWithdraw" || typeStr === "DualWithdraw" || typeStr === "STOP_FARM") {
+    if (
+      typeStr === "SingleWithdraw" ||
+      typeStr === "DualWithdraw" ||
+      typeStr === "STOP_FARM"
+    ) {
       const d = ev?.data ?? {};
 
       // LP (from)
-      const lpAddr = d?.blpTokenAddress ?? d?.bTokenAddress ?? d?.lpToken ?? d?.lpTokenAddress; // [FIX]
-      const lpAmt = d?.blpTokenAmount ?? d?.bTokenAmount ?? d?.lpAmount ?? d?.amountLP; // [FIX]
+      const lpAddr =
+        d?.blpTokenAddress ??
+        d?.bTokenAddress ??
+        d?.lpToken ??
+        d?.lpTokenAddress; // [FIX]
+      const lpAmt =
+        d?.blpTokenAmount ?? d?.bTokenAmount ?? d?.lpAmount ?? d?.amountLP; // [FIX]
 
-      const from = makeTokenInfo(lpAddr, lpAmt, chainId, chainLinkPriceMap, true, tokensOverride, vaultsOverride);
+      const from = makeTokenInfo(
+        lpAddr,
+        lpAmt,
+        chainId,
+        chainLinkPriceMap,
+        true,
+        tokensOverride,
+        vaultsOverride
+      );
       if (!from) continue;
       delete (from as any).usdAmount; // [SAFE]
 
@@ -280,17 +382,37 @@ export function buildTransactions(
       let toPairs: UnderlyingPair[] = extractUnderlyingFromWithdraws(d); // singleWithdraws 우선
 
       if (toPairs.length === 0) {
-        const b0Addr = d?.bToken0Address ?? d?.Token0Address ?? d?.token0 ?? d?.token0Address; // [FIX]
-        const b1Addr = d?.bToken1Address ?? d?.Token1Address ?? d?.token1 ?? d?.token1Address; // [FIX]
-        const b0Amt = d?.bToken0Amount ?? d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
-        const b1Amt = d?.bToken1Amount ?? d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
-        if (b0Addr && b0Amt) toPairs.push({ address: String(b0Addr), amount: String(b0Amt) });
-        if (b1Addr && b1Amt) toPairs.push({ address: String(b1Addr), amount: String(b1Amt) });
+        const b0Addr =
+          d?.bToken0Address ??
+          d?.Token0Address ??
+          d?.token0 ??
+          d?.token0Address; // [FIX]
+        const b1Addr =
+          d?.bToken1Address ??
+          d?.Token1Address ??
+          d?.token1 ??
+          d?.token1Address; // [FIX]
+        const b0Amt =
+          d?.bToken0Amount ?? d?.Token0Amount ?? d?.token0Amount ?? d?.amount0;
+        const b1Amt =
+          d?.bToken1Amount ?? d?.Token1Amount ?? d?.token1Amount ?? d?.amount1;
+        if (b0Addr && b0Amt)
+          toPairs.push({ address: String(b0Addr), amount: String(b0Amt) });
+        if (b1Addr && b1Amt)
+          toPairs.push({ address: String(b1Addr), amount: String(b1Amt) });
       }
 
       const to: TransactionTokenInfo[] = toPairs
         .map(({ address, amount }) =>
-          makeTokenInfo(address, amount, chainId, chainLinkPriceMap, false, tokensOverride, vaultsOverride)
+          makeTokenInfo(
+            address,
+            amount,
+            chainId,
+            chainLinkPriceMap,
+            false,
+            tokensOverride,
+            vaultsOverride
+          )
         )
         .filter((x): x is TransactionTokenInfo => Boolean(x));
 
@@ -304,10 +426,13 @@ export function buildTransactions(
     if (typeStr === "StakingDeposit") {
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
-      const timestamp: string = String(ev?.blockTimestamp ?? ev?.timestamp ?? "0");
+      const timestamp: string = String(
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+      );
 
-      const vaultName: string =
-        String(ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault");
+      const vaultName: string = String(
+        ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault"
+      );
 
       // amount: / 10^8
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
@@ -321,7 +446,7 @@ export function buildTransactions(
       const to = makeStakeTokenInfo(vaultName, toSrc, amtRaw, DEC);
 
       txs.push({
-        type: TransactionType.STAKING ?? "StakingDeposit" as any, // enum이 없으면 string 사용
+        type: TransactionType.STAKING ?? ("StakingDeposit" as any), // enum이 없으면 string 사용
         hash,
         timestamp,
         from,
@@ -334,10 +459,13 @@ export function buildTransactions(
     if (typeStr === "StakingWithdraw") {
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
-      const timestamp: string = String(ev?.blockTimestamp ?? ev?.timestamp ?? "0");
+      const timestamp: string = String(
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+      );
 
-      const vaultName: string =
-        String(ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault");
+      const vaultName: string = String(
+        ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault"
+      );
 
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
       const DEC = 8;
@@ -349,7 +477,7 @@ export function buildTransactions(
       const to = makeStakeTokenInfo(vaultName, toSrc, amtRaw, DEC);
 
       txs.push({
-        type: TransactionType.UNSTAKING ?? "StakingWithdraw" as any,
+        type: TransactionType.UNSTAKING ?? ("StakingWithdraw" as any),
         hash,
         timestamp,
         from,
@@ -362,9 +490,13 @@ export function buildTransactions(
     if (typeStr === "StakingClaim") {
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
-      const timestamp: string = String(ev?.blockTimestamp ?? ev?.timestamp ?? "0");
+      const timestamp: string = String(
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+      );
 
-      const rewardSymbol: string = String(d?.rewardSymbol ?? d?.symbol ?? "REWARD");
+      const rewardSymbol: string = String(
+        d?.rewardSymbol ?? d?.symbol ?? "REWARD"
+      );
       const amtRaw = d?.rewardAmount ?? d?.amount ?? "0";
       const DEC = d.rewardDecimals;
 
@@ -376,17 +508,17 @@ export function buildTransactions(
       );
 
       txs.push({
-        type: TransactionType.CLAIM ?? "StakingClaim" as any,
+        type: TransactionType.CLAIM ?? ("StakingClaim" as any),
         hash,
         timestamp,
-        token : to, // from 없음
+        token: to, // from 없음
       } as any);
       continue;
     }
 
     // 알려지지 않은 타입은 스킵 (필요 시 로깅)
   }
-  console.log("[wallet] buildTransaction useAccountWalletData", { chainId, txs });
+  // console.log("[wallet] buildTransaction useAccountWalletData", { chainId, txs });
 
   return txs;
 }

@@ -690,14 +690,14 @@ export function usePairStartPanel(item: FarmPair) {
         tokenStatuses[otherIndex].amount ?? BigDecimal.ZERO();
       const otherAmount = parseUnits(otherAmountBD.toString(), otherDecimals);
 
-      console.log(
-        "usePairStartPanel wrapperDualDepositWithETH",
-        tokenStatuses[ethIndex].amount,
-        ethAmountBD,
-        ethValue,
-        otherAmountBD,
-        otherAmount
-      );
+      // console.log(
+      //   "usePairStartPanel wrapperDualDepositWithETH",
+      //   tokenStatuses[ethIndex].amount,
+      //   ethAmountBD,
+      //   ethValue,
+      //   otherAmountBD,
+      //   otherAmount
+      // );
       // wrapper 호출
       writeContract(
         {

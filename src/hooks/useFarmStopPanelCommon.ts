@@ -210,12 +210,12 @@ export default function useFarmStopPanelCommon(
         }
         // wrapper: singleRedeemToETH(bToken, bAmount)
 
-        console.log(
-          "useFarmStopPanelCommon WrapperSingleCall",
-          WRAPPER_ADDRESS,
-          stakeTokenAddress,
-          blpAmount
-        );
+        // console.log(
+        //   "useFarmStopPanelCommon WrapperSingleCall",
+        //   WRAPPER_ADDRESS,
+        //   stakeTokenAddress,
+        //   blpAmount
+        // );
 
         writeContract(
           {
@@ -249,12 +249,12 @@ export default function useFarmStopPanelCommon(
           return;
         }
         // wrapper: dualRedeemToETH(blpToken, blpAmount)
-        console.log(
-          "useFarmStopPanelCommon WrapperPairCall",
-          WRAPPER_ADDRESS,
-          stakeTokenAddress,
-          blpAmount
-        );
+        // console.log(
+        //   "useFarmStopPanelCommon WrapperPairCall",
+        //   WRAPPER_ADDRESS,
+        //   stakeTokenAddress,
+        //   blpAmount
+        // );
 
         writeContract(
           {
@@ -280,11 +280,11 @@ export default function useFarmStopPanelCommon(
       }
 
       if (route === "ROUTER_SINGLE") {
-        console.log(
-          "useFarmStopPanelCommon routerSingleCall",
-          routerAddress,
-          stakeTokenAddress
-        );
+        // console.log(
+        //   "useFarmStopPanelCommon routerSingleCall",
+        //   routerAddress,
+        //   stakeTokenAddress
+        // );
 
         writeContract(
           {
@@ -310,11 +310,11 @@ export default function useFarmStopPanelCommon(
       }
 
       if (route === "ROUTER_PAIR") {
-        console.log(
-          "useFarmStopPanelCommon routerPairCall",
-          routerAddress,
-          stakeTokenAddress
-        );
+        // console.log(
+        //   "useFarmStopPanelCommon routerPairCall",
+        //   routerAddress,
+        //   stakeTokenAddress
+        // );
 
         writeContract(
           {

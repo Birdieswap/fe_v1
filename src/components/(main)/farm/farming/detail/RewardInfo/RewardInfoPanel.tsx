@@ -76,7 +76,7 @@ export default function RewardInfoPanel({
       aprSource: matched.staking,
     });
   }, [matched?.staking, onOpenStakingModal]);
-  console.log("RewardInfoPanel render:", extraList);
+  // console.log("RewardInfoPanel render:", extraList);
   if (!showStakingBlock) {
     return (
       <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>

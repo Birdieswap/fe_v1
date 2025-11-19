@@ -53,7 +53,7 @@ export default function StakePanel({
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
   // console.log("stakePanel", item, state);
-  console.log("stakePanel tokenStatuses", state.tokenStatuses);
+  // console.log("stakePanel tokenStatuses", state.tokenStatuses);
 
   return (
     <StakePanelContainer layoutId="stake-unstake">

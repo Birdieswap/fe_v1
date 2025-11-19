@@ -16,10 +16,12 @@ import PanelButtons, { PanelMode } from "./PanelButtons";
 export default function FarmingPanels({
   item,
   price,
+  totalBalance,
   initialPanel = "START",
 }: {
   item: Farm;
   price: BigDecimal | null;
+  totalBalance?: BigDecimal;
   initialPanel?: PanelMode;
 }) {
   const [selectedPanel, setSelectedPanel] = useState<PanelMode>(initialPanel);
@@ -50,7 +52,12 @@ export default function FarmingPanels({
       <AnimatePresence initial={false} mode="wait">
         {item.type === FarmType.PAIR &&
           (selectedPanel === "START" ? (
-            <PairStartPanel key="pair-start" item={item} price={price} />
+            <PairStartPanel
+              key="pair-start"
+              item={item}
+              price={price}
+              totalBalance={totalBalance}
+            />
           ) : (
             <PairStopPanel key="pair-stop" item={item} price={price} />
           ))}
