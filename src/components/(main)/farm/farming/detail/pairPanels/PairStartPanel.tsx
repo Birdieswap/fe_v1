@@ -82,15 +82,15 @@ export function PairStartPanel({
 
   const nextTotalUsd = existingUsd.add(inputUsd);
 
-  console.log(
-    "pairStartPanel deposit check",
-    {
-      existingUsd: existingUsd.toString(),
-      inputUsd: inputUsd.toString(),
-      nextTotalUsd: nextTotalUsd.toString(),
-    },
-    state
-  );
+  // console.log(
+  //   "pairStartPanel deposit check",
+  //   {
+  //     existingUsd: existingUsd.toString(),
+  //     inputUsd: inputUsd.toString(),
+  //     nextTotalUsd: nextTotalUsd.toString(),
+  //   },
+  //   state
+  // );
 
   const isOverDepositLimit =
     LIMIT_DEPOSIT_MODE_ON && nextTotalUsd.gt(DEPOSIT_LIMIT_USD);
@@ -184,14 +184,14 @@ export function PairStartPanel({
       }
     }
 
-    console.log(
-      "PairStartPanel priceUsd",
-      value0.toString(),
-      value1.toString(),
-      totalValue.toString(),
-      maxToken0.toString(),
-      maxToken1.toString()
-    );
+    // console.log(
+    //   "PairStartPanel priceUsd",
+    //   value0.toString(),
+    //   value1.toString(),
+    //   totalValue.toString(),
+    //   maxToken0.toString(),
+    //   maxToken1.toString()
+    // );
   } else {
     // 풀 비율 계산이 안 되는 경우: 잔여 USD를 각 토큰 가격으로 단순 환산
     if (priceUsd0.gt(0)) {
