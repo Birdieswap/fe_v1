@@ -5,12 +5,7 @@ import {
   UsePairStartPanelReturn,
   usePairStartPanel,
 } from "@/hooks/usePairStartPanel";
-import {
-  Filler,
-  PanelContainer,
-  PanelHeader,
-  SectionHeader,
-} from "@/components/atoms/FarmPanel";
+import { Filler, PanelContainer } from "@/components/atoms/FarmPanel";
 import { defaultTransition } from "@/const/presenceTransition";
 
 import { ExecuteButtons } from "../../common/ExecuteButtons";
