@@ -53,7 +53,7 @@ export default function FarmStartErrorMessages({
 
   return (
     <AnimatePresence initial={false}>
-      {message && (
+      {!showDepositLimitInfo && message && (
         <motion.div
           key="farm-error"
           layout
