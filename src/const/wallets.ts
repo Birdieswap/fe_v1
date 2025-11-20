@@ -16,7 +16,7 @@ export const uniswap: WalletProviderInfo = {
   iconSrc: "/wallets/uniswap.svg",
 };
 export const coinbase: WalletProviderInfo = {
-  key: "coinbaseWallet",
+  key: "coinbase",
   name: "Coinbase Wallet",
   iconSrc: "/wallets/coinbase.svg",
 };
