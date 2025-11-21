@@ -33,6 +33,7 @@ export default function UnStakePanel({
   price,
   presetMaxToken,
   onPresetApplied,
+  hasRewards,
 }: {
   item: Farm;
   matched: AprEntry | undefined;
@@ -42,6 +43,7 @@ export default function UnStakePanel({
   price?: BigDecimal | null;
   presetMaxToken?: number;
   onPresetApplied?: () => void;
+  hasRewards: boolean;
 }) {
   const state = useUnStakePanel(item);
 
@@ -212,6 +214,7 @@ export default function UnStakePanel({
         executeText="Stop Staking"
         tokenStatuses={tokenStatusesApproved}
         variant="PINK"
+        hasRewards={hasRewards}
       />
     </StakePanelContainer>
   );
