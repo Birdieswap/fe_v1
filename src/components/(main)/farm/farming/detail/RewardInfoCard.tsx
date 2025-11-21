@@ -21,11 +21,15 @@ export default function RewardInfoCard({
   price,
   onOpenStakingModal,
   className,
+  hasRewards,
+  totalSupply,
 }: {
   item: Farm;
   price?: BigDecimal | null;
   onOpenStakingModal?: (row: VaultRowItem) => void;
   className?: string;
+  hasRewards: boolean;
+  totalSupply?: number;
 }) {
   const { userPoints } = useContext(AssetsContext);
   const symbol = item?.wip_stakeToken?.symbol;
@@ -42,6 +46,7 @@ export default function RewardInfoCard({
           points={points}
           onOpenStakingModal={onOpenStakingModal}
           className={className}
+          totalSupply={totalSupply}
         />
       </div>
 

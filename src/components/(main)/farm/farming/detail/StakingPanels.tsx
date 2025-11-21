@@ -21,6 +21,7 @@ export default function StakingPanels({
   stakedBalance,
   totalBalance,
   price,
+  hasRewards,
 }: {
   item: Farm;
   selectedRow: string | null;
@@ -28,6 +29,7 @@ export default function StakingPanels({
   stakedBalance?: BigDecimal;
   totalBalance?: BigDecimal;
   price?: BigDecimal | null;
+  hasRewards: boolean;
 }) {
   // --- EarningsPanel에서 하던 matched 계산을 이곳으로 이동 ---
   const chainId = useChainId();
@@ -182,6 +184,7 @@ export default function StakingPanels({
             stakedBalance={stakedBalance}
             totalBalance={totalBalance}
             price={price}
+            hasRewards={hasRewards}
           />
         ) : (
           <UnStakePanel

@@ -28,6 +28,7 @@ export default function StakePanel({
   stakedBalance,
   totalBalance,
   price,
+  hasRewards,
 }: {
   item: Farm;
   matched: AprEntry | undefined;
@@ -35,6 +36,7 @@ export default function StakePanel({
   stakedBalance?: BigDecimal;
   totalBalance?: BigDecimal;
   price?: BigDecimal | null;
+  hasRewards: boolean;
 }) {
   const state = useStakePanel(item);
   const firstStatus = state.tokenStatuses?.[0];
@@ -52,7 +54,14 @@ export default function StakePanel({
       : "";
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
-  // console.log("stakePanel", item, state);
+  console.log("[StakePanel] hasRewards debug", {
+    matched,
+    hasRewards,
+    isExecutableBase: state.isExecutable,
+    finalIsExecutable: state.isExecutable && hasRewards,
+  });
+
+  console.log("stakePanel", item, state, matched);
   // console.log("stakePanel tokenStatuses", state.tokenStatuses);
 
   return (
@@ -94,13 +103,15 @@ export default function StakePanel({
 
       <StakeExecuteButtons
         isConnected={state.isConnected}
-        isExecutable={state.isExecutable}
+        isExecutable={state.isExecutable && hasRewards}
         isPending={state.isPending}
         isWrongNetwork={state.isWrongNetwork}
         execute={state.execute}
         executeText="Start Staking"
         tokenStatuses={state.tokenStatuses}
         variant="MINT"
+        showErrorMessages={hasRewards}
+        hasRewards={hasRewards}
       />
     </StakePanelContainer>
   );
