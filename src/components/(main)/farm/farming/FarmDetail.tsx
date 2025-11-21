@@ -156,6 +156,19 @@ export default function FarmDetail({
     }
   }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
   // console.log("FarmDetail item", item, "price", price);
+  const hasRewards =
+    !!matched &&
+    !!matched.staking &&
+    (Number(matched.staking.dailyPoint) > 0 ||
+      (matched.staking.extraRewards?.length ?? 0) > 0);
+
+  console.log(
+    "[FarmDetail] hasRewards:",
+    hasRewards,
+    matched?.staking?.dailyPoint,
+    matched,
+    totalSupply
+  );
 
   return (
     <AnimatePresence initial={false} mode="wait">
@@ -188,6 +201,7 @@ export default function FarmDetail({
               stakedBalance={stakedBalance}
               totalBalance={totalBalance}
               price={price}
+              hasRewards={hasRewards}
             />
           </div>
 
@@ -202,12 +216,16 @@ export default function FarmDetail({
               item={item} // ⬅️ useRewardInfo용
               price={price} // ⬅️ useRewardInfo용
               onOpenStakingModal={handleOpenStakingModal} // ⬅️ 모바일 Staking
+              hasRewards={hasRewards}
+              totalSupply={totalSupply}
             />
 
             <RewardInfoCard
               item={item}
               price={price}
               onOpenStakingModal={handleOpenModal}
+              hasRewards={hasRewards}
+              totalSupply={totalSupply}
             />
           </div>
 

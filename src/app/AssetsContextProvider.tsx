@@ -57,7 +57,7 @@ export type AprVault = {
 export type StakeVault = {
   notice?: string;
   stakingToken: string;
-  dailyPointRate: string;
+  dailyPoint: string;
   contractAddress: `0x${string}`;
   extraRewards?: ExtraRewards[];
 };
