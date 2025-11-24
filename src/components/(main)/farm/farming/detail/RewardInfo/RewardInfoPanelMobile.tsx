@@ -26,7 +26,7 @@ import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import type { Farm } from "@/types/FarmListTableRowProps";
-import type { BigDecimal } from "@/types/BigDecimal";
+import { BigDecimal } from "@/types/BigDecimal";
 
 type Address = `0x${string}`;
 
@@ -62,12 +62,14 @@ export default function RewardInfoPanelMobile({
   points,
   onOpenStakingModal,
   className,
+  stakedBalance,
 }: {
   item: Farm;
   price?: BigDecimal | null;
   points?: string | null;
   onOpenStakingModal?: (row: any) => void;
   className?: string;
+  stakedBalance?: BigDecimal;
 }) {
   const {
     price,
@@ -106,7 +108,12 @@ export default function RewardInfoPanelMobile({
     );
   }
 
-  if (!hasUserStakePoint && !hasEarned) {
+  if (
+    !hasUserStakePoint &&
+    !hasEarned &&
+    showStakingBlock &&
+    stakedBalance == new BigDecimal(0)
+  ) {
     return (
       <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>
         <div className="flex grow flex-col items-center justify-center gap-4 pt-1.5 pb-4">
