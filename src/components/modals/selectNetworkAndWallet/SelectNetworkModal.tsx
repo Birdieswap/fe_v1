@@ -3,7 +3,7 @@
 import "./SelectNetworkMenu.css";
 
 import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { Fragment, useContext, useMemo, useRef, useEffect } from "react";
+import { Fragment, useContext, useRef, useEffect } from "react";
 
 import ModalBase from "@/components/atoms/ModalBase";
 import { WalletContext } from "@/app/WalletContextProvider";

@@ -95,7 +95,7 @@ function TokenList(props: {
     token?: IToken;
   }[];
 }) {
-  console.log("TransactionProgressInfo", props.tokens);
+  // console.log("TransactionProgressInfo", props.tokens);
   return (
     <Fragment>
       {/* {props.tokens.map(({ token, amount }, index) => ( */}
@@ -115,7 +115,7 @@ function StartFarmingTransactionInfoDisplay(
   props: TransactionStatusProps & StartFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
-  console.log("TransactionProgressInfo startFarmingTransaction", props);
+  // console.log("TransactionProgressInfo startFarmingTransaction", props);
 
   return (
     <div className="progress-info-container progress-farm flex flex-col items-center">
@@ -137,7 +137,7 @@ function StopFarmingTransactionInfoDisplay(
   props: TransactionStatusProps & StopFarmingTransactionProps
 ) {
   const { isDisplayInput, isDisplayOutput } = getDisplayType(props);
-  console.log("TransactionProgressInfo stopFarmingTransaction", props);
+  // console.log("TransactionProgressInfo stopFarmingTransaction", props);
 
   return (
     <div className="progress-info-container progress-farm flex flex-col items-center">

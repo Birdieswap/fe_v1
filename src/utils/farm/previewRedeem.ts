@@ -8,15 +8,12 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 
 import getTokenAddress from "../assets/getTokenAddress";
-import getProviderAddress from "../assets/getProviderAddress";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
-
-
 
 export default async function previewRedeem(
   client: PublicClient,
   farm: IBirdieSingleFarm | IBirdieLPFarm,
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   const chainId = client.chain?.id;
 
@@ -26,22 +23,20 @@ export default async function previewRedeem(
     chainId,
   });
 
-  const providerAddress = stakingProviders.BIRDIESWAP_Router.addresses?.[chainId];
-  
+  const providerAddress =
+    stakingProviders.BIRDIESWAP_Router.addresses?.[chainId];
+
   if (!farmAddress) return null;
-  
+
   const args: ReadContractParameters<
-    Abi,//(typeof farm)["abi"],
+    Abi, //(typeof farm)["abi"],
     "previewFullRedeem",
-    [`0x${string}`,bigint]
+    [`0x${string}`, bigint]
   > = {
     address: providerAddress as `0x${string}`,
     abi: stakingProviders.BIRDIESWAP_Router.abi as Abi,
     functionName: "previewFullRedeem",
-    args: [
-      farmAddress,
-      amount.roundToDecimals(farm.decimals).value
-    ],
+    args: [farmAddress, amount.roundToDecimals(farm.decimals).value],
   };
 
   const data = await readContract(client, args);

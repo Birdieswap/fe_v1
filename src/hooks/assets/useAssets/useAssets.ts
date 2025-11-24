@@ -11,7 +11,6 @@ import { prefetchFarmData } from "@/utils/farm/farmDataCache";
 import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
-  EContractType,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
 import type { aprDataState as AprDataState } from "@/app/AssetsContextProvider";
@@ -683,7 +682,7 @@ export default function useAssets() {
       pointsQ.isLoading,
     ]
   );
-  console.log("useAssets assets", assets);
+  // console.log("useAssets assets", assets);
 
   return assets;
 }

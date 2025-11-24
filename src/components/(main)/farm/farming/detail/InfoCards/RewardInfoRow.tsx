@@ -1,6 +1,4 @@
-import Icons from "@/assets/icons/icons";
-import { Button, cn, Image } from "@heroui/react";
-import { Fragment } from "react";
+import { Image } from "@heroui/react";
 
 export default function RewardInfoRow(props: {
   rewardToken: string;

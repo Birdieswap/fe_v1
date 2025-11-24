@@ -81,7 +81,7 @@ function castMapToStringKey<V>(
 function toAssetsLike(total: any): AssetsLike {
   // Some codebases expose balances directly on context, others under .balances
   const b = total?.balances ?? total;
-  console.log("walletTokens", total);
+  // console.log("walletTokens", total);
 
   // Try to discover farm price map if present somewhere else
   const farmPriceMap = (total?.farmValues?.priceMap ??

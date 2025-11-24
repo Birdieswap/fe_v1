@@ -6,7 +6,6 @@ import useAssets from "@/hooks/assets/useAssets/useAssets";
 import { useAssetValues } from "@/hooks/assets/useAssets/useAssetValues";
 import useAccountBalances from "@/hooks/assets/useAssets/useAccountBalances";
 import { BigDecimal } from "@/types/BigDecimal";
-import { Farm } from "@/types/FarmListTableRowProps";
 import { UserPoints } from "@/hooks/assets/useAssets/useAccountPoints";
 
 export type FarmValues = {

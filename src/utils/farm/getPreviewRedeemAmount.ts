@@ -7,16 +7,13 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 import { BigDecimal } from "@/types/BigDecimal";
 
-import getTokenAddress from "../assets/getTokenAddress";
-import getUniswapTokenFromIToken from "../uniswap/getUniswapTokenFromIToken";
-import { getUnlockedTokenAmountsFromLiquidity } from "../uniswap/getUnlockedTokenAmountsFromLiquidity";
 import previewRedeem from "./previewRedeem";
 import totalDualUnderlyingTokens from "./totalDualUnderlyingTokens";
 
 async function getPreviewRedeemAmountSingle(
   client: PublicClient,
   farm: IBirdieSingleFarm,
-  amount: BigDecimal,
+  amount: BigDecimal
 ): Promise<{
   bTokenAmount: BigDecimal | null;
   tokenAmount: BigDecimal | null;
@@ -59,9 +56,9 @@ async function getPreviewRedeemAmountSingle(
 
 async function getPreviewRedeemAmountLP(
   client: PublicClient,
-  farm: IBirdieLPFarm,
+  farm: IBirdieLPFarm
 ): Promise<{
-  data : any
+  data: any;
 } | null> {
   const chainId = client.chain?.id;
 
@@ -101,12 +98,12 @@ async function getPreviewRedeemAmountLP(
   //     : null,
   // ]);
 
-  return lpAmount as any
+  return lpAmount as any;
   //{
-    // blpAmount: amount,
-    // lpAmount,
-    // bTokenAmount,
-    // tokenAmount,
+  // blpAmount: amount,
+  // lpAmount,
+  // bTokenAmount,
+  // tokenAmount,
   //};
 }
 
@@ -128,7 +125,7 @@ async function getPreviewRedeemAmountLP(
 export async function getPreviewRedeemAmount(
   client: PublicClient,
   farm: IBirdieLPFarm | IBirdieSingleFarm,
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   if (isBirdieLPFarm(farm)) {
     return getPreviewRedeemAmountLP(client, farm);

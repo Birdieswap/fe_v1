@@ -39,8 +39,7 @@ export default function RewardInfoCard({
   const symbol = item?.wip_stakeToken?.symbol;
   const StakeAddress = item?.wip_stakeToken?.addresses?.[chainId];
   const points = userPoints?.staking?.[StakeAddress] ?? null;
-  console.log("RewardInfoCard render points:", item, points);
-  // console.log("RewardInfoCard render item:", item, userPoints);
+
   return (
     <>
       {/* ✅ 데스크톱 전용 뷰: sm 이상에서만 렌더 */}

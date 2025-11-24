@@ -30,10 +30,7 @@ import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import previewRedeem from "@/utils/farm/previewRedeem";
-import {
-  ADDRESS,
-  contractAddresses,
-} from "@/const/contracts/contractAddresses";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
 import {
   getFromContracts,

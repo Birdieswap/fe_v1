@@ -6,20 +6,14 @@ import { StakeExecuteButtons } from "./common/StakeExecuteButtons";
 import {
   StakeFiller,
   StakePanelContainer,
-  StakePanelHeader,
-  StakeSectionHeader,
 } from "@/components/atoms/stakePanelBase";
 import { BigDecimal } from "@/types/BigDecimal";
 import type { StakeTokenStatus } from "@/hooks/farm/StakeTokenStatus";
 import StakingAmountInput from "./StakingAmountInput";
 import useUnStakePanel from "@/hooks/useUnStakePanel";
 import type { Farm } from "@/types/FarmListTableRowProps";
-import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { AprEntry } from "@/app/AssetsContextProvider";
-import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { LoadingPulse } from "./common/LoadingPulse";
 import { motion } from "framer-motion";
 import BalanceRatioCard from "./common/BalanceRatioCard";
 import { defaultTransition } from "@/const/presenceTransition";

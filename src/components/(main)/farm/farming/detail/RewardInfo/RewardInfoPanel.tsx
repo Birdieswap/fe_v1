@@ -88,13 +88,13 @@ export default function RewardInfoPanel({
   // console.log("RewardInfoPanel render:", extraList);
   const pointRate = dailyPointNum / price / (totalSupply || 1) / 1e18;
 
-  console.log("RewardInfoPanel debug:", {
-    matched,
-    price,
-    dailyPointNum,
-    pointRate,
-    totalSupply,
-  });
+  // console.log("RewardInfoPanel debug:", {
+  //   matched,
+  //   price,
+  //   dailyPointNum,
+  //   pointRate,
+  //   totalSupply,
+  // });
 
   if (!showStakingBlock && !hasUserStakePoint && !hasEarned) {
     return (

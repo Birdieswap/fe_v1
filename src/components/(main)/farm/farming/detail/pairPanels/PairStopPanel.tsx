@@ -1,16 +1,11 @@
 import { motion } from "framer-motion";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
-import {
-  Filler,
-  PanelContainer,
-  PanelHeader,
-} from "@/components/atoms/FarmPanel";
+import { Filler, PanelContainer } from "@/components/atoms/FarmPanel";
 import { usePairStopPanel } from "@/hooks/usePairStopPanel";
 import { defaultTransition } from "@/const/presenceTransition";
 import { BigDecimal } from "@/types/BigDecimal";
 
-import { SectionHeader } from "../../common/SectionHeader";
 import { ExecuteButtons } from "../../common/ExecuteButtons";
 
 import PairStopAmountInput from "./pairStop/PairStopAmountInput";

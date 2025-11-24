@@ -1,4 +1,10 @@
-import { Client, formatUnits, TransactionReceipt, keccak256, toBytes } from "viem";
+import {
+  Client,
+  formatUnits,
+  TransactionReceipt,
+  keccak256,
+  toBytes,
+} from "viem";
 import { waitForTransactionReceipt } from "viem/actions";
 
 import {
@@ -33,7 +39,10 @@ function isWETH(token?: IToken) {
   return sym === "WETH" || sym === "WETH9";
 }
 
-function resolveTokenAddressSafe(token: IToken | undefined, chainId: number): `0x${string}` | null {
+function resolveTokenAddressSafe(
+  token: IToken | undefined,
+  chainId: number
+): `0x${string}` | null {
   if (!token) return null;
   // ETH는 네이티브로 처리해야 하므로 주소 null
   if (isNativeETH(token)) return null;
@@ -59,7 +68,7 @@ function getReceivedTransfersFromReceipt(
   token?: IToken,
   tokenAddress?: `0x${string}` | null,
   address?: `0x${string}`,
-  executorAddress?: `0x${string}`, 
+  executorAddress?: `0x${string}`
 ) {
   const decimals = token?.decimals ?? 18;
 
@@ -118,8 +127,8 @@ export function getWriteTransactionHandlers({
         ...transactionProps,
         transactionStatus: TransactionStatus.FAILED,
       });
-      console.log("onError");
-      console.log("e", error.message);
+      // console.log("onError");
+      // console.log("e", error.message);
     },
     onSuccess: (tx: `0x${string}`) => {
       refetch?.();
@@ -150,15 +159,21 @@ export function getWriteTransactionHandlers({
             if (receipt.status === "success") {
               refetch?.();
 
-              if (transactionProps.transactionType === TransactionType.START_FARMING) {
+              if (
+                transactionProps.transactionType ===
+                TransactionType.START_FARMING
+              ) {
                 const output = {
                   ...transactionProps.output,
                   amount: getReceivedTransfersFromReceipt(
                     receipt,
                     transactionProps.output.token,
-                    resolveTokenAddressSafe(transactionProps.output.token, chainId),
+                    resolveTokenAddressSafe(
+                      transactionProps.output.token,
+                      chainId
+                    ),
                     transactionProps.address,
-                    undefined,
+                    undefined
                   ),
                 };
 
@@ -168,19 +183,24 @@ export function getWriteTransactionHandlers({
                   transactionStatus: TransactionStatus.SUCCESS,
                   output,
                 });
-              } else if (transactionProps.transactionType === TransactionType.STOP_FARMING) {
-                const executor = (transactionProps as any).executorAddress as `0x${string}` | undefined;
+              } else if (
+                transactionProps.transactionType ===
+                TransactionType.STOP_FARMING
+              ) {
+                const executor = (transactionProps as any).executorAddress as
+                  | `0x${string}`
+                  | undefined;
 
                 const output = (transactionProps.output ?? []).map((v) => {
                   const resolved = resolveTokenAddressSafe(v.token, chainId);
 
                   // 디버깅에 도움되도록 로그 남기기 (필요 시 주석 처리)
-                  console.log("[STOP_FARMING][resolve]", {
-                    sym: (v.token as any)?.symbol,
-                    addr: resolved,
-                    user: transactionProps.address,
-                    exec: executor,
-                  });
+                  // console.log("[STOP_FARMING][resolve]", {
+                  //   sym: (v.token as any)?.symbol,
+                  //   addr: resolved,
+                  //   user: transactionProps.address,
+                  //   exec: executor,
+                  // });
 
                   return {
                     ...v,
@@ -189,12 +209,12 @@ export function getWriteTransactionHandlers({
                       v.token,
                       isNativeETH(v.token) ? null : resolved,
                       transactionProps.address,
-                      executor,
+                      executor
                     ),
                   };
                 });
 
-                console.log("handleWriteTransaction Stop Farming (resolved output)", output);
+                // console.log("handleWriteTransaction Stop Farming (resolved output)", output);
 
                 transactionContext.setTransactionProps({
                   ...transactionProps,
@@ -202,13 +222,18 @@ export function getWriteTransactionHandlers({
                   transactionStatus: TransactionStatus.SUCCESS,
                   output,
                 });
-              } else if (transactionProps.transactionType === TransactionType.SWAP) {
+              } else if (
+                transactionProps.transactionType === TransactionType.SWAP
+              ) {
                 const amount = getReceivedTransfersFromReceipt(
                   receipt,
                   transactionProps.output.token,
-                  resolveTokenAddressSafe(transactionProps.output.token, chainId),
+                  resolveTokenAddressSafe(
+                    transactionProps.output.token,
+                    chainId
+                  ),
                   transactionProps.address,
-                  undefined,
+                  undefined
                 );
                 const output = {
                   ...transactionProps.output,
@@ -243,235 +268,12 @@ export function getWriteTransactionHandlers({
               transactionStatus: TransactionStatus.FAILED,
             });
             transactionContext.onOpen();
-            console.log("onError");
-            console.log("e", error);
+            // console.log("onError");
+            // console.log("e", error);
           });
 
-      console.log("onSettled");
-      console.log("tx", tx);
+      // console.log("onSettled");
+      // console.log("tx", tx);
     },
   };
 }
-
-
-
-// import { Client, formatUnits, keccak256, toBytes, TransactionReceipt } from "viem";
-// import { waitForTransactionReceipt } from "viem/actions";
-
-// import {
-//   TransactionContextType,
-//   TransactionStatusProps,
-// } from "@/app/TransactionContextProvider";
-// import TransactionStatus from "@/types/TransactionStatus";
-// import { BigDecimal } from "@/types/BigDecimal";
-// import { TransactionType } from "@/types/TransactionTypes";
-// import { IToken } from "@/const/contracts/types/tokenTypes";
-
-// import getTokenAddress from "./assets/getTokenAddress";
-
-// // event signature topics
-// const TRANSFER_TOPIC = keccak256(toBytes("Transfer(address,address,uint256)"));
-// const WITHDRAWAL_TOPIC = keccak256(toBytes("Withdrawal(address,uint256)"));
-
-// function topicEndsWithAddress(topic?: `0x${string}`, address?: `0x${string}`) {
-//   if (!topic || !address) return false;
-//   // 32바이트 패딩된 topic 끝 40글자가 주소(0x 제외)
-//   return topic.toLowerCase().endsWith(address.toLowerCase().slice(2));
-// }
-
-// function getReceivedTransfersFromReceipt(
-//   receipt: TransactionReceipt,
-//   token?: IToken,
-//   tokenAddress?: `0x${string}` | null,
-//   address?: `0x${string}`,
-// ) {
-//   const transferReceive = receipt.logs.find((v) => {
-//     return (
-//       v.address &&
-//       tokenAddress &&
-//       BigInt(v.address) === BigInt(tokenAddress) &&
-//       // sender
-//       v.topics[0] &&
-//       BigInt(v.topics[0]) ===
-//         BigInt(
-//           "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-//         ) &&
-//       // receiver
-//       address &&
-//       v.topics[2] &&
-//       BigInt(v.topics[2]) === BigInt(address)
-//     );
-//   });
-
-//   if (transferReceive) {
-//     return new BigDecimal(
-//       formatUnits(BigInt(transferReceive.data), token?.decimals ?? 18),
-//       token?.decimals ?? 18,
-//     );
-//   } else return undefined;
-// }
-
-// export function getWriteTransactionHandlers({
-//   client,
-//   transactionContext,
-//   transactionProps,
-//   refetch,
-// }: {
-//   client?: Client;
-//   transactionContext: TransactionContextType;
-//   transactionProps: TransactionStatusProps;
-//   refetch?: () => Promise<unknown>;
-// }) {
-//   transactionContext.setTransactionProps({
-//     ...transactionProps,
-//     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
-//   });
-//   transactionContext.onOpen();
-
-//   return {
-//     onError: (error: Error) => {
-//       transactionContext.onOpen();
-//       transactionContext.setTransactionProps({
-//         ...transactionProps,
-//         transactionStatus: TransactionStatus.FAILED,
-//       });
-//       console.log("onError");
-//       console.log("e", error.message);
-//       // alert(`Task submit Failed. reason : ${error.message}`);
-//     },
-//     onSuccess: (tx: `0x${string}`) => {
-//       refetch?.();
-//       transactionContext.onOpen();
-//       transactionContext.setTransactionProps({
-//         ...transactionProps,
-//         transactionStatus: TransactionStatus.PENDING,
-//         txid: tx,
-//       });
-
-//       const chainIdNum: number = (() => {
-//         const v = (transactionProps as any).chainId;
-//         if (typeof v === "number") return v;
-//         if (typeof v === "bigint") return Number(v); // 주의: 안전성 — chainId는 보통 작음
-//         if (typeof v === "string") {
-//           const n = Number(v);
-//           return Number.isFinite(n) ? n : NaN;
-//         }
-//         return NaN; // 또는 기본값(예: 1)
-//       })();
-
-//       const chainId = chainIdNum ;
-
-//       if (client)
-//         waitForTransactionReceipt(client, {
-//           hash: tx,
-//         })
-//           .then((receipt) => {
-//             // const transferReceive = receipt.logs.find((v) => (
-//             // v.topics.includes("0xddf252ad1c6f8a039b4c0a7e2d3b5e9c4d3f5e8a0") &&
-//             // v.address ===
-//             // ))
-//             if (receipt.status === "success") {
-//               refetch?.();
-
-//               if (
-//                 transactionProps.transactionType ===
-//                 TransactionType.START_FARMING
-//               ) {
-//                 const output = {
-//                   ...transactionProps.output,
-//                   amount: getReceivedTransfersFromReceipt(
-//                     receipt,
-//                     transactionProps.output.token,
-//                     getTokenAddress({
-//                       token: transactionProps.output.token,
-//                       chainId,
-//                     }),
-//                     transactionProps.address,
-//                   ),
-//                 };
-
-//                 transactionContext.setTransactionProps({
-//                   ...transactionProps,
-//                   txid: tx,
-//                   transactionStatus: TransactionStatus.SUCCESS,
-//                   output,
-//                 });
-//               } else if (
-//                 transactionProps.transactionType ===
-//                 TransactionType.STOP_FARMING
-//               ) {
-//                 const output = transactionProps.output.map((v) => ({
-//                   ...v,
-//                   amount: getReceivedTransfersFromReceipt(
-//                     receipt,
-//                     v.token,
-//                     getTokenAddress({
-//                       token: v.token,
-//                       chainId: transactionProps.chainId,
-//                     }),
-//                     transactionProps.address,
-//                   ),
-//                 }));
-//                 console.log("handleWriteTransaction Stop Farming", output);
-
-//                 transactionContext.setTransactionProps({
-//                   ...transactionProps,
-//                   txid: tx,
-//                   transactionStatus: TransactionStatus.SUCCESS,
-//                   output,
-//                 });
-//               } else if (
-//                 transactionProps.transactionType === TransactionType.SWAP
-//               ) {
-//                 const amount = getReceivedTransfersFromReceipt(
-//                   receipt,
-//                   transactionProps.output.token,
-//                   getTokenAddress({
-//                     token: transactionProps.output.token,
-//                     chainId,
-//                   }),
-//                   transactionProps.address,
-//                 );
-//                 const output = {
-//                   ...transactionProps.output,
-//                   amount: amount ?? transactionProps.output.amount,
-//                 };
-
-//                 transactionContext.setTransactionProps({
-//                   ...transactionProps,
-//                   txid: tx,
-//                   transactionStatus: TransactionStatus.SUCCESS,
-//                   output,
-//                 });
-//               } else {
-//                 transactionContext.setTransactionProps({
-//                   ...transactionProps,
-//                   txid: tx,
-//                   transactionStatus: TransactionStatus.SUCCESS,
-//                 });
-//               }
-//             } else {
-//               transactionContext.setTransactionProps({
-//                 ...transactionProps,
-//                 txid: tx,
-//                 transactionStatus: TransactionStatus.FAILED,
-//               });
-//             }
-//             transactionContext.onOpen();
-//           })
-//           .catch((error) => {
-//             transactionContext.setTransactionProps({
-//               ...transactionProps,
-//               transactionStatus: TransactionStatus.FAILED,
-//             });
-//             transactionContext.onOpen();
-//             console.log("onError");
-//             console.log("e", error);
-//             // alert(`Task submit Failed. reason : ${error}`);
-//           });
-
-//       console.log("onSettled");
-//       console.log("tx", tx);
-//     },
-//   };
-// }
