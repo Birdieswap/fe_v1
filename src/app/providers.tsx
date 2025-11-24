@@ -261,7 +261,7 @@ const connectors = connectorsForWallets(
   { appName, projectId }
 );
 
-// wagmiConfig 생성 (★ autoConnect:false 설정)
+// wagmiConfig 생성
 export const wagmiConfig = createConfig({
   chains,
   transports,
@@ -307,7 +307,7 @@ export default function Providers({
       nonce={nonce}
     >
       <ThemeColorMetaSync />
-      <WagmiProvider config={wagmiConfig}>
+      <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
             <RainbowKitProvider
