@@ -682,7 +682,7 @@ export default function useAssets() {
       pointsQ.isLoading,
     ]
   );
-  // console.log("useAssets assets", assets);
+  console.log("useAssets assets", assets);
 
   return assets;
 }

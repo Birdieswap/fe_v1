@@ -208,6 +208,7 @@ body {
     --color-background
   ); /* light/dark 전환에 따라 자동 변경 */
   min-height: 100%;
+  scrollbar-width: none;
 }
 
 /* iOS 바운스/overscroll에서 흰색이 보이지 않게 html에도 직접 지정 */
@@ -228,6 +229,11 @@ html {
 #root,
 #__next {
   background-color: var(--color-background);
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none; /* 🔽 Chrome / Safari / Edge: 스크롤바 UI 숨기기 */
 }
 
 /* ──────────────── Utilities / Components ──────────────── */
