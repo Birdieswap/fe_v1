@@ -2,12 +2,11 @@ import { useAccount, useReadContract, UseReadContractReturnType } from "wagmi";
 import { erc20Abi } from "viem";
 import { useMemo } from "react";
 
-import { IContractBase, IToken,IStakingProvider} from "@/const/contracts/types/tokenTypes";
+import { IToken, IStakingProvider } from "@/const/contracts/types/tokenTypes";
 import { BigDecimal } from "@/types/BigDecimal";
 
 import useTokenAddress from "./useTokenAddress";
 import useProviderAddress from "./useProviderAddress";
-
 
 export default function useAllowance(props: {
   token: IToken;

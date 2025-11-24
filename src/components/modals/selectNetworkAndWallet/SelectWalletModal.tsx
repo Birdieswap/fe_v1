@@ -3,7 +3,7 @@
 import "./SelectNetworkMenu.css";
 
 import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { Fragment, useContext, useMemo, useRef } from "react";
+import { Fragment, useContext, useRef } from "react";
 
 import ModalBase from "@/components/atoms/ModalBase";
 import Icons from "@/assets/icons/icons";
@@ -19,9 +19,6 @@ export default function SelectWalletModal() {
   const modalRef = useRef<HTMLButtonElement>(null);
 
   const isOpen = isConnectModalOpen;
-  // useMemo(() => {
-  //   return isConnectModalOpen && (modalRef.current?.checkVisibility() ?? false);
-  // }, [isConnectModalOpen, modalRef]);
 
   return (
     <Fragment>

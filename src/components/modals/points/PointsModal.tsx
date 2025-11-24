@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalBody, ModalContent, ModalHeader } from "@heroui/react";
+import { ModalBody, ModalContent } from "@heroui/react";
 import ModalBase from "@/components/atoms/ModalBase";
 
 export default function PointsModal({

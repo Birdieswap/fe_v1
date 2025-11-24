@@ -14,9 +14,6 @@ import { BigDecimal } from "@/types/BigDecimal";
 import type { Farm } from "@/types/FarmListTableRowProps";
 import type { StakeVault } from "@/app/AssetsContextProvider";
 import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
-import { useReadContract } from "wagmi";
-import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
-import { formatUnits } from "viem";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";

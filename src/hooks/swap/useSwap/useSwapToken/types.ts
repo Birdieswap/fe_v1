@@ -1,7 +1,3 @@
-// ===============================
-// File: hooks/swap/types.ts
-// 목적: 타입과 공용 인터페이스 정의 (동일 동작 유지)
-// ===============================
 import { Dispatch, SetStateAction } from "react";
 import { Config } from "wagmi";
 import { Client, PublicClient } from "viem";

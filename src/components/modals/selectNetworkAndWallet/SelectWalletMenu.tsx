@@ -20,7 +20,7 @@ import { WalletContext } from "@/app/WalletContextProvider";
 import { walletProviders } from "@/const/wallets";
 //import { getAvailableWalletKeys } from "@/app/providers"; // ⭐ 추가
 import { useChainId, useConfig } from "wagmi"; // 🔥 이 import 추가
-import { disconnect, getAccount } from "wagmi/actions"; // ← 추가
+import { getAccount } from "wagmi/actions"; // ← 추가
 import { openDenyWalletModal } from "@/utils/wallet/denyWalletModal";
 import {
   isWalletAllowed,

@@ -163,14 +163,6 @@ export default function FarmDetail({
     (Number(matched.staking.dailyPoint) > 0 ||
       (matched.staking.extraRewards?.length ?? 0) > 0);
 
-  console.log(
-    "[FarmDetail] hasRewards:",
-    hasRewards,
-    matched?.staking?.dailyPoint,
-    matched,
-    totalSupply
-  );
-
   return (
     <AnimatePresence initial={false} mode="wait">
       {isActive && (

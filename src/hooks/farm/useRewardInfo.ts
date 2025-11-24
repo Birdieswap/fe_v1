@@ -103,23 +103,11 @@ export function useRewardInfo(item: Farm, priceBD?: BigDecimal | null) {
 
   const hasEarned = totalEarned > 0n;
 
-  console.log("useRewardInfo debug:", {
-    dprRaw,
-    matched,
-    price,
-    dailyPointNum,
-    userStakePoint,
-    totalEarned: totalEarned.toString(),
-  });
-
   const showStakingBlock =
     (Boolean(matched?.staking?.contractAddress) &&
       Array.isArray(extraList) &&
       extraList.length > 0) ||
     (Number.isFinite(dailyPointNum) && dailyPointNum > 0);
-
-  // console.log("useRewardInfo render:", { dailyPointRateNum, price });
-  // console.log("matched staking raw:", matched?.staking);
 
   return {
     price,

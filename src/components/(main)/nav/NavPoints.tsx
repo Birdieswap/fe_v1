@@ -2,10 +2,8 @@
 
 import {
   Button,
-  Modal,
   ModalBody,
   ModalContent,
-  ModalHeader,
   NavbarItem,
   useDisclosure,
 } from "@heroui/react";

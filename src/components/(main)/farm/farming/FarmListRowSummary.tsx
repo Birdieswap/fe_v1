@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useAccount, useChainId } from "wagmi";
 
-import { Farm, FarmType } from "@/types/FarmListTableRowProps";
+import { Farm } from "@/types/FarmListTableRowProps";
 import Arrow from "@/assets/icons/arrow.svg";
 import { defaultTransition } from "@/const/presenceTransition";
 import Icons from "@/assets/icons/icons";
