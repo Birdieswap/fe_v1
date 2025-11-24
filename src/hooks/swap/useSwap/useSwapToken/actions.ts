@@ -242,21 +242,6 @@ export async function swap(params: {
       args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
     } as any);
 
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: tokenAddress,
-    //       abi: weth_abi,
-    //       functionName: "withdraw",
-    //       args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //   onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
-
     await finalizeAfterTxSuccess({
       hash,
       publicClient,
@@ -313,27 +298,6 @@ export async function swap(params: {
       ],
       value,
     } as any);
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: wrapperAddress,
-    //       abi: birdieswap_wrapper_abi,
-    //       functionName: "swapWithETH", // (payable)
-    //       args: [
-    //         feeTier as number,
-    //         outputTokenAddress,
-    //         minReceive,
-    //         sqrtPriceLimit,
-    //         referralAddress as `0x${string}`,
-    //       ],
-    //       value,
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -389,28 +353,6 @@ export async function swap(params: {
       ],
     } as any);
 
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: wrapperAddress,
-    //       abi: birdieswap_wrapper_abi,
-    //       functionName: "swapToETH", // (nonpayable)
-    //       args: [
-    //         inputTokenAddress,
-    //         feeTier as number,
-    //         amountBD.value,
-    //         minReceive,
-    //         sqrtPriceLimit,
-    //         referralAddress as `0x${string}`,
-    //       ],
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
-
     await finalizeAfterTxSuccess({
       hash,
       publicClient,
@@ -453,29 +395,6 @@ export async function swap(params: {
       referralAddress as `0x${string}`,
     ],
   });
-
-  // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-  //   writeContract(
-  //     {
-  //       address: contracts.birdieRouter.address as `0x${string}`,
-  //       abi: contracts.birdieRouter.abi,
-  //       functionName: "swap",
-  //       args: [
-  //         inputTokenAddress as `0x${string}`,
-  //         feeTier as number,
-  //         outputTokenAddress as `0x${string}`,
-  //         amountBD.value,
-  //         minReceive,
-  //         sqrtPriceLimit,
-  //         referralAddress as `0x${string}`,
-  //       ],
-  //     },
-  //     {
-  //       onError: (e: any) => reject(e),
-  //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-  //     },
-  //   );
-  // });
 
   await finalizeAfterTxSuccess({
     hash,

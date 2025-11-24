@@ -174,7 +174,7 @@ export default function FarmDetail({
           style={{ overflow: "hidden", willChange: "height, opacity" }}
           className={clsx(
             "flex w-full flex-col gap-4 overflow-hidden  px-4 py-6 bg-default-100 dark:bg-dark-popup-bg",
-            "md:col-span-6",
+            "md:col-span-full",
             "max-md:col-span-3 max-md:row-span-2"
           )}
           data-selected={isActive}

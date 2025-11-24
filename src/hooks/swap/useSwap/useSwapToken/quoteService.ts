@@ -12,6 +12,8 @@ import { getPoolPrice } from "@/utils/uniswap/getPoolPrice";
 import { Fraction } from "@uniswap/sdk-core";
 import { PublicClient } from "viem";
 
+const DEBUG_QUOTE = false;
+
 export async function getOtherAmount(
   ctx: QuoteCtx,
   thisAmount: string,
@@ -43,6 +45,16 @@ export async function getOtherAmount(
     const curFromToken = overrideFromToken ?? ctx.fromToken;
     const curToToken = overrideToToken ?? ctx.toToken;
 
+    if (DEBUG_QUOTE) {
+      console.log("[getOtherAmount] start", {
+        thisAmount,
+        thisSide,
+        chainId,
+        fromSymbol: curFromToken?.symbol,
+        toSymbol: curToToken?.symbol,
+      });
+    }
+
     if (!thisAmount || !chainId || !assetValues || !curFromToken || !curToToken)
       return "";
     if (!swapPool || !poolAddress || !outBpool) return "";
@@ -66,6 +78,13 @@ export async function getOtherAmount(
       inputAddrUnderlying.toLowerCase() === outputAddrUnderlying.toLowerCase()
     )
       return "";
+
+    if (DEBUG_QUOTE) {
+      console.log("[getOtherAmount] underlying addrs", {
+        inputAddrUnderlying,
+        outputAddrUnderlying,
+      });
+    }
 
     // 5) slot0 -> pool price
     const slot0Data = await getSlot0(
@@ -97,6 +116,13 @@ export async function getOtherAmount(
       token1Decimals: token1Decimals as number,
       zeroForOne,
     });
+
+    if (DEBUG_QUOTE) {
+      console.log("[getOtherAmount] pool price", {
+        sqrtPriceX96: slot0Data.sqrtPriceX96.toString(),
+        swapPoolPrice: swapPoolPrice?.toString?.() ?? swapPoolPrice,
+      });
+    }
 
     const midPoolPrice = await previewRedeem(
       publicClient as any,
@@ -139,31 +165,28 @@ export async function getOtherAmount(
     const inputMeta = inIs0 ? meta0 : inIs1 ? meta1 : undefined;
     const outputMeta = outIs1 ? meta1 : outIs0 ? meta0 : undefined;
 
-    if (!inputMeta || !outputMeta) return "";
+    if (DEBUG_QUOTE) {
+      console.log("[getOtherAmount] meta match", {
+        inIs0,
+        inIs1,
+        outIs0,
+        outIs1,
+        inputMeta: {
+          bAddr: inputMeta?.bAddr,
+          uAddr: inputMeta?.uAddr,
+          uSym: inputMeta?.uSym,
+          bDec: inputMeta?.bDec,
+        },
+        outputMeta: {
+          bAddr: outputMeta?.bAddr,
+          uAddr: outputMeta?.uAddr,
+          uSym: outputMeta?.uSym,
+          bDec: outputMeta?.bDec,
+        },
+      });
+    }
 
-    // const midPoolPriceRaw = await previewRedeem(publicClient as any, outBpool as any, swapPoolPrice);
-    // if (midPoolPriceRaw) {
-    //   let oriented = midPoolPriceRaw;
-    //   // 입력이 meta1이고 출력이 meta0인 경우 = 방향 반대 → 역수 처리
-    //   if (inIs1 && outIs0) {
-    //     try {
-    //       oriented = new BigDecimal(BigInt(1), 0).div(midPoolPriceRaw);
-    //     } catch {
-    //       oriented = midPoolPriceRaw; // divide-by-zero 안전
-    //     }
-    //   }
-    //   const producedPair = `${addrLower(curFromToken)}_${addrLower(curToToken)}`;
-    //   if (producedPair === pairKey) {
-    //     setMidPoolPrice(oriented);
-    //     try { setMidOwner?.(pairKey); } catch {}
-    //   }
-    //   // B-logs(2): 중간가/방향
-    //   console.log("[midPrice]", {
-    //     raw: midPoolPriceRaw?.toString?.(),
-    //     oriented: oriented?.toString?.(),
-    //     inIs0, outIs1, inIs1, outIs0,
-    //   });
-    // }
+    if (!inputMeta || !outputMeta) return "";
 
     const feeTier = swapPool.fee_tier as number;
 
@@ -173,6 +196,16 @@ export async function getOtherAmount(
         thisAmount,
         fromErc20.decimals ?? 18
       );
+
+      if (DEBUG_QUOTE) {
+        console.log("[getOtherAmount.in] parsedUnderlyingIn", {
+          thisAmount,
+          decimals: fromErc20.decimals ?? 18,
+          raw: parsedUnderlyingIn.value.toString(),
+          display: parsedUnderlyingIn.toString?.() ?? parsedUnderlyingIn,
+        });
+      }
+
       if (parsedUnderlyingIn.value <= BigInt(0)) return "0";
       const bAmountIn = await previewFullDeposit(
         publicClient as any,
@@ -180,6 +213,12 @@ export async function getOtherAmount(
         parsedUnderlyingIn
       );
       if (!bAmountIn || bAmountIn.value <= BigInt(0)) return "";
+
+      if (DEBUG_QUOTE) {
+        console.log("[getOtherAmount.in] after previewFullDeposit", {
+          bAmountIn: bAmountIn.value.toString(),
+        });
+      }
 
       const quote = await quoteExactInputSingle(
         publicClient as PublicClient,
@@ -199,6 +238,20 @@ export async function getOtherAmount(
       if (!quote || quote.amountOut <= BigInt(0)) return "";
       setQuoteReceive?.(quote.amountOut);
 
+      if (DEBUG_QUOTE) {
+        let approxRateB: number | undefined;
+        try {
+          approxRateB = Number(quote.amountOut) / Number(bAmountIn.value || 1n);
+        } catch {}
+        console.log("[getOtherAmount.in] quoter result", {
+          amountOut: quote.amountOut.toString(),
+          sqrtPriceX96After: quote.sqrtPriceX96After.toString(),
+          initializedTicksCrossed: quote.initializedTicksCrossed,
+          gasEstimate: quote.gasEstimate.toString(),
+          approxRateB, // bOut / bIn (rough)
+        });
+      }
+
       const bOutBD = new BigDecimal(quote.amountOut, outputMeta.bDec ?? 18);
       const finalUnderlyingOut = await previewRedeem(
         publicClient as any,
@@ -207,11 +260,21 @@ export async function getOtherAmount(
       );
       if (!finalUnderlyingOut) return "";
 
-      // console.log("[quote.result.in]", {
-      //   bIn: bAmountIn.value.toString(),
-      //   bOut: quote.amountOut.toString(),
-      //   underlyingOut: finalUnderlyingOut.toString(),
-      // });
+      if (DEBUG_QUOTE) {
+        let approxRateUnderlying: number | undefined;
+        try {
+          approxRateUnderlying =
+            Number(finalUnderlyingOut.toString?.() ?? finalUnderlyingOut) /
+            Number(thisAmount);
+        } catch {}
+        console.log("[getOtherAmount.in] final", {
+          finalUnderlyingOutRaw:
+            finalUnderlyingOut.value?.toString?.() ?? undefined,
+          finalUnderlyingOutDisplay:
+            finalUnderlyingOut.toString?.() ?? finalUnderlyingOut,
+          approxRateUnderlying, // out / in (rough, only small amounts에서 의미 있음)
+        });
+      }
 
       return finalUnderlyingOut.toPrecisionString(true, false);
     } else {
@@ -220,12 +283,28 @@ export async function getOtherAmount(
         thisAmount,
         toErc20.decimals ?? 18
       );
+
+      if (DEBUG_QUOTE) {
+        console.log("[getOtherAmount.out] desiredUnderlyingOut", {
+          thisAmount,
+          decimals: toErc20.decimals ?? 18,
+          raw: desiredUnderlyingOut.value.toString(),
+          display: desiredUnderlyingOut.toString?.() ?? desiredUnderlyingOut,
+        });
+      }
+
       const desiredBOut = await previewFullDeposit(
         publicClient as any,
         outputMeta.raw,
         desiredUnderlyingOut
       );
       if (!desiredBOut) return "";
+
+      if (DEBUG_QUOTE) {
+        console.log("[getOtherAmount.out] after previewFullDeposit", {
+          desiredBOut: desiredBOut.value.toString(),
+        });
+      }
 
       const quote = await quoteExactOutputSingle(
         publicClient as PublicClient,
@@ -244,6 +323,21 @@ export async function getOtherAmount(
       );
       if (!quote) return "";
 
+      if (DEBUG_QUOTE) {
+        let approxRateB: number | undefined;
+        try {
+          approxRateB =
+            Number(desiredBOut.value || 1n) / Number(quote.amountIn || 1n);
+        } catch {}
+        console.log("[getOtherAmount.out] quoter result", {
+          amountIn: quote.amountIn.toString(),
+          sqrtPriceX96After: quote.sqrtPriceX96After.toString(),
+          initializedTicksCrossed: quote.initializedTicksCrossed,
+          gasEstimate: quote.gasEstimate.toString(),
+          approxRateB, // desiredBOut / bInRequired (rough)
+        });
+      }
+
       const bInRequiredBD = new BigDecimal(
         quote.amountIn,
         inputMeta.bDec ?? 18
@@ -255,11 +349,21 @@ export async function getOtherAmount(
       );
       if (!requiredUnderlyingIn) return "";
 
-      // console.log("[quote.result.out]", {
-      //   desiredBOut: desiredBOut.value.toString(),
-      //   bIn: quote.amountIn.toString(),
-      //   underlyingIn: requiredUnderlyingIn.toString(),
-      // });
+      if (DEBUG_QUOTE) {
+        let approxRateUnderlying: number | undefined;
+        try {
+          approxRateUnderlying =
+            Number(desiredUnderlyingOut.toString?.() ?? desiredUnderlyingOut) /
+            Number(requiredUnderlyingIn.toString?.() ?? requiredUnderlyingIn);
+        } catch {}
+        console.log("[getOtherAmount.out] final", {
+          requiredUnderlyingInRaw:
+            requiredUnderlyingIn.value?.toString?.() ?? undefined,
+          requiredUnderlyingInDisplay:
+            requiredUnderlyingIn.toString?.() ?? requiredUnderlyingIn,
+          approxRateUnderlying, // desiredOut / requiredIn (rough)
+        });
+      }
 
       return requiredUnderlyingIn.toPrecisionString(true, false);
     }
