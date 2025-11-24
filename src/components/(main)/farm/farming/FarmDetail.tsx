@@ -156,6 +156,7 @@ export default function FarmDetail({
     }
   }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
   // console.log("FarmDetail item", item, "price", price);
+
   const hasRewards =
     !!matched &&
     !!matched.staking &&
@@ -226,6 +227,7 @@ export default function FarmDetail({
               onOpenStakingModal={handleOpenModal}
               hasRewards={hasRewards}
               totalSupply={totalSupply}
+              stakedBalance={stakedBalance}
             />
           </div>
 
