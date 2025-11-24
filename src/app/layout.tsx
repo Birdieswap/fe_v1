@@ -16,6 +16,7 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter", // CSS 변수로 노출
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
