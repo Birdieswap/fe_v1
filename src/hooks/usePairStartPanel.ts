@@ -6,7 +6,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { parseUnits, PublicClient } from "viem";
+import { formatUnits, parseUnits, PublicClient } from "viem";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -29,7 +29,7 @@ import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
-import previewRedeem from "@/utils/farm/previewRedeem";
+
 import { ADDRESS } from "@/const/contracts/contractAddresses";
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
 import {
@@ -40,6 +40,18 @@ import {
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
+import miscContracts from "@/const/contracts/tokens/others";
+import {
+  fetchV3Position,
+  type V3PositionRaw,
+} from "@/utils/uniswap/positionManager";
+import { Pool as V3Pool, Position as V3Position } from "@uniswap/v3-sdk";
+
+import { uniswap_pool_v3_abi } from "@/const/contracts/abis/uniswap_pool_v3_abi";
+import { Token } from "@uniswap/sdk-core";
+import { readContract } from "viem/actions";
+import previewRedeem from "@/utils/farm/previewRedeem";
+
 type NativeMode = "ETH" | "WETH" | null;
 
 export enum InvalidStatuses {
@@ -48,7 +60,11 @@ export enum InvalidStatuses {
   IMPERMANENT_INSOLVENCY = "IMPERMANENT_INSOLVENCY",
 }
 
-export function usePairStartPanel(item: FarmPair) {
+export function usePairStartPanel(
+  item: FarmPair,
+  tokenId?: bigint,
+  uniswapPoolAddress?: `0x${string}`
+) {
   const {
     client,
     transactionContext,
@@ -94,6 +110,16 @@ export function usePairStartPanel(item: FarmPair) {
     ADDRESS.ROUTER,
     chainId
   );
+
+  const inputToken0Address = getTokenAddress({
+    token: inputToken0,
+    chainId,
+  });
+  const inputToken1Address = getTokenAddress({
+    token: inputToken1,
+    chainId,
+  });
+
   // 기본 토큰이 ETH인지 판정: symbol === 'ETH' 또는 0x000... 주소 컨벤션
   const defaultIsETH: [boolean, boolean] = [
     inputToken0?.symbol === "ETH" ||
@@ -124,15 +150,6 @@ export function usePairStartPanel(item: FarmPair) {
   ];
 
   //  표시용 토큰/잔액/승인
-
-  const inputToken0Address = getTokenAddress({
-    token: inputToken0,
-    chainId,
-  });
-  const inputToken1Address = getTokenAddress({
-    token: inputToken1,
-    chainId,
-  });
 
   const insolvency0 = useMemo(() => {
     return getInsolvencyAmount({
@@ -259,42 +276,224 @@ export function usePairStartPanel(item: FarmPair) {
   const [underlyingBalance1, setUnderlyingBalance1] =
     useState<BigDecimal | null>(null);
 
-  // [추가] poolBalance0/1, client, bToken0/1 변경 시 previewRedeem 호출
+  const [v3Position, setV3Position] = useState<V3PositionRaw | null>(null);
+  const [v3Pool, setV3Pool] = useState<V3Pool | null>(null);
+
   useEffect(() => {
+    // 0. 기본 입력값 체크
+    if (!client || !chainId) {
+      console.log("[V3] skip: no client/chainId", { client, chainId });
+      return;
+    }
+    if (!tokenId || tokenId === 0n) {
+      console.log("[V3] skip: invalid tokenId", { tokenId });
+      return;
+    }
+    if (!uniswapPoolAddress) {
+      console.log("[V3] skip: no uniswapPoolAddress", { uniswapPoolAddress });
+      return;
+    }
+
+    const nfpmAddress = miscContracts.UniswapNonfungiblePositionManager
+      .addresses[chainId] as `0x${string}` | undefined;
+
+    if (!nfpmAddress) {
+      console.error("[V3] NFPM address not found for chain", chainId);
+      return;
+    }
+
     let cancelled = false;
 
-    async function load() {
+    (async () => {
       try {
-        // 필수 의존성 가드
-        if (!client) return;
+        console.log("[V3] STEP0 input", {
+          chainId,
+          tokenId: tokenId.toString(),
+          nfpmAddress,
+          uniswapPoolAddress,
+          bToken0Addr: bToken0.addresses?.[chainId],
+          bToken1Addr: bToken1.addresses?.[chainId],
+        });
 
-        // poolBalance가 BigDecimal이라고 가정. null/undefined 가드
-        if (!poolBalance0 || !poolBalance1) return;
+        // 1. position 데이터
+        const pos = await fetchV3Position(
+          client as PublicClient,
+          nfpmAddress,
+          tokenId
+        );
+        if (cancelled) return;
+        console.log("[V3] STEP1 position", pos);
 
-        const [u0, u1] = await Promise.all([
-          previewRedeem(client as PublicClient, bToken0, poolBalance0),
-          previewRedeem(client as PublicClient, bToken1, poolBalance1),
+        // 2. pool 상태(slot0, liquidity)
+        const [slot0Raw, poolLiquidityRaw] = await Promise.all([
+          readContract(client as PublicClient, {
+            address: uniswapPoolAddress,
+            abi: uniswap_pool_v3_abi,
+            functionName: "slot0",
+          }),
+          readContract(client as PublicClient, {
+            address: uniswapPoolAddress,
+            abi: uniswap_pool_v3_abi,
+            functionName: "liquidity",
+          }),
+        ]);
+        console.log("[V3] STEP2 raw slot0/liquidity", {
+          slot0Raw,
+          poolLiquidityRaw,
+        });
+
+        let sqrtPriceX96: bigint;
+        let tick: number;
+        if (Array.isArray(slot0Raw)) {
+          sqrtPriceX96 = slot0Raw[0] as bigint;
+          tick = Number(slot0Raw[1]);
+        } else {
+          const slot0 = slot0Raw as any;
+          sqrtPriceX96 = BigInt(slot0.sqrtPriceX96 ?? slot0[0] ?? 0n);
+          tick = Number(slot0.tick ?? slot0[1] ?? 0);
+        }
+        const poolLiquidity = BigInt(poolLiquidityRaw as bigint);
+
+        console.log("[V3] STEP3 parsed slot0", {
+          sqrtPriceX96: sqrtPriceX96.toString(),
+          tick,
+          poolLiquidity: poolLiquidity.toString(),
+        });
+
+        // 3. NFPM token0/1 vs bToken0/1 매칭
+        const posToken0 = pos.token0.toLowerCase();
+        const posToken1 = pos.token1.toLowerCase();
+        const b0Addr = (bToken0.addresses?.[chainId] as string).toLowerCase();
+        const b1Addr = (bToken1.addresses?.[chainId] as string).toLowerCase();
+
+        console.log("[V3] STEP4 token address match", {
+          posToken0,
+          posToken1,
+          b0Addr,
+          b1Addr,
+        });
+
+        let poolBToken0 = bToken0;
+        let poolBToken1 = bToken1;
+        let amount0IsForBToken0 = true;
+
+        if (posToken0 === b0Addr && posToken1 === b1Addr) {
+          // 정상 순서
+          amount0IsForBToken0 = true;
+        } else if (posToken0 === b1Addr && posToken1 === b0Addr) {
+          // 뒤집힌 순서
+          poolBToken0 = bToken1;
+          poolBToken1 = bToken0;
+          amount0IsForBToken0 = false;
+        } else {
+          console.error("[V3] NFPM token0/1 does not match bTokens", {
+            posToken0: pos.token0,
+            posToken1: pos.token1,
+            bToken0: bToken0.addresses?.[chainId],
+            bToken1: bToken1.addresses?.[chainId],
+          });
+          return;
+        }
+
+        // 4. SDK Pool / Position 생성
+        const sdkToken0 = new Token(
+          chainId,
+          pos.token0 as `0x${string}`,
+          poolBToken0.decimals,
+          poolBToken0.symbol
+        );
+        const sdkToken1 = new Token(
+          chainId,
+          pos.token1 as `0x${string}`,
+          poolBToken1.decimals,
+          poolBToken1.symbol
+        );
+
+        const pool = new V3Pool(
+          sdkToken0,
+          sdkToken1,
+          pos.fee,
+          sqrtPriceX96.toString(),
+          poolLiquidity.toString(),
+          tick
+        );
+        if (cancelled) return;
+        setV3Pool(pool);
+
+        const sdkPos = new V3Position({
+          pool,
+          liquidity: pos.liquidity.toString(),
+          tickLower: pos.tickLower,
+          tickUpper: pos.tickUpper,
+        });
+
+        const amount0Raw = BigInt((sdkPos.amount0 as any).quotient.toString());
+        const amount1Raw = BigInt((sdkPos.amount1 as any).quotient.toString());
+
+        const amount0Human = formatUnits(
+          amount0Raw,
+          poolBToken0.decimals ?? 18
+        );
+        const amount1Human = formatUnits(
+          amount1Raw,
+          poolBToken1.decimals ?? 18
+        );
+
+        console.log("[V3] STEP5 pool bToken amounts", {
+          amount0Raw: amount0Raw.toString(),
+          amount1Raw: amount1Raw.toString(),
+          amount0Human,
+          amount1Human,
+          amount0IsForBToken0,
+        });
+
+        let bToken0AmountHuman: string;
+        let bToken1AmountHuman: string;
+        if (amount0IsForBToken0) {
+          bToken0AmountHuman = amount0Human;
+          bToken1AmountHuman = amount1Human;
+        } else {
+          bToken0AmountHuman = amount1Human;
+          bToken1AmountHuman = amount0Human;
+        }
+
+        // 5. previewRedeem으로 underlying 수량
+        const b0AmountBD = new BigDecimal(bToken0AmountHuman);
+        const b1AmountBD = new BigDecimal(bToken1AmountHuman);
+
+        console.log("[V3] STEP6 previewRedeem input", {
+          b0AmountBD: b0AmountBD.toString(),
+          b1AmountBD: b1AmountBD.toString(),
+        });
+
+        const [under0, under1] = await Promise.all([
+          previewRedeem(client as PublicClient, bToken0, b0AmountBD),
+          previewRedeem(client as PublicClient, bToken1, b1AmountBD),
         ]);
 
+        console.log("[V3] STEP7 previewRedeem result", {
+          under0: under0?.toString(),
+          under1: under1?.toString(),
+        });
+
         if (!cancelled) {
-          // 실패/undefined/null 시 0으로 폴백 (계산부 안전을 위해)
-          setUnderlyingBalance0(u0 ?? BigDecimal.ZERO());
-          setUnderlyingBalance1(u1 ?? BigDecimal.ZERO());
+          setV3Position(pos);
+          setUnderlyingBalance0(under0 ?? BigDecimal.ZERO());
+          setUnderlyingBalance1(under1 ?? BigDecimal.ZERO());
         }
-      } catch {
+      } catch (e) {
+        console.error("[V3] load V3 position/pool failed", e);
         if (!cancelled) {
           setUnderlyingBalance0(BigDecimal.ZERO());
           setUnderlyingBalance1(BigDecimal.ZERO());
         }
       }
-    }
-
-    load();
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [client, bToken0, bToken1, poolBalance0, poolBalance1]);
+  }, [client, chainId, tokenId, uniswapPoolAddress, bToken0, bToken1]);
 
   // console.log("getOtherAmount", stakeToken, { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0": poolBalance0, "poolBalance1.value": poolBalance1, "underlyingBalance0": underlyingBalance0, "underlyingBalance1": underlyingBalance1 });
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
@@ -419,18 +618,15 @@ export function usePairStartPanel(item: FarmPair) {
               amounts[1] || BigDecimal.ZERO(),
               1
             );
-
             setAmounts([otherAmount, amounts[1]]);
           } else if (!v[1]) {
             const otherAmount = getOtherAmount(
               amounts[0] || BigDecimal.ZERO(),
               0
             );
-
             setAmounts([amounts[0], otherAmount]);
           }
         }
-
         return state;
       });
     },
@@ -441,10 +637,8 @@ export function usePairStartPanel(item: FarmPair) {
     (value: BigDecimal | null, index: 0 | 1) => {
       setAmounts((prev) => {
         if (isActive.every(Boolean)) {
-          //  양쪽 활성: 지금은 '입력한 쪽'만 즉시 반영, 반대편은 유지
           return [index === 0 ? value : prev[0], index === 1 ? value : prev[1]];
         } else {
-          //  한쪽만 활성: 반대편은 항상 null (비활성 인풋은 비워둠)
           return [index === 0 ? value : null, index === 1 ? value : null];
         }
       });
@@ -520,7 +714,6 @@ export function usePairStartPanel(item: FarmPair) {
       const curN = cur ? Number(cur?.toString?.() ?? cur) : null;
       const nextN = next ? Number(next?.toString?.() ?? next) : null;
 
-      // 동일하면 스킵(불필요 렌더/깜빡임 방지)
       if (curN !== nextN) {
         setAmountBase(next, other);
       }

@@ -32,25 +32,42 @@ export const ADDRESS = {
   // lp vaults + pools
   USDC_WETH_VAULT: "USDC_WETH_VAULT",
   USDC_WETH_POOL: "USDC_WETH_POOL",
+  USDC_WETH_TOKEN_ID: "USDC_WETH_TOKEN_ID",
 
   CBBTC_WETH_VAULT: "CBBTC_WETH_VAULT",
   CBBTC_WETH_POOL: "CBBTC_WETH_POOL",
+  CBBTC_WETH_TOKEN_ID: "CBBTC_WETH_TOKEN_ID",
 
   CBBTC_USDC_VAULT: "CBBTC_USDC_VAULT",
   CBBTC_USDC_POOL: "CBBTC_USDC_POOL",
+  CBBTC_USDC_TOKEN_ID: "CBBTC_USDC_TOKEN_ID",
 
   WBTC_WETH_VAULT: "WBTC_WETH_VAULT",
   WBTC_WETH_POOL: "WBTC_WETH_POOL",
+  WBTC_WETH_TOKEN_ID: "WBTC_WETH_TOKEN_ID",
 
   WBTC_USDC_VAULT: "WBTC_USDC_VAULT",
   WBTC_USDC_POOL: "WBTC_USDC_POOL",
+  WBTC_USDC_TOKEN_ID: "WBTC_USDC_TOKEN_ID",
 
   EURC_USDC_VAULT: "EURC_USDC_VAULT",
   EURC_USDC_POOL: "EURC_USDC_POOL",
+  EURC_USDC_TOKEN_ID: "EURC_USDC_TOKEN_ID",
 } as const;
 export type AddressKey = keyof typeof ADDRESS;
 
 type AddressMap = Partial<Record<AddressKey, Address>>;
+type tokenIdMap = Partial<Record<AddressKey, string | number>>;
+
+export const pool_tokenIds: Record<ChainKey, tokenIdMap> = {
+  sepolia: {
+    USDC_WETH_TOKEN_ID: 215932,
+    WBTC_USDC_TOKEN_ID: 215933,
+    WBTC_WETH_TOKEN_ID: 215935,
+  },
+  base: {},
+  arbitrum: {},
+} as const;
 
 export const contractAddresses: Record<ChainKey, AddressMap> = {
   sepolia: {

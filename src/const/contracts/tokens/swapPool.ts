@@ -10,19 +10,21 @@ import networks from "../networks";
 
 import stakingProviders from "./stakingProviders";
 import singleVaults from "./singleVaults";
-import { contractAddresses } from "../contractAddresses";
+import { contractAddresses, pool_tokenIds } from "../contractAddresses";
 
 const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "bUSDCWETH",
   fullName: "Birdieswap USDC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_POOL as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_POOL as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.USDC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .USDC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
-  fee_tier : 3000,
+  fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
@@ -31,6 +33,11 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWETH,
     singleVaults.bHarvestAutopilotUSDC,
   ],
+  tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
 const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
@@ -38,12 +45,14 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
   symbol: "bUSDCWETH",
   fullName: "Birdieswap USDC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_POOL as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_POOL as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.USDC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .USDC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
-  fee_tier : 3000,
+  fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
@@ -52,6 +61,11 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
     singleVaults.bHarvestAutopilotETH,
     singleVaults.bHarvestAutopilotUSDC,
   ],
+  tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
 // const blpUniswapHarvestAutopilotCBBTCUSDC = SwapPoolGuard({
@@ -142,19 +156,26 @@ const blpUniswapHarvestAutopilotUSDCWBTC = SwapPoolGuard({
   symbol: "bUSDCWBTC",
   fullName: "Birdieswap USDC 3000 WBTC",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_USDC_POOL as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_USDC_POOL as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_USDC_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_USDC_POOL as `0x${string}`,
   },
   decimals: 8,
-  fee_tier : 3000,
+  fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
   isInternal: true,
   input: [
     singleVaults.bHarvestAutopilotUSDC,
-    singleVaults.bHarvestAutopilotWBTC,    
+    singleVaults.bHarvestAutopilotWBTC,
   ],
+  tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_USDC_TOKEN_ID as
+      | string
+      | number,
+  },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
 const blpUniswapHarvestAutopilotWBTCWETH = SwapPoolGuard({
@@ -162,11 +183,13 @@ const blpUniswapHarvestAutopilotWBTCWETH = SwapPoolGuard({
   symbol: "bWBTCWETH",
   fullName: "Birdieswap WBTC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_WETH_POOL as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_WETH_POOL as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
-  fee_tier : 3000,
+  fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
@@ -175,6 +198,11 @@ const blpUniswapHarvestAutopilotWBTCWETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWBTC,
     singleVaults.bHarvestAutopilotWETH,
   ],
+  tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
 const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
@@ -182,11 +210,13 @@ const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
   symbol: "bWBTCWETH",
   fullName: "Birdieswap WBTC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_WETH_POOL as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_WETH_POOL as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_WETH_POOL as `0x${string}`,
   },
   decimals: 8,
-  fee_tier : 3000,
+  fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
@@ -195,12 +225,14 @@ const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWBTC,
     singleVaults.bHarvestAutopilotETH,
   ],
+  tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
-
-
 const swapPools = {
-
   blpUniswapHarvestAutopilotWETHUSDC,
   blpUniswapHarvestAutopilotETHUSDC,
   // blpUniswapHarvestAutopilotCBBTCUSDC,
