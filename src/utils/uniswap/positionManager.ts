@@ -1,6 +1,6 @@
-// positionManager.ts
 import { uniswap_nonfungiblePositionManager_abi } from "@/const/contracts/abis/uniswap_nonfungiblePositionManager_abi";
 import { PublicClient } from "viem";
+import { readContract } from "viem/actions";
 
 export type V3PositionRaw = {
   nonce: bigint;
@@ -22,12 +22,12 @@ export async function fetchV3Position(
   nfpmAddress: `0x${string}`,
   tokenId: bigint
 ): Promise<V3PositionRaw> {
-  const res = await client.readContract({
+  const res = (await readContract(client, {
     address: nfpmAddress,
     abi: uniswap_nonfungiblePositionManager_abi,
     functionName: "positions",
     args: [tokenId],
-  });
+  })) as any;
 
   const [
     nonce,

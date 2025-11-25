@@ -15,6 +15,7 @@ import PairStartSummary from "./pairStart/PairStartSummary";
 import { BigDecimal } from "@/types/BigDecimal";
 import { useContext } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import { useChainId } from "wagmi";
 
 export function PairStartPanel({
   item,
@@ -26,7 +27,15 @@ export function PairStartPanel({
   totalBalance?: BigDecimal;
 }) {
   // 기존 훅: 지난 패치에서 ETH/WETH 파생값을 반환하도록 확장됨
-  const state: UsePairStartPanelReturn = usePairStartPanel(item);
+  const chainId = useChainId();
+  const poolAddress = item.wip_stakeToken.swap.addresses[chainId];
+  const tokenId = BigInt(item.wip_stakeToken.swap.tokenId?.[chainId] ?? 0);
+
+  const state: UsePairStartPanelReturn = usePairStartPanel(
+    item,
+    tokenId,
+    poolAddress
+  );
   const { assetValues } = useContext(AssetsContext);
 
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
@@ -228,6 +237,7 @@ export function PairStartPanel({
   // 실행 가능 여부: 기존 조건 + 입금 제한
   const isExecutable = state.isStartable && !isOverDepositLimit;
   // ─────────────────────────────────────────────
+  // console.log("PairStartPanel render", item, poolAddress, tokenId);
 
   return (
     <PanelContainer layoutId="detail-pair">
