@@ -24,10 +24,11 @@ import IconTransactionFailed from "./transactionProgress/transaction_failed.svg"
 import TransactionProgressLight from "./transactionProgress/transaction_progress_light.json";
 import TransactionProgressDark from "./transactionProgress/transaction_progress_dark.json";
 import TransactionProgressInfo from "./transactionProgress/TransactionProgressInfo";
+import IconTransactionCanceled from "./transactionProgress/transaction_canceled.svg";
 
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
-  { ssr: false },
+  { ssr: false }
 );
 
 const transition = {
@@ -87,7 +88,7 @@ function AddToWallet(props: { token?: IToken }) {
 }
 
 export default function TransactionProgressModal(
-  props: TransactionProgressModalProps,
+  props: TransactionProgressModalProps
 ) {
   const { selectedNetwork } = useContext(WalletContext);
   const transactionStatus = props.transactionProps?.transactionStatus;
@@ -105,16 +106,23 @@ export default function TransactionProgressModal(
     switch (transactionStatus) {
       case TransactionStatus.FAILED:
         return "Transaction Failed";
+      case TransactionStatus.CANCELED:
+        return "Transaction Canceled in Wallet";
       case TransactionStatus.SUCCESS:
         return "Success!";
       case TransactionStatus.PENDING:
         return "Transaction Submitted";
       case TransactionStatus.CONFIRM_NEEDED:
-        return "Confirm transaction in wallet";
+        return "Confirm Transaction in Wallet";
       default:
         return "Transaction Status Unknown";
     }
   }, [transactionStatus]);
+
+  const isLinkDisabled =
+    transactionStatus === TransactionStatus.FAILED ||
+    transactionStatus === TransactionStatus.CANCELED ||
+    transactionStatus === TransactionStatus.CONFIRM_NEEDED;
 
   return (
     <ModalBase
@@ -134,6 +142,15 @@ export default function TransactionProgressModal(
                     {...transition}
                   >
                     <IconTransactionFailed />
+                  </motion.div>
+                )}
+                {transactionStatus === TransactionStatus.CANCELED && (
+                  <motion.div
+                    key="image_canceled"
+                    className="absolute inset-0 flex flex-col items-center justify-center"
+                    {...transition}
+                  >
+                    <IconTransactionCanceled />
                   </motion.div>
                 )}
                 {(transactionStatus === TransactionStatus.CONFIRM_NEEDED ||
@@ -198,31 +215,33 @@ export default function TransactionProgressModal(
               <AnimatePresence initial={false}>
                 {props.transactionProps &&
                   props.transactionProps.transactionStatus !==
-                    TransactionStatus.FAILED && (
+                    TransactionStatus.FAILED &&
+                  props.transactionProps.transactionStatus !==
+                    TransactionStatus.CANCELED && (
                     <TransactionProgressInfo {...props.transactionProps} />
                   )}
               </AnimatePresence>
               <Link
                 className={
-                  "pt-2 text-light-primary data-[failed=true]:pointer-events-none data-[failed=true]:cursor-default dark:text-dark-primary"
+                  "pt-2 text-light-primary dark:text-dark-primary " +
+                  "data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-default"
                 }
-                data-failed={transactionStatus === TransactionStatus.FAILED}
+                data-disabled={isLinkDisabled}
                 href={txHref}
                 target="_blank"
                 onClick={(e) => {
-                  if (
-                    transactionStatus === TransactionStatus.FAILED ||
-                    transactionStatus === TransactionStatus.CONFIRM_NEEDED
-                  ) {
+                  if (isLinkDisabled) {
                     e.preventDefault();
                   }
                 }}
               >
                 {transactionStatus === TransactionStatus.FAILED
                   ? "Please try again"
-                  : transactionStatus === TransactionStatus.CONFIRM_NEEDED
-                    ? ""
-                    : "View on explorer"}
+                  : transactionStatus === TransactionStatus.CANCELED
+                    ? "Transaction was canceled"
+                    : transactionStatus === TransactionStatus.CONFIRM_NEEDED
+                      ? ""
+                      : "View on explorer"}
               </Link>
               <AnimatePresence initial={false}>
                 {props.transactionProps?.transactionType ===

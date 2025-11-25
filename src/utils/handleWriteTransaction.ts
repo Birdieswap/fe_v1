@@ -4,6 +4,7 @@ import {
   TransactionReceipt,
   keccak256,
   toBytes,
+  UserRejectedRequestError,
 } from "viem";
 import { waitForTransactionReceipt } from "viem/actions";
 
@@ -121,14 +122,26 @@ export function getWriteTransactionHandlers({
   transactionContext.onOpen();
 
   return {
-    onError: (error: Error) => {
+    onError: (error: unknown) => {
       transactionContext.onOpen();
+
+      const isUserRejected =
+        error instanceof UserRejectedRequestError ||
+        (typeof error === "object" &&
+          error !== null &&
+          // @ts-expect-error
+          (error.code === 4001 ||
+            // @ts-expect-error
+            error?.shortMessage?.toLowerCase?.().includes("user rejected") ||
+            // @ts-expect-error
+            error?.message?.toLowerCase?.().includes("user rejected")));
+
       transactionContext.setTransactionProps({
         ...transactionProps,
-        transactionStatus: TransactionStatus.FAILED,
+        transactionStatus: isUserRejected
+          ? TransactionStatus.CANCELED // 지갑에서 Cancel → CANCELED
+          : TransactionStatus.FAILED, // 나머지 에러 → FAILED
       });
-      // console.log("onError");
-      // console.log("e", error.message);
     },
     onSuccess: (tx: `0x${string}`) => {
       refetch?.();
