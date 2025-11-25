@@ -1,0 +1,34 @@
+<svg
+  width="64"
+  height="64"
+  viewBox="0 0 64 64"
+  fill="none"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <!-- 정삼각형 배경 (#929AB1), 기존 아이콘들과 비슷한 스케일 -->
+  <path
+    d="M32 6L8 58H56L32 6Z"
+    fill="#C9CFE0"
+    stroke="#C9CFE0"
+    stroke-width="8"
+    stroke-linejoin="round"
+  />
+
+  <!-- 느낌표 세로 막대 (기존 failed 아이콘의 흰색 심볼 높이에 맞춘 스케일) -->
+  <rect
+    x="30"
+    y="18"
+    width="4"
+    height="20"
+    rx="2"
+    fill="white"
+  />
+
+  <!-- 느낌표 점 (위 막대와의 갭을 충분히 두고, 전체 높이 맞춤) -->
+  <circle
+    cx="32"
+    cy="47"
+    r="3.5"
+    fill="white"
+  />
+</svg>
