@@ -224,7 +224,7 @@ export default function TransactionProgressModal(
               <Link
                 className={
                   "pt-2 text-light-primary dark:text-dark-primary " +
-                  "data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-default"
+                  "data-[disabled=true]:pointer-events-none data-[disabled=true]:cursor-default data-[disabled=true]:text-default-500"
                 }
                 data-disabled={isLinkDisabled}
                 href={txHref}
