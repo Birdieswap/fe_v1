@@ -10,14 +10,16 @@ import {
 import getTokenAddress from "../assets/getTokenAddress";
 import getProviderAddress from "../assets/getProviderAddress";
 
-
 export default async function previewFullDeposit(
   client: PublicClient,
   farm: IBirdieSingleFarm | IBirdieLPFarm,
   amount: BigDecimal,
+  providerOverride?: {
+    address?: `0x${string}`;
+    abi?: Abi;
+  }
 ) {
   const chainId = client.chain?.id;
-  
 
   if (!chainId) return null;
   const farmAddress = getTokenAddress({
@@ -25,25 +27,32 @@ export default async function previewFullDeposit(
     chainId,
   });
 
-  const providerAddress = getProviderAddress({
-    provider : farm.provider,
+  const defaultProviderAddress = getProviderAddress({
+    provider: farm.provider,
     chainId,
   });
-  
+
+  // 🔥 override 가 있으면 그걸 우선 사용
+  const providerAddress =
+    (providerOverride?.address as `0x${string}` | undefined) ??
+    (defaultProviderAddress as `0x${string}`);
+
+  const abi: Abi =
+    (providerOverride?.abi as Abi | undefined) ?? (farm.provider.abi as Abi);
+
+  console.log("previewFulDeposit ", farm);
+
   if (!farmAddress) return null;
-  
+
   const args: ReadContractParameters<
-    Abi,//(typeof farm)["abi"],
+    Abi, //(typeof farm)["abi"],
     "previewFullDeposit",
-    [`0x${string}`,bigint]
+    [`0x${string}`, bigint]
   > = {
     address: providerAddress as `0x${string}`,
-    abi: farm.provider.abi as Abi,
+    abi,
     functionName: "previewFullDeposit",
-    args: [
-      farmAddress,
-      amount.roundToDecimals(farm.decimals).value
-    ],
+    args: [farmAddress, amount.roundToDecimals(farm.decimals).value],
   };
 
   const data = await readContract(client, args);
