@@ -7,6 +7,7 @@ import {
   useRef,
 } from "react";
 import { formatUnits, parseUnits, PublicClient } from "viem";
+import { Position as UniV3Position } from "@uniswap/v3-sdk";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -261,15 +262,19 @@ export function usePairStartPanel(
 
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
 
-  const { underlying0: underlyingBalance0, underlying1: underlyingBalance1 } =
-    useV3UnderlyingFromTokenId({
-      client: client as any, // useFarmPanelCommon 에서 온 client (PublicClient | undefined)
-      chainId,
-      tokenId,
-      uniswapPoolAddress,
-      bToken0,
-      bToken1,
-    });
+  const {
+    underlying0: underlyingBalance0,
+    underlying1: underlyingBalance1,
+    v3Pool,
+    v3Position,
+  } = useV3UnderlyingFromTokenId({
+    client: client as any,
+    chainId,
+    tokenId,
+    uniswapPoolAddress,
+    bToken0,
+    bToken1,
+  });
 
   // console.log("getOtherAmount", stakeToken, { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0": poolBalance0, "poolBalance1.value": poolBalance1, "underlyingBalance0": underlyingBalance0, "underlyingBalance1": underlyingBalance1 });
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
@@ -330,7 +335,6 @@ export function usePairStartPanel(
     (value: BigDecimal, index: 0 | 1) => {
       const otherToken = index === 0 ? inputToken1 : inputToken0;
 
-      // null 가드 및 폴백
       const thisUnderlying =
         (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
         BigDecimal.ZERO();
@@ -338,16 +342,74 @@ export function usePairStartPanel(
         (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
         BigDecimal.ZERO();
 
-      if (thisUnderlying.eq(0)) {
+      // 1) 기존 포지션 underlying 비율이 있는 경우
+      if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
+        return value
+          .mul(otherUnderlying)
+          .div(thisUnderlying)
+          .roundToDecimals(otherToken.decimals ?? 18);
+      }
+
+      // 2) underlying 이 0 → V3 수학 기반으로 새 유동성의 other token amount 계산
+      if (!v3Pool || !v3Position) {
+        // 풀/포지션 정보가 없으면 계산 불가 → 0
         return BigDecimal.ZERO();
       }
-      // console.log("getOtherAmount", { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0.value": poolBalance0.value, "poolBalance1.value": poolBalance1.value, "value": value, "thisUnderlying": thisUnderlying, "otherUnderlying": otherUnderlying });
-      return value
-        .mul(otherUnderlying)
-        .div(thisUnderlying)
-        .roundToDecimals(otherToken.decimals ?? 18);
+
+      try {
+        const baseToken = index === 0 ? inputToken0 : inputToken1;
+        const baseDecimals = baseToken.decimals ?? 18;
+
+        // 사용자가 입력한 value(BigDecimal)를 raw bigint 로 변환
+        const rawBase = parseUnits(value.toString(), baseDecimals);
+
+        let simulatedPos: UniV3Position;
+        if (index === 0) {
+          // token0 을 value 만큼 넣고, 필요한 token1 amount 계산
+          simulatedPos = UniV3Position.fromAmount0({
+            pool: v3Pool as any,
+            tickLower: v3Position.tickLower,
+            tickUpper: v3Position.tickUpper,
+            amount0: rawBase.toString(),
+            useFullPrecision: true,
+          });
+        } else {
+          // token1 을 value 만큼 넣고, 필요한 token0 amount 계산
+          simulatedPos = UniV3Position.fromAmount1({
+            pool: v3Pool as any,
+            tickLower: v3Position.tickLower,
+            tickUpper: v3Position.tickUpper,
+            amount1: rawBase.toString(),
+          });
+        }
+
+        const amount0Raw = BigInt(
+          (simulatedPos.amount0 as any).quotient.toString()
+        );
+        const amount1Raw = BigInt(
+          (simulatedPos.amount1 as any).quotient.toString()
+        );
+
+        const otherIsToken1 = index === 0;
+        const otherRaw = otherIsToken1 ? amount1Raw : amount0Raw;
+
+        const otherDecimals = otherToken.decimals ?? 18;
+        const otherHuman = formatUnits(otherRaw, otherDecimals);
+
+        return new BigDecimal(otherHuman).roundToDecimals(otherDecimals);
+      } catch (e) {
+        console.error("[V3] getOtherAmount V3 fallback failed", e);
+        return BigDecimal.ZERO();
+      }
     },
-    [inputToken0, inputToken1, underlyingBalance0, underlyingBalance1]
+    [
+      inputToken0,
+      inputToken1,
+      underlyingBalance0,
+      underlyingBalance1,
+      v3Pool,
+      v3Position,
+    ]
   );
 
   const getMaxAmount = useCallback(() => {
