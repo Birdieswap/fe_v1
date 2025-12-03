@@ -27,10 +27,15 @@ export default function SwapFeeInfo() {
     toAmount,
     toPrice,
     fromPrice,
+
+    activeSwapPool,
+
     swapPool,
     exchangeRate,
     rExchangeRate,
     priceImpact,
+
+    isExternalSwapPool,
   } = useSwapContext();
 
   const [showReverse, setShowReverse] = useState(false);
@@ -38,6 +43,12 @@ export default function SwapFeeInfo() {
   const { address } = useAccount();
   const { aprDataState } = useContext(AssetsContext);
   const chainId = useChainId();
+
+  // ✅ [추가] pool 변수 하나로 통일
+  const pool = activeSwapPool ?? null;
+
+  // ✅ [추가] 내부 풀일 때만 포인트 관련 UI/계산 수행
+  const showSwapPointUI = !!pool && !isExternalSwapPool;
 
   const getSwapPointAddress = (
     token: typeof fromToken,
@@ -62,6 +73,8 @@ export default function SwapFeeInfo() {
   };
 
   const swapPointValue = useMemo(() => {
+    if (!showSwapPointUI) return null;
+
     if (!aprDataState?.SwapPointsDistributionSpeed || !fromToken) return null;
 
     // fromToken 구조에 맞게 address 를 꺼내 주세요
@@ -81,6 +94,8 @@ export default function SwapFeeInfo() {
     decimals <= 0 ? "1" : "1" + "0".repeat(decimals);
 
   const estimatedSwapPoints = useMemo(() => {
+    if (!showSwapPointUI) return null;
+
     if (swapPointValue == null) return null;
     if (!fromAmount || !fromToken) return null;
 
@@ -125,14 +140,14 @@ export default function SwapFeeInfo() {
     }
   };
   //console.log("Referral Address in SwapFeeInfo:", referralAddress, "User Address:", address);
-  const feeTier = swapPool?.fee_tier ? swapPool.fee_tier / 10000 : 0;
-  const feeFractionBD = useMemo(() => {
-    if (!swapPool?.fee_tier) return new BigDecimal(0);
+  //const feeTier = swapPool?.fee_tier ? swapPool.fee_tier / 10000 : 0;
+  const feeTier = pool?.fee_tier ? pool.fee_tier / 10000 : 0;
 
-    return new BigDecimal(Number(swapPool.fee_tier)).div(
-      new BigDecimal(1000000)
-    );
-  }, [swapPool?.fee_tier]);
+  const feeFractionBD = useMemo(() => {
+    if (!pool?.fee_tier) return new BigDecimal(0);
+
+    return new BigDecimal(Number(pool.fee_tier)).div(new BigDecimal(1000000));
+  }, [pool?.fee_tier]);
 
   // 간단한 포맷 함수: round 후 trailing zero 제거
   const formatBD = (bd: BigDecimal, decimals: number) => {
@@ -143,42 +158,62 @@ export default function SwapFeeInfo() {
   const isWrapper = isEthOnlyOneSide(fromToken, toToken);
 
   const exchangeRateInfo = useMemo(() => {
-    if (isWrap && fromToken && toToken && fromPrice) {
-      const val = fromPrice.roundToDecimals(2).toPrecisionString(false, false);
-      return `1 ${fromToken.symbol} = 1 ${toToken.symbol} ($ ${val})`;
+    // wrap: 항상 1:1
+    if (isWrap && fromToken && toToken) {
+      // USD price가 있으면 보여주고, 없으면 생략
+      const usd = fromPrice
+        ? ` ($ ${fromPrice.roundToDecimals(2).toPrecisionString(false, false)})`
+        : "";
+      return `1 ${fromToken.symbol} = 1 ${toToken.symbol}${usd}`;
     }
 
-    if (!exchangeRate || !toPrice || !toToken || !fromToken) return "";
-    const exchangeRateValue = new BigDecimal(exchangeRate || "0");
-    const toValueString = toPrice
-      .mul(exchangeRateValue)
-      .roundToDecimals(2)
-      .toPrecisionString(false, false);
-    const exchangeRateString = exchangeRateValue
-      .roundToDecimals(toToken.displayDecimals ?? toToken.decimals ?? 3)
+    if (!exchangeRate || !toToken || !fromToken) return "";
+
+    const rateBD = new BigDecimal(exchangeRate || "0");
+    const rateStr = rateBD
+      .roundToDecimals(toToken.displayDecimals ?? toToken.decimals ?? 6)
       .toPrecisionString(false, false);
 
-    return `1 ${fromToken?.symbol} = ${exchangeRateString} ${toToken?.symbol} ($\u00A0${toValueString})`;
-  }, [exchangeRate, fromToken, toPrice, toToken]);
+    // ✅ 외부토큰이면 toPrice가 없을 수 있음 → USD 생략
+    if (!toPrice) {
+      return `1 ${fromToken.symbol} = ${rateStr} ${toToken.symbol}`;
+    }
+
+    const usdStr = toPrice
+      .mul(rateBD)
+      .roundToDecimals(2)
+      .toPrecisionString(false, false);
+
+    return `1 ${fromToken.symbol} = ${rateStr} ${toToken.symbol} ($ ${usdStr})`;
+  }, [isWrap, exchangeRate, fromToken, toToken, toPrice, fromPrice]);
 
   const rExchangeRateInfo = useMemo(() => {
-    if (isWrap && fromToken && toToken && toPrice) {
-      const val = toPrice.roundToDecimals(2).toPrecisionString(false, false);
-      return `1 ${toToken.symbol} = 1 ${fromToken.symbol} ($ ${val})`;
+    if (isWrap && fromToken && toToken) {
+      const usd = toPrice
+        ? ` ($ ${toPrice.roundToDecimals(2).toPrecisionString(false, false)})`
+        : "";
+      return `1 ${toToken.symbol} = 1 ${fromToken.symbol}${usd}`;
     }
 
-    if (!rExchangeRate || !fromPrice || !toToken || !fromToken) return "";
-    const rExchangeRateValue = new BigDecimal(rExchangeRate || "0");
-    const fromValueString = fromPrice
-      .mul(rExchangeRateValue)
-      .roundToDecimals(2)
-      .toPrecisionString(false, false);
-    const rExchangeRateString = rExchangeRateValue
-      .roundToDecimals(fromToken.displayDecimals ?? fromToken.decimals ?? 3)
+    if (!rExchangeRate || !toToken || !fromToken) return "";
+
+    const rBD = new BigDecimal(rExchangeRate || "0");
+    const rStr = rBD
+      .roundToDecimals(fromToken.displayDecimals ?? fromToken.decimals ?? 6)
       .toPrecisionString(false, false);
 
-    return `1 ${toToken?.symbol} = ${rExchangeRateString} ${fromToken?.symbol} ($\u00A0${fromValueString})`;
-  }, [rExchangeRate, fromToken, toToken, fromPrice]);
+    // ✅ 외부토큰이면 fromPrice가 없을 수 있음 → USD 생략
+    if (!fromPrice) {
+      return `1 ${toToken.symbol} = ${rStr} ${fromToken.symbol}`;
+    }
+
+    const usdStr = fromPrice
+      .mul(rBD)
+      .roundToDecimals(2)
+      .toPrecisionString(false, false);
+
+    return `1 ${toToken.symbol} = ${rStr} ${fromToken.symbol} ($ ${usdStr})`;
+  }, [isWrap, rExchangeRate, fromToken, toToken, fromPrice, toPrice]);
 
   if (!fromToken || !toToken) {
     return; //<div>Select tokens to see fee information</div>;
@@ -210,7 +245,7 @@ export default function SwapFeeInfo() {
               </span>
               <div className="flex flex-row items-center gap-0.5">
                 <div className="flex flex-row items-center gap-0.5 opacity-100 transition-opacity group-data-[open=true]:opacity-0">
-                  {swapPool && <Icons.PointIcon className="h-5 w-5" />}
+                  {showSwapPointUI && <Icons.PointIcon className="h-5 w-5" />}
                 </div>
 
                 <Icons.Dropdown className="rotate-180 transition-transform group-data-[open=true]:rotate-0" />
@@ -292,7 +327,7 @@ export default function SwapFeeInfo() {
                   </span>
                 </span>
               </span>
-              {estimatedSwapPoints !== null && (
+              {showSwapPointUI && estimatedSwapPoints !== null && (
                 <>
                   <span className="text-default-700 dark:text-default-300">
                     Estimated Swap Point

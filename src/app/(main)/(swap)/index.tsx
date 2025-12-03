@@ -10,6 +10,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
 import { useChainId } from "wagmi";
 import tokens from "@/const/contracts/tokens/tokens";
+import { externalTokens } from "@/const/contracts/tokens/externalTokens";
 
 export default function SwapIndex() {
   const {
@@ -49,9 +50,14 @@ export default function SwapIndex() {
     (sym?: string) => {
       if (!sym) return undefined;
       const s = sym.trim().toUpperCase();
-      const list: any[] = Array.isArray(tokens)
+      const internalList: any[] = Array.isArray(tokens)
         ? (tokens as any[])
         : Object.values(tokens || {});
+      const externalList: any[] = Array.isArray(externalTokens)
+        ? (externalTokens as any[])
+        : Object.values(externalTokens || {});
+      const list: any[] = [...internalList, ...externalList];
+
       return list.find((t) => {
         const symbolEq =
           t?.symbol?.toUpperCase?.() === s ||

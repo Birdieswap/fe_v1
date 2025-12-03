@@ -4,9 +4,9 @@ import { useMemo } from "react";
 import lpVaults from "@/const/contracts/tokens/lpVaults";
 import singleVaults from "@/const/contracts/tokens/singleVaults";
 import tokens from "@/const/contracts/tokens/tokens";
-
 import useBalances from "./useBalances";
 import useStakedBalances from "./useStakedBalances";
+import { externalTokens } from "@/const/contracts/tokens/externalTokens";
 
 type AprLike = {
   contractAddress?: `0x${string}` | string;
@@ -27,7 +27,20 @@ export default function useAccountBalances(aprList?: AprLike[]) {
   const chainId = useChainId();
   const { address } = useAccount();
   // 지갑 보유
-  const tokenList = useMemo(() => Object.values(tokens), []);
+  //const tokenList = useMemo(() => Object.values(tokens), []);
+  const tokenList = useMemo(() => {
+    const list = [...Object.values(tokens), ...Object.values(externalTokens)];
+
+    const seen = new Set<string>();
+    return list.filter((t: any) => {
+      const addr = (t.address ?? t.contractAddress ?? "").toLowerCase();
+      if (!addr) return true; // 주소 없는 토큰은 일단 통과(원하면 제외)
+      if (seen.has(addr)) return false;
+      seen.add(addr);
+      return true;
+    });
+  }, []);
+
   const singleVaultList = useMemo(() => Object.values(singleVaults), []);
   const lpVaultList = useMemo(() => Object.values(lpVaults), []);
 

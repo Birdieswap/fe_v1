@@ -2,6 +2,7 @@ import networks from "./networks";
 import tokens from "./tokens/tokens";
 import { PriceFeedGuard } from "./types/typeGuards";
 import RewardsTokens from "./tokens/RewardsTokens";
+import { externalTokens } from "./tokens/externalTokens";
 
 const CBBTC_USD = PriceFeedGuard({
   symbol: "LINK:cbBTC_USD",
@@ -78,6 +79,50 @@ const EURC_USD = PriceFeedGuard({
   decimals: 8,
 });
 
+const VIRTUAL_USD = PriceFeedGuard({
+  symbol: "LINK:VIRTUAL_USD",
+  fullName: "Chainlink VIRTUAL/USD Price Feed",
+  addresses: {
+    [networks.base.id]: "0xEaf310161c9eF7c813A14f8FEF6Fb271434019F7",
+  },
+  base: externalTokens.VIRTUAL,
+  quote: "USD",
+  decimals: 8,
+});
+
+const AERO_USD = PriceFeedGuard({
+  symbol: "LINK:AERO_USD",
+  fullName: "Chainlink AERO/USD Price Feed",
+  addresses: {
+    [networks.base.id]: "0x4EC5970fC728C5f65ba413992CD5fF6FD70fcfF0",
+  },
+  base: externalTokens.AERO,
+  quote: "USD",
+  decimals: 8,
+});
+
+const DEGEN_USD = PriceFeedGuard({
+  symbol: "LINK:DEGEN_USD",
+  fullName: "Chainlink DEGEN/USD Price Feed",
+  addresses: {
+    [networks.base.id]: "0xE62BcE5D7CB9d16AB8b4D622538bc0A50A5799c2",
+  },
+  base: externalTokens.DEGEN,
+  quote: "USD",
+  decimals: 8,
+});
+
+const PEPE_USD = PriceFeedGuard({
+  symbol: "LINK:PEPE_USD",
+  fullName: "Chainlink PEPE/USD Price Feed",
+  addresses: {
+    [networks.base.id]: "0xB48ac6409C0c3718b956089b0fFE295A10ACDdad",
+  },
+  base: externalTokens.PEPE,
+  quote: "USD",
+  decimals: 8,
+});
+
 /*
 const USDT_USD = PriceFeedGuard({
   symbol: "LINK:USDT_USD",
@@ -103,8 +148,6 @@ const AAVE_USD = PriceFeedGuard({
   decimals: 8,
 });    */
 
-
-
 const priceFeeds = {
   CBBTC_USD,
   WBTC_USD,
@@ -112,6 +155,12 @@ const priceFeeds = {
   WETH_USD,
   USDC_USD,
   EURC_USD,
+  VIRTUAL_USD,
+  AERO_USD,
+  DEGEN_USD,
+  PEPE_USD,
+  // USDT_USD,
+  // AAVE_USD,
 };
 
 export default priceFeeds;

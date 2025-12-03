@@ -110,7 +110,7 @@ export default function SwapConfirmButton() {
 
     return new BigDecimal(fromAmount, fromToken.decimals).gt(fromBalance);
   }, [fromAmount, fromToken, fromBalance]);
-  const isWrongNetwork = chainId !== 11155111; // && chainId !== 9998453;
+  const isWrongNetwork = chainId !== 11155111 && chainId !== 8453;
   const { onPress, isDisabled, buttonText, buttonVariant } = useMemo(() => {
     const isLoading =
       isLoadingFrom || isLoadingTo || isPending || isApprovePending;

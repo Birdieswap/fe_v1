@@ -24,12 +24,27 @@ export type ApproveTransactionProps = {
   input?: IToken;
 };
 
+export type SwapBenchmarkInfo = {
+  benchmarkOut: string;
+  // 비교 시 interface fee 고려 = benchmarkOut * 0.9975
+  benchmarkOutAfterFee: string;
+  // 실제 수령량 (token units, string)
+  actualOut: string;
+  // USD 환산 이익(달러)
+  profitUsd: string; // e.g. "1.23"
+  // 토큰 수량 차이(actual - benchmarkAfterFee)
+  profitToken: string; // e.g. "0.0123"
+};
+
 export type SwapTransactionProps = {
   chainId: number;
   transactionType: TransactionType.SWAP;
   input: TransactionTokenDisplayProps;
   output: TransactionTokenDisplayProps;
   address?: `0x${string}`;
+
+  swapBenchmarkInfo?: SwapBenchmarkInfo | null;
+  fireConfetti?: boolean;
 };
 
 export type StartFarmingTransactionProps = {

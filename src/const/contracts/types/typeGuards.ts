@@ -9,6 +9,7 @@ import {
   IStakingProvider,
   ISwapPool,
   IToken,
+  ITokenBase,
 } from "./tokenTypes";
 
 export function StakingProviderGuard<U extends IStakingProvider>(item: U) {
@@ -17,8 +18,16 @@ export function StakingProviderGuard<U extends IStakingProvider>(item: U) {
 export function CurrencyGuard<U extends ICurrency>(item: U) {
   return item as ICurrency & U;
 }
-export function SwapPoolGuard<U extends ISwapPool>(item: U) {
-  return item as ISwapPool & U;
+export function SwapPoolGuard(
+  item: ISwapPool<IBirdieSingleFarm>
+): ISwapPool<IBirdieSingleFarm>;
+
+export function SwapPoolGuard(item: ISwapPool<ICurrency>): ISwapPool<ICurrency>;
+
+export function SwapPoolGuard<T extends ITokenBase>(
+  item: ISwapPool<T>
+): ISwapPool<T> {
+  return item;
 }
 export function BirdieSingleFarmGuard<U extends IBirdieSingleFarm>(item: U) {
   return item as IBirdieSingleFarm & U;

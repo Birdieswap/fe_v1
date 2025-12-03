@@ -1,316 +1,245 @@
 import type { ICurrency } from "@/const/contracts/types/tokenTypes";
-import * as SwapPoolMod from "@/const/contracts/tokens/swapPool";
-import * as TokensRegMod from "@/const/contracts/tokens/tokens";
-import * as SingleVaultsMod from "@/const/contracts/tokens/singleVaults";
-import * as TokenInfoMod from "@/const/tokenInfo";
+import internalSwapPoolsMod from "@/const/contracts/tokens/swapPool";
+import externalSwapPoolsMod from "@/const/contracts/tokens/externalSwapPool";
+import tokens from "@/const/contracts/tokens/tokens";
+import { INTERNAL_TOKENS, EXTERNAL_TOKENS } from "@/const/tokenInfo";
 
-const lc = (s?: string | null) => (s ? String(s).toLowerCase() : "");
-const isObj = (x: unknown): x is Record<string, unknown> =>
-  typeof x === "object" && x !== null;
+const symUP = (t?: ICurrency | null) => String(t?.symbol ?? "").toUpperCase();
+const isETH = (t?: ICurrency | null) => symUP(t) === "ETH";
+const isWETH = (t?: ICurrency | null) => symUP(t) === "WETH";
 
-function isTokenLike(x: any): x is ICurrency {
-  return !!x && typeof x === "object" && typeof (x as any).symbol === "string";
-}
-const symOf = (t?: ICurrency) => lc((t as any)?.symbol);
-
-// ----- tokenInfo.ts 호환: SwapTokens 배열 / tokens 레지스트리 복원 -----
-function resolveTokenInfo(mod: any): {
-  SwapTokens: ICurrency[];
-  TokensRegistry: Record<string, ICurrency>;
-} {
-  const any = (mod || {}) as any;
-  const def = (any.default || {}) as any;
-
-  // SwapTokens 후보
-  const arrCands = [
-    any.SwapTokens,
-    def.SwapTokens,
-    any.TOKEN_LIST,
-    def.TOKEN_LIST,
-    any.tokensArray,
-    def.tokensArray,
-  ];
-  let SwapTokens: ICurrency[] =
-    (arrCands.find((v) => Array.isArray(v)) as ICurrency[]) || [];
-
-  // tokens 레지스트리 후보
-  const regCands = [
-    any.tokens,
-    def.tokens,
-    any.TOKENS,
-    def.TOKENS,
-    any.registry,
-    def.registry,
-  ];
-  let TokensRegistry: Record<string, ICurrency> | null =
-    (regCands.find((v) => isObj(v)) as any) || null;
-
-  // 레지스트리만 있고 배열이 없으면 값들로 배열 구성
-  if (!SwapTokens.length && TokensRegistry) {
-    const vals = Object.values(TokensRegistry).filter(
-      isTokenLike
-    ) as ICurrency[];
-    if (vals.length) SwapTokens = vals;
-  }
-  // 배열만 있고 레지스트리 없으면 심볼 기반으로 생성
-  if (!TokensRegistry) {
-    const m: Record<string, ICurrency> = {};
-    for (const t of SwapTokens) {
-      const s = symOf(t);
-      if (s) m[s] = t;
-    }
-    TokensRegistry = m;
-  }
-  return { SwapTokens, TokensRegistry: TokensRegistry! };
-}
-const { SwapTokens, TokensRegistry } = resolveTokenInfo(TokenInfoMod);
-
-// ----- tokens.ts 레지스트리(예: tokens.USDC)도 합쳐둔다(없으면 패스) -----
-(function mergeTokensRegistry(mod: any) {
-  const any = (mod || {}) as any;
-  const def = (any.default || {}) as any;
-  const candidates = [
-    any.tokens,
-    def.tokens,
-    any.TOKENS,
-    def.TOKENS,
-    any.registry,
-    def.registry,
-    any,
-  ];
-  for (const c of candidates) {
-    if (!c || typeof c !== "object") continue;
-    for (const [k, v] of Object.entries(c)) {
-      if (!isTokenLike(v)) continue;
-      const s = symOf(v);
-      if (s && !TokensRegistry[s]) TokensRegistry[s] = v as ICurrency;
-    }
-  }
-})(TokensRegMod);
-
-// ----- singleVaults 전체를 평탄화(문자열 키 접근 가능) -----
-function buildSingleVaultIndex(mod: any) {
+function resolvePoolList(mod: any): any[] {
   const root = (mod && (mod.default ?? mod)) ?? {};
-  const idx = new Map<string, any>();
-  function walk(obj: any, path: string[] = []) {
-    if (!obj || typeof obj !== "object") return;
-    for (const [k, v] of Object.entries(obj)) {
-      const p = [...path, k];
-      idx.set(k, v);
-      idx.set(p.join("."), v); // groupA.blp... 같은 형태도 지원
-      if (typeof v === "object") walk(v, p);
-    }
-  }
-  walk(root);
-  return idx;
-}
-const SINGLE_VAULT_IDX = buildSingleVaultIndex(SingleVaultsMod);
-const getVaultRecord = (key: any) =>
-  typeof key === "string" ? SINGLE_VAULT_IDX.get(key) : key;
-
-// ----- swapPools 수집 (배열/객체/디폴트 모두 지원) -----
-type PoolLike = { input?: any[]; name?: string; id?: string; key?: string };
-
-function resolveSwapPools(mod: any): Array<PoolLike & { __name?: string }> {
-  const raw = (mod && (mod.default ?? mod)) ?? {};
-  const out: Array<PoolLike & { __name?: string }> = [];
-
-  if (Array.isArray(raw)) {
-    for (const p of raw) if (isObj(p)) out.push(p as any);
-  } else {
-    // named object로 들어오는 경우
-    for (const [k, v] of Object.entries(raw)) {
-      if (Array.isArray(v as any)) {
-        // 배열이면 그 내부 객체들
-        for (const p of v as any[]) {
-          if (isObj(p)) out.push({ ...(p as any), __name: k });
-        }
-      } else if (isObj(v)) {
-        out.push({ ...(v as any), __name: k });
-      }
-    }
-    // 흔한 키들
-    for (const key of ["swapPools", "pools"]) {
-      if (Array.isArray((raw as any)[key])) {
-        for (const p of (raw as any)[key]) if (isObj(p)) out.push(p as any);
-      }
-    }
-  }
-  return out;
-}
-
-// ----- vault input → 토큰(ICurrency[]) 복원 -----
-//  (1) 이미 토큰 객체 배열이면 그대로
-//  (2) 문자열 배열이면 심볼 키로 TokensRegistry 찾아서 복원
-//  (3) vault 키(문자열)면 vault 찾아서 그 안의 input/tokens/underlyings 등을 다시 복원
-function tokensFromUnknown(x: any): ICurrency[] {
-  if (!x) return [];
-  if (Array.isArray(x) && x.every(isTokenLike)) return x as ICurrency[];
-
-  if (Array.isArray(x) && x.every((v) => typeof v === "string")) {
-    const out: ICurrency[] = [];
-    for (const s of x as string[]) {
-      const key = lc(s);
-      const tok = TokensRegistry[key] || TokensRegistry[key.toUpperCase()];
-      if (isTokenLike(tok)) out.push(tok);
-    }
-    return out;
-  }
-
-  if (typeof x === "string") return tokensFromUnknown(getVaultRecord(x));
-
-  if (isObj(x)) {
-    const cand =
-      (Array.isArray((x as any).input) && (x as any).input) ||
-      (Array.isArray((x as any).tokens) && (x as any).tokens) ||
-      (Array.isArray((x as any).underlyings) && (x as any).underlyings) ||
-      (Array.isArray((x as any).assets) && (x as any).assets) ||
-      (Array.isArray((x as any).pair) && (x as any).pair) ||
-      (Array.isArray((x as any).pairs) && (x as any).pairs) ||
-      null;
-    if (!cand) return [];
-    const out: ICurrency[] = [];
-    for (const item of cand) {
-      if (isTokenLike(item)) out.push(item);
-      else if (typeof item === "string")
-        out.push(...tokensFromUnknown(getVaultRecord(item)));
-      else if (Array.isArray(item) || isObj(item))
-        out.push(...tokensFromUnknown(item));
-    }
-    return out;
-  }
+  if (Array.isArray(root)) return root.filter(Boolean);
+  if (root && typeof root === "object")
+    return Object.values(root).filter(Boolean);
   return [];
 }
 
-// ======================================================================
-//                            pairList 빌드
-// ======================================================================
-
-let PAIR_LIST_CACHE: ICurrency[][] | null = null;
-
-/** swapPools의 각 pool.input에 있는 두 개의 singleVault를 읽고,
- *  각 vault.input을 토큰 배열로 복원해 무순서 쌍으로 pairList 구성 */
-function buildPairList(): ICurrency[][] {
-  const pools = resolveSwapPools(SwapPoolMod);
-  const pairs: ICurrency[][] = [];
-  const seen = new Set<string>();
-
-  for (const pool of pools) {
-    const inputs = Array.isArray(pool?.input) ? pool.input : [];
-    if (inputs.length < 2) continue;
-
-    // 문제에서 명시: input에는 두 개의 singleVault가 들어있음
-    const vA = tokensFromUnknown(inputs[0]);
-    const vB = tokensFromUnknown(inputs[1]);
-    if (!vA.length || !vB.length) continue;
-
-    // 일반화: 교차 조합으로 쌍 구성 (보통 각 1개지만 방어)
-    for (const tA of vA)
-      for (const tB of vB) {
-        if (!isTokenLike(tA) || !isTokenLike(tB)) continue;
-        const sA = symOf(tA);
-        const sB = symOf(tB);
-        if (!sA || !sB) continue;
-
-        // 무순서 쌍 dedupe
-        const key = sA < sB ? `${sA}|${sB}` : `${sB}|${sA}`;
-        if (seen.has(key)) continue;
-        seen.add(key);
-        pairs.push([tA, tB]);
-      }
-  }
-
-  // 만약 swapPool/singleVaults 해석이 전부 실패했다면,
-  // 안전장치로 pool 이름(예: ...WETHUSDC)의 접미부에서 심볼 두 개를 파싱해 복원 시도
-  if (!pairs.length) {
-    const pools = resolveSwapPools(SwapPoolMod);
-    const symbols = Object.keys(TokensRegistry).sort(
-      (a, b) => b.length - a.length
-    ); // 긴 심볼 우선 매칭
-    for (const p of pools) {
-      const name = String(
-        p?.name || p?.id || p?.key || (p as any)?.__name || ""
-      );
-      const cap = name.toUpperCase();
-      // 접미부에서 두 심볼 추정 (ex: EURCUSDC, CBBTCWETH ...)
-      for (let i = 0; i < symbols.length; i++) {
-        for (let j = i + 1; j < symbols.length; j++) {
-          const s1 = symbols[i].toUpperCase();
-          const s2 = symbols[j].toUpperCase();
-          if (cap.includes(s1) && cap.includes(s2)) {
-            const t1 = TokensRegistry[lc(s1)] || TokensRegistry[s1];
-            const t2 = TokensRegistry[lc(s2)] || TokensRegistry[s2];
-            if (isTokenLike(t1) && isTokenLike(t2)) {
-              const key = s1 < s2 ? `${s1}|${s2}` : `${s2}|${s1}`;
-              if (!seen.has(key)) {
-                seen.add(key);
-                pairs.push([t1, t2]);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return pairs;
+/** pool 자체 주소가 chainId에 있어야 그 체인에서 "존재하는 풀"로 인정 */
+function hasPoolAddressOnChain(pool: any, chainId: number) {
+  const addr = pool?.addresses?.[chainId];
+  return typeof addr === "string" && addr.length > 0;
 }
 
-function ensurePairList(): ICurrency[][] {
-  if (!PAIR_LIST_CACHE) {
-    PAIR_LIST_CACHE = buildPairList();
-    // console.log("[getAvailableTokens] pairList built:", PAIR_LIST_CACHE?.map(p=>p.map(t=>t.symbol)));
-  }
-  return PAIR_LIST_CACHE;
+/**
+ * token이 체인 주소를 가지는지
+ * - ETH는 native라 주소가 없을 수 있으니 true로 허용
+ */
+function hasAddressOnChain(token?: ICurrency | null, chainId?: number) {
+  if (!token || !chainId) return false;
+  if (isETH(token)) return true;
+  const addr = token.addresses?.[chainId];
+  return typeof addr === "string" && addr.length > 0;
 }
 
-// ======================================================================
-//                       공개 API: 파트너 / 가용 토큰
-// ======================================================================
+/**
+ * 페어 매칭용 address(lower)
+ *
+ * IMPORTANT:
+ * - "풀 탐색/매칭"에서는 'ETH=ETH'로 취급하고 싶지만
+ *   실제 풀 및 external 토큰 주소 비교는 ERC20 주소가 필요하다.
+ * - 따라서 비교용 주소는 ETH -> WETH 주소로 정규화한다.
+ *
+ * (표시용 토큰은 별도로 매핑)
+ */
+function matchAddrLower(token?: ICurrency | null, chainId?: number): string {
+  if (!token || !chainId) return "";
+  const addr = isETH(token)
+    ? (tokens.WETH.addresses?.[chainId] as string | undefined)
+    : (token.addresses?.[chainId] as string | undefined);
+  return typeof addr === "string" && addr.length > 0 ? addr.toLowerCase() : "";
+}
 
-/** baseToken을 포함하는 pair의 '상대 토큰'들을 모아 반환 */
-export function getPartnerTokens(baseToken: ICurrency): ICurrency[] {
-  const pairs = ensurePairList();
-  const target = symOf(baseToken);
-  if (!target) return [];
+function pairKey(a: string, b: string) {
+  if (!a || !b) return "";
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/**
+ * address(lower) => "표시용 토큰" 매핑
+ * - ETH는 matchAddrLower에서 WETH주소로 들어가지만, 표시할 때는 ETH로 보여주고 싶다.
+ * - 그래서 WETH 주소를 ETH 토큰 객체로 맵핑해 둔다.
+ */
+function buildAddrToDisplayToken(chainId: number) {
+  const map = new Map<string, ICurrency>();
+  const all = [...(INTERNAL_TOKENS ?? []), ...(EXTERNAL_TOKENS ?? [])].filter(
+    Boolean
+  ) as ICurrency[];
+
+  for (const t of all) {
+    const a = matchAddrLower(t, chainId);
+    if (a) map.set(a, t);
+  }
+
+  //  핵심: WETH 주소는 표시용으로 ETH로 보이게 (ETH 선택 UX 유지)
+  const wethAddr = matchAddrLower(tokens.WETH as any, chainId);
+  if (wethAddr) map.set(wethAddr, tokens.ETH as any as ICurrency);
+
+  return map;
+}
+
+/** internal pool: input[i]는 singleVault(bFarm), underlying은 input[i].input */
+function internalUnderlyingTokens(
+  pool: any
+): [ICurrency | null, ICurrency | null] {
+  const a = pool?.input?.[0]?.input ?? null;
+  const b = pool?.input?.[1]?.input ?? null;
+  return [a, b];
+}
+
+/** external pool: input[i]가 underlying token */
+function externalUnderlyingTokens(
+  pool: any
+): [ICurrency | null, ICurrency | null] {
+  const a = pool?.input?.[0] ?? null;
+  const b = pool?.input?.[1] ?? null;
+  return [a, b];
+}
+
+/**
+ * getPartnerTokens
+ *
+ * 요구사항:
+ * 1) baseToken 포함 풀을 internalSwapPool에서 찾고, 그 다음 externalSwapPool에서 찾는다.
+ * 2) internal에도 있고 external에도 있으면 internal만 포함(중복 pair skip)
+ * 4) pool + tokens 모두 chainId 주소가 있는 것만
+ *
+ * NOTE:
+ * - 반환 토큰은 "표시용 토큰" (ETH는 ETH로 반환)
+ * - 실제 비교는 matchAddrLower(ETH->WETH) 사용
+ */
+export function getPartnerTokens(
+  baseToken: ICurrency,
+  chainId: number
+): ICurrency[] {
+  if (!baseToken || !chainId) return [];
+
+  const addrToDisplay = buildAddrToDisplayToken(chainId);
+  const baseAddr = matchAddrLower(baseToken, chainId);
+  if (!baseAddr) return [];
+
+  const partners: ICurrency[] = [];
+  const addedPartnerAddr = new Set<string>();
+  const internalPairKeys = new Set<string>();
+
+  // ---------------- internal first ----------------
+  const internalPools = resolvePoolList(internalSwapPoolsMod);
+
+  for (const p of internalPools) {
+    if (!hasPoolAddressOnChain(p, chainId)) continue;
+
+    const [u0, u1] = internalUnderlyingTokens(p);
+    if (
+      !hasAddressOnChain(u0 as any, chainId) ||
+      !hasAddressOnChain(u1 as any, chainId)
+    )
+      continue;
+
+    const a0 = matchAddrLower(u0 as any, chainId);
+    const a1 = matchAddrLower(u1 as any, chainId);
+    if (!a0 || !a1) continue;
+
+    const pk = pairKey(a0, a1);
+    if (!pk) continue;
+
+    if (a0 !== baseAddr && a1 !== baseAddr) continue;
+
+    internalPairKeys.add(pk);
+
+    const otherAddr = a0 === baseAddr ? a1 : a0;
+    if (!otherAddr || addedPartnerAddr.has(otherAddr)) continue;
+
+    const displayToken = addrToDisplay.get(otherAddr);
+    if (!displayToken) continue;
+
+    addedPartnerAddr.add(otherAddr);
+    partners.push(displayToken);
+  }
+
+  // ---------------- external (skip if internal already has same pair) ----------------
+  const externalPools = resolvePoolList(externalSwapPoolsMod);
+
+  for (const p of externalPools) {
+    if (!hasPoolAddressOnChain(p, chainId)) continue;
+
+    const [u0, u1] = externalUnderlyingTokens(p);
+    if (
+      !hasAddressOnChain(u0 as any, chainId) ||
+      !hasAddressOnChain(u1 as any, chainId)
+    )
+      continue;
+
+    const a0 = matchAddrLower(u0 as any, chainId);
+    const a1 = matchAddrLower(u1 as any, chainId);
+    if (!a0 || !a1) continue;
+
+    const pk = pairKey(a0, a1);
+    if (!pk) continue;
+
+    //  요구사항 2: internal에 같은 pair 있으면 external 스킵
+    if (internalPairKeys.has(pk)) continue;
+
+    if (a0 !== baseAddr && a1 !== baseAddr) continue;
+
+    const otherAddr = a0 === baseAddr ? a1 : a0;
+    if (!otherAddr || addedPartnerAddr.has(otherAddr)) continue;
+
+    const displayToken = addrToDisplay.get(otherAddr);
+    if (!displayToken) continue;
+
+    addedPartnerAddr.add(otherAddr);
+    partners.push(displayToken);
+  }
+
+  return partners;
+}
+
+/**
+ * getAvailableTokens
+ *
+ * 요구사항:
+ * - baseToken은 항상 포함
+ * - baseToken=ETH이면 WETH 포함
+ * - baseToken=WETH이면 ETH 포함
+ */
+export default function getAvailableTokens(
+  baseToken?: ICurrency,
+  chainId?: number
+): ICurrency[] {
+  const all = [...(INTERNAL_TOKENS ?? []), ...(EXTERNAL_TOKENS ?? [])].filter(
+    Boolean
+  ) as ICurrency[];
+  if (!chainId) return all;
+
+  // baseToken 없으면: 체인 주소 있는 토큰만
+  if (!baseToken) return all.filter((t) => hasAddressOnChain(t, chainId));
 
   const out: ICurrency[] = [];
   const seen = new Set<string>();
 
-  for (const pair of pairs) {
-    if (pair.length < 2) continue;
-    const [a, b] = pair;
-    const sA = symOf(a),
-      sB = symOf(b);
-    if (sA === target && sB && !seen.has(sB)) {
-      seen.add(sB);
-      out.push(b);
-    } else if (sB === target && sA && !seen.has(sA)) {
-      seen.add(sA);
-      out.push(a);
-    }
-  }
-  // console.log("getAvailableTokens!!!!!! getPartnerTokens PAIRS",pairs,"out",out)
+  const push = (t?: ICurrency | null) => {
+    if (!t) return;
+    if (!hasAddressOnChain(t, chainId)) return;
+    const k = symUP(t);
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    out.push(t);
+  };
+
+  // baseToken은 항상 포함
+  push(baseToken);
+
+  // partner들
+  for (const p of getPartnerTokens(baseToken, chainId)) push(p);
+
+  // ETH <-> WETH "표시/선택 편의" 규칙
+  if (isETH(baseToken)) push(tokens.WETH as any as ICurrency);
+  if (isWETH(baseToken)) push(tokens.ETH as any as ICurrency);
+
+  // toToken 후보(out)에 ETH가 있으면 WETH도 같이 포함
+  const hasEthInOut = out.some((t) => isETH(t));
+  if (hasEthInOut) push(tokens.WETH as any as ICurrency);
+
   return out;
-}
-
-/** baseToken이 없으면 SwapTokens 전체, 있으면 파트너 + 자기 자신 반환 */
-export default function getAvailableTokens(baseToken?: ICurrency): ICurrency[] {
-  if (!baseToken) {
-    return Array.isArray(SwapTokens) && SwapTokens.length
-      ? SwapTokens
-      : Object.values(TokensRegistry).filter(isTokenLike);
-  }
-  const partners = getPartnerTokens(baseToken);
-  const selfSym = symOf(baseToken);
-  const exists = partners.some((t) => symOf(t) === selfSym);
-
-  // console.log("getAvailableTokens!!!!!! getPartnerTokens partners",partners,"exists",exists)
-
-  return exists ? partners : [...partners, baseToken];
-}
-
-// 디버깅용
-export function getPairList(): ICurrency[][] {
-  return ensurePairList();
 }

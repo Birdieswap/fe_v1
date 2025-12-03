@@ -2,911 +2,917 @@ import { Abi } from "viem";
 
 export const birdieswap_staking_abi = [
   {
-    "type": "constructor",
-    "inputs": [
+    type: "constructor",
+    inputs: [
       {
-        "name": "deployerAddress_",
-        "type": "address",
-        "internalType": "address"
+        name: "configAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "stakingTokenAddress_",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "DEFAULT_ADMIN_ROLE",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "addRewardToken",
-    "inputs": [
-      {
-        "name": "_rewardToken",
-        "type": "address",
-        "internalType": "contract IERC20"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "balanceOf",
-    "inputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "claim",
-    "inputs": [
-      {
-        "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "claimAll",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "claimMany",
-    "inputs": [
-      {
-        "name": "_indices",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "deposit",
-    "inputs": [
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "depositAndClaimAll",
-    "inputs": [
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "earned",
-    "inputs": [
-      {
-        "name": "_account",
-        "type": "address",
-        "internalType": "address"
+        name: "storageAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "emergencyWithdraw",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "exitAndClaimAll",
-    "inputs": [
-      {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "fundReward",
-    "inputs": [
-      {
-        "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "stakingTokenAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "roleRouterAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_duration",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "getPendingRewards",
-    "inputs": [
-      {
-        "name": "_account",
-        "type": "address",
-        "internalType": "address"
+        name: "eventRelayerAddress_",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "_indices",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
+        name: "zapAddress_",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "stateMutability": "view"
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "getRewardCount",
-    "inputs": [],
-    "outputs": [
+    type: "function",
+    name: "DEFAULT_ADMIN_ROLE",
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "getRewardInfo",
-    "inputs": [
+    type: "function",
+    name: "DISTRIBUTOR_ROLE",
+    inputs: [],
+    outputs: [
       {
-        "name": "index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
     ],
-    "outputs": [
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "GUARDIAN_ROLE",
+    inputs: [],
+    outputs: [
       {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "KEEPER_ROLE",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "MANAGER_ROLE",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "OPERATOR_ROLE",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bytes32",
+        internalType: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "addRewardToken",
+    inputs: [
+      {
+        name: "_rewardToken",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "balanceOf",
+    inputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "claim",
+    inputs: [
+      {
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "claimAll",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "claimMany",
+    inputs: [
+      {
+        name: "_rewardIndices",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "deposit",
+    inputs: [
+      {
+        name: "_stakeAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "depositAndClaimAll",
+    inputs: [
+      {
+        name: "_stakeAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "depositsPaused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "earned",
+    inputs: [
+      {
+        name: "_userAddress",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "rewardPerTokenStored",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "total",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "easyEnter",
+    inputs: [
+      {
+        name: "_tokenIn",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "lastUpdate",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "_tokenInAmount",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "rewardSpeed",
-        "type": "uint256",
-        "internalType": "uint256"
+        name: "_beneficiary",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "sharesMinted",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "easyPay",
+    inputs: [
+      {
+        name: "_stakingShares",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "periodFinish",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getRoleAdmin",
-    "inputs": [
-      {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getStakingToken",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTotalOutstanding",
-    "inputs": [
-      {
-        "name": "index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "getTotalSupply",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "grantRole",
-    "inputs": [
-      {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: "_tokenOut",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "hasRole",
-    "inputs": [
-      {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: "_exactOut",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "_beneficiary",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "pause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "paused",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "renounceRole",
-    "inputs": [
-      {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "callerConfirmation",
-        "type": "address",
-        "internalType": "address"
-      }
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "rescueERC20",
-    "inputs": [
+    type: "function",
+    name: "emergencyWithdraw",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "fundReward",
+    inputs: [
       {
-        "name": "_token",
-        "type": "address",
-        "internalType": "contract IERC20"
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "_to",
-        "type": "address",
-        "internalType": "address"
+        name: "_rewardAmount",
+        type: "uint256",
+        internalType: "uint256",
       },
       {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_duration",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "function",
-    "name": "revokeRole",
-    "inputs": [
+    type: "function",
+    name: "getAllRewardTokens",
+    inputs: [],
+    outputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "internalType": "bytes32"
+        name: "tokens",
+        type: "address[]",
+        internalType: "address[]",
       },
-      {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
-      }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "rewardPerToken",
-    "inputs": [
+    type: "function",
+    name: "getPendingRewards",
+    inputs: [
       {
-        "name": "_index",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_account",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_rewardIndices",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
     ],
-    "outputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "pendingRewards",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "supportsInterface",
-    "inputs": [
+    type: "function",
+    name: "getRewardCount",
+    inputs: [],
+    outputs: [
       {
-        "name": "interfaceId",
-        "type": "bytes4",
-        "internalType": "bytes4"
-      }
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getRewardInfo",
+    inputs: [
       {
-        "name": "",
-        "type": "bool",
-        "internalType": "bool"
-      }
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "unpause",
-    "inputs": [],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "userRewardAccrued",
-    "inputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
+        name: "token",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "rewardPerTokenStored",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "lastUpdate",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "rewardSpeed",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "periodFinish",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getRewardPerToken",
+    inputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
-    "name": "userRewardPerTokenPaid",
-    "inputs": [
+    outputs: [
       {
-        "name": "",
-        "type": "address",
-        "internalType": "address"
+        name: "rewardPerToken",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
     ],
-    "outputs": [
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getStakingToken",
+    inputs: [],
+    outputs: [
       {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
     ],
-    "stateMutability": "view"
+    stateMutability: "view",
   },
   {
-    "type": "function",
-    "name": "withdraw",
-    "inputs": [
+    type: "function",
+    name: "getTotalOutstanding",
+    inputs: [
       {
-        "name": "_amount",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "event",
-    "name": "Deposit",
-    "inputs": [
+    outputs: [
       {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "remaining",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "ERC20Rescued",
-    "inputs": [
+    type: "function",
+    name: "getTotalSupply",
+    inputs: [],
+    outputs: [
       {
-        "name": "token",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "to",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "by",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "Paused",
-    "inputs": [
+    type: "function",
+    name: "getVersion",
+    inputs: [],
+    outputs: [
       {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
+        name: "",
+        type: "string",
+        internalType: "string",
+      },
     ],
-    "anonymous": false
+    stateMutability: "pure",
   },
   {
-    "type": "event",
-    "name": "RewardFunded",
-    "inputs": [
+    type: "function",
+    name: "i_underlying0",
+    inputs: [],
+    outputs: [
       {
-        "name": "index",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: "",
+        type: "address",
+        internalType: "address",
       },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "duration",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "from",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "leftover",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "newRewardSpeed",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "RewardPaid",
-    "inputs": [
+    type: "function",
+    name: "i_underlying1",
+    inputs: [],
+    outputs: [
       {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "",
+        type: "address",
+        internalType: "address",
       },
-      {
-        "name": "index",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
-      },
-      {
-        "name": "reward",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "RewardTokenAdded",
-    "inputs": [
+    type: "function",
+    name: "pause",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "pauseDeposits",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "pauseWithdrawals",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "paused",
+    inputs: [],
+    outputs: [
       {
-        "name": "index",
-        "type": "uint256",
-        "indexed": true,
-        "internalType": "uint256"
+        name: "",
+        type: "bool",
+        internalType: "bool",
       },
-      {
-        "name": "token",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "RoleAdminChanged",
-    "inputs": [
+    type: "function",
+    name: "rescueERC20",
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: "_tokenAddress",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "previousAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: "_receiverAddress",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "newAdminRole",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      }
+        name: "_amount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
-    "anonymous": false
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
-    "type": "event",
-    "name": "RoleGranted",
-    "inputs": [
+    type: "function",
+    name: "unpause",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unpauseDeposits",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unpauseWithdrawals",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "userRewardAccrued",
+    inputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: "",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
     ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "RoleRevoked",
-    "inputs": [
+    outputs: [
       {
-        "name": "role",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
-      {
-        "name": "account",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "sender",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
     ],
-    "anonymous": false
+    stateMutability: "view",
   },
   {
-    "type": "event",
-    "name": "Unpaused",
-    "inputs": [
+    type: "function",
+    name: "userRewardPerTokenPaid",
+    inputs: [
       {
-        "name": "account",
-        "type": "address",
-        "indexed": false,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
-    "name": "Withdraw",
-    "inputs": [
-      {
-        "name": "user",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
+        name: "",
+        type: "address",
+        internalType: "address",
       },
       {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "error",
-    "name": "AccessControlBadConfirmation",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "AccessControlUnauthorizedAccount",
-    "inputs": [
-      {
-        "name": "account",
-        "type": "address",
-        "internalType": "address"
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
       },
+    ],
+    outputs: [
       {
-        "name": "neededRole",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ]
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
   },
   {
-    "type": "error",
-    "name": "BirdieswapStakingV1__CannotRescueRewardToken",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__CannotRescueStakingToken",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__ExceededMaxRewardTokens",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__InsufficientBalance",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__InsufficientContractBalance",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__InvalidAmount",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__InvalidDuration",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__InvalidRewardTokens",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__OverflowError",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "BirdieswapStakingV1__RewardSpeedTooHigh",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "EnforcedPause",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ExpectedPause",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ReentrancyGuardReentrantCall",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "SafeERC20FailedOperation",
-    "inputs": [
+    type: "function",
+    name: "withdraw",
+    inputs: [
       {
-        "name": "token",
-        "type": "address",
-        "internalType": "address"
-      }
-    ]
-  }
-]as const satisfies Abi;
+        name: "_withdrawAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "withdrawAndClaimAll",
+    inputs: [
+      {
+        name: "_withdrawAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "withdrawalsPaused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "event",
+    name: "Paused",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "event",
+    name: "Unpaused",
+    inputs: [
+      {
+        name: "account",
+        type: "address",
+        indexed: false,
+        internalType: "address",
+      },
+    ],
+    anonymous: false,
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__CannotRescueRewardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__CannotRescueStakingToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__DepositsAlreadyPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__DepositsNotPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__DepositsPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__DuplicatedClaimIndex",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__DuplicatedRewardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterZeroAddress",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterZeroAmount",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterZeroShares",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayInsufficientOut",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayZeroAddress",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayZeroAmount",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__ExceededMaxCap",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__ExceededMaxRewardTokens",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__GlobalPauseActive",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InsufficientBalance",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InsufficientContractBalance",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidAmount",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidDuration",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidRewardIndex",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__NonStandardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__NotValidContract",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__PrecisionZero",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__ReentrantCall",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__RewardSpeedTooHigh",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__RewardTokenNotWhitelisted",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__StakingTokenCannotBeRewardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__UnauthorizedAccess",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__WithdrawalsAlreadyPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__WithdrawalsNotPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__WithdrawalsPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__ZeroAddressNotAllowed",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "EnforcedPause",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "ExpectedPause",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "ReentrancyGuardReentrantCall",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "SafeERC20FailedOperation",
+    inputs: [
+      {
+        name: "token",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+  },
+] as const satisfies Abi;
