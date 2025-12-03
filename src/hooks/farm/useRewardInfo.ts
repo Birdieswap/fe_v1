@@ -52,9 +52,10 @@ export function useRewardInfo(item: Farm, priceBD?: BigDecimal | null) {
 
   const dprRaw = matched?.staking?.dailyPoint as string | number | undefined;
 
-  const dailyPointNum = Number(
-    typeof dprRaw === "string" || typeof dprRaw === "number" ? dprRaw : 0
-  );
+  const dailyPointNum =
+    Number(
+      typeof dprRaw === "string" || typeof dprRaw === "number" ? dprRaw : 0
+    ) * 365;
   const extraList = (matched?.staking?.extraRewards ?? []) as any[];
 
   // --- 1) userPoints 기반 유저 스테이킹 여부 ---

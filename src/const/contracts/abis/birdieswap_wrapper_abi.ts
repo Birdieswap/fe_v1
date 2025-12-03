@@ -9,16 +9,6 @@ export const birdieswap_wrapper_abi = [
         type: "address",
         internalType: "address",
       },
-      {
-        name: "router_",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "eventRelayer_",
-        type: "address",
-        internalType: "address",
-      },
     ],
     stateMutability: "nonpayable",
   },
@@ -88,6 +78,25 @@ export const birdieswap_wrapper_abi = [
       },
     ],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "easyEnterWithETH",
+    inputs: [
+      {
+        name: "_stakingContract",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
+      {
+        name: "sharesMinted",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "payable",
   },
   {
     type: "function",
@@ -194,6 +203,11 @@ export const birdieswap_wrapper_abi = [
         type: "address",
         internalType: "address",
       },
+      {
+        name: "_deadline",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     outputs: [
       {
@@ -238,6 +252,11 @@ export const birdieswap_wrapper_abi = [
         type: "address",
         internalType: "address",
       },
+      {
+        name: "_deadline",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     outputs: [
       {
@@ -256,6 +275,11 @@ export const birdieswap_wrapper_abi = [
   {
     type: "error",
     name: "BirdieswapWrapperV1__NoWETHInPair",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__NonStandardToken",
     inputs: [],
   },
   {
@@ -300,7 +324,7 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__WrapperDidNotReceiveTokens",
+    name: "BirdieswapWrapperV1__WrapperDidNotReceiveExpectedTokens",
     inputs: [],
   },
   {

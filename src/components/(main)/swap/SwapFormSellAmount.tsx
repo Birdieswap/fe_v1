@@ -83,12 +83,17 @@ export default function SwapFormAmount({
 
   function openSelectTokenModal() {
     const baseToken = type === "sell" ? toToken : fromToken;
+
     if (!baseToken) {
-      setAvailableTokens(SwapTokens);
+      // 기준 토큰이 없을 때도 현재 체인 기준으로 필터링
+      setAvailableTokens(getAvailableTokens(undefined, chainId));
     } else {
-      const list = getAvailableTokens(baseToken);
-      setAvailableTokens(list && list.length ? list : SwapTokens);
+      const list = getAvailableTokens(baseToken, chainId);
+      setAvailableTokens(
+        list && list.length ? list : getAvailableTokens(undefined, chainId)
+      );
     }
+
     disclosure.onOpen();
   }
 

@@ -65,6 +65,10 @@ export interface PoolInfo {
   outBpool: IBirdieSingleFarm | null;
   token0Decimals?: number;
   token1Decimals?: number;
+
+  token0Address?: Addr;
+  token1Address?: Addr;
+  fromIsToken0?: boolean;
 }
 
 export interface QuoteCtx {

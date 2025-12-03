@@ -1,4 +1,4 @@
-import { useContext, useState, useRef, useEffect } from "react";
+import { useContext, useState, useRef, useEffect, useMemo } from "react";
 import { useAccount, useChainId, useClient, useWriteContract } from "wagmi";
 
 import { TransactionContext } from "@/app/TransactionContextProvider";
@@ -14,6 +14,7 @@ import useTokenAddress from "../useTokenAddress";
 import useChainLinkPrice from "../useChainLinkPrice";
 
 import useSwapTokens from "./useSwap/useSwapTokens";
+import useTokenUsdPrice from "../useTokenUsdPrice";
 
 export default function useSwap() {
   const chainId = useChainId();
@@ -30,8 +31,17 @@ export default function useSwap() {
     balances,
     isFetching: isFetchingAssets,
   } = useContext(AssetsContext);
-  const fromPrice = useChainLinkPrice(fromToken);
-  const toPrice = useChainLinkPrice(toToken);
+  // const fromPrice = useChainLinkPrice(fromToken);
+  // const toPrice = useChainLinkPrice(toToken);
+
+  const { priceUsd: fromUsd } = useTokenUsdPrice(fromToken);
+  const { priceUsd: toUsd } = useTokenUsdPrice(toToken);
+
+  // 기존 컴포넌트들이 BigDecimal을 기대하면 변환해서 내려주기
+  const fromPrice =
+    fromUsd != null ? new BigDecimal(String(fromUsd)) : undefined;
+  const toPrice = toUsd != null ? new BigDecimal(String(toUsd)) : undefined;
+
   const client = useClient();
 
   const fromBalance = useBalance(fromToken);
@@ -70,8 +80,49 @@ export default function useSwap() {
     stopTyping: () => setIsTyping(false), // 디바운스 완료시 호출'
   });
 
+  // ===== [추가] external/internal 풀 중 "표시할 풀"을 정규화 =====
+  // - externalSwapPool이 존재하면 activeSwapPool로 쓰고
+  // - 없으면 기존 swapPool 사용
+  const externalSwapPool = (tempStuff as any).externalSwapPool ?? null; // ✅ 없을 수도 있으니 안전하게
+  const activeSwapPool = externalSwapPool ?? tempStuff.swapPool ?? null;
+
+  const isExternalSwapPool = useMemo(() => {
+    // external 풀은 isInternal: false 로 구분 가능
+    if (!activeSwapPool) return false;
+    return (activeSwapPool as any).isInternal === false;
+  }, [activeSwapPool]);
+
   const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
   const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
+
+  const prevChainIdRef = useRef<number | undefined>(chainId);
+
+  // CHANGE(필수): chain 변경 시 입력값 초기화
+
+  useEffect(() => {
+    const prev = prevChainIdRef.current;
+    if (!chainId || prev === chainId) return;
+
+    // ✅ 체인 변경 시: 초기 상태로 리셋
+    setFromToken(tokens.ETH);
+    setToToken(undefined);
+
+    setFromAmount("");
+    setToAmount("");
+
+    setPriceImpact(undefined); // 또는 new BigDecimal(0, 18)
+    setIsTyping(false);
+
+    // 필요하면: 스왑 관련 상태도 초기화 호출(가능한 경우)
+    // tempStuff.reset?.();
+
+    // ref도 같이 갱신 (토큰 변경 useEffect들의 "prev" 기준도 맞춰줌)
+    prevFromTokenRef.current = tokens.ETH;
+    prevToTokenRef.current = undefined;
+
+    prevChainIdRef.current = chainId;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chainId]);
 
   // CHANGE(필수): fromToken 변경 시 입력값 초기화
   useEffect(() => {
@@ -262,6 +313,12 @@ export default function useSwap() {
     isApprovePending: tempStuff.isApprovePending,
     swap: tempStuff.swap,
     swapPool: tempStuff.swapPool,
+
+    // ===== [추가] external도 노출 + UI에서 쓸 "activeSwapPool" 노출 =====
+    externalSwapPool, // 있을 경우만 채워짐
+    activeSwapPool, // SwapFeeInfo는 이거만 보면 됨
+    isExternalSwapPool, // external일 때 포인트 UI 숨기기용
+
     approve: tempStuff.approve,
     setToTokenWithGuard,
     setFromTokenWithGuard,
