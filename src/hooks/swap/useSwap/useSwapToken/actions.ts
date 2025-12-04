@@ -119,8 +119,7 @@ export async function swap(params: {
   setToAmount: (v: string) => void;
   balances?: any;
 
-  // ✅ 추가: 비교용 benchmark + toToken USD
-  benchmarkOut?: string | null; // token units (string)
+  benchmarkOut?: string | null;
   toTokenUsd?: number | null;
 }) {
   const {

@@ -44,69 +44,62 @@ export default function SwapFeeInfo() {
   const { aprDataState } = useContext(AssetsContext);
   const chainId = useChainId();
 
-  // ✅ [추가] pool 변수 하나로 통일
+  // ✅ pool 변수 하나로 통일
   const pool = activeSwapPool ?? null;
 
-  // ✅ [추가] 내부 풀일 때만 포인트 관련 UI/계산 수행
+  // ✅ 내부 풀일 때만 포인트 관련 UI/계산 수행
   const showSwapPointUI = !!pool && !isExternalSwapPool;
-
-  const getSwapPointAddress = (
-    token: typeof fromToken,
-    chainId: number
-  ): `0x${string}` | null => {
-    if (!token) return null;
-
-    // ETH → WETH 주소로 치환
-    if (token.symbol === "ETH") {
-      const wethAddress = tokens.WETH?.addresses?.[chainId];
-      if (wethAddress) return wethAddress as `0x${string}`;
-      return null;
-    }
-
-    // 일반 ERC20 토큰 주소
-    const address =
-      typeof token.addresses === "string"
-        ? token.addresses
-        : token.addresses?.[chainId];
-
-    return (address ?? null) as `0x${string}` | null;
-  };
-
-  const swapPointValue = useMemo(() => {
-    if (!showSwapPointUI) return null;
-
-    if (!aprDataState?.SwapPointsDistributionSpeed || !fromToken) return null;
-
-    // fromToken 구조에 맞게 address 를 꺼내 주세요
-    const tokenAddress = getSwapPointAddress(fromToken, chainId);
-
-    if (!tokenAddress) return null;
-
-    const value = aprDataState.SwapPointsDistributionSpeed[tokenAddress];
-
-    // console.log("swapPointValue in SwapFeeInfo:", tokenAddress, value);
-
-    return value ?? null;
-  }, [aprDataState, fromToken, chainId]);
 
   // 10^n 을 문자열로 만드는 헬퍼 (예: n=6 -> "1000000")
   const pow10String = (decimals: number) =>
     decimals <= 0 ? "1" : "1" + "0".repeat(decimals);
 
+  /**
+   * ✅ Swap Point 조회용 주소:
+   * - ETH면 WETH 주소로 치환
+   * - 그 외는 token.addresses에서 chainId에 맞춰 추출
+   */
+  const swapPointTokenAddress = useMemo((): `0x${string}` | null => {
+    if (!showSwapPointUI || !fromToken) return null;
+
+    const isEth = fromToken.symbol?.toUpperCase?.() === "ETH";
+    if (isEth) {
+      const weth = tokens.WETH?.addresses?.[chainId];
+      return (weth ?? null) as `0x${string}` | null;
+    }
+
+    const addr =
+      typeof (fromToken as any).addresses === "string"
+        ? ((fromToken as any).addresses as string)
+        : ((fromToken as any).addresses?.[chainId] as string | undefined);
+
+    return (addr ?? null) as `0x${string}` | null;
+  }, [showSwapPointUI, fromToken, chainId]);
+
+  const swapPointValue = useMemo(() => {
+    if (!showSwapPointUI) return null;
+    if (!aprDataState?.SwapPointsDistributionSpeed) return null;
+    if (!swapPointTokenAddress) return null;
+
+    return (
+      aprDataState.SwapPointsDistributionSpeed[swapPointTokenAddress] ?? null
+    );
+  }, [showSwapPointUI, aprDataState, swapPointTokenAddress]);
+
   const estimatedSwapPoints = useMemo(() => {
     if (!showSwapPointUI) return null;
-
     if (swapPointValue == null) return null;
     if (!fromAmount || !fromToken) return null;
 
     try {
-      const decimals = fromToken.decimals ?? 18;
+      // ✅ ETH면 WETH decimals 기준으로 스케일 맞춤
+      const isEth = fromToken.symbol?.toUpperCase?.() === "ETH";
+      const decimals = isEth
+        ? (tokens.WETH?.decimals ?? 18)
+        : (fromToken.decimals ?? 18);
 
-      // fromAmount: 이미 위에서 Number(...) 로 쓰고 있지만,
-      // 여기선 문자열 그대로 넣는 편이 BigDecimal 에 안전합니다.
       const amountBD = new BigDecimal(String(fromAmount));
-
-      const tokenScaleBD = new BigDecimal(pow10String(decimals)); // 10^fromToken.decimals
+      const tokenScaleBD = new BigDecimal(pow10String(decimals)); // 10^decimals
       const swapPointBD = new BigDecimal(swapPointValue);
       const scale1e18BD = new BigDecimal("1000000000000000000"); // 10^18
 
@@ -114,21 +107,12 @@ export default function SwapFeeInfo() {
         .mul(tokenScaleBD)
         .mul(swapPointBD)
         .div(scale1e18BD);
-
-      // 화면에는 깔끔하게 포맷된 문자열로
       return result.roundToDecimals(4).toPrecisionString(true, false);
     } catch (e) {
       console.warn("failed to calc estimatedSwapPoints", e);
       return null;
     }
-  }, [swapPointValue, fromAmount, fromToken]);
-
-  // console.log(
-  //   "From Token in SwapFeeInfo:",
-  //   fromToken,
-  //   aprDataState,
-  //   swapPointValue
-  // );
+  }, [showSwapPointUI, swapPointValue, fromAmount, fromToken]);
 
   const RewardRatio = () => {
     if (!referralAddress || !address) return 0;
@@ -139,28 +123,25 @@ export default function SwapFeeInfo() {
       return 0.8;
     }
   };
-  //console.log("Referral Address in SwapFeeInfo:", referralAddress, "User Address:", address);
-  //const feeTier = swapPool?.fee_tier ? swapPool.fee_tier / 10000 : 0;
+
   const feeTier = pool?.fee_tier ? pool.fee_tier / 10000 : 0;
 
   const feeFractionBD = useMemo(() => {
     if (!pool?.fee_tier) return new BigDecimal(0);
-
     return new BigDecimal(Number(pool.fee_tier)).div(new BigDecimal(1000000));
   }, [pool?.fee_tier]);
 
   // 간단한 포맷 함수: round 후 trailing zero 제거
   const formatBD = (bd: BigDecimal, decimals: number) => {
-    // stripZero = true, useComma = false
     return bd.roundToDecimals(decimals).toPrecisionString(true, false);
   };
+
   const isWrap = isWrapPair(fromToken, toToken);
   const isWrapper = isEthOnlyOneSide(fromToken, toToken);
 
   const exchangeRateInfo = useMemo(() => {
     // wrap: 항상 1:1
     if (isWrap && fromToken && toToken) {
-      // USD price가 있으면 보여주고, 없으면 생략
       const usd = fromPrice
         ? ` ($ ${fromPrice.roundToDecimals(2).toPrecisionString(false, false)})`
         : "";
@@ -216,7 +197,7 @@ export default function SwapFeeInfo() {
   }, [isWrap, rExchangeRate, fromToken, toToken, fromPrice, toPrice]);
 
   if (!fromToken || !toToken) {
-    return; //<div>Select tokens to see fee information</div>;
+    return null;
   }
 
   return (
@@ -254,8 +235,9 @@ export default function SwapFeeInfo() {
           </div>
         </Button>
       </div>
+
       <AnimatePresence>
-        {!isWrap && priceImpact && priceImpact.abs().gt(0.05) && (
+        {!isWrap && priceImpact && priceImpact.negate().gt(0.05) && (
           <SwapError>
             <Icons.Error className="dark:fill-[#ff3f3f]" />
             <span>
@@ -295,12 +277,14 @@ export default function SwapFeeInfo() {
                     ? `Auto(0.5%)`
                     : `${maxSlippage}%`}
               </span>
+
               <span className="text-default-700 dark:text-default-300">
                 Price Impact
               </span>
               <span>
-                {isWrap ? `0%` : `-${priceImpact?.abs().mul(100).toFixed(2)}%`}
+                {isWrap ? `0%` : `${priceImpact?.mul(100).toFixed(2)}%`}
               </span>
+
               <span className="text-default-700 dark:text-default-300">
                 Fee ({feeTier}%)
               </span>
@@ -327,6 +311,7 @@ export default function SwapFeeInfo() {
                   </span>
                 </span>
               </span>
+
               {showSwapPointUI && estimatedSwapPoints !== null && (
                 <>
                   <span className="text-default-700 dark:text-default-300">
@@ -346,10 +331,7 @@ export default function SwapFeeInfo() {
                         max-[320px]:text-[13px]
                       "
                     >
-                      {/* 아이콘 */}
                       <Icons.PointIcon className="h-5 w-5 shrink-0 ml-4" />
-
-                      {/* 텍스트 – SwapPointsDistributionSpeed 의 value 표시 */}
                       <span
                         className="
                           tabular-nums

@@ -1,6 +1,7 @@
 // src/utils/wallet/buildTransactions.ts
 import lpVaultsDefault from "@/const/contracts/tokens/lpVaults";
 import tokensDefault from "@/const/contracts/tokens/tokens";
+import externalTokensDefault from "@/const/contracts/tokens/externalTokens";
 import { BigDecimal } from "@/types/BigDecimal";
 import {
   TransactionType,
@@ -72,7 +73,8 @@ function findPriceMeta(
 function findTokenMetaFromTokens(
   tokenAddress: string,
   chainId: number,
-  tokensOverride?: any
+  tokensOverride?: any,
+  externalTokensOverride?: any
 ): {
   symbol: string;
   decimals: number;
@@ -80,25 +82,35 @@ function findTokenMetaFromTokens(
   address: string;
 } | null {
   const addrL = lc(tokenAddress);
-  const source = tokensOverride ?? tokensDefault;
-  const list: any[] = Array.isArray(source) ? source : Object.values(source);
 
-  for (const t of list) {
-    const byChain =
-      t?.addresses?.[chainId] ??
-      t?.address?.[chainId] ??
-      t?.chains?.[chainId] ??
-      t?.address;
-    const resolved = typeof byChain === "string" ? byChain : undefined;
-    if (resolved && lc(resolved) === addrL) {
-      return {
-        symbol: t.symbol ?? t.ticker ?? t.name ?? "UNKNOWN",
-        decimals: t.decimals ?? t.tokenDecimals ?? 18,
-        iconSrc: t.iconSrc ?? t.icon ?? t.logoURI,
-        address: resolved,
-      };
+  const sources = [
+    tokensOverride ?? tokensDefault,
+    externalTokensOverride ?? externalTokensDefault, //  추가
+  ];
+
+  for (const source of sources) {
+    if (!source) continue;
+    const list: any[] = Array.isArray(source) ? source : Object.values(source);
+
+    for (const t of list) {
+      const byChain =
+        t?.addresses?.[chainId] ??
+        t?.address?.[chainId] ??
+        t?.chains?.[chainId] ??
+        t?.address;
+
+      const resolved = typeof byChain === "string" ? byChain : undefined;
+      if (resolved && lc(resolved) === addrL) {
+        return {
+          symbol: t.symbol ?? t.ticker ?? t.name ?? "UNKNOWN",
+          decimals: t.decimals ?? t.tokenDecimals ?? 18,
+          iconSrc: t.iconSrc ?? t.icon ?? t.logoURI,
+          address: resolved,
+        };
+      }
     }
   }
+
   return null;
 }
 
@@ -150,13 +162,23 @@ function makeTokenInfo(
   priceMap: ChainLinkPriceMapLike,
   preferLpMeta = false,
   tokensOverride?: any,
-  vaultsOverride?: any
+  vaultsOverride?: any,
+  externalTokensOverride?: any // 추가
 ): TransactionTokenInfo | null {
   const baseMeta = preferLpMeta
     ? (findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride) ??
-      findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride))
-    : (findTokenMetaFromTokens(tokenAddr, chainId, tokensOverride) ??
-      findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride));
+      findTokenMetaFromTokens(
+        tokenAddr,
+        chainId,
+        tokensOverride,
+        externalTokensOverride
+      ))
+    : (findTokenMetaFromTokens(
+        tokenAddr,
+        chainId,
+        tokensOverride,
+        externalTokensOverride
+      ) ?? findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride));
 
   if (!baseMeta) return null; // [SAFE] 메타 없으면 null 반환
 
@@ -258,7 +280,8 @@ export function buildTransactions(
         chainLinkPriceMap,
         false,
         tokensOverride,
-        vaultsOverride
+        vaultsOverride,
+        externalTokensDefault // 추가
       );
       const to = makeTokenInfo(
         tokenOutAddr,
@@ -267,7 +290,8 @@ export function buildTransactions(
         chainLinkPriceMap,
         false,
         tokensOverride,
-        vaultsOverride
+        vaultsOverride,
+        externalTokensDefault //  추가
       );
       if (!from || !to) continue;
 
@@ -430,23 +454,34 @@ export function buildTransactions(
         ev?.blockTimestamp ?? ev?.timestamp ?? "0"
       );
 
-      const vaultName: string = String(
-        ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault"
-      );
+      const stakingTokenAddr: string | undefined = d?.stakingTokenAddress;
 
-      // amount: / 10^8
+      // ✅ stakingTokenAddress로 메타 찾기 (LP vault 우선)
+      const meta =
+        (stakingTokenAddr
+          ? (findTokenMetaFromLpVaults(
+              stakingTokenAddr,
+              chainId,
+              vaultsOverride
+            ) ??
+            findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
+          : null) ?? null;
+
+      const displayName = meta?.symbol ?? "Vault";
+
+      // amount: / 10^8 (기존 로직 유지)
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
       const DEC = 8;
 
-      // From/To src
+      // ✅ 아이콘: 메타가 있으면 그걸 사용, 없으면 기존 기본값
       const fromSrc = "/tokens/blp-token.svg";
       const toSrc = "/tokens/sblp-token.svg";
 
-      const from = makeStakeTokenInfo(vaultName, fromSrc, amtRaw, DEC);
-      const to = makeStakeTokenInfo(vaultName, toSrc, amtRaw, DEC);
+      const from = makeStakeTokenInfo(displayName, fromSrc, amtRaw, DEC);
+      const to = makeStakeTokenInfo(displayName, toSrc, amtRaw, DEC);
 
       txs.push({
-        type: TransactionType.STAKING ?? ("StakingDeposit" as any), // enum이 없으면 string 사용
+        type: TransactionType.STAKING,
         hash,
         timestamp,
         from,
@@ -463,21 +498,32 @@ export function buildTransactions(
         ev?.blockTimestamp ?? ev?.timestamp ?? "0"
       );
 
-      const vaultName: string = String(
-        ev?.vaultName ?? d?.vaultName ?? d?.name ?? "Vault"
-      );
+      const stakingTokenAddr: string | undefined = d?.stakingTokenAddress;
+
+      // ✅ stakingTokenAddress로 메타 찾기 (LP vault 우선)
+      const meta =
+        (stakingTokenAddr
+          ? (findTokenMetaFromLpVaults(
+              stakingTokenAddr,
+              chainId,
+              vaultsOverride
+            ) ??
+            findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
+          : null) ?? null;
+
+      const displayName = meta?.symbol ?? "Vault";
 
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
       const DEC = 8;
 
-      const fromSrc = "/tokens/sblp-token.svg";
-      const toSrc = "/tokens/blp-token.svg";
+      const fromSrc = meta?.iconSrc ?? "/tokens/sblp-token.svg";
+      const toSrc = meta?.iconSrc ?? "/tokens/blp-token.svg";
 
-      const from = makeStakeTokenInfo(vaultName, fromSrc, amtRaw, DEC);
-      const to = makeStakeTokenInfo(vaultName, toSrc, amtRaw, DEC);
+      const from = makeStakeTokenInfo(displayName, fromSrc, amtRaw, DEC);
+      const to = makeStakeTokenInfo(displayName, toSrc, amtRaw, DEC);
 
       txs.push({
-        type: TransactionType.UNSTAKING ?? ("StakingWithdraw" as any),
+        type: TransactionType.UNSTAKING,
         hash,
         timestamp,
         from,

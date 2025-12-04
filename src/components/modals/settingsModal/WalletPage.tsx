@@ -354,7 +354,7 @@ export default function WalletPage(props: {
     walletData,
   } = useContext(WalletContext);
 
-  // console.log("WalletPage walletData", account, walletData);
+  console.log("WalletPage walletData", account, walletData);
   const { referralAddress } = useReferral();
   const isSelfReferral = account?.address === referralAddress;
   return (

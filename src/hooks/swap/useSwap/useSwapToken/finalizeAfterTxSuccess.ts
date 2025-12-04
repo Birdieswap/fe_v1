@@ -13,6 +13,7 @@ type RefsBundle = {
 
 type TxContextLite = {
   setTransactionProps: (p: any) => void;
+  transactionProps?: any;
 };
 
 export async function finalizeAfterTxSuccess(args: {
@@ -38,7 +39,7 @@ export async function finalizeAfterTxSuccess(args: {
   benchmarkOut?: string | null; // token units string (유니스왑 기준 or external 기준)
   toTokenUsd?: number | null; // USD price per 1 toToken
   preToBalance?: bigint | null; // tx 직전 toToken balance raw
-  usdThreshold?: number; // default=1
+  usdThreshold?: number; // default=0.1
 }) {
   const {
     hash,
@@ -47,8 +48,16 @@ export async function finalizeAfterTxSuccess(args: {
     balances,
     fromToken,
     toToken,
+    chainId,
+    userAddress,
     refs,
     updateAmountCommon,
+
+    transactionContext,
+    benchmarkOut,
+    toTokenUsd,
+    preToBalance,
+    usdThreshold = 0.1,
   } = args;
 
   // 1) 모달 핸들러 성공 콜백 (기존 순서 유지)
@@ -63,7 +72,6 @@ export async function finalizeAfterTxSuccess(args: {
   if (receipt?.status !== "success") return receipt;
 
   // 3) swap 전용 "입력 스냅샷/토큰 변경 대응" 블록
-  //    → refs / updateAmountCommon 이 둘 다 있을 때만 수행
   if (refs && updateAmountCommon) {
     const snap = refs.lastInputRef.current;
     const curFromToken = refs.curFromTokenRef.current;
@@ -76,7 +84,6 @@ export async function finalizeAfterTxSuccess(args: {
       curToToken?.symbol !== toToken?.symbol;
 
     if (tokenMismatch) {
-      // 스왑 도중 from/to 토큰이 바뀐 상태 → 현재 화면 입력값 기준으로 다시 quote
       const curSide = nowFromAmount ? "in" : nowToAmount ? "out" : null;
       if (curSide) {
         const curValue = curSide === "in" ? nowFromAmount : nowToAmount;
@@ -88,7 +95,6 @@ export async function finalizeAfterTxSuccess(args: {
         );
       }
     } else if (snap?.amount && Number(snap.amount) > 0) {
-      // 토큰은 그대로인데 마지막 입력 스냅샷이 남아 있는 경우 → 그 값으로 재계산
       await updateAmountCommon(
         snap.amount,
         snap.side,
@@ -96,17 +102,114 @@ export async function finalizeAfterTxSuccess(args: {
         snap.withFromToken
       );
     }
-  } else {
-    // refs/updateAmountCommon 이 없는 호출(예: farming/claim 등)인 경우
-    // 여기서는 단순히 잔액 리프레시만 수행하고 넘어간다.
-    // console.debug("[finalizeAfterTxSuccess] refs or updateAmountCommon not provided, skip quote refresh");
   }
 
-  // 4) 잔액 리프레시 (공통)
+  // 4) 실제 수령 vs benchmark 비교 + 모달로 전달
+  try {
+    if (
+      publicClient &&
+      userAddress &&
+      toToken &&
+      typeof preToBalance === "bigint"
+    ) {
+      let postToBalance: bigint | null = null;
+
+      if (toToken.symbol === "ETH") {
+        postToBalance = await publicClient.getBalance({ address: userAddress });
+      } else {
+        const toAddr = getTokenAddress({
+          token: toToken,
+          chainId,
+        }) as `0x${string}` | null;
+
+        if (toAddr) {
+          postToBalance = await publicClient.readContract({
+            address: toAddr,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [userAddress],
+          });
+        }
+      }
+
+      if (postToBalance != null) {
+        const deltaRaw = postToBalance - preToBalance;
+
+        if (deltaRaw > 0n) {
+          const decimals = toToken.decimals ?? 18;
+          const actualToken = Number(formatUnits(deltaRaw, decimals));
+
+          let benchToken: number | null = null;
+          if (benchmarkOut != null) {
+            benchToken = Number(benchmarkOut);
+          }
+
+          const diffToken =
+            benchToken != null ? actualToken - benchToken : null;
+
+          const usdPrice = toTokenUsd ?? null;
+          const diffUsd =
+            diffToken != null && usdPrice != null ? diffToken * usdPrice : null;
+
+          // console.log("[swap benchmark]", {
+          //   symbol: toToken.symbol,
+          //   actualToken,
+          //   benchToken,
+          //   diffToken,
+          //   diffUsd,
+          //   usdThreshold,
+          // });
+
+          if (diffUsd != null && diffUsd >= usdThreshold) {
+            // console.log(
+            //   `[swap benchmark] 🎉 You gained ~$${diffUsd.toFixed(
+            //     4
+            //   )} vs benchmark`
+            // );
+
+            // ✅ 모달에 보낼 예쁘게 포맷된 값들
+            const displayDecimals =
+              toToken.displayDecimals ?? Math.min(decimals, 6);
+
+            const profitUsd = diffUsd.toFixed(4);
+            const actualOutStr = actualToken.toFixed(displayDecimals);
+            const benchmarkOutStr =
+              benchToken != null ? benchToken.toFixed(displayDecimals) : null;
+
+            // ✅ 여기서 "기존 transactionProps"를 보존하면서 merge 해야 함
+            if (transactionContext?.setTransactionProps) {
+              transactionContext.setTransactionProps((prev: any) => {
+                if (!prev) return prev; // 아직 세팅 안 되었으면 건드리지 않음
+
+                return {
+                  ...prev,
+                  fireConfetti: true,
+                  swapBenchmarkInfo: {
+                    profitUsd,
+                    actualOut: actualOutStr,
+                    benchmarkOutAfterFee: benchmarkOutStr,
+                  },
+                };
+              });
+            }
+          }
+        } else {
+          // console.log("[swap benchmark] deltaRaw <= 0, skipped", {
+          //   symbol: toToken.symbol,
+          //   preToBalance: preToBalance.toString(),
+          //   postToBalance: postToBalance.toString(),
+          // });
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[swap benchmark] post-balance/compare failed", e);
+  }
+
+  // 5) 잔액 리프레시 (공통)
   if (typeof balances?.refetchAll === "function") {
     await balances.refetchAll();
   } else {
-    // 통합 함수 없으면 ERC20 + ETH 병렬로
     await Promise.all([
       balances?.tokenBalances?.query?.refetch?.(),
       balances?.nativeBalance?.query?.refetch?.(),
