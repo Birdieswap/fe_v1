@@ -24,27 +24,12 @@ export type ApproveTransactionProps = {
   input?: IToken;
 };
 
-export type SwapBenchmarkInfo = {
-  benchmarkOut: string;
-  // 비교 시 interface fee 고려 = benchmarkOut * 0.9975
-  benchmarkOutAfterFee: string;
-  // 실제 수령량 (token units, string)
-  actualOut: string;
-  // USD 환산 이익(달러)
-  profitUsd: string; // e.g. "1.23"
-  // 토큰 수량 차이(actual - benchmarkAfterFee)
-  profitToken: string; // e.g. "0.0123"
-};
-
 export type SwapTransactionProps = {
   chainId: number;
   transactionType: TransactionType.SWAP;
   input: TransactionTokenDisplayProps;
   output: TransactionTokenDisplayProps;
   address?: `0x${string}`;
-
-  swapBenchmarkInfo?: SwapBenchmarkInfo | null;
-  fireConfetti?: boolean;
 };
 
 export type StartFarmingTransactionProps = {
@@ -90,6 +75,14 @@ export type TransactionStatusProps = {
   onSubmittedInfo?: ReactNode;
   onConfirmedInfo?: ReactNode;
   onTryAgain?: () => void;
+
+  // ✅ 새로 추가: 스왑 벤치마크 / 이펙트용
+  fireConfetti?: boolean;
+  swapBenchmarkInfo?: {
+    profitUsd: string; // "0.3486"
+    actualOut: string; // "30.5784"
+    benchmarkOutAfterFee: string | null; // "30.23" or null
+  };
 } & (
   | ApproveTransactionProps
   | SwapTransactionProps
@@ -102,7 +95,9 @@ export type TransactionStatusProps = {
 
 export type TransactionContextType = {
   transactionProps: TransactionStatusProps | null;
-  setTransactionProps: (props: TransactionStatusProps | null) => void;
+  setTransactionProps: React.Dispatch<
+    React.SetStateAction<TransactionStatusProps | null>
+  >;
   isOpen: boolean;
   onClose: () => void;
   onOpen: () => void;
@@ -120,14 +115,15 @@ export default function TransactionContextProvider(props: {
   children: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [transactionProps, setTransactionProps] =
+    useState<TransactionStatusProps | null>(null);
+
   const onClose = () => {
     setIsOpen(false);
   };
   const onOpen = () => {
     setIsOpen(true);
   };
-  const [transactionProps, setTransactionProps] =
-    useState<TransactionStatusProps | null>(null);
 
   return (
     <Fragment>

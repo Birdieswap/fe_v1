@@ -28,7 +28,7 @@ export class BigDecimal {
   readonly decimals: number;
   constructor(
     value: BigDecimal | BigNumber | bigint | number | string | undefined,
-    decimals?: number,
+    decimals?: number
   ) {
     //value?: BigDecimal | bigint | string | number, decimals?: number) {
     if (value === undefined) {
@@ -78,7 +78,7 @@ export class BigDecimal {
       }
     } else if (typeof value === "number") {
       this.value = BigInt(
-        parseUnits(value.toFixed(decimals ?? 18), decimals ?? 18),
+        parseUnits(value.toFixed(decimals ?? 18), decimals ?? 18)
       );
       this.decimals = decimals ?? 18;
     } else if (value instanceof BigNumber) {
@@ -97,14 +97,14 @@ export class BigDecimal {
   }
   toBigNumber(): BigNumber {
     return BigNumber.from(this.value).div(
-      BigNumber.from(10).pow(this.decimals),
+      BigNumber.from(10).pow(this.decimals)
     );
   }
   matchDecimals(decimals: number): BigDecimal {
     if (this.decimals < decimals) {
       return new BigDecimal(
         this.value * BigInt(10) ** BigInt(decimals - this.decimals),
-        decimals,
+        decimals
       );
     } else return new BigDecimal(this);
   }
@@ -117,7 +117,7 @@ export class BigDecimal {
 
     return new BigDecimal(
       matchedThis.value + matchedValue.value,
-      matchedThis.decimals,
+      matchedThis.decimals
     );
   }
   sub(value: BigDecimal | number): BigDecimal {
@@ -132,7 +132,7 @@ export class BigDecimal {
 
     return new BigDecimal(
       matchedThis.value - matchedValue.value,
-      matchedThis.decimals,
+      matchedThis.decimals
     );
   }
   sqrt(): BigDecimal {
@@ -140,7 +140,7 @@ export class BigDecimal {
       throw new Error("Cannot calculate square root of a negative number");
     }
     const sqrtValue = sqrtBigInt(
-      this.value * BigInt(10) ** BigInt(this.decimals),
+      this.value * BigInt(10) ** BigInt(this.decimals)
     );
 
     return new BigDecimal(sqrtValue, this.decimals);
@@ -155,7 +155,7 @@ export class BigDecimal {
 
     return new BigDecimal(
       this.value * value.value,
-      this.decimals + value.decimals,
+      this.decimals + value.decimals
     );
   }
   shiftTo(decimals: number): BigDecimal {
@@ -172,7 +172,7 @@ export class BigDecimal {
       str.length <= decimals
         ? "0." + str.padStart(decimals, "0")
         : str.slice(0, -decimals) + "." + str.slice(-decimals),
-      decimals,
+      decimals
     );
   }
   shift(decimals: number): BigDecimal {
@@ -191,7 +191,7 @@ export class BigDecimal {
     return new BigDecimal(
       (matchedThis.value * BigInt(10) ** BigInt(matchedThis.decimals)) /
         matchedValue.value,
-      matchedThis.decimals,
+      matchedThis.decimals
     );
   }
   isGreaterThan(value: BigDecimal | number): boolean {
@@ -221,7 +221,7 @@ export class BigDecimal {
   abs(): BigDecimal {
     return new BigDecimal(
       this.value < BigInt(0) ? -this.value : this.value,
-      this.decimals,
+      this.decimals
     );
   }
   gt(value: BigDecimal | number): boolean {
@@ -248,18 +248,21 @@ export class BigDecimal {
   eq(value: BigDecimal | number): boolean {
     return this.equal(value);
   }
+  negate(): BigDecimal {
+    return new BigDecimal(-this.value, this.decimals);
+  }
   roundToDecimals(decimals: number): BigDecimal {
     if (this.decimals === decimals) {
       return new BigDecimal(this);
     } else if (this.decimals < decimals) {
       return new BigDecimal(
         this.value * BigInt(10) ** BigInt(decimals - this.decimals),
-        decimals,
+        decimals
       );
     } else {
       return new BigDecimal(
         this.value / BigInt(10) ** BigInt(this.decimals - decimals),
-        decimals,
+        decimals
       );
     }
   }
@@ -268,7 +271,7 @@ export class BigDecimal {
   }
   toFixed(fractionDigits?: number): string {
     return this.roundToDecimals(
-      fractionDigits || this.decimals,
+      fractionDigits || this.decimals
     ).toPrecisionString(false, false);
   }
   toPrecisionString(stripZero?: boolean, useComma?: boolean): string {
@@ -311,7 +314,7 @@ export class BigDecimal {
         new BigDecimal(min).isLessThan(value)
           ? new BigDecimal(min)
           : new BigDecimal(value),
-      new BigDecimal(values[0]),
+      new BigDecimal(values[0])
     );
   }
   static max(...values: (BigDecimal | number)[]): BigDecimal {
@@ -320,7 +323,7 @@ export class BigDecimal {
         new BigDecimal(max).isGreaterThan(value)
           ? new BigDecimal(max)
           : new BigDecimal(value),
-      new BigDecimal(values[0]),
+      new BigDecimal(values[0])
     );
   }
 

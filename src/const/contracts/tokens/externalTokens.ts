@@ -1266,4 +1266,6 @@ export const externalTokens = {
   MAGIC,
   TRUST,
   BEBE,
-} as const;
+};
+
+export default externalTokens;

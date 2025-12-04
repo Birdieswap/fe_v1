@@ -63,7 +63,7 @@ export default function PointsPanel({
         {/* 획득 내역 카드 */}
         <div className="rounded-[12px] bg-default-100 px-4 py-3 dark:bg-background">
           <div className="flex flex-col gap-2 text-[16px] font-sans text-foreground">
-            <Row label="Farm" value={stakingPoint} />
+            {/* <Row label="Farm" value={stakingPoint} /> */}
             <Row label="Swap" value={swapPoint} />
             <Row label="Referral" value={referralPoint} />
           </div>
@@ -71,7 +71,7 @@ export default function PointsPanel({
 
         {/* 청록 카피 */}
         <p className="font-sans text-[16px] font-regular  text-primary dark:text-dark-green-key">
-          Supply, swap, and invite friends to get points.
+          {/* Supply,*/} swap, and invite friends to get points.
         </p>
 
         {/* 구분선 */}

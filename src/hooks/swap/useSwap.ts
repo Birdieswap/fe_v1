@@ -15,6 +15,12 @@ import useChainLinkPrice from "../useChainLinkPrice";
 
 import useSwapTokens from "./useSwap/useSwapTokens";
 import useTokenUsdPrice from "../useTokenUsdPrice";
+import {
+  getFromContracts,
+  isZeroAddress,
+} from "@/utils/farm/getAddressHelpers";
+import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 
 export default function useSwap() {
   const chainId = useChainId();
@@ -31,13 +37,11 @@ export default function useSwap() {
     balances,
     isFetching: isFetchingAssets,
   } = useContext(AssetsContext);
-  // const fromPrice = useChainLinkPrice(fromToken);
-  // const toPrice = useChainLinkPrice(toToken);
 
+  // ✅ 가격은 여기서만 계산 (inner: chainlink, external: coingecko 로직은 useTokenUsdPrice 내부)
   const { priceUsd: fromUsd } = useTokenUsdPrice(fromToken);
   const { priceUsd: toUsd } = useTokenUsdPrice(toToken);
 
-  // 기존 컴포넌트들이 BigDecimal을 기대하면 변환해서 내려주기
   const fromPrice =
     fromUsd != null ? new BigDecimal(String(fromUsd)) : undefined;
   const toPrice = toUsd != null ? new BigDecimal(String(toUsd)) : undefined;
@@ -58,6 +62,28 @@ export default function useSwap() {
     undefined
   );
 
+  // ===== Router / Wrapper 주소
+  const ROUTER_ADDRESS = getFromContracts(ADDRESS.ROUTER, chainId);
+  const WRAPPER_ADDRESS = getFromContracts(ADDRESS.WRAPPER, chainId);
+
+  const ROUTER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Router ?? {
+    addresses: { [chainId]: ROUTER_ADDRESS },
+  };
+  const WRAPPER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Wrapper ?? {
+    addresses: { [chainId]: WRAPPER_ADDRESS },
+  };
+
+  const toTokenAddr = useMemo(
+    () => getTokenAddress({ token: toToken as any, chainId }),
+    [toToken, chainId]
+  );
+
+  const isToETH = useMemo(() => {
+    const sym = (toToken as any)?.symbol;
+    return sym === "ETH" || isZeroAddress?.(toTokenAddr as `0x${string}`);
+  }, [toToken, toTokenAddr]);
+
+  // ===== 내부 useSwapTokens 사용
   const tempStuff = useSwapTokens({
     client,
     chainId,
@@ -76,55 +102,45 @@ export default function useSwap() {
     balances,
     setPriceImpact,
     maxSlippage: maxSlippage === "auto" ? 0.005 : maxSlippage / 100, // 0.5% when auto
-    isTyping, // 추가: 입력중 여부
-    stopTyping: () => setIsTyping(false), // 디바운스 완료시 호출'
+    isTyping,
+    stopTyping: () => setIsTyping(false),
+
+    // ✅ 여기서 toToken 의 USD 가격을 그대로 내려준다
+    toTokenUsd: toUsd ?? null,
   });
 
-  // ===== [추가] external/internal 풀 중 "표시할 풀"을 정규화 =====
-  // - externalSwapPool이 존재하면 activeSwapPool로 쓰고
-  // - 없으면 기존 swapPool 사용
-  const externalSwapPool = (tempStuff as any).externalSwapPool ?? null; // ✅ 없을 수도 있으니 안전하게
+  // ===== external / internal 풀 정규화
+  const externalSwapPool = (tempStuff as any).externalSwapPool ?? null;
   const activeSwapPool = externalSwapPool ?? tempStuff.swapPool ?? null;
 
   const isExternalSwapPool = useMemo(() => {
-    // external 풀은 isInternal: false 로 구분 가능
     if (!activeSwapPool) return false;
     return (activeSwapPool as any).isInternal === false;
   }, [activeSwapPool]);
 
   const prevFromTokenRef = useRef<ICurrency | undefined>(fromToken);
   const prevToTokenRef = useRef<ICurrency | undefined>(toToken);
-
   const prevChainIdRef = useRef<number | undefined>(chainId);
 
-  // CHANGE(필수): chain 변경 시 입력값 초기화
-
+  // ===== 체인 변경 시 초기화
   useEffect(() => {
     const prev = prevChainIdRef.current;
     if (!chainId || prev === chainId) return;
 
-    // ✅ 체인 변경 시: 초기 상태로 리셋
     setFromToken(tokens.ETH);
     setToToken(undefined);
-
     setFromAmount("");
     setToAmount("");
-
-    setPriceImpact(undefined); // 또는 new BigDecimal(0, 18)
+    setPriceImpact(undefined);
     setIsTyping(false);
 
-    // 필요하면: 스왑 관련 상태도 초기화 호출(가능한 경우)
-    // tempStuff.reset?.();
-
-    // ref도 같이 갱신 (토큰 변경 useEffect들의 "prev" 기준도 맞춰줌)
     prevFromTokenRef.current = tokens.ETH;
     prevToTokenRef.current = undefined;
-
     prevChainIdRef.current = chainId;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chainId]);
 
-  // CHANGE(필수): fromToken 변경 시 입력값 초기화
+  // ===== fromToken 변경 시 초기화
   useEffect(() => {
     const prev = prevFromTokenRef.current;
     const changed =
@@ -134,19 +150,15 @@ export default function useSwap() {
         fromToken?.addresses?.[chainId!]);
 
     if (changed) {
-      // console.log("[reset] fromToken changed → reset fromAmount/toAmount", {
-      //   prev: prev?.symbol,
-      //   next: fromToken?.symbol,
-      // });
-      setFromAmount(""); // CHANGE(필수): 초기화
-      setToAmount(""); // CHANGE(필수): 초기화
+      setFromAmount("");
+      setToAmount("");
     }
 
     prevFromTokenRef.current = fromToken;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fromToken, chainId]); // chainId도 키로 넣어 체인 변경 시 처리 일관성 강화
+  }, [fromToken, chainId]);
 
-  // CHANGE(필수): toToken 변경 시 입력값 초기화
+  // ===== toToken 변경 시 초기화
   useEffect(() => {
     const prev = prevToTokenRef.current;
     const changed =
@@ -154,26 +166,19 @@ export default function useSwap() {
       (toToken?.symbol || toToken?.fullName || toToken?.addresses?.[chainId!]);
 
     if (changed) {
-      // console.log("[reset] toToken changed → reset fromAmount/toAmount", {
-      //   prev: prev?.symbol,
-      //   next: toToken?.symbol,
-      // });
-      setFromAmount(""); // CHANGE(필수): 초기화
-      setToAmount(""); // CHANGE(필수): 초기화
+      setFromAmount("");
+      setToAmount("");
     }
 
     prevToTokenRef.current = toToken;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toToken, chainId]);
 
-  //============================여기까지 토큰 변경시 초기화
-
   function setFromTokenWithGuard(token: ICurrency | undefined) {
     if (!token) {
       setFromToken(undefined);
       setFromAmount("");
       setToAmount("");
-
       return;
     }
     const tokenAddress = getTokenAddress({
@@ -183,23 +188,18 @@ export default function useSwap() {
 
     if (tokenAddress === fromTokenAddress) return;
 
-    // 토큰 스위치 시 PI 리셋
     setPriceImpact(new BigDecimal(0, 18));
 
     if (tokenAddress === toTokenAddress) {
-      //  switchTokens();
       setFromToken(token);
       setToToken(undefined);
       setToAmount("");
       setFromAmount("");
-
       return;
     } else {
-      // toToken이 선택되어 있고 toAmount가 입력되어 있는 경우
       if (toToken && toAmount) {
         setFromToken(token);
 
-        // toAmount를 기준으로 fromAmount 계산
         const toAmountBD = new BigDecimal(toAmount, toToken.decimals || 18);
 
         if (!toAmountBD.isZero() && chainId && assetValues) {
@@ -213,15 +213,11 @@ export default function useSwap() {
             })?.toPrecisionString(true, false) ?? "";
 
           setFromAmount(newFromAmount);
-          // toAmount는 유지 (setToAmount 호출하지 않음)
-
-          // updateAmount 호출로 정확한 계산 수행
           tempStuff.updateAmount(toAmount, "out", token);
         } else {
           setFromAmount("");
         }
       } else {
-        // toToken이 없거나 toAmount가 없는 경우 기존 동작
         setFromToken(token);
         setFromAmount("");
         setToAmount("");
@@ -234,7 +230,6 @@ export default function useSwap() {
       setToToken(undefined);
       setToAmount("");
       setFromAmount("");
-
       return;
     }
     const tokenAddress = getTokenAddress({
@@ -246,20 +241,16 @@ export default function useSwap() {
 
     setPriceImpact(new BigDecimal(0, 18));
     if (tokenAddress === fromTokenAddress) {
-      //switchTokens();
       setFromToken(undefined);
       setToToken(token);
       setToAmount("");
       setFromAmount("");
-
       return;
     } else {
-      // fromToken이 undefined인 경우 처리
       if (!fromToken) {
         setToToken(token);
         setToAmount("");
         setFromAmount("");
-
         return;
       }
 
@@ -313,12 +304,9 @@ export default function useSwap() {
     isApprovePending: tempStuff.isApprovePending,
     swap: tempStuff.swap,
     swapPool: tempStuff.swapPool,
-
-    // ===== [추가] external도 노출 + UI에서 쓸 "activeSwapPool" 노출 =====
-    externalSwapPool, // 있을 경우만 채워짐
-    activeSwapPool, // SwapFeeInfo는 이거만 보면 됨
-    isExternalSwapPool, // external일 때 포인트 UI 숨기기용
-
+    externalSwapPool,
+    activeSwapPool,
+    isExternalSwapPool,
     approve: tempStuff.approve,
     setToTokenWithGuard,
     setFromTokenWithGuard,
