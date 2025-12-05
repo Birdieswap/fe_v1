@@ -1,7 +1,8 @@
+// derivePoolInfo.ts
 import tokens from "@/const/contracts/tokens/tokens";
 import { PoolInfo, Addr } from "./types";
 
-const DEBUG_DERIVE_POOL_INFO = true; // ✅ 필요할 때만 true
+const DEBUG_DERIVE_POOL_INFO = false; // 필요할 때 true 로
 
 function isEthLike(addr?: string) {
   if (!addr) return false;
@@ -71,22 +72,22 @@ export function derivePoolInfo(
   });
 
   if (!in0Addr || !in1Addr) {
-    // if (DEBUG_DERIVE_POOL_INFO) {
-    //   console.log("[derivePoolInfo] missing input addr", {
-    //     pool: swapPool?.symbol,
-    //     chainId,
-    //     in0Addr,
-    //     in1Addr,
-    //     raw0Symbol: raw0?.symbol,
-    //     raw1Symbol: raw1?.symbol,
-    //     raw0Addr: raw0?.addresses?.[chainId],
-    //     raw1Addr: raw1?.addresses?.[chainId],
-    //   });
-    // }
+    if (DEBUG_DERIVE_POOL_INFO) {
+      console.log("[derivePoolInfo] missing input addr", {
+        pool: swapPool?.symbol,
+        chainId,
+        in0Addr,
+        in1Addr,
+        raw0Symbol: raw0?.symbol,
+        raw1Symbol: raw1?.symbol,
+        raw0Addr: raw0?.addresses?.[chainId],
+        raw1Addr: raw1?.addresses?.[chainId],
+      });
+    }
     return { ...empty, poolAddress };
   }
 
-  // 정렬 기준(체크섬/대소문자 방지)
+  // 정렬 기준(체크섬/대소문자 방지) - bToken 주소 기준
   const is0Lower = in0Addr.toLowerCase() < in1Addr.toLowerCase();
   const t0Entry = is0Lower ? raw0 : raw1;
   const t1Entry = is0Lower ? raw1 : raw0;
@@ -137,28 +138,31 @@ export function derivePoolInfo(
   let outBToken: Addr = null;
   let outBpool: any | null = null;
   if (swapPool?.isInternal) {
+    // fromIsToken0 기준으로 "to 쪽" bToken/bPool 선택
     outBToken = zeroForOne ? token1Address : token0Address;
     outBpool = zeroForOne ? t1Entry : t0Entry;
   }
 
-  // if (DEBUG_DERIVE_POOL_INFO) {
-  //   console.log("[derivePoolInfo]", {
-  //     pool: swapPool?.symbol,
-  //     isInternal: !!swapPool?.isInternal,
-  //     chainId,
-  //     poolAddress,
-  //     token0Address,
-  //     token1Address,
-  //     token0Decimals,
-  //     token1Decimals,
-  //     underlying0,
-  //     underlying1,
-  //     fromTokenAddress,
-  //     fromNorm,
-  //     fromIsToken0,
-  //     zeroForOne,
-  //   });
-  // }
+  if (DEBUG_DERIVE_POOL_INFO) {
+    console.log("[derivePoolInfo] result", {
+      pool: swapPool?.symbol,
+      isInternal: !!swapPool?.isInternal,
+      chainId,
+      poolAddress,
+      token0Address,
+      token1Address,
+      token0Decimals,
+      token1Decimals,
+      underlying0,
+      underlying1,
+      fromTokenAddress,
+      fromNorm,
+      fromIsToken0,
+      zeroForOne,
+      outBToken,
+      outBpoolSymbol: outBpool?.symbol,
+    });
+  }
 
   return {
     poolAddress,
