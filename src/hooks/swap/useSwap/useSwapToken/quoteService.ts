@@ -192,7 +192,7 @@ async function getOtherAmountInternal(
       swapPool,
       poolInfo: {
         poolAddress,
-        outBpool,
+        outBpool, // 현재는 사용 안 하지만 타입 변화 피하려고 그대로 둠
         token0Decimals,
         token1Decimals,
         zeroForOne,
@@ -213,7 +213,7 @@ async function getOtherAmountInternal(
         benchmarkOut: null,
         meta: { isInternalPool: true, benchmarkUsed: "none" },
       };
-    if (!swapPool || !poolAddress || !outBpool || !publicClient)
+    if (!swapPool || !poolAddress || !publicClient)
       return {
         amount: "",
         benchmarkOut: null,
@@ -246,22 +246,7 @@ async function getOtherAmountInternal(
         meta: { isInternalPool: true, benchmarkUsed: "none" },
       };
 
-    // if (DEBUG_QUOTE) {
-    //   console.log("[internal quote] ctx", {
-    //     pool: (swapPool as any)?.symbol,
-    //     chainId,
-    //     poolAddress,
-    //     fromSymbol: curFromToken?.symbol,
-    //     toSymbol: curToToken?.symbol,
-    //     inputAddrUnderlying,
-    //     outputAddrUnderlying,
-    //     token0Decimals,
-    //     token1Decimals,
-    //     zeroForOne,
-    //   });
-    // }
-
-    // slot0 -> pool price (bToken 기준)
+    // slot0 -> pool price (bToken 기준 mid)
     const slot0Data = await getSlot0(
       publicClient as any,
       poolAddress as `0x${string}`
@@ -286,43 +271,6 @@ async function getOtherAmountInternal(
       token1Decimals: token1Decimals as number,
       zeroForOne,
     });
-
-    // internal mid price: previewRedeem(outBpool, poolPrice)
-    try {
-      const midPoolPrice = await previewRedeem(
-        publicClient as any,
-        outBpool as any,
-        swapPoolPrice
-      );
-      if (midPoolPrice) {
-        const poolAddrForKey = (swapPool as any)?.addresses?.[chainId] as
-          | string
-          | undefined;
-        const producedKey = `${addrLower(curFromToken)}_${addrLower(
-          curToToken
-        )}_${(poolAddrForKey ?? "").toLowerCase()}`;
-
-        // if (DEBUG_QUOTE) {
-        //   console.log("[internal midPrice] previewRedeem", {
-        //     producedKey,
-        //     pairKey,
-        //     mid: midPoolPrice.toPrecisionString(true, false),
-        //   });
-        // }
-
-        // 🔥 여기서 pairKey와 정확히 맞춰줘야 internal PI 계산이 살아난다
-        if (producedKey === pairKey) {
-          setMidPoolPrice(midPoolPrice);
-          setMidOwner?.(pairKey);
-        }
-      }
-    } catch (e) {
-      if (DEBUG_QUOTE) {
-        console.warn("[internal midPrice previewRedeem error]", e);
-      }
-      // 실패 시 slot0 기반 mid fallback
-      await ensureMidPriceFromSlot0(ctx, curFromToken, curToToken);
-    }
 
     const pickTokenMeta = (entry: any) => {
       const bAddr = entry?.addresses?.[chainId] as `0x${string}` | undefined;
@@ -357,17 +305,66 @@ async function getOtherAmountInternal(
 
     const feeTier = swapPool.fee_tier as number;
 
-    // if (DEBUG_QUOTE) {
-    //   console.log("[internal tokenMeta]", {
-    //     inIs0,
-    //     inIs1,
-    //     outIs0,
-    //     outIs1,
-    //     inputMeta,
-    //     outputMeta,
-    //     feeTier,
-    //   });
-    // }
+    // =========================
+    // 완전한 underlying mid price 계산
+    // P_U = (v_out * P_B) / v_in
+    //  - v_in  = previewRedeem(1 B_in)
+    //  - v_out = previewRedeem(1 B_out)
+    //  - P_B   = swapPoolPrice (B_out / B_in)
+    // =========================
+    try {
+      const oneBIn = new BigDecimal("1", inputMeta.bDec ?? 18);
+      const oneBOut = new BigDecimal("1", outputMeta.bDec ?? 18);
+
+      const underlyingPerBIn = await previewRedeem(
+        publicClient as any,
+        inputMeta.raw,
+        oneBIn
+      );
+      const underlyingPerBOut = await previewRedeem(
+        publicClient as any,
+        outputMeta.raw,
+        oneBOut
+      );
+
+      if (
+        !underlyingPerBIn ||
+        !underlyingPerBOut ||
+        underlyingPerBIn.value <= 0n ||
+        underlyingPerBOut.value <= 0n
+      ) {
+        throw new Error("invalid share price from previewRedeem");
+      }
+
+      // v_out * P_B  (단위: U_out per B_in)
+      const uOutPerBIn = underlyingPerBOut.mul(swapPoolPrice);
+      // (v_out * P_B) / v_in  (단위: U_out / U_in)
+      const midUnderlying = uOutPerBIn.div(underlyingPerBIn);
+
+      const midIsZero =
+        (midUnderlying as any)?.isZero?.() ?? midUnderlying.lte(0);
+
+      if (!midIsZero) {
+        const poolAddrForKey = (swapPool as any)?.addresses?.[chainId] as
+          | string
+          | undefined;
+        const producedKey = `${addrLower(curFromToken)}_${addrLower(
+          curToToken
+        )}_${(poolAddrForKey ?? "").toLowerCase()}`;
+
+        // 🔥 여기서 pairKey와 정확히 맞춰줘야 internal PI 계산이 살아난다
+        if (producedKey === pairKey) {
+          setMidPoolPrice(midUnderlying);
+          setMidOwner?.(pairKey);
+        }
+      }
+    } catch (e) {
+      if (DEBUG_QUOTE) {
+        console.warn("[internal midPrice underlying calc error]", e);
+      }
+      // 실패 시 slot0 기반 mid fallback (기존 로직 유지)
+      await ensureMidPriceFromSlot0(ctx, curFromToken, curToToken);
+    }
 
     // -------------------------
     // SIDE: in
@@ -507,14 +504,6 @@ async function getOtherAmountInternal(
         benchmarkUsed = "fallback_internal_x_0_9975";
       }
 
-      // if (DEBUG_QUOTE) {
-      //   console.log("[internal result in]", {
-      //     amountStr,
-      //     benchmarkOut,
-      //     benchmarkUsed,
-      //   });
-      // }
-
       return {
         amount: amountStr,
         benchmarkOut,
@@ -601,13 +590,6 @@ async function getOtherAmountInternal(
 
     // out side 에서는 일단 amount 기반 fallback 만 제공
     const benchmarkOut = applyInterfaceFee(thisAmount, toErc20.decimals ?? 18);
-
-    // if (DEBUG_QUOTE) {
-    //   console.log("[internal result out]", {
-    //     amountStr,
-    //     benchmarkOut,
-    //   });
-    // }
 
     return {
       amount: amountStr,

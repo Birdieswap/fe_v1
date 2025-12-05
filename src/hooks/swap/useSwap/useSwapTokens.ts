@@ -50,6 +50,8 @@ type Token = {
   address?: `0x${string}` | null;
 };
 
+const DEBUG_SWAP_PI = true;
+
 const isETH = (t?: Token | null) => t?.symbol?.toUpperCase() === "ETH";
 const isWETH = (t?: Token | null) => t?.symbol?.toUpperCase() === "WETH";
 const isWrapPair = (a?: Token | null, b?: Token | null) =>
@@ -270,6 +272,16 @@ export default function useSwapTokens({
     if (lastPIRef.current !== key) {
       lastPIRef.current = key;
       setPriceImpact?.(pi);
+
+      if (DEBUG_SWAP_PI) {
+        console.log("[swap PI]", {
+          pairKey,
+          midOwner: midOwnerRef.current,
+          exchangeRate: exchangeRateBD.toPrecisionString(true, false),
+          midPoolPrice: midPoolPrice.toPrecisionString(true, false),
+          pi: pi.toPrecisionString(true, false),
+        });
+      }
     }
   }, [exchangeRateBD, midPoolPrice, pairKey, setPriceImpact]);
 
