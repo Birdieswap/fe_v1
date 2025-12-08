@@ -257,7 +257,7 @@ export default function ReceiveAddress({
                   onError={handleError}
                   // 기본 finder 제거 (빨간 점선 없애기)
                   components={{
-                    finder: true,
+                    finder: false,
                     torch: true,
                     zoom: true,
                     onOff: false,
