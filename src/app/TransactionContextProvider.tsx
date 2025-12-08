@@ -75,6 +75,14 @@ export type TransactionStatusProps = {
   onSubmittedInfo?: ReactNode;
   onConfirmedInfo?: ReactNode;
   onTryAgain?: () => void;
+
+  // ✅ 새로 추가: 스왑 벤치마크 / 이펙트용
+  fireConfetti?: boolean;
+  swapBenchmarkInfo?: {
+    profitUsd: string; // "0.3486"
+    actualOut: string; // "30.5784"
+    benchmarkOutAfterFee: string | null; // "30.23" or null
+  };
 } & (
   | ApproveTransactionProps
   | SwapTransactionProps
@@ -87,7 +95,9 @@ export type TransactionStatusProps = {
 
 export type TransactionContextType = {
   transactionProps: TransactionStatusProps | null;
-  setTransactionProps: (props: TransactionStatusProps | null) => void;
+  setTransactionProps: React.Dispatch<
+    React.SetStateAction<TransactionStatusProps | null>
+  >;
   isOpen: boolean;
   onClose: () => void;
   onOpen: () => void;
@@ -105,14 +115,15 @@ export default function TransactionContextProvider(props: {
   children: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [transactionProps, setTransactionProps] =
+    useState<TransactionStatusProps | null>(null);
+
   const onClose = () => {
     setIsOpen(false);
   };
   const onOpen = () => {
     setIsOpen(true);
   };
-  const [transactionProps, setTransactionProps] =
-    useState<TransactionStatusProps | null>(null);
 
   return (
     <Fragment>

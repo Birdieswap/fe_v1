@@ -1,12 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   StakeFiller,
   StakePanelContainer,
-  StakePanelHeader,
-  StakeSectionHeader,
 } from "@/components/atoms/stakePanelBase";
 
 import { BigDecimal } from "@/types/BigDecimal";
@@ -14,8 +11,7 @@ import StakingAmountInput from "./StakingAmountInput";
 import { StakeExecuteButtons } from "./common/StakeExecuteButtons";
 import useStakePanel from "@/hooks/useStakePanel";
 import type { Farm } from "@/types/FarmListTableRowProps";
-import { FaRegArrowAltCircleUp } from "react-icons/fa";
-import { ExtraRewardsInfo } from "./common/ExtraRewardsInfo";
+
 import { AprEntry } from "@/app/AssetsContextProvider";
 import { format2 } from "@/utils/wallet/tokens/calcBigdecimal";
 import BalanceRatioCard from "./common/BalanceRatioCard";
@@ -28,6 +24,7 @@ export default function StakePanel({
   stakedBalance,
   totalBalance,
   price,
+  hasRewards,
 }: {
   item: Farm;
   matched: AprEntry | undefined;
@@ -35,6 +32,7 @@ export default function StakePanel({
   stakedBalance?: BigDecimal;
   totalBalance?: BigDecimal;
   price?: BigDecimal | null;
+  hasRewards: boolean;
 }) {
   const state = useStakePanel(item);
   const firstStatus = state.tokenStatuses?.[0];
@@ -52,8 +50,15 @@ export default function StakePanel({
       : "";
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
-  // console.log("stakePanel", item, state);
-  console.log("stakePanel tokenStatuses", state.tokenStatuses);
+  // console.log("[StakePanel] hasRewards debug", {
+  //   matched,
+  //   hasRewards,
+  //   isExecutableBase: state.isExecutable,
+  //   finalIsExecutable: state.isExecutable && hasRewards,
+  // });
+
+  // console.log("stakePanel", item, state, matched);
+  // console.log("stakePanel tokenStatuses", state.tokenStatuses);
 
   return (
     <StakePanelContainer layoutId="stake-unstake">
@@ -94,13 +99,15 @@ export default function StakePanel({
 
       <StakeExecuteButtons
         isConnected={state.isConnected}
-        isExecutable={state.isExecutable}
+        isExecutable={state.isExecutable && hasRewards}
         isPending={state.isPending}
         isWrongNetwork={state.isWrongNetwork}
         execute={state.execute}
         executeText="Start Staking"
         tokenStatuses={state.tokenStatuses}
         variant="MINT"
+        showErrorMessages={hasRewards}
+        hasRewards={hasRewards}
       />
     </StakePanelContainer>
   );

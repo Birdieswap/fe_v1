@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useAccount, useChainId } from "wagmi";
 
-import { Farm, FarmType } from "@/types/FarmListTableRowProps";
+import { Farm } from "@/types/FarmListTableRowProps";
 import Arrow from "@/assets/icons/arrow.svg";
 import { defaultTransition } from "@/const/presenceTransition";
 import Icons from "@/assets/icons/icons";
@@ -363,19 +363,18 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
             </span>
             <div className="flex flex-col items-end leading-tight">
               <span className="text-sm font-semibold max-md:font-medium">
-                {!account.isConnected ? (
-                  "Connect Wallet"
-                ) : !isBalanceAvailable ? (
-                  <LoadingPulse w="w-16" />
-                ) : (
-                  balance.roundToDecimals(5).toPrecisionString(true, true)
-                )}
+                {!account.isConnected
+                  ? "Connect Wallet"
+                  : !isBalanceAvailable
+                    ? "0"
+                    : // ( <LoadingPulse w="w-16" />)
+                      balance.roundToDecimals(5).toPrecisionString(true, true)}
               </span>
               <span className="text-[12px] text-default-700 dark:text-default-300">
                 {!account.isConnected ? (
                   "Connect Wallet"
                 ) : !isBalanceAvailable ? (
-                  <LoadingPulse w="w-20" />
+                  "0" //(<LoadingPulse w="w-20" />)
                 ) : price ? (
                   "$" +
                   suffixNumbers(

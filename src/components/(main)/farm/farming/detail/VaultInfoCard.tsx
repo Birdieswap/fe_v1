@@ -14,9 +14,6 @@ import { BigDecimal } from "@/types/BigDecimal";
 import type { Farm } from "@/types/FarmListTableRowProps";
 import type { StakeVault } from "@/app/AssetsContextProvider";
 import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
-import { useReadContract } from "wagmi";
-import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
-import { formatUnits } from "viem";
 
 type Period = "1d" | "7d" | "30d";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";
@@ -61,6 +58,8 @@ export default function VaultInfoCard({
   item,
   price,
   onOpenStakingModal,
+  hasRewards,
+  totalSupply,
 }: {
   period: Period;
   onChangePeriod: (p: Period) => void;
@@ -72,19 +71,20 @@ export default function VaultInfoCard({
   item: Farm;
   price?: BigDecimal | null;
   onOpenStakingModal?: (row: VaultRowItem) => void;
+  hasRewards: boolean;
+  totalSupply?: number;
 }) {
   // 🔥 여기서만 useRewardInfo 사용 (선택된 FarmDetail 인스턴스에서만)
   const {
     price: priceNum,
     matched,
-    dailyPointRateNum,
+    dailyPointNum,
     extraList,
     showStakingBlock,
   } = useRewardInfo(item, price);
 
   const hasAnyExtra = Array.isArray(extraList) && extraList.length > 0;
-  const hasPointRate =
-    Number.isFinite(dailyPointRateNum) && dailyPointRateNum > 0;
+  const hasPointRate = Number.isFinite(dailyPointNum) && dailyPointNum > 0;
 
   // 🔥 Staking용 VaultRowItem 구성
   const stakingRow: VaultRowItem | null = useMemo(() => {
@@ -104,37 +104,7 @@ export default function VaultInfoCard({
     };
   }, [matched, periodKey]);
 
-  const stakingAddress = matched?.staking?.contractAddress as
-    | `0x${string}`
-    | undefined;
-
-  // 🔥 staking TVL 계산용 totalSupply
-  const {
-    data: totalSupplyRaw,
-    // isLoading: isReadingTotal,
-    // refetch: refetchTotalSupply,
-  } = useReadContract({
-    address: stakingAddress,
-    abi: birdieswap_staking_abi,
-    functionName: "getTotalSupply",
-    query: {
-      enabled: Boolean(stakingAddress),
-      refetchOnWindowFocus: false,
-    },
-  });
-
-  const totalSupply = useMemo(() => {
-    try {
-      if (!totalSupplyRaw) return 0;
-      return Number(
-        formatUnits(totalSupplyRaw as bigint, item.wip_stakeToken.decimals)
-      );
-    } catch {
-      return 0;
-    }
-  }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
-
-  // ✅ Extra APR 미리 계산: Hooks는 여기서 한 번만 호출
+  // Extra APR 미리 계산: Hooks는 여기서 한 번만 호출
   const extraAprMap = useMemo(() => {
     const base = priceNum || 0;
     const out: Record<string, number | null> = {};
@@ -180,14 +150,14 @@ export default function VaultInfoCard({
     return out;
   }, [extraList, priceNum, totalSupply]);
 
-  console.log("VaultInfoCard render:", {
-    dailyPointRateNum,
-    priceNum,
-    extraList,
-    showStakingBlock,
-    stakingRow,
-    totalSupply,
-  });
+  // console.log("VaultInfoCard render:", {
+  //   dailyPointNum,
+  //   priceNum,
+  //   extraList,
+  //   showStakingBlock,
+  //   stakingRow,
+  //   totalSupply,
+  // });
 
   return (
     <div
@@ -253,8 +223,10 @@ export default function VaultInfoCard({
           )}
 
           {/* 모바일 전용 Staking 요약 블록 */}
-          <Divider className="border-default-300 dark:border-default-100 md:hidden" />
-          {showStakingBlock && stakingRow && (
+          {hasRewards && (
+            <Divider className="border-default-300 dark:border-default-100 md:hidden" />
+          )}
+          {hasRewards && showStakingBlock && stakingRow && (
             <div className="flex flex-col gap-3 rounded-2xl bg-background text-sm md:hidden">
               {/* 클릭 시 모달 오픈 */}
               <div
@@ -291,24 +263,31 @@ export default function VaultInfoCard({
               </div>
 
               {/* 포인트 레이트 표시 */}
-              <div className="flex w-full flex-row items-center gap-1.5">
-                <p className="font-medium text-default-800 dark:text-default-200">
-                  Birdieswap Point
-                </p>
-                <div className="grow" />
-                <p className="whitespace-nowrap font-normal">
-                  {hasPointRate
-                    ? format2(dailyPointRateNum / (priceNum || 1) / 1e18, 2)
-                    : "0.00"}{" "}
-                  /$
-                </p>
-              </div>
-
+              {hasPointRate && (
+                <div className="flex w-full flex-row items-center gap-1.5">
+                  <p className="font-medium text-default-800 dark:text-default-200">
+                    Birdieswap Point
+                  </p>
+                  <div className="grow" />
+                  <p className="whitespace-nowrap font-normal">
+                    {format2(
+                      dailyPointNum /
+                        (priceNum || 1) /
+                        (totalSupply || 1) /
+                        1e18,
+                      4
+                    )}
+                    /$
+                  </p>
+                </div>
+              )}
               {/* Extra Rewards */}
               {hasAnyExtra &&
                 extraList.map((er: any) => {
                   const key = `${er.symbol}-${er.indexNumber}`;
                   const aprPct = extraAprMap[key] ?? null;
+
+                  if (aprPct == null || aprPct <= 0) return null;
 
                   return (
                     <div
@@ -320,7 +299,9 @@ export default function VaultInfoCard({
                       </p>
                       <div className="grow" />
                       <p className="whitespace-nowrap font-normal">
-                        {aprPct == null ? "—" : `${aprPct.toFixed(2)}% APR`}
+                        {aprPct == null
+                          ? "0.00% APR"
+                          : `${aprPct.toFixed(2)}% APR`}
                       </p>
                     </div>
                   );

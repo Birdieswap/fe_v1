@@ -552,7 +552,7 @@ export default function FarmListTable({
   return (
     <motion.div
       className={clsx(
-        "container grid origin-top items-center justify-center gap-x-2",
+        "w-full max-w-none grid origin-top items-center gap-x-2",
         GRID_COLS,
         "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}

@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { useContext, useMemo } from "react";
 
 import { BigDecimal } from "@/types/BigDecimal";
-import { setPrecisionString } from "@/utils/setPrecision";
 import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
 import { AssetsContext } from "@/app/AssetsContextProvider";

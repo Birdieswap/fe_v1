@@ -9,7 +9,7 @@ import {
   PopoverTrigger,
   Image,
 } from "@heroui/react";
-import { useContext, useMemo, useRef } from "react";
+import { useContext, useRef } from "react";
 import { useChainId, useSwitchChain } from "wagmi";
 
 import { NetworkInfo } from "@/types/NetworkInfo";

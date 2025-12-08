@@ -155,6 +155,13 @@ export default function FarmDetail({
       return 0;
     }
   }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
+  // console.log("FarmDetail item", item, "price", price);
+
+  const hasRewards =
+    !!matched &&
+    !!matched.staking &&
+    (Number(matched.staking.dailyPoint) > 0 ||
+      (matched.staking.extraRewards?.length ?? 0) > 0);
 
   return (
     <AnimatePresence initial={false} mode="wait">
@@ -167,14 +174,18 @@ export default function FarmDetail({
           style={{ overflow: "hidden", willChange: "height, opacity" }}
           className={clsx(
             "flex w-full flex-col gap-4 overflow-hidden  px-4 py-6 bg-default-100 dark:bg-dark-popup-bg",
-            "md:col-span-6",
+            "md:col-span-full",
             "max-md:col-span-3 max-md:row-span-2"
           )}
           data-selected={isActive}
         >
           {/* 상단: Farming / Staking 패널 */}
           <div className="flex w-full gap-4 md:flex-row max-md:flex-col">
-            <FarmingPanels item={item} price={price} />
+            <FarmingPanels
+              item={item}
+              price={price}
+              totalBalance={totalBalance}
+            />
 
             <StakingPanels
               item={item}
@@ -183,6 +194,7 @@ export default function FarmDetail({
               stakedBalance={stakedBalance}
               totalBalance={totalBalance}
               price={price}
+              hasRewards={hasRewards}
             />
           </div>
 
@@ -197,12 +209,17 @@ export default function FarmDetail({
               item={item} // ⬅️ useRewardInfo용
               price={price} // ⬅️ useRewardInfo용
               onOpenStakingModal={handleOpenStakingModal} // ⬅️ 모바일 Staking
+              hasRewards={hasRewards}
+              totalSupply={totalSupply}
             />
 
             <RewardInfoCard
               item={item}
               price={price}
               onOpenStakingModal={handleOpenModal}
+              hasRewards={hasRewards}
+              totalSupply={totalSupply}
+              stakedBalance={stakedBalance}
             />
           </div>
 

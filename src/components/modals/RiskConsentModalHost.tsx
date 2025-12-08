@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ModalContent, ModalBody, Checkbox, Link } from "@heroui/react";
+import { useEffect, useRef, useState } from "react";
+import { ModalContent, ModalBody, Link } from "@heroui/react";
 import ModalBase from "../atoms/ModalBase";
 import ThemedButton from "../atoms/ThemedButton";
 import { dbg } from "@/debug/dbg";
@@ -179,7 +179,7 @@ export default function RiskConsentModalHost() {
         src: "window/document",
         eType: (e as any)?.type,
       }); // [DBG]
-      console.log("[RiskModal] OPEN event received", e);
+      // console.log("[RiskModal] OPEN event received", e);
       if (DBG) console.log("[RiskModal] OPEN event received:", e);
       const ce = e as OpenEvent;
       const detail = ce?.detail;

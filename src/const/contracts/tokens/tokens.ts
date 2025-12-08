@@ -13,11 +13,11 @@ const ETH = CurrencyGuard({
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.ETH as `0x${string}`,
     [networks.base.id]: contractAddresses.base.ETH as `0x${string}`,
-    [networks.baseFork.id]: contractAddresses.arbitrum.ETH as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.ETH as `0x${string}`,
   },
   abi: erc20_abi,
   decimals: 18,
-  displayDecimals: 3,
+  displayDecimals: 9,
   iconSrc: "/tokens/ETH.svg",
 } as const);
 
@@ -32,7 +32,7 @@ const WETH = CurrencyGuard({
   },
   abi: erc20_abi,
   decimals: 18,
-  displayDecimals: 6,
+  displayDecimals: 9,
   iconSrc: "/tokens/WETH.svg",
 } as const);
 
@@ -47,7 +47,7 @@ const USDC = CurrencyGuard({
   },
   abi: erc20_abi,
   decimals: 6,
-  displayDecimals: 2,
+  displayDecimals: 5,
   iconSrc: "/tokens/USDC.svg",
 } as const);
 
@@ -56,7 +56,6 @@ const CBBTC = CurrencyGuard({
   symbol: "cbBTC",
   fullName: "Coinbase Wrapped BTC",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.CBBTC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.CBBTC as `0x${string}`,
   },
   abi: erc20_abi,
@@ -90,7 +89,7 @@ const EURC = CurrencyGuard({
   },
   abi: erc20_abi,
   decimals: 6,
-  displayDecimals: 2,
+  displayDecimals: 5,
   iconSrc: "/tokens/EURC.svg",
 } as const);
 
@@ -99,8 +98,8 @@ const tokens = {
   WETH,
   USDC,
   WBTC,
-  // CBBTC,
-  // EURC,
+  CBBTC,
+  // EURC
 };
 
 export default tokens;

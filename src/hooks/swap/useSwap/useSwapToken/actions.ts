@@ -1,6 +1,5 @@
 import { Config } from "wagmi";
 import { erc20Abi, parseUnits } from "viem";
-import type { Abi, Address } from "viem";
 import { WriteContractMutate } from "wagmi/query";
 import { TransactionContextType } from "@/app/TransactionContextProvider";
 import { TransactionType } from "@/types/TransactionTypes";
@@ -40,6 +39,7 @@ export function approve(params: {
     refetchAllowance,
     spenderAddress,
   } = params;
+
   const transactionProps = {
     transactionType: TransactionType.APPROVE,
     input: fromToken,
@@ -118,6 +118,9 @@ export async function swap(params: {
   ) => Promise<void>;
   setToAmount: (v: string) => void;
   balances?: any;
+
+  benchmarkOut?: string | null;
+  toTokenUsd?: number | null;
 }) {
   const {
     chainId,
@@ -143,10 +146,14 @@ export async function swap(params: {
     updateAmountCommon,
     setToAmount,
     balances,
+
+    benchmarkOut,
+    toTokenUsd,
   } = params;
 
   const inputAmountBD = new BigDecimal(fromAmount, fromToken?.decimals);
   const outputAmountBD = new BigDecimal(toAmount, toToken?.decimals);
+  const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
 
   const transactionProps = {
     transactionType: TransactionType.SWAP,
@@ -168,20 +175,40 @@ export async function swap(params: {
       writeContract(cfg, {
         onError: (e: any) => {
           try {
-            // swap도 approve처럼 실패로 전환
             (handlers as any)?.onError?.(e);
           } finally {
             reject(e);
           }
         },
-        onSuccess: (h: any) => {
-          // 성공은 finalizeAfterTxSuccess가 처리하므로 여기선 hash만 전달
-          resolve(h as `0x${string}`);
-        },
+        onSuccess: (h: any) => resolve(h as `0x${string}`),
       });
     });
 
-  // WETH 입출금 케이스 처리
+  // ✅ (A) tx 직전 toToken balance 스냅샷
+  let preToBalance: bigint | null = null;
+  try {
+    if (publicClient && userAddress) {
+      if (toToken?.symbol === "ETH") {
+        preToBalance = await publicClient.getBalance({ address: userAddress });
+      } else {
+        const toAddr = getTokenAddress({ token: toToken, chainId }) as
+          | `0x${string}`
+          | null;
+        if (toAddr) {
+          preToBalance = await publicClient.readContract({
+            address: toAddr,
+            abi: erc20Abi,
+            functionName: "balanceOf",
+            args: [userAddress],
+          });
+        }
+      }
+    }
+  } catch {
+    preToBalance = null;
+  }
+
+  // WETH 입출금
   const isDeposit = fromToken?.symbol === "ETH" && toToken?.symbol === "WETH";
   const isWithdraw = fromToken?.symbol === "WETH" && toToken?.symbol === "ETH";
 
@@ -196,22 +223,6 @@ export async function swap(params: {
       value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
     } as any);
 
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: tokenAddress,
-    //       abi: weth_abi,
-    //       functionName: "deposit",
-    //       // deposit() payable
-    //       value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
-
     await finalizeAfterTxSuccess({
       hash,
       publicClient,
@@ -219,6 +230,8 @@ export async function swap(params: {
       balances,
       fromToken,
       toToken,
+      chainId,
+      userAddress,
       refs: {
         lastInputRef,
         curFromTokenRef,
@@ -227,7 +240,12 @@ export async function swap(params: {
         curToAmountRef,
       },
       updateAmountCommon,
+      transactionContext,
+      benchmarkOut,
+      toTokenUsd,
+      preToBalance,
     });
+
     return;
   }
 
@@ -242,21 +260,6 @@ export async function swap(params: {
       args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
     } as any);
 
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: tokenAddress,
-    //       abi: weth_abi,
-    //       functionName: "withdraw",
-    //       args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //   onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
-
     await finalizeAfterTxSuccess({
       hash,
       publicClient,
@@ -264,6 +267,8 @@ export async function swap(params: {
       balances,
       fromToken,
       toToken,
+      chainId,
+      userAddress,
       refs: {
         lastInputRef,
         curFromTokenRef,
@@ -272,10 +277,16 @@ export async function swap(params: {
         curToAmountRef,
       },
       updateAmountCommon,
+      transactionContext,
+      benchmarkOut,
+      toTokenUsd,
+      preToBalance,
     });
+
     return;
   }
 
+  // Wrapper: ETH -> Token
   const isWrapperIn =
     fromToken?.symbol === "ETH" && toToken?.symbol !== "WETH" && !!toToken;
 
@@ -290,16 +301,13 @@ export async function swap(params: {
     }) as `0x${string}`;
     const feeTier = swapPool?.fee_tier as number;
     const minReceive = receiveAtLeast;
-    // 기존 코드와 동일하게 sqrtPriceLimitX96는 0으로 보냅니다.
     const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0);
 
-    // payable value = ETH 입력값(18자리)
     const value = parseUnits(
       new BigDecimal(fromAmount).toString(),
       tokens.WETH.decimals ?? 18
     );
 
-    // 동일한 모달 핸들러 사용
     const hash = await writeWithHandlers({
       address: wrapperAddress,
       abi: birdieswap_wrapper_abi,
@@ -310,30 +318,10 @@ export async function swap(params: {
         minReceive,
         sqrtPriceLimit,
         referralAddress as `0x${string}`,
+        deadline,
       ],
       value,
     } as any);
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: wrapperAddress,
-    //       abi: birdieswap_wrapper_abi,
-    //       functionName: "swapWithETH", // (payable)
-    //       args: [
-    //         feeTier as number,
-    //         outputTokenAddress,
-    //         minReceive,
-    //         sqrtPriceLimit,
-    //         referralAddress as `0x${string}`,
-    //       ],
-    //       value,
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -342,6 +330,8 @@ export async function swap(params: {
       balances,
       fromToken,
       toToken,
+      chainId,
+      userAddress,
       refs: {
         lastInputRef,
         curFromTokenRef,
@@ -350,12 +340,16 @@ export async function swap(params: {
         curToAmountRef,
       },
       updateAmountCommon,
+      transactionContext,
+      benchmarkOut,
+      toTokenUsd,
+      preToBalance,
     });
 
     return;
   }
 
-  // ========== [추가 2] Wrapper 스왑: Token -> ETH (상대가 WETH가 아닌 경우) ==========
+  // Wrapper: Token -> ETH
   const isWrapperOut =
     toToken?.symbol === "ETH" && fromToken?.symbol !== "WETH" && !!fromToken;
 
@@ -373,8 +367,6 @@ export async function swap(params: {
     const minReceive = receiveAtLeast;
     const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0);
 
-    console.log("wrapper-swapToETH args", sqrtPriceLimitX96);
-
     const hash = await writeWithHandlers({
       address: wrapperAddress,
       abi: birdieswap_wrapper_abi,
@@ -386,30 +378,9 @@ export async function swap(params: {
         minReceive,
         sqrtPriceLimit,
         referralAddress as `0x${string}`,
+        deadline,
       ],
     } as any);
-
-    // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-    //   writeContract(
-    //     {
-    //       address: wrapperAddress,
-    //       abi: birdieswap_wrapper_abi,
-    //       functionName: "swapToETH", // (nonpayable)
-    //       args: [
-    //         inputTokenAddress,
-    //         feeTier as number,
-    //         amountBD.value,
-    //         minReceive,
-    //         sqrtPriceLimit,
-    //         referralAddress as `0x${string}`,
-    //       ],
-    //     } as any,
-    //     {
-    //       onError: (e: any) => reject(e),
-    //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-    //     },
-    //   );
-    // });
 
     await finalizeAfterTxSuccess({
       hash,
@@ -418,6 +389,8 @@ export async function swap(params: {
       balances,
       fromToken,
       toToken,
+      chainId,
+      userAddress,
       refs: {
         lastInputRef,
         curFromTokenRef,
@@ -426,18 +399,22 @@ export async function swap(params: {
         curToAmountRef,
       },
       updateAmountCommon,
+      transactionContext,
+      benchmarkOut,
+      toTokenUsd,
+      preToBalance,
     });
 
     return;
   }
 
-  // Birdie Router 일반 스왑
+  // Router swap
   const inputTokenAddress = getTokenAddress({ token: fromToken, chainId });
   const outputTokenAddress = getTokenAddress({ token: toToken, chainId });
   const amountBD = new BigDecimal(fromAmount, fromToken?.decimals);
   const feeTier = swapPool?.fee_tier as number;
   const minReceive = receiveAtLeast;
-  const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0); // 기존 코드 그대로 보존
+  const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0);
 
   const hash = await writeWithHandlers({
     address: contracts.birdieRouter.address as `0x${string}`,
@@ -451,31 +428,9 @@ export async function swap(params: {
       minReceive,
       sqrtPriceLimit,
       referralAddress as `0x${string}`,
+      deadline,
     ],
   });
-
-  // const hash: `0x${string}` = await new Promise((resolve, reject) => {
-  //   writeContract(
-  //     {
-  //       address: contracts.birdieRouter.address as `0x${string}`,
-  //       abi: contracts.birdieRouter.abi,
-  //       functionName: "swap",
-  //       args: [
-  //         inputTokenAddress as `0x${string}`,
-  //         feeTier as number,
-  //         outputTokenAddress as `0x${string}`,
-  //         amountBD.value,
-  //         minReceive,
-  //         sqrtPriceLimit,
-  //         referralAddress as `0x${string}`,
-  //       ],
-  //     },
-  //     {
-  //       onError: (e: any) => reject(e),
-  //       onSuccess: (h: any) => resolve(h as `0x${string}`),
-  //     },
-  //   );
-  // });
 
   await finalizeAfterTxSuccess({
     hash,
@@ -484,6 +439,8 @@ export async function swap(params: {
     balances,
     fromToken,
     toToken,
+    chainId,
+    userAddress,
     refs: {
       lastInputRef,
       curFromTokenRef,
@@ -492,5 +449,9 @@ export async function swap(params: {
       curToAmountRef,
     },
     updateAmountCommon,
+    transactionContext,
+    benchmarkOut,
+    toTokenUsd,
+    preToBalance,
   });
 }

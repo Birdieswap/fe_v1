@@ -7,7 +7,6 @@ import { Fragment, useContext } from "react";
 import { useTheme } from "next-themes";
 
 import Icons from "@/assets/icons/icons";
-import ThemedSwitch from "@/components/atoms/ThemedSwitch";
 import { SettingsContext } from "@/app/SettingsProvider";
 
 function ThemeSelector(props: {

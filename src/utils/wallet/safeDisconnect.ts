@@ -1,11 +1,5 @@
-
 import { disconnect } from "wagmi/actions";
-import {
-  CLEAR_LOCAL_KEYS,
-  CLEAR_LOCAL_PREFIXES,
-  isInjectedLike,
-  isWalletConnectLike,
-} from "./connectorUtils";
+import { isInjectedLike, isWalletConnectLike } from "./connectorUtils";
 
 /** wagmi.persisted store를 강제로 'disconnected' 상태로 만든다. */
 function forceWagmiDisconnected() {
@@ -49,7 +43,14 @@ function clearKnownCaches() {
     ];
     KEYS.forEach((k) => localStorage.removeItem(k));
     // prefix 기반 정리
-    const PREFIXES = ["wagmi.", "rainbowkit.", "wc@", "walletconnect", "coinbaseWallet:", "walletlink:"];
+    const PREFIXES = [
+      "wagmi.",
+      "rainbowkit.",
+      "wc@",
+      "walletconnect",
+      "coinbaseWallet:",
+      "walletlink:",
+    ];
     Object.keys(localStorage).forEach((k) => {
       if (PREFIXES.some((p) => k.startsWith(p))) {
         localStorage.removeItem(k);
@@ -68,16 +69,26 @@ export async function safeDisconnect(params: {
   const connectorId: string | undefined = connector?.id;
 
   // 1) wagmi state 끊기
-  try { await disconnect(config, { connector }); } catch {}
+  try {
+    await disconnect(config, { connector });
+  } catch {}
 
   // 2) 커넥터 자체 세션 끊기 시도
-  try { await connector?.disconnect?.(); } catch {}
-  try { await (connector as any)?.deactivate?.(); } catch {}
+  try {
+    await connector?.disconnect?.();
+  } catch {}
+  try {
+    await (connector as any)?.deactivate?.();
+  } catch {}
 
   // 3) WalletConnect는 provider 쪽도 끊기
   if (isWalletConnectLike(connectorId)) {
-    try { await (connector as any)?.walletConnectProvider?.disconnect?.(); } catch {}
-    try { await (connector as any)?.walletConnectProvider?.destroy?.(); } catch {}
+    try {
+      await (connector as any)?.walletConnectProvider?.disconnect?.();
+    } catch {}
+    try {
+      await (connector as any)?.walletConnectProvider?.destroy?.();
+    } catch {}
   }
 
   // 4) 로컬스토리지 캐시/세션 강제 초기화
@@ -87,10 +98,14 @@ export async function safeDisconnect(params: {
   // 5) Injected(메타마스크) 계열: 완전한 세션 종료가 불가 → 리로드 옵션
   if (isInjectedLike(connectorId, provider)) {
     // soft-block 플래그는 유지 (원하는 UX에 맞춰)
-    try { sessionStorage.setItem("__CONSENT_BLOCKED_UNTIL_SIGN__", "1"); } catch {}
+    try {
+      sessionStorage.setItem("__CONSENT_BLOCKED_UNTIL_SIGN__", "1");
+    } catch {}
 
     if (hardReloadOnInjected) {
-      try { location.reload(); } catch {}
+      try {
+        location.reload();
+      } catch {}
     }
   }
 }

@@ -6,6 +6,7 @@ import RewardInfoPanel from "./RewardInfo/RewardInfoPanel";
 import RewardInfoPanelMobile from "./RewardInfo/RewardInfoPanelMobile";
 import { useContext } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import { useChainId } from "wagmi";
 
 // 외부에서 모달 열기 콜백 시그니처에 쓰이는 타입(기존과 동일)
 type VaultRowItem = {
@@ -21,17 +22,24 @@ export default function RewardInfoCard({
   price,
   onOpenStakingModal,
   className,
+  hasRewards,
+  totalSupply,
+  stakedBalance,
 }: {
   item: Farm;
   price?: BigDecimal | null;
   onOpenStakingModal?: (row: VaultRowItem) => void;
   className?: string;
+  hasRewards: boolean;
+  totalSupply?: number;
+  stakedBalance?: BigDecimal;
 }) {
+  const chainId = useChainId();
   const { userPoints } = useContext(AssetsContext);
   const symbol = item?.wip_stakeToken?.symbol;
-  const points = userPoints?.staking?.[symbol] ?? null;
+  const StakeAddress = item?.wip_stakeToken?.addresses?.[chainId];
+  const points = userPoints?.staking?.[StakeAddress] ?? null;
 
-  console.log("RewardInfoCard render item:", item, userPoints);
   return (
     <>
       {/* ✅ 데스크톱 전용 뷰: sm 이상에서만 렌더 */}
@@ -42,6 +50,7 @@ export default function RewardInfoCard({
           points={points}
           onOpenStakingModal={onOpenStakingModal}
           className={className}
+          totalSupply={totalSupply}
         />
       </div>
 
@@ -53,6 +62,7 @@ export default function RewardInfoCard({
           points={points}
           onOpenStakingModal={onOpenStakingModal}
           className={className}
+          stakedBalance={stakedBalance}
         />
       </div>
     </>

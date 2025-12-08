@@ -57,15 +57,24 @@ export default function RewardInfoPanel({
   points,
   onOpenStakingModal,
   className,
+  totalSupply,
 }: {
   item: Farm;
   price?: BigDecimal | null;
   points?: string | null;
   onOpenStakingModal?: (row: any) => void;
   className?: string;
+  totalSupply?: number;
 }) {
-  const { price, matched, dailyPointRateNum, extraList, showStakingBlock } =
-    useRewardInfo(item, priceBD);
+  const {
+    price,
+    matched,
+    dailyPointNum,
+    extraList,
+    showStakingBlock,
+    hasEarned,
+    hasUserStakePoint,
+  } = useRewardInfo(item, priceBD);
   const openStakingModal = useCallback(() => {
     if (!matched?.staking || !onOpenStakingModal) return;
     onOpenStakingModal({
@@ -76,11 +85,30 @@ export default function RewardInfoPanel({
       aprSource: matched.staking,
     });
   }, [matched?.staking, onOpenStakingModal]);
-  console.log("RewardInfoPanel render:", extraList);
-  if (!showStakingBlock) {
+  // console.log("RewardInfoPanel render:", extraList);
+  const pointRate = dailyPointNum / price / (totalSupply || 1) / 1e18;
+
+  // console.log("RewardInfoPanel debug:", {
+  //   matched,
+  //   price,
+  //   dailyPointNum,
+  //   pointRate,
+  //   totalSupply,
+  // });
+
+  if (!showStakingBlock && !hasUserStakePoint && !hasEarned) {
     return (
       <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>
-        <p className="text-default-500">No rewards info.</p>
+        <div className="flex grow flex-col items-center justify-center gap-4 pt-1.5 pb-4">
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            There are no additional staking rewards available at the moment.
+          </p>
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            But you are still enjoying the double growth rate of
+            Birdieswap!{" "}
+          </p>
+        </div>
       </div>
     );
   }
@@ -128,8 +156,8 @@ export default function RewardInfoPanel({
           <p className="text-[15px] font-semibold">Birdieswap Point</p>
         </div>
         <span className={CELL_METRIC}>
-          {dailyPointRateNum
-            ? `${(dailyPointRateNum / (price || 1) / 1e18).toFixed(2)} /$`
+          {dailyPointNum
+            ? `${(dailyPointNum / (price || 1) / (totalSupply || 1) / 1e18).toFixed(4)} /$`
             : "0.00/$"}
         </span>
         <div className={RIGHT_GROUP}>
@@ -169,6 +197,7 @@ export default function RewardInfoPanel({
                   (er.contractAddress as Address) ??
                   (matched!.staking!.contractAddress as Address),
               }}
+              totalSupply={totalSupply}
             />
           ))}
         </div>
@@ -182,11 +211,13 @@ function ExtraRewardClaimRow({
   stakingAddress,
   reward,
   stakeUsdPrice,
+  totalSupply,
 }: {
   item: Farm;
   stakingAddress: Address;
   reward: ExtraReward;
   stakeUsdPrice: number;
+  totalSupply?: number;
 }) {
   const { address } = useAccount();
   const chainId = useChainId();
@@ -208,31 +239,6 @@ function ExtraRewardClaimRow({
       refetchOnWindowFocus: false,
     },
   });
-
-  const {
-    data: totalSupplyRaw,
-    isLoading: isReadingTotal,
-    refetch: refetchTotalSupply,
-  } = useReadContract({
-    address: stakingAddress,
-    abi: birdieswap_staking_abi,
-    functionName: "getTotalSupply",
-    query: {
-      enabled: Boolean(stakingAddress),
-      refetchOnWindowFocus: false,
-    },
-  });
-
-  const totalSupply = useMemo(() => {
-    try {
-      if (!totalSupplyRaw) return 0;
-      return Number(
-        formatUnits(totalSupplyRaw as bigint, item.wip_stakeToken.decimals)
-      );
-    } catch {
-      return 0;
-    }
-  }, [totalSupplyRaw, item.wip_stakeToken.decimals]);
 
   const amountNum = useMemo(() => {
     try {
@@ -343,7 +349,7 @@ function ExtraRewardClaimRow({
         <p className="truncate text-[15px] font-semibold">{reward.symbol}</p>
       </div>
       <span className={CELL_METRIC}>
-        {aprPct == null ? "—" : `${aprPct.toFixed(2)}% APR`}
+        {aprPct == null ? "0.00% APR" : `${aprPct.toFixed(2)}% APR`}
       </span>
       <div className={RIGHT_GROUP}>
         <div className={AMOUNT_INNER}>

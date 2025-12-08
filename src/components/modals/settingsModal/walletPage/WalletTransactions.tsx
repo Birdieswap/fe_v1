@@ -14,17 +14,12 @@ import {
 } from "react";
 
 import Icons from "@/assets/icons/icons";
-import { timeElapsed } from "@/utils/timeElapsed";
-import { setPrecisionString } from "@/utils/setPrecision";
-import type { TransactionEvent } from "@/utils/wallet/getMyTransactionData";
 import { useChainId } from "wagmi";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import { buildTransactions } from "@/utils/wallet/transactions/buildTransactions";
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { WalletContext } from "@/app/WalletContextProvider";
-import { FaRegArrowAltCircleUp } from "react-icons/fa";
-import { FaRegArrowAltCircleDown } from "react-icons/fa";
 import { PiHandWithdraw } from "react-icons/pi";
 
 export enum TransactionType {

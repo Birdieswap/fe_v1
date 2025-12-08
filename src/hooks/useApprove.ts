@@ -22,7 +22,6 @@ export default function useApprove(props: {
   writeContract: WriteContractMutate<Config, unknown>;
   refetch?: () => Promise<unknown>;
 }) {
-
   const chainId = useChainId();
   const approve = useCallback(
     (token: IToken) => {
@@ -33,7 +32,7 @@ export default function useApprove(props: {
         token: token,
         chainId,
       });
-      console.log("tokenAddress",tokenAddress);
+      // console.log("tokenAddress",tokenAddress);
       const transactionProps: TransactionStatusProps & ApproveTransactionProps =
         {
           transactionType: TransactionType.APPROVE,
@@ -47,15 +46,15 @@ export default function useApprove(props: {
         refetch: props.refetch,
       });
 
-      console.log(
-        "[approve]",
-        { 
-          token,
-          chainId,
-          tokenSymbol: token?.symbol,
-          tokenAddress,
-        }
-      );
+      // console.log(
+      //   "[approve]",
+      //   {
+      //     token,
+      //     chainId,
+      //     tokenSymbol: token?.symbol,
+      //     tokenAddress,
+      //   }
+      // );
 
       props.writeContract(
         {
@@ -65,14 +64,14 @@ export default function useApprove(props: {
           args: [
             props.routerAddress as `0x${string}`,
             BigInt(
-              "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+              "115792089237316195423570985008687907853269984665640564039457584007913129639935"
             ),
           ],
         },
-        handler,
+        handler
       );
     },
-    [chainId, props],
+    [chainId, props]
   );
 
   return approve;

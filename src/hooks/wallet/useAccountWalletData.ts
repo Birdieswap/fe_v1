@@ -83,7 +83,7 @@ export function useAccountWalletData(
     boostCountRef.current = 0;
     preFetchLenRef.current = 0;
 
-    console.log("[useAWD] reset", { address, chainId, initialCursor: initial });
+    // console.log("[useAWD] reset", { address, chainId, initialCursor: initial });
   }, [address, chainId, blockHeight]);
 
   const baseKey = [
@@ -134,10 +134,10 @@ export function useAccountWalletData(
 
     const page = txQ.data;
     const list = page.Transactions ?? [];
-    console.log("[useAWD] merge start", {
-      pageLen: list.length,
-      earliest: page.EarliestBlock,
-    });
+    // console.log("[useAWD] merge start", {
+    //   pageLen: list.length,
+    //   earliest: page.EarliestBlock,
+    // });
 
     // EarliestBlock 갱신
     const pageEarliest = Number(page.EarliestBlock);
@@ -153,7 +153,7 @@ export function useAccountWalletData(
         const next = Array.from(map.values()).sort(
           (a, b) => Number(b.blockNumber) - Number(a.blockNumber)
         );
-        console.log("[useAWD] merged len", next.length);
+        // console.log("[useAWD] merged len", next.length);
         return next;
       });
     }
@@ -161,7 +161,7 @@ export function useAccountWalletData(
     // 종료 조건: 빈 페이지거나, 이번 페이지의 최소 blockNumber가 EarliestBlock 이하
     if (list.length === 0) {
       setEndReached(true);
-      console.log("[useAWD] endReached by empty page");
+      // console.log("[useAWD] endReached by empty page");
     } else {
       const minInPage = Math.min(...list.map((t) => Number(t.blockNumber)));
       if (
@@ -170,7 +170,7 @@ export function useAccountWalletData(
         minInPage <= pageEarliest
       ) {
         setEndReached(true);
-        console.log("[useAWD] endReached by earliest");
+        // console.log("[useAWD] endReached by earliest");
       }
     }
   }, [txQ.data]);
@@ -181,7 +181,7 @@ export function useAccountWalletData(
     if (!accTxs.length) return;
     const minBlock = Math.min(...accTxs.map((t) => Number(t.blockNumber)));
     if (Number.isNaN(minBlock)) return;
-    console.log("[useAWD] loadMore → cursor", minBlock - 1);
+    // console.log("[useAWD] loadMore → cursor", minBlock - 1);
     setCursor(minBlock - 1);
   }, [accTxs, endReached]);
 
@@ -198,11 +198,11 @@ export function useAccountWalletData(
 
     if (added < PAGE_TARGET && boostCountRef.current < MAX_BOOST) {
       boostCountRef.current += 1;
-      console.log("[useAWD] autoboost", {
-        added,
-        target: PAGE_TARGET,
-        boostTry: boostCountRef.current,
-      });
+      // console.log("[useAWD] autoboost", {
+      //   added,
+      //   target: PAGE_TARGET,
+      //   boostTry: boostCountRef.current,
+      // });
       loadMore();
     }
   }, [txQ.isFetching, accTxs.length, endReached, loadMore]);

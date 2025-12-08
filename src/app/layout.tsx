@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next";
+import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import clsx from "clsx";
@@ -16,6 +16,7 @@ const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter", // CSS 변수로 노출
   display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {

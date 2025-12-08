@@ -4,13 +4,12 @@ import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
-import useFarmStopPanelCommon, { StopRoute }  from "./useFarmStopPanelCommon";
+import useFarmStopPanelCommon, { StopRoute } from "./useFarmStopPanelCommon";
 import useFarmLPBalances from "./useFarmLPBalances";
-import { parseUnits, PublicClient } from "viem";
+import { parseUnits } from "viem";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
-import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
-import { getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
+import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
@@ -53,19 +52,32 @@ export function usePairStopPanel(item: FarmPair) {
   // 표시 토큰 (토글 반영)
   const displayTokens = useMemo(() => {
     const t0 = hasWethLike[0]
-      ? (nativeMode?.[0] === "ETH" ? ethDisplayMeta : wethDisplayMeta)
+      ? nativeMode?.[0] === "ETH"
+        ? ethDisplayMeta
+        : wethDisplayMeta
       : (inputToken0 as any);
     const t1 = hasWethLike[1]
-      ? (nativeMode?.[1] === "ETH" ? ethDisplayMeta : wethDisplayMeta)
+      ? nativeMode?.[1] === "ETH"
+        ? ethDisplayMeta
+        : wethDisplayMeta
       : (inputToken1 as any);
     return [t0, t1] as const;
-  }, [hasWethLike, nativeMode, ethDisplayMeta, wethDisplayMeta, inputToken0, inputToken1]);
+  }, [
+    hasWethLike,
+    nativeMode,
+    ethDisplayMeta,
+    wethDisplayMeta,
+    inputToken0,
+    inputToken1,
+  ]);
 
   // ETH 경로 포함 여부: displayToken으로 판별
-  const isETH0 = (displayTokens[0] as any)?.symbol === "ETH" ||
-                 isZeroAddress((displayTokens[0] as any)?.addresses?.["" as any]);
-  const isETH1 = (displayTokens[1] as any)?.symbol === "ETH" ||
-                 isZeroAddress((displayTokens[1] as any)?.addresses?.["" as any]);
+  const isETH0 =
+    (displayTokens[0] as any)?.symbol === "ETH" ||
+    isZeroAddress((displayTokens[0] as any)?.addresses?.["" as any]);
+  const isETH1 =
+    (displayTokens[1] as any)?.symbol === "ETH" ||
+    isZeroAddress((displayTokens[1] as any)?.addresses?.["" as any]);
   const anyETH = isETH0 || isETH1;
 
   // 공통 훅: anyETH면 Wrapper, 아니면 Router로 BLP allowance/approve 스펜더 지정
@@ -96,11 +108,17 @@ export function usePairStopPanel(item: FarmPair) {
 
   const [isApprovePending, setIsApprovePending] = useState(false);
 
-  const approveWithPending = useCallback(async (token: any) => {
-    setIsApprovePending(true);
-    try { await approve(token); }
-    finally { setIsApprovePending(false); }
-  }, [approve]);
+  const approveWithPending = useCallback(
+    async (token: any) => {
+      setIsApprovePending(true);
+      try {
+        await approve(token);
+      } finally {
+        setIsApprovePending(false);
+      }
+    },
+    [approve]
+  );
 
   // AmountInput 상태
   const tokenStatus: FarmStopTokenStatus = useMemo(
@@ -114,7 +132,8 @@ export function usePairStopPanel(item: FarmPair) {
       isImpermanentInsolvency: false,
       impermanentInsolvency: undefined,
       isInsufficientBalance: balance.lt(amount || 0),
-      isApprovable: isConnected && !allowance.gte(amount || 0) && !isApprovePending,
+      isApprovable:
+        isConnected && !allowance.gte(amount || 0) && !isApprovePending,
       approve: () => approveWithPending(stakeToken),
     }),
     [stakeToken, balance, amount, allowance, isConnected, approve]
@@ -126,16 +145,11 @@ export function usePairStopPanel(item: FarmPair) {
 
     // dL: BLP 감소량(정수값으로 계산하기 위해 BLP decimals만큼 내림)
     const dL =
-      amount?.shift(-(item.wip_stakeToken.decimals ?? 18)) ??
-      BigDecimal.ZERO();
+      amount?.shift(-(item.wip_stakeToken.decimals ?? 18)) ?? BigDecimal.ZERO();
 
     // 풀 잔고 x, y: 각 토큰 decimals 보정 후 고정 소수점 정밀도로 사용
-    const x = poolBalance0
-      .shift(-(token0.decimals ?? 18))
-      .roundToDecimals(36);
-    const y = poolBalance1
-      .shift(-(token1.decimals ?? 18))
-      .roundToDecimals(36);
+    const x = poolBalance0.shift(-(token0.decimals ?? 18)).roundToDecimals(36);
+    const y = poolBalance1.shift(-(token1.decimals ?? 18)).roundToDecimals(36);
 
     if (x.eq(0)) return [null, null] as const;
 
@@ -176,7 +190,6 @@ export function usePairStopPanel(item: FarmPair) {
     }
   }, [unlockAmounts]);
 
-
   // 실행: 어느 한쪽이라도 ETH 선택 → WRAPPER_PAIR, 아니면 ROUTER_PAIR
   const stopFarming = useCallback(() => {
     if (!address) return;
@@ -194,14 +207,7 @@ export function usePairStopPanel(item: FarmPair) {
       blpAmount,
       onSuccess: () => setAmount(BigDecimal.ZERO()),
     });
-  }, [
-    address,
-    amount,
-    nativeMode,
-    hasWethLike,
-    stakeToken,
-    performStop,
-  ]);
+  }, [address, amount, nativeMode, hasWethLike, stakeToken, performStop]);
 
   const isStoppable = useMemo(
     () =>
@@ -214,7 +220,7 @@ export function usePairStopPanel(item: FarmPair) {
   );
 
   const isPending =
-    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending; 
+    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending;
 
   // 두 칸 모두 렌더
   const isActive = useMemo<[boolean, boolean]>(() => [true, true], []);
@@ -244,12 +250,9 @@ export function usePairStopPanel(item: FarmPair) {
     // ETH/WETH 토글
     nativeMode,
     setNativeMode,
-    nativeToggleCanShow: [
-      hasWethLike[0],
-      hasWethLike[1],
-    ] as [boolean, boolean],
+    nativeToggleCanShow: [hasWethLike[0], hasWethLike[1]] as [boolean, boolean],
     displayTokens,
-    
+
     chainId,
     poolBalance0,
     poolBalance1,
