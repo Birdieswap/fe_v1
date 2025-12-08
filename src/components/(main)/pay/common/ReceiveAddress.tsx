@@ -257,7 +257,7 @@ export default function ReceiveAddress({
                   onError={handleError}
                   // 기본 finder 제거 (빨간 점선 없애기)
                   components={{
-                    finder: true,
+                    finder: false,
                     torch: true,
                     zoom: true,
                     onOff: false,
@@ -299,7 +299,7 @@ export default function ReceiveAddress({
               <p className="mt-2 text-center text-sm text-default-300">
                 Scanning may be less reliable in dark mode.
               </p>
-              <p className="mt-2 text-center text-sm text-default-300">
+              <p className="mb-2 text-center text-sm text-default-300">
                 If detection fails, please try again in light mode.
               </p>
 
