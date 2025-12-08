@@ -242,8 +242,7 @@ export default function ReceiveAddress({
 
               {/* 안내 문구 */}
               <p className="text-sm mt-3 text-default-200">
-                Align the QR code within the frame to scan the recipient&apos;s
-                address.
+                Align the QR code within the frame
               </p>
 
               {/* 스캐너 영역 */}
@@ -258,7 +257,7 @@ export default function ReceiveAddress({
                   onError={handleError}
                   // 기본 finder 제거 (빨간 점선 없애기)
                   components={{
-                    finder: false,
+                    finder: true,
                     torch: true,
                     zoom: true,
                     onOff: false,
@@ -297,22 +296,26 @@ export default function ReceiveAddress({
               </div>
 
               {/* 다크 모드 안내 문구 */}
-              <p className="mt-2 text-center text-xs text-default-300">
-                Scanning may be less reliable in dark mode. If detection fails,
-                please try again with your device or wallet in light mode.
+              <p className="mt-2 text-center text-sm text-default-300">
+                Scanning may be less reliable in dark mode.
+              </p>
+              <p className="mt-2 text-center text-sm text-default-300">
+                If detection fails, please try again in light mode.
               </p>
 
               {/* Cancel 버튼 (MINT 테마) */}
-              <ThemedButton
-                variant="MINT"
-                className="mt-2"
-                onPress={() => {
-                  onClose();
-                  setIsScannerOpen(false);
-                }}
-              >
-                Cancel
-              </ThemedButton>
+              <div className="mt-2 w-full max-w-sm">
+                <ThemedButton
+                  variant="MINT"
+                  className="h-11 w-full grow-0 text-base"
+                  onPress={() => {
+                    onClose();
+                    setIsScannerOpen(false);
+                  }}
+                >
+                  Cancel
+                </ThemedButton>
+              </div>
             </div>
           )}
         </ModalContent>
