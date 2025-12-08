@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import type React from "react";
 import dynamic from "next/dynamic";
+import type React from "react";
 import {
   Input,
   Modal,
@@ -12,7 +12,6 @@ import {
   ModalFooter,
   ModalHeader,
   Button,
-  Divider,
 } from "@heroui/react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import clsx from "clsx";
@@ -21,22 +20,14 @@ import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-// ====== QR 스캐너 타입 최소 정의 ======
-type DetectedCode = {
-  rawValue: string;
-};
-
-interface QrScannerProps {
-  onScan: (detectedCodes: DetectedCode[]) => void;
-  onError?: (error: unknown) => void;
-  constraints?: MediaTrackConstraints;
-}
+// 👇 라이브러리에서 공식 타입 import
+import type { IDetectedBarcode, IScannerProps } from "@yudiel/react-qr-scanner";
 
 // Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
-const QrScanner = dynamic(
+const QrScanner = dynamic<IScannerProps>(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
   { ssr: false }
-) as React.ComponentType<QrScannerProps>;
+);
 
 type ReceiveAddressProps = {
   value?: string;
@@ -79,10 +70,16 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
     setIsScannerOpen(false);
   };
 
-  const handleScan = (detectedCodes: DetectedCode[]) => {
+  // 👇 라이브러리에서 넘겨주는 공식 타입 그대로 사용
+  const handleScan = (detectedCodes: IDetectedBarcode[]) => {
     if (!detectedCodes || detectedCodes.length === 0) return;
+
     const first = detectedCodes[0];
     if (!first?.rawValue) return;
+
+    // 디버깅 해보고 싶으면 한 번 찍어보면 됨
+    // console.log("DETECTED:", first);
+
     handleDecoded(first.rawValue);
   };
 
@@ -129,11 +126,10 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
         </Button>
       </div>
 
-      {/* ===== 카메라 없음 / 미지원 모달 (공통 포맷 사용) ===== */}
+      {/* ===== 카메라 없음 / 미지원 모달 ===== */}
       <ModalBase
         isOpen={isNoCameraModalOpen}
         onOpenChange={(open) => {
-          // HeroUI onOpenChange는 boolean | undefined 를 넘길 수 있으므로 방어적으로 처리
           if (open === false) setIsNoCameraModalOpen(false);
           if (open === true) setIsNoCameraModalOpen(true);
         }}
@@ -147,13 +143,13 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
         isDismissable
       >
         <ModalContent>
-          <ModalHeader className="px-0 pb-5 flex justify-center">
+          <ModalHeader className="flex justify-center px-0 pb-5">
             <h1 className="text-xl font-semibold text-foreground">
               Camera not available
             </h1>
           </ModalHeader>
 
-          <ModalBody className="px-2 py-3 mb-5">
+          <ModalBody className="mb-5 px-2 py-3">
             <p className="text-base text-foreground">
               This device doesn&apos;t seem to have a camera or your browser
               doesn&apos;t support camera access. Please paste the wallet
@@ -171,7 +167,7 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
         </ModalContent>
       </ModalBase>
 
-      {/* ===== QR 스캐너 모달 (기존 HeroUI Modal 그대로 유지) ===== */}
+      {/* ===== QR 스캐너 모달 ===== */}
       <Modal
         isOpen={isScannerOpen}
         onOpenChange={setIsScannerOpen}
@@ -188,17 +184,38 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
               <p className="text-sm text-default-200">
                 Align the QR code within the frame
               </p>
+
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
-                  constraints={{ facingMode: "environment" }}
+                  // ✅ 인식 콜백
                   onScan={handleScan}
-                  onError={(error: unknown) => {
+                  // ✅ 에러 콜백
+                  onError={(error) => {
                     console.error(error);
                     onClose();
                     setIsNoCameraModalOpen(true);
                   }}
+                  // ✅ 카메라 옵션: 후면 + 적당한 해상도
+                  constraints={{
+                    facingMode: "environment",
+                    aspectRatio: 1,
+                    width: { ideal: 1920 },
+                    height: { ideal: 1080 },
+                  }}
+                  // ✅ QR 코드만 탐지 (성능/안정성 ↑)
+                  formats={["qr_code"]}
+                  // 필요하면 조금 더 자주/덜 자주 스캔
+                  scanDelay={500}
+                  components={{
+                    finder: true,
+                    torch: true,
+                  }}
+                  styles={{
+                    container: { width: "100%", aspectRatio: "1 / 1" },
+                  }}
                 />
               </div>
+
               <Button variant="light" onPress={onClose}>
                 Cancel
               </Button>
