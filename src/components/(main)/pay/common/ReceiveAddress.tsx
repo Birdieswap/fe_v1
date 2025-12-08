@@ -37,7 +37,22 @@ interface QrScannerProps {
     torch?: boolean;
     zoom?: boolean;
     onOff?: boolean;
+    audio?: boolean;
+    tracker?: (
+      detectedCodes: IDetectedBarcode[],
+      ctx: CanvasRenderingContext2D
+    ) => void;
   };
+  styles?: {
+    container?: React.CSSProperties;
+    video?: React.CSSProperties;
+    finderBorder?: number;
+  };
+  classNames?: {
+    container?: string;
+    video?: string;
+  };
+  children?: React.ReactNode;
 }
 
 // Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
@@ -219,11 +234,19 @@ export default function ReceiveAddress({
       >
         <ModalContent>
           {(onClose) => (
-            <div className="flex h-[80vh] flex-col items-center justify-center gap-4">
-              <p className="text-sm text-default-200">
-                Align the QR code within the frame
+            <div className="flex h-[80vh] flex-col items-center justify-center gap-4 px-4">
+              {/* 상단 타이틀 */}
+              <h1 className="text-xl font-semibold text-light-primary">
+                Birdieswap Pay
+              </h1>
+
+              {/* 안내 문구 */}
+              <p className="text-sm mt-3 text-default-200">
+                Align the QR code within the frame to scan the recipient&apos;s
+                address.
               </p>
 
+              {/* 스캐너 영역 */}
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
                   // QR만 인식하게 포맷 좁히기
@@ -233,27 +256,63 @@ export default function ReceiveAddress({
                   // 스캔 결과 / 에러 핸들러
                   onScan={handleScan}
                   onError={handleError}
-                  // 토치/줌 등 기본 UI 컴포넌트
+                  // 기본 finder 제거 (빨간 점선 없애기)
                   components={{
-                    finder: true,
+                    finder: false,
                     torch: true,
                     zoom: true,
                     onOff: false,
                   }}
-                  // 같은 코드 중복 스캔 딜레이
-                  scanDelay={300}
-                />
+                  // 스타일 커스터마이징
+                  styles={{
+                    container: {
+                      position: "relative",
+                      borderRadius: 16,
+                    },
+                    video: {
+                      borderRadius: 16,
+                      objectFit: "cover",
+                    },
+                    finderBorder: 0,
+                  }}
+                  // 내부 컨트롤에 색 입히기 위한 className
+                  classNames={{
+                    container: "birdieswap-qr-container",
+                  }}
+                >
+                  {/* 커스텀 finder (네 귀퉁이 light-primary) */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="relative h-3/4 w-3/4 max-w-xs">
+                      {/* top-left */}
+                      <span className="absolute left-0 top-0 h-6 w-6 border-t-2 border-l-2 border-light-primary rounded-tl-lg" />
+                      {/* top-right */}
+                      <span className="absolute right-0 top-0 h-6 w-6 border-t-2 border-r-2 border-light-primary rounded-tr-lg" />
+                      {/* bottom-left */}
+                      <span className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-light-primary rounded-bl-lg" />
+                      {/* bottom-right */}
+                      <span className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-light-primary rounded-br-lg" />
+                    </div>
+                  </div>
+                </QrScanner>
               </div>
 
-              <Button
-                variant="light"
+              {/* 다크 모드 안내 문구 */}
+              <p className="mt-2 text-center text-xs text-default-300">
+                Scanning may be less reliable in dark mode. If detection fails,
+                please try again with your device or wallet in light mode.
+              </p>
+
+              {/* Cancel 버튼 (MINT 테마) */}
+              <ThemedButton
+                variant="MINT"
+                className="mt-2"
                 onPress={() => {
                   onClose();
                   setIsScannerOpen(false);
                 }}
               >
                 Cancel
-              </Button>
+              </ThemedButton>
             </div>
           )}
         </ModalContent>
