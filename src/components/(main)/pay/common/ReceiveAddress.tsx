@@ -241,23 +241,28 @@ export default function ReceiveAddress({
               </h1>
 
               {/* 안내 문구 */}
-              <p className="mt-3 text-sm text-default-200">
+              <p className="text-sm mt-3 text-default-200">
                 Align the QR code within the frame
               </p>
 
               {/* 스캐너 영역 */}
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
+                  // QR만 인식하게 포맷 좁히기
                   formats={["qr_code"]}
+                  // 뒷면 카메라 우선
                   constraints={{ facingMode: "environment" }}
+                  // 스캔 결과 / 에러 핸들러
                   onScan={handleScan}
                   onError={handleError}
+                  // 기본 finder 제거 (빨간 점선 없애기)
                   components={{
                     finder: true,
                     torch: true,
                     zoom: true,
                     onOff: false,
                   }}
+                  // 스타일 커스터마이징
                   styles={{
                     container: {
                       position: "relative",
@@ -267,16 +272,30 @@ export default function ReceiveAddress({
                       borderRadius: 16,
                       objectFit: "cover",
                     },
-                    // 기본 finder 빨간 점선 두께 0으로 줄이기
                     finderBorder: 0,
                   }}
+                  // 내부 컨트롤에 색 입히기 위한 className
                   classNames={{
                     container: "birdieswap-qr-container",
                   }}
-                />
+                >
+                  {/* 커스텀 finder (네 귀퉁이 light-primary) */}
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="relative h-3/4 w-3/4 max-w-xs">
+                      {/* top-left */}
+                      <span className="absolute left-0 top-0 h-6 w-6 border-t-2 border-l-2 border-light-primary rounded-tl-lg" />
+                      {/* top-right */}
+                      <span className="absolute right-0 top-0 h-6 w-6 border-t-2 border-r-2 border-light-primary rounded-tr-lg" />
+                      {/* bottom-left */}
+                      <span className="absolute bottom-0 left-0 h-6 w-6 border-b-2 border-l-2 border-light-primary rounded-bl-lg" />
+                      {/* bottom-right */}
+                      <span className="absolute bottom-0 right-0 h-6 w-6 border-b-2 border-r-2 border-light-primary rounded-br-lg" />
+                    </div>
+                  </div>
+                </QrScanner>
               </div>
 
-              {/* 다크 모드 안내 문구 (간격 좁게) */}
+              {/* 다크 모드 안내 문구 */}
               <div className="mt-2 mb-2 text-center text-sm text-default-300 space-y-1">
                 <p>Scanning may be less reliable in dark mode.</p>
                 <p>If detection fails, please try again in light mode.</p>
