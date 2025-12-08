@@ -101,7 +101,7 @@ export default function StakeInput({
   const iconAlt =
     panel === "unstake" ? "Staked BLP" : (token?.symbol ?? "token");
 
-  console.log("StakeInput unstake Token", token);
+  // console.log("StakeInput unstake Token", token);
 
   return (
     <AnimatePresence initial={false}>

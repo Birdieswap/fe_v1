@@ -4,12 +4,11 @@ import { parseUnits } from "viem";
 import { FarmSingle } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
 
-import useFarmStopPanelCommon, { StopRoute }  from "./useFarmStopPanelCommon";
+import useFarmStopPanelCommon, { StopRoute } from "./useFarmStopPanelCommon";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
 
-import { ADDRESS, } from "@/const/contracts/contractAddresses";
-import {  getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
+import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
@@ -39,12 +38,19 @@ export function useSingleStopPanel(item: FarmSingle) {
   // displayToken: 기본이 ETH일 때만 토글 적용
   const displayToken = useMemo(() => {
     if (!defaultIsETH) return receiveToken as any;
-    return nativeMode === "WETH" ? (wethDisplayMeta as any) : (ethDisplayMeta as any);
+    return nativeMode === "WETH"
+      ? (wethDisplayMeta as any)
+      : (ethDisplayMeta as any);
   }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, receiveToken]);
 
   // 경로 판정: displayToken으로 ETH 경로 여부 (주소가 없거나 0x00.. 이면 ETH로 취급)
-  const isETHPath = (displayToken as any)?.symbol === "ETH" ||
-                    isZeroAddress((displayToken as any)?.addresses?.[/* chainId will be checked in common */ ""] as any);
+  const isETHPath =
+    (displayToken as any)?.symbol === "ETH" ||
+    isZeroAddress(
+      (displayToken as any)?.addresses?.[
+        /* chainId will be checked in common */ ""
+      ] as any
+    );
 
   // 공통 훅 호출: ETH 경로면 Wrapper, 아니면 Router로 승인/allowance 스펜더 지정
   const {
@@ -64,8 +70,6 @@ export function useSingleStopPanel(item: FarmSingle) {
       : (stakingProviders as any).BIRDIESWAP_Router,
   });
 
-  
-
   // BLP 잔액/승인
   const balance = useBalance(stakeToken);
   // 청산 BLP 금액
@@ -74,14 +78,19 @@ export function useSingleStopPanel(item: FarmSingle) {
     setAmount(balance ?? BigDecimal.ZERO());
   }, [balance]);
 
-
   const [isApprovePending, setIsApprovePending] = useState(false);
 
-  const approveWithPending = useCallback(async (token: any) => {
-    setIsApprovePending(true);
-    try { await approve(token); }
-    finally { setIsApprovePending(false); }
-  }, [approve]);
+  const approveWithPending = useCallback(
+    async (token: any) => {
+      setIsApprovePending(true);
+      try {
+        await approve(token);
+      } finally {
+        setIsApprovePending(false);
+      }
+    },
+    [approve]
+  );
 
   // AmountInput 상태
   const tokenStatus: FarmStopTokenStatus = useMemo(
@@ -95,8 +104,9 @@ export function useSingleStopPanel(item: FarmSingle) {
       isImpermanentInsolvency: false,
       impermanentInsolvency: undefined,
       isInsufficientBalance: balance.lt(amount || 0),
-      isApprovable: isConnected && !allowance.gte(amount || 0) && !isApprovePending,
-      approve: () => approveWithPending(stakeToken),  
+      isApprovable:
+        isConnected && !allowance.gte(amount || 0) && !isApprovePending,
+      approve: () => approveWithPending(stakeToken),
     }),
     [stakeToken, balance, amount, allowance, isConnected, approve]
   );
@@ -118,13 +128,7 @@ export function useSingleStopPanel(item: FarmSingle) {
       blpAmount,
       onSuccess: () => setAmount(BigDecimal.ZERO()),
     });
-  }, [
-    address,
-    amount,
-    isETHPath,
-    stakeToken,
-    performStop,
-  ]);
+  }, [address, amount, isETHPath, stakeToken, performStop]);
 
   const isStoppable = useMemo(
     () =>
@@ -137,7 +141,7 @@ export function useSingleStopPanel(item: FarmSingle) {
   );
 
   const isPending =
-    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending; ;
+    allowanceQuery.isFetching || isPendingWriteContract || isApprovePending;
 
   const isActive = useMemo<[boolean]>(() => [true], []);
 
@@ -165,7 +169,7 @@ export function useSingleStopPanel(item: FarmSingle) {
     // ETH/WETH 토글 UI
     nativeMode,
     setNativeMode,
-    nativeToggleCanShow: defaultIsETH, // 
+    nativeToggleCanShow: defaultIsETH, //
   };
 }
 

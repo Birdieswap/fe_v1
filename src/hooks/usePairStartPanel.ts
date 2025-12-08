@@ -6,7 +6,8 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { parseUnits, PublicClient } from "viem";
+import { formatUnits, parseUnits, PublicClient } from "viem";
+import { Position as UniV3Position } from "@uniswap/v3-sdk";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -29,11 +30,8 @@ import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
-import previewRedeem from "@/utils/farm/previewRedeem";
-import {
-  ADDRESS,
-  contractAddresses,
-} from "@/const/contracts/contractAddresses";
+
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
 import {
   getFromContracts,
@@ -43,6 +41,11 @@ import {
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
+import { useV3UnderlyingFromTokenId } from "./farm/useV3UnderlyingFromTokenId";
+
+import previewFullDeposit from "@/utils/farm/previewFullDeposit";
+import previewRedeem from "@/utils/farm/previewRedeem";
+
 type NativeMode = "ETH" | "WETH" | null;
 
 export enum InvalidStatuses {
@@ -51,7 +54,11 @@ export enum InvalidStatuses {
   IMPERMANENT_INSOLVENCY = "IMPERMANENT_INSOLVENCY",
 }
 
-export function usePairStartPanel(item: FarmPair) {
+export function usePairStartPanel(
+  item: FarmPair,
+  tokenId?: bigint,
+  uniswapPoolAddress?: `0x${string}`
+) {
   const {
     client,
     transactionContext,
@@ -68,7 +75,6 @@ export function usePairStartPanel(item: FarmPair) {
 
   const accountBalances = useAccountBalances();
 
-  // [ADDED] balances -> plain Map으로 정리 (useMemo 내부에서 훅 호출 금지)
   const balanceMap: Map<`0x${string}`, any> = useMemo(() => {
     return (
       (accountBalances as any)?.tokenBalances?.balanceMap ||
@@ -81,8 +87,6 @@ export function usePairStartPanel(item: FarmPair) {
   const inputToken0 = bToken0.input;
   const inputToken1 = bToken1.input;
 
-  // === addresses 안전 조회 (ETH 등 addresses 없는 토큰도 안전)
-  // [ADDED] === ETH/WETH 토글/주소/표시용 상수 ===
   const ETH_ZERO_ADDRESS: `0x${string}` =
     getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
   const WETH_ADDRESS: `0x${string}` | null = getFromContracts(
@@ -97,36 +101,6 @@ export function usePairStartPanel(item: FarmPair) {
     ADDRESS.ROUTER,
     chainId
   );
-  // 기본 토큰이 ETH인지 판정: symbol === 'ETH' 또는 0x000... 주소 컨벤션
-  const defaultIsETH: [boolean, boolean] = [
-    inputToken0?.symbol === "ETH" ||
-      isZeroAddress((inputToken0 as any)?.addresses?.[chainId]),
-    inputToken1?.symbol === "ETH" ||
-      isZeroAddress((inputToken1 as any)?.addresses?.[chainId]),
-  ];
-  // [ADDED] 슬라이더 선택 상태 (기본이 ETH면 'ETH')
-  const [nativeMode, setNativeMode] = useState<[NativeMode, NativeMode]>([
-    defaultIsETH[0] ? "ETH" : null,
-    defaultIsETH[1] ? "ETH" : null,
-  ]);
-
-  // UI에서 쓰기 쉬운 세터
-  const setNativeMode0 = useCallback((m: any) => {
-    const s = (m ?? "").toString().trim().toUpperCase();
-    setNativeMode((prev) => [s === "WETH" ? "WETH" : "ETH", prev[1]]);
-  }, []);
-  const setNativeMode1 = useCallback((m: any) => {
-    const s = (m ?? "").toString().trim().toUpperCase();
-    setNativeMode((prev) => [prev[0], s === "WETH" ? "WETH" : "ETH"]);
-  }, []);
-
-  // 노출 조건: 기본이 ETH일 때만
-  const nativeToggleCanShow: [boolean, boolean] = [
-    defaultIsETH[0],
-    defaultIsETH[1],
-  ];
-
-  //  표시용 토큰/잔액/승인
 
   const inputToken0Address = getTokenAddress({
     token: inputToken0,
@@ -136,6 +110,32 @@ export function usePairStartPanel(item: FarmPair) {
     token: inputToken1,
     chainId,
   });
+
+  const defaultIsETH: [boolean, boolean] = [
+    inputToken0?.symbol === "ETH" ||
+      isZeroAddress((inputToken0 as any)?.addresses?.[chainId]),
+    inputToken1?.symbol === "ETH" ||
+      isZeroAddress((inputToken1 as any)?.addresses?.[chainId]),
+  ];
+
+  const [nativeMode, setNativeMode] = useState<[NativeMode, NativeMode]>([
+    defaultIsETH[0] ? "ETH" : null,
+    defaultIsETH[1] ? "ETH" : null,
+  ]);
+
+  const setNativeMode0 = useCallback((m: any) => {
+    const s = (m ?? "").toString().trim().toUpperCase();
+    setNativeMode((prev) => [s === "WETH" ? "WETH" : "ETH", prev[1]]);
+  }, []);
+  const setNativeMode1 = useCallback((m: any) => {
+    const s = (m ?? "").toString().trim().toUpperCase();
+    setNativeMode((prev) => [prev[0], s === "WETH" ? "WETH" : "ETH"]);
+  }, []);
+
+  const nativeToggleCanShow: [boolean, boolean] = [
+    defaultIsETH[0],
+    defaultIsETH[1],
+  ];
 
   const insolvency0 = useMemo(() => {
     return getInsolvencyAmount({
@@ -159,7 +159,6 @@ export function usePairStartPanel(item: FarmPair) {
   const ethDisplayMeta = tokens.ETH;
   const wethDisplayMeta = tokens.WETH;
 
-  // 표시용 토큰: 기본이 ETH인 경우에만 nativeMode를 적용해 ETH/WETH 선택
   const displayTokens = useMemo(() => {
     const t0 = defaultIsETH[0]
       ? nativeMode[0] === "WETH"
@@ -181,7 +180,6 @@ export function usePairStartPanel(item: FarmPair) {
     inputToken1,
   ]);
 
-  // ── 여기부터는 sideMode 없이 displayTokens로만 판별 ──
   const sideAddr0 = (displayTokens[0] as any)?.addresses?.[chainId] as
     | `0x${string}`
     | undefined;
@@ -202,7 +200,7 @@ export function usePairStartPanel(item: FarmPair) {
     sideAddr1?.toLowerCase?.() === WETH_ADDRESS.toLowerCase?.();
 
   const anyETH = isETH0 || isETH1;
-  // 잔액(ETH면 네이티브/WETH 맵에서, 아니면 기존 balance)
+
   const getBal = (addr?: `0x${string}` | string | null) => {
     if (!addr) return null;
     const lower = (addr as string).toLowerCase() as `0x${string}`;
@@ -223,8 +221,6 @@ export function usePairStartPanel(item: FarmPair) {
       : balance1,
   ];
 
-  // ===== 승인 로직 (ETH는 승인 불필요) =====
-  // allowance 대상 토큰: ETH → 더미 WETH, WETH/기타 → 해당 표시 토큰
   const token0ForAllowance = isETH0
     ? (wethDisplayMeta as any)
     : (displayTokens[0] as any);
@@ -257,49 +253,20 @@ export function usePairStartPanel(item: FarmPair) {
 
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
 
-  const [underlyingBalance0, setUnderlyingBalance0] =
-    useState<BigDecimal | null>(null);
-  const [underlyingBalance1, setUnderlyingBalance1] =
-    useState<BigDecimal | null>(null);
+  const {
+    underlying0: underlyingBalance0,
+    underlying1: underlyingBalance1,
+    v3Pool,
+    v3Position,
+  } = useV3UnderlyingFromTokenId({
+    client: client as any,
+    chainId,
+    tokenId,
+    uniswapPoolAddress,
+    bToken0,
+    bToken1,
+  });
 
-  // [추가] poolBalance0/1, client, bToken0/1 변경 시 previewRedeem 호출
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
-        // 필수 의존성 가드
-        if (!client) return;
-
-        // poolBalance가 BigDecimal이라고 가정. null/undefined 가드
-        if (!poolBalance0 || !poolBalance1) return;
-
-        const [u0, u1] = await Promise.all([
-          previewRedeem(client as PublicClient, bToken0, poolBalance0),
-          previewRedeem(client as PublicClient, bToken1, poolBalance1),
-        ]);
-
-        if (!cancelled) {
-          // 실패/undefined/null 시 0으로 폴백 (계산부 안전을 위해)
-          setUnderlyingBalance0(u0 ?? BigDecimal.ZERO());
-          setUnderlyingBalance1(u1 ?? BigDecimal.ZERO());
-        }
-      } catch {
-        if (!cancelled) {
-          setUnderlyingBalance0(BigDecimal.ZERO());
-          setUnderlyingBalance1(BigDecimal.ZERO());
-        }
-      }
-    }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [client, bToken0, bToken1, poolBalance0, poolBalance1]);
-
-  // console.log("getOtherAmount", stakeToken, { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0": poolBalance0, "poolBalance1.value": poolBalance1, "underlyingBalance0": underlyingBalance0, "underlyingBalance1": underlyingBalance1 });
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
     false,
@@ -313,7 +280,7 @@ export function usePairStartPanel(item: FarmPair) {
         return next;
       });
       try {
-        await Promise.resolve(fn(token)); // ✅ 항상 await 가능
+        await Promise.resolve(fn(token));
       } finally {
         setIsApprovePending((p) => {
           const next = [...p] as [boolean, boolean];
@@ -324,7 +291,7 @@ export function usePairStartPanel(item: FarmPair) {
     },
     []
   );
-  // ====== 승인 상태 (ETH=항상 true, WETH=WETH allowance) ======
+
   const isApproved = useMemo<[boolean, boolean]>(() => {
     const amt0 = amounts[0] || BigDecimal.ZERO();
     const amt1 = amounts[1] || BigDecimal.ZERO();
@@ -355,10 +322,20 @@ export function usePairStartPanel(item: FarmPair) {
   }, [insolvency0, amounts, insolvency1]);
 
   const getOtherAmount = useCallback(
-    (value: BigDecimal, index: 0 | 1) => {
-      const otherToken = index === 0 ? inputToken1 : inputToken0;
+    async (value: BigDecimal, index: 0 | 1): Promise<BigDecimal> => {
+      const baseUnderlying = index === 0 ? inputToken0 : inputToken1;
+      const otherUnderlyingToken = index === 0 ? inputToken1 : inputToken0;
+      const baseBToken = index === 0 ? bToken0 : bToken1;
+      const otherBToken = index === 0 ? bToken1 : bToken0;
 
-      // null 가드 및 폴백
+      console.log("getOtherAmount called:", {
+        value,
+        index,
+        baseUnderlying,
+        otherUnderlyingToken,
+        baseBToken,
+        otherBToken,
+      });
       const thisUnderlying =
         (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
         BigDecimal.ZERO();
@@ -366,88 +343,176 @@ export function usePairStartPanel(item: FarmPair) {
         (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
         BigDecimal.ZERO();
 
-      if (thisUnderlying.eq(0)) {
+      // 1) 기존 포지션 underlying 비율이 있으면 단순 비례로 계산
+      if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
+        return value
+          .mul(otherUnderlying)
+          .div(thisUnderlying)
+          .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
+      }
+
+      // 2) fallback: Uniswap V3 수학 + Birdieswap previewFullDeposit/previewRedeem
+      if (!client || !chainId || !v3Pool || !v3Position) {
         return BigDecimal.ZERO();
       }
-      // console.log("getOtherAmount", { "bToken0": bToken0, "bToken1": bToken1, "inputToken0": inputToken0, "inputToken1": inputToken1, "balance0": balance0, "balance1": balance1, "poolBalance0.value": poolBalance0.value, "poolBalance1.value": poolBalance1.value, "value": value, "thisUnderlying": thisUnderlying, "otherUnderlying": otherUnderlying });
-      return value
-        .mul(otherUnderlying)
-        .div(thisUnderlying)
-        .roundToDecimals(otherToken.decimals ?? 18);
-    },
-    [inputToken0, inputToken1, underlyingBalance0, underlyingBalance1]
-  );
 
-  const getMaxAmount = useCallback(() => {
-    const maxAmount = [
-      BigDecimal.min(balance0, insolvency0),
-      BigDecimal.min(balance1, insolvency1),
-    ];
-    const maxSwappedAmount = [
-      getOtherAmount(maxAmount[1], 1),
-      getOtherAmount(maxAmount[0], 0),
-    ];
+      try {
+        // 🔥 baseBToken 의 provider 가 Wrapper 인지 체크
+        const baseProvider = (baseBToken as any).provider;
 
-    if (!isActive[0]) {
-      return [null, maxAmount[1]] as [BigDecimal | null, BigDecimal | null];
-    } else if (!isActive[1]) {
-      return [maxAmount[1], null] as [BigDecimal | null, BigDecimal | null];
-    } else if (maxSwappedAmount[1].lt(maxAmount[1])) {
-      return [maxAmount[0], maxSwappedAmount[1]] as [
-        BigDecimal | null,
-        BigDecimal | null,
-      ];
-    } else {
-      return [maxSwappedAmount[0], maxAmount[1]] as [
-        BigDecimal | null,
-        BigDecimal | null,
-      ];
-    }
-  }, [balance0, insolvency0, balance1, insolvency1, getOtherAmount, isActive]);
+        const isWrapperProvider =
+          baseProvider === (stakingProviders as any).BIRDIESWAP_Wrapper;
 
-  const setMaxAmount = useCallback(() => {
-    setAmounts(getMaxAmount());
-  }, [getMaxAmount, setAmounts]);
+        // 🔥 Wrapper 이면 Router 로 override 해서 previewFullDeposit 호출
+        const providerOverride = isWrapperProvider
+          ? {
+              address: stakingProviders.BIRDIESWAP_Router.addresses?.[
+                chainId
+              ] as `0x${string}`,
+              abi: stakingProviders.BIRDIESWAP_Router.abi as any, // 실제 타입은 Abi
+            }
+          : undefined;
 
-  const setIsActive = useCallback(
-    (state: [boolean, boolean]) => {
-      _setIsActive((v) => {
-        if (!state[0]) {
-          setAmounts([null, amounts[1]]);
-        } else if (!state[1]) {
-          setAmounts([amounts[0], null]);
-        } else {
-          if (!v[0]) {
-            const otherAmount = getOtherAmount(
-              amounts[1] || BigDecimal.ZERO(),
-              1
-            );
+        // 2-1) underlying 입력값 → base bToken 수량으로 변환
+        const bBase = await previewFullDeposit(
+          client as PublicClient,
+          baseBToken,
+          value,
+          providerOverride
+        );
 
-            setAmounts([otherAmount, amounts[1]]);
-          } else if (!v[1]) {
-            const otherAmount = getOtherAmount(
-              amounts[0] || BigDecimal.ZERO(),
-              0
-            );
-
-            setAmounts([amounts[0], otherAmount]);
-          }
+        if (!bBase || bBase.eq(0)) {
+          return BigDecimal.ZERO();
         }
 
-        return state;
+        const baseBDecimals = baseBToken.decimals ?? 18;
+        const rawBase = parseUnits(
+          bBase.roundToDecimals(baseBDecimals).toString(),
+          baseBDecimals
+        );
+
+        // 2-2) Uniswap V3 SDK 로 other bToken amount 계산
+        let simulatedPos: UniV3Position;
+        if (index === 0) {
+          // base = token0 (bToken0), other = token1 (bToken1) 라고 가정
+          simulatedPos = UniV3Position.fromAmount0({
+            pool: v3Pool as any,
+            tickLower: v3Position.tickLower,
+            tickUpper: v3Position.tickUpper,
+            amount0: rawBase.toString(),
+            useFullPrecision: true,
+          });
+        } else {
+          // base = token1 (bToken1)
+          simulatedPos = UniV3Position.fromAmount1({
+            pool: v3Pool as any,
+            tickLower: v3Position.tickLower,
+            tickUpper: v3Position.tickUpper,
+            amount1: rawBase.toString(),
+          });
+        }
+
+        const amount0Raw = BigInt(
+          (simulatedPos.amount0 as any).quotient.toString()
+        );
+        const amount1Raw = BigInt(
+          (simulatedPos.amount1 as any).quotient.toString()
+        );
+
+        const otherIsToken1 = index === 0;
+        const otherRaw = otherIsToken1 ? amount1Raw : amount0Raw;
+
+        const otherBDecimals = otherBToken.decimals ?? 18;
+        const otherBHuman = formatUnits(otherRaw, otherBDecimals);
+        const otherBAmountBD = new BigDecimal(otherBHuman);
+
+        // 2-3) other bToken 수량 → underlying 수량으로 변환
+        const otherUnderlyingBD = await previewRedeem(
+          client as PublicClient,
+          otherBToken,
+          otherBAmountBD
+        );
+
+        if (!otherUnderlyingBD) {
+          return BigDecimal.ZERO();
+        }
+
+        // UI 표시용으로 상대 underlying 토큰 decimals 기준으로 라운딩
+        return otherUnderlyingBD.roundToDecimals(
+          otherUnderlyingToken.decimals ?? 18
+        );
+      } catch (e) {
+        console.error("[V3] getOtherAmount V3+Birdie fallback failed", e);
+        return BigDecimal.ZERO();
+      }
+    },
+    [
+      client,
+      chainId,
+      inputToken0,
+      inputToken1,
+      bToken0,
+      bToken1,
+      underlyingBalance0,
+      underlyingBalance1,
+      v3Pool,
+      v3Position,
+    ]
+  );
+
+  /**
+   * setMaxAmount: 비동기 getOtherAmount 사용하도록 변경
+   */
+  const setMaxAmount = useCallback(() => {
+    (async () => {
+      const maxAmount0 = BigDecimal.min(balance0, insolvency0);
+      const maxAmount1 = BigDecimal.min(balance1, insolvency1);
+
+      const [maxSwapped0, maxSwapped1] = await Promise.all([
+        getOtherAmount(maxAmount1, 1), // base = 1 → other = 0
+        getOtherAmount(maxAmount0, 0), // base = 0 → other = 1
+      ]);
+
+      let result: [BigDecimal | null, BigDecimal | null];
+
+      if (!isActive[0]) {
+        result = [null, maxAmount1];
+      } else if (!isActive[1]) {
+        result = [maxAmount0, null];
+      } else if (maxSwapped1.lt(maxAmount1)) {
+        result = [maxAmount0, maxSwapped1];
+      } else {
+        result = [maxSwapped0, maxAmount1];
+      }
+
+      setAmounts(result);
+    })();
+  }, [balance0, insolvency0, balance1, insolvency1, getOtherAmount, isActive]);
+
+  /**
+   * isActive 토글은 amount 재계산 없이 on/off + clear 정도만 처리 (단순화)
+   */
+  const setIsActive = useCallback(
+    (state: [boolean, boolean]) => {
+      _setIsActive(state);
+      setAmounts((prev) => {
+        if (!state[0]) {
+          return [null, prev[1]];
+        } else if (!state[1]) {
+          return [prev[0], null];
+        }
+        return prev;
       });
     },
-    [_setIsActive, amounts, setAmounts, getOtherAmount]
+    [_setIsActive]
   );
 
   const setAmountBase = useCallback(
     (value: BigDecimal | null, index: 0 | 1) => {
       setAmounts((prev) => {
         if (isActive.every(Boolean)) {
-          //  양쪽 활성: 지금은 '입력한 쪽'만 즉시 반영, 반대편은 유지
           return [index === 0 ? value : prev[0], index === 1 ? value : prev[1]];
         } else {
-          //  한쪽만 활성: 반대편은 항상 null (비활성 인풋은 비워둠)
           return [index === 0 ? value : null, index === 1 ? value : null];
         }
       });
@@ -475,20 +540,17 @@ export function usePairStartPanel(item: FarmPair) {
     displayTokensRef.current = displayTokens;
   }, [displayTokens]);
 
-  // [ADDED] 디바운스 상태/타이머
   const DEBOUNCE_MS = 750;
   const lastTypedIndexRef = useRef<0 | 1 | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // [ADDED] 새 setAmount (디바운스 + 지우면 즉시 반대편 클리어)
+  /**
+   * setAmount: 디바운스 후 비동기 getOtherAmount 호출
+   */
   const setAmount = (value: BigDecimal | null, index: 0 | 1) => {
-    // 1) 입력값은 "즉시" 반영 (사용감)
     setAmountBase(value as BigDecimal, index);
-
-    // 2) 최근 입력 인덱스 기록
     lastTypedIndexRef.current = index;
 
-    // 3) 지우기(빈/0)면 반대편도 즉시 0으로 + 타이머 클리어
     if (isZeroish(value)) {
       const other = (index === 0 ? 1 : 0) as 0 | 1;
       if (typingTimerRef.current) {
@@ -499,7 +561,6 @@ export function usePairStartPanel(item: FarmPair) {
       return;
     }
 
-    // 4) 연속 입력 →  디바운스 후에만 반대편 계산
     if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     typingTimerRef.current = setTimeout(() => {
       const i = lastTypedIndexRef.current;
@@ -514,30 +575,26 @@ export function usePairStartPanel(item: FarmPair) {
         return;
       }
 
-      const next =
-        getOtherAmount(srcAmount as BigDecimal, i)?.roundToDecimals(
-          tokens?.[other]?.decimals ?? 8
-        ) ?? null;
+      getOtherAmount(srcAmount as BigDecimal, i).then((nextRaw) => {
+        const next = nextRaw?.roundToDecimals(tokens?.[other]?.decimals ?? 8);
 
-      const cur = amountsRef.current?.[other] ?? null;
-      const curN = cur ? Number(cur?.toString?.() ?? cur) : null;
-      const nextN = next ? Number(next?.toString?.() ?? next) : null;
+        const cur = amountsRef.current?.[other] ?? null;
+        const curN = cur ? Number(cur?.toString?.() ?? cur) : null;
+        const nextN = next ? Number(next?.toString?.() ?? next) : null;
 
-      // 동일하면 스킵(불필요 렌더/깜빡임 방지)
-      if (curN !== nextN) {
-        setAmountBase(next, other);
-      }
+        if (curN !== nextN) {
+          setAmountBase(next, other);
+        }
+      });
     }, DEBOUNCE_MS);
   };
 
-  // [ADDED] unmount 시 타이머 정리
   useEffect(() => {
     return () => {
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     };
   }, []);
 
-  // 사이드별 approve: spender 주소는 위에서 분기(WETH/기타=Router, ETH=Wrapper)
   const spender0Addr =
     (spender0Provider?.addresses?.[chainId] as `0x${string}` | undefined) ??
     (stakeToken?.provider?.addresses?.[chainId] as `0x${string}` | undefined);
@@ -578,7 +635,7 @@ export function usePairStartPanel(item: FarmPair) {
   const tokenStatuses = useMemo(
     () =>
       [0, 1].map((i) => {
-        const input = displayTokens[i] as any; // ETH/WETH 반영된 토큰
+        const input = displayTokens[i] as any;
         const bal = displayBalances[i] ?? BigDecimal.ZERO();
         const amt = amounts[i];
         return {
@@ -618,7 +675,6 @@ export function usePairStartPanel(item: FarmPair) {
     ]
   );
 
-  // === Router/Wrapper 호출 ===
   const startFarming = useCallback(() => {
     if (!address) return;
     const transactionProps: TransactionStatusProps &
@@ -650,7 +706,7 @@ export function usePairStartPanel(item: FarmPair) {
       },
     });
 
-    const anyETH = isETH0 || isETH1;
+    const anyETHLocal = isETH0 || isETH1;
     if (isETH0 && isETH1) {
       console.error(
         "[startFarming] both sides are ETH — unsupported combination"
@@ -658,8 +714,7 @@ export function usePairStartPanel(item: FarmPair) {
       return;
     }
 
-    // (A) 한쪽이라도 ETH
-    if (anyETH) {
+    if (anyETHLocal) {
       if (!WRAPPER_ADDRESS) {
         console.error(
           "[startFarming] Missing WRAPPER_ADDRESS for chain:",
@@ -671,7 +726,6 @@ export function usePairStartPanel(item: FarmPair) {
       const ethIndex: 0 | 1 = isETH0 ? 0 : 1;
       const otherIndex: 0 | 1 = isETH0 ? 1 : 0;
 
-      // ETH value
       const ethAmountBD = tokenStatuses[ethIndex].amount ?? BigDecimal.ZERO();
       const ethValue = parseUnits(ethAmountBD.toFixed(18), 18);
 
@@ -690,22 +744,13 @@ export function usePairStartPanel(item: FarmPair) {
         tokenStatuses[otherIndex].amount ?? BigDecimal.ZERO();
       const otherAmount = parseUnits(otherAmountBD.toString(), otherDecimals);
 
-      console.log(
-        "usePairStartPanel wrapperDualDepositWithETH",
-        tokenStatuses[ethIndex].amount,
-        ethAmountBD,
-        ethValue,
-        otherAmountBD,
-        otherAmount
-      );
-      // wrapper 호출
       writeContract(
         {
           address: WRAPPER_ADDRESS,
           abi: birdieswap_wrapper_abi,
           functionName: "dualDepositWithETH",
           args: [otherTokenAddr, otherAmount],
-          value: ethValue, // payable
+          value: ethValue,
         },
         {
           onError: handlers.onError,
@@ -723,7 +768,6 @@ export function usePairStartPanel(item: FarmPair) {
       return;
     }
 
-    // 둘 다 비-ETH → Router.dualDeposit
     if (!ROUTER_ADDRESS) {
       console.error(
         "[startFarming] Missing ROUTER_ADDRESS for chain:",

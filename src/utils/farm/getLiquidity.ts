@@ -1,4 +1,4 @@
-import { Chain, Address, PublicClient, ReadContractParameters } from "viem";
+import { Chain, PublicClient, ReadContractParameters } from "viem";
 import { readContract } from "viem/actions";
 
 import {

@@ -8,9 +8,12 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 
 import getTokenAddress from "../assets/getTokenAddress";
-import getProviderAddress from "../assets/getProviderAddress";
-import { ADDRESS, contractAddresses } from "@/const/contracts/contractAddresses";
-import { getFromContracts, ZERO_ADDRESS, toLower, isHexAddress } from "@/utils/farm/getAddressHelpers";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
+import {
+  getFromContracts,
+  ZERO_ADDRESS,
+  toLower,
+} from "@/utils/farm/getAddressHelpers";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 function isNativeLike(addr: string) {
@@ -21,7 +24,10 @@ function isNativeLike(addr: string) {
   );
 }
 
-function mapNativeToWeth(address: `0x${string}`, chainId: number): `0x${string}` {
+function mapNativeToWeth(
+  address: `0x${string}`,
+  chainId: number
+): `0x${string}` {
   if (!isNativeLike(address)) return address; // Native 가 아니면 그대로
   const weth = getFromContracts(ADDRESS.WETH, chainId);
   return (weth ?? address) as `0x${string}`;
@@ -29,13 +35,12 @@ function mapNativeToWeth(address: `0x${string}`, chainId: number): `0x${string}`
 
 export default async function totalDualUnderlyingTokens(
   client: PublicClient,
-  farm: IBirdieSingleFarm | IBirdieLPFarm,
+  farm: IBirdieSingleFarm | IBirdieLPFarm
 ) {
   const chainId = client.chain?.id;
   if (!chainId) return null;
-  
+
   const routerAddress = stakingProviders.BIRDIESWAP_Router.addresses[chainId];
-  
 
   if (!chainId) return null;
   const farmAddress = getTokenAddress({
@@ -47,28 +52,30 @@ export default async function totalDualUnderlyingTokens(
   //   provider : farm.provider,
   //   chainId,
   // });
-  
+
   if (!farmAddress || !routerAddress) return null;
 
   // console.log("totalDualUnderlyingTokens!!!!!!", farm, farmAddress, providerAddress)
   const args: ReadContractParameters<
-    Abi,//(typeof farm)["abi"],
+    Abi, //(typeof farm)["abi"],
     "totalDualUnderlyingTokens",
     [`0x${string}`]
   > = {
     address: routerAddress as `0x${string}`,
     abi: stakingProviders.BIRDIESWAP_Router.abi as Abi,
     functionName: "totalDualUnderlyingTokens",
-    args: [
-      farmAddress,
-    ],
+    args: [farmAddress],
   };
 
-  const data = await readContract(client, args) as [string, string, bigint, bigint];;
-  
-  
+  const data = (await readContract(client, args)) as [
+    string,
+    string,
+    bigint,
+    bigint,
+  ];
+
   if (!data) return null;
-  
+
   const [UnderlyingTokenA, UnderlyingTokenB, amountTokenA, amountTokenB] = data;
 
   const token0 = (farm as IBirdieLPFarm).swap?.input?.[0]?.input;
@@ -76,7 +83,6 @@ export default async function totalDualUnderlyingTokens(
   if (!token0 || !token1) return null; // LP 가드
 
   const WETH_ADDRESS = getFromContracts(ADDRESS.WETH, chainId);
-    
 
   const token0AddrRaw = getTokenAddress({ token: token0, chainId });
   const token1AddrRaw = getTokenAddress({ token: token1, chainId });
@@ -88,9 +94,12 @@ export default async function totalDualUnderlyingTokens(
     token1?.symbol === "ETH" ? WETH_ADDRESS : token1AddrRaw
   );
 
-  const UnderlyingToken0 = toLower(mapNativeToWeth(UnderlyingTokenA as `0x${string}`, chainId));
-  const UnderlyingToken1 = toLower(mapNativeToWeth(UnderlyingTokenB as `0x${string}`, chainId));
-
+  const UnderlyingToken0 = toLower(
+    mapNativeToWeth(UnderlyingTokenA as `0x${string}`, chainId)
+  );
+  const UnderlyingToken1 = toLower(
+    mapNativeToWeth(UnderlyingTokenB as `0x${string}`, chainId)
+  );
 
   // console.log("totalDualUnderlyingTokens WETH Address", WETH_ADDRESS,"Underlying",UnderlyingToken0,UnderlyingToken1,"tokenAddrRaw",token0AddrRaw,token1AddrRaw,"tokenAddr주소매칭소문자",token0Addr,token1Addr)
 
@@ -110,7 +119,5 @@ export default async function totalDualUnderlyingTokens(
     const token1Address = UnderlyingTokenA as `0x${string}`;
     // console.log("totalDualUnderlyingTokens data!!!!!!!22222",farm, data,token0Address, poolBalance0, token1Address, poolBalance1)
     return [token0Address, poolBalance0, token1Address, poolBalance1];
-  }  
-
+  }
 }
-

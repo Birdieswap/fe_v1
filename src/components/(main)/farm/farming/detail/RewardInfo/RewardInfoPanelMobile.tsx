@@ -26,7 +26,7 @@ import { useRewardInfo } from "@/hooks/farm/useRewardInfo";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import type { Farm } from "@/types/FarmListTableRowProps";
-import type { BigDecimal } from "@/types/BigDecimal";
+import { BigDecimal } from "@/types/BigDecimal";
 
 type Address = `0x${string}`;
 
@@ -62,17 +62,23 @@ export default function RewardInfoPanelMobile({
   points,
   onOpenStakingModal,
   className,
+  stakedBalance,
 }: {
   item: Farm;
   price?: BigDecimal | null;
   points?: string | null;
   onOpenStakingModal?: (row: any) => void;
   className?: string;
+  stakedBalance?: BigDecimal;
 }) {
-  const { price, matched, extraList, showStakingBlock } = useRewardInfo(
-    item,
-    priceBD
-  );
+  const {
+    price,
+    matched,
+    extraList,
+    showStakingBlock,
+    hasEarned,
+    hasUserStakePoint,
+  } = useRewardInfo(item, priceBD);
 
   const openStakingModal = useCallback(() => {
     if (!matched?.staking || !onOpenStakingModal) return;
@@ -85,10 +91,40 @@ export default function RewardInfoPanelMobile({
     });
   }, [matched?.staking, onOpenStakingModal]);
 
-  if (!showStakingBlock) {
+  if (!showStakingBlock && !hasUserStakePoint && !hasEarned) {
     return (
       <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>
-        <p className="text-default-500">No rewards info.</p>
+        <div className="flex grow flex-col items-center justify-center gap-4 pt-1.5 pb-4">
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            There are no additional staking rewards available at the moment.
+          </p>
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            But you are still enjoying the double growth rate of
+            Birdieswap!{" "}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    !hasUserStakePoint &&
+    !hasEarned &&
+    showStakingBlock &&
+    stakedBalance == new BigDecimal(0)
+  ) {
+    return (
+      <div className={clsx("rounded-2xl bg-background p-4 text-sm", className)}>
+        <div className="flex grow flex-col items-center justify-center gap-4 pt-1.5 pb-4">
+          <Icons.WalletEmptyReward className="fill-light-mid-mint-2 dark:fill-dark-empty-state" />
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            You haven’t started staking yet.
+          </p>
+          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+            Join staking to enjoy even more rewards on Birdieswap!{" "}
+          </p>
+        </div>
       </div>
     );
   }
@@ -302,9 +338,10 @@ function ExtraRewardClaimRowMobile({
           size="sm"
           className={clsx(
             BTN_BASE,
-            "disabled:bg-default-300 disabled:text-default-600",
-            "dark:disabled:bg-dark-popup-bg dark:disabled:text-default-400",
-            "aria-[busy=true]:animate-pulse aria-[busy=true]:cursor-wait"
+            "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
+            "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
+            "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
+            "data-[disabled=true]:pointer-events-none"
           )}
           isLoading={false}
           isDisabled={!canClaim || isPending || isWaiting}

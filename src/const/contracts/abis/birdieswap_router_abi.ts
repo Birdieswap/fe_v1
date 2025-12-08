@@ -696,19 +696,6 @@ export const birdieswap_router_abi = [
   },
   {
     type: "function",
-    name: "setRouterAddress",
-    inputs: [
-      {
-        name: "_address",
-        type: "address",
-        internalType: "address",
-      },
-    ],
-    outputs: [],
-    stateMutability: "nonpayable",
-  },
-  {
-    type: "function",
     name: "setRouterConfigAddress",
     inputs: [
       {
@@ -824,6 +811,11 @@ export const birdieswap_router_abi = [
         name: "_referrerAddress",
         type: "address",
         internalType: "address",
+      },
+      {
+        name: "_deadline",
+        type: "uint256",
+        internalType: "uint256",
       },
     ],
     outputs: [
@@ -1086,6 +1078,11 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
+    name: "BirdieswapRouterV1__ConfigNotInitialized",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "BirdieswapRouterV1__DepositsAlreadyPaused",
     inputs: [],
   },
@@ -1136,6 +1133,11 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
+    name: "BirdieswapRouterV1__NonStandardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "BirdieswapRouterV1__NotAllowedNFT",
     inputs: [
       {
@@ -1159,6 +1161,11 @@ export const birdieswap_router_abi = [
         internalType: "bytes",
       },
     ],
+  },
+  {
+    type: "error",
+    name: "BirdieswapRouterV1__RequestExpired",
+    inputs: [],
   },
   {
     type: "error",

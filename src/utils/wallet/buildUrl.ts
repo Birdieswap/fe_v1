@@ -50,7 +50,7 @@ export function buildUrl(
   const proxyUrl = `/api/realkimp/${normalized}${q}`;
 
   if (typeof window !== "undefined" && SENSITIVE.has(normalized)) {
-    console.log(`[buildUrl] PROXY ONLY → ${normalized} =`, proxyUrl);
+    // console.log(`[buildUrl] PROXY ONLY → ${normalized} =`, proxyUrl);
   }
   return proxyUrl;
 }

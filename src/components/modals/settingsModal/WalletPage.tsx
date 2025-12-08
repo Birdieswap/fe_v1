@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ModalHeader,
-  Button,
-  ModalBody,
-  cn,
-  ButtonGroup,
-  Divider,
-} from "@heroui/react";
+import { ModalHeader, Button, ModalBody, cn, Divider } from "@heroui/react";
 import { Fragment, useContext, useMemo, useState } from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains, useConfig } from "wagmi";

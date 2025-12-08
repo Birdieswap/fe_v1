@@ -23,7 +23,7 @@ async function getSwapQuote(
   tokenFrom: IBirdieSingleFarm,
   tokenTo: IBirdieSingleFarm,
   amountSide: "in" | "out",
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   const chainId = client.chain?.id;
 
@@ -54,7 +54,7 @@ async function getSwapQuote(
   ]);
 
   const biAmount = amount.roundToDecimals(
-    amountSide === "in" ? tokenFrom.decimals : tokenTo.decimals,
+    amountSide === "in" ? tokenFrom.decimals : tokenTo.decimals
   ).value;
 
   const res = await quoteExactAmount(
@@ -64,7 +64,7 @@ async function getSwapQuote(
     amountAddress,
     amountSide,
     biAmount,
-    immutables.fee,
+    immutables.fee
   );
 
   if (!res) return null;
@@ -72,24 +72,24 @@ async function getSwapQuote(
   const sqrtPriceX96Before = isPoolInverted
     ? new Fraction(
         JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10)),
-        JSBI.BigInt(state.sqrtPriceX96.toString(10)),
+        JSBI.BigInt(state.sqrtPriceX96.toString(10))
       )
     : new Fraction(
         JSBI.BigInt(state.sqrtPriceX96.toString(10)),
-        JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10)),
+        JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10))
       );
   const sqrtPriceX96After = isPoolInverted
     ? new Fraction(
         JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10)),
-        JSBI.BigInt(res.sqrtPriceX96After.toString(10)),
+        JSBI.BigInt(res.sqrtPriceX96After.toString(10))
       )
     : new Fraction(
         JSBI.BigInt(res.sqrtPriceX96After.toString(10)),
-        JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10)),
+        JSBI.BigInt((BigInt(1) << BigInt(96)).toString(10))
       );
 
-  console.log("sqrtPriceX96Before: ", sqrtPriceX96Before.toFixed(18));
-  console.log("sqrtPriceX96After: ", sqrtPriceX96After.toFixed(18));
+  // console.log("sqrtPriceX96Before: ", sqrtPriceX96Before.toFixed(18));
+  // console.log("sqrtPriceX96After: ", sqrtPriceX96After.toFixed(18));
 
   const amountIn = new BigDecimal(res.amountOut, tokenFrom.decimals);
   const amountOut = new BigDecimal(res.amountOut, tokenTo.decimals);
@@ -126,7 +126,7 @@ async function getSwapQuoteFromICurrencyAndProvider(
   tokenTo: ICurrency,
   provider: EProvider,
   amountSide: "in" | "out",
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   const chainId = client.chain?.id;
 
@@ -139,7 +139,7 @@ async function getSwapQuoteFromICurrencyAndProvider(
     provider,
   });
 
-  console.log("pool: ", pool?.fullName);
+  // console.log("pool: ", pool?.fullName);
   if (!pool) return null;
   const bTokenFrom =
     pool.input[0].input.symbol === tokenFrom.symbol
@@ -160,7 +160,7 @@ export async function getSwapQuoteForProviders(
   tokenFrom: ICurrency,
   tokenTo: ICurrency,
   amountSide: "in" | "out",
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   const chainId = client.chain?.id;
 
@@ -172,7 +172,7 @@ export async function getSwapQuoteForProviders(
     tokenTo,
     EProvider.AAVE,
     amountSide,
-    amount,
+    amount
   ).catch((error) => {
     console.error("Error getting AAVE swap quote:", error);
 
@@ -184,7 +184,7 @@ export async function getSwapQuoteForProviders(
     tokenTo,
     EProvider.AUTOPILOT,
     amountSide,
-    amount,
+    amount
   ).catch((error) => {
     console.error("Error getting Autopilot swap quote:", error);
 
@@ -201,7 +201,7 @@ export async function updateToAmount(
   client: PublicClient,
   tokenFrom: ICurrency,
   tokenTo: ICurrency,
-  amount: BigDecimal,
+  amount: BigDecimal
 ) {
   const chainId = client.chain?.id;
 
@@ -212,6 +212,6 @@ export async function updateToAmount(
     tokenFrom,
     tokenTo,
     "in",
-    amount,
+    amount
   );
 }

@@ -106,6 +106,9 @@ export type ISwapPool<T extends ITokenBase = ITokenBase> = IContractBase & {
   protocol: string; // i.e. Uniswap V2, etc.
   isInternal?: boolean; // Whether this is an internal pool (e.g. Birdie LP)
   input: [T, T];
+  tokenId?: {
+    [networkId: number]: string | number;
+  };
 };
 
 export type IBirdieSingleFarm<T extends IStakingProvider = IStakingProvider> =

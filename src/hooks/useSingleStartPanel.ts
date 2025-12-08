@@ -19,10 +19,14 @@ import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
-import { ADDRESS, } from "@/const/contracts/contractAddresses";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
-import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi"; 
-import {  getFromContracts, isZeroAddress, ZERO_ADDRESS } from "@/utils/farm/getAddressHelpers";
+import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
+import {
+  getFromContracts,
+  isZeroAddress,
+  ZERO_ADDRESS,
+} from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
@@ -63,8 +67,10 @@ export function useSingleStartPanel(item: FarmSingle) {
   // 주소 상수/참조
   const ETH_ZERO_ADDRESS: `0x${string}` =
     getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
-  const WETH_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.WETH, chainId);
+  const WETH_ADDRESS: `0x${string}` | null = getFromContracts(
+    ADDRESS.WETH,
+    chainId
+  );
 
   const WRAPPER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
   const ROUTER_PROVIDER_FALLBACK = useMemo(() => {
@@ -80,12 +86,15 @@ export function useSingleStartPanel(item: FarmSingle) {
 
   // 기본 spender (provider) 주소
   const ROUTER_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.ROUTER, chainId) ?? ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; //NEW: router 주소
-  const WRAPPER_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.WRAPPER, chainId); //NEW: wrapper 주소
+    getFromContracts(ADDRESS.ROUTER, chainId) ??
+    ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; //NEW: router 주소
+  const WRAPPER_ADDRESS: `0x${string}` | null = getFromContracts(
+    ADDRESS.WRAPPER,
+    chainId
+  ); //NEW: wrapper 주소
 
   // 기본 ETH 판정
-    const defaultIsETH =
+  const defaultIsETH =
     baseInput?.symbol === "ETH" ||
     isZeroAddress((baseInput as any)?.addresses?.[chainId]);
 
@@ -105,7 +114,9 @@ export function useSingleStartPanel(item: FarmSingle) {
   // ETH/WETH 반영된 표시 토큰
   const displayToken = useMemo(() => {
     if (!defaultIsETH) return baseInput as any;
-    return nativeMode === "WETH" ? (wethDisplayMeta as any) : (ethDisplayMeta as any);
+    return nativeMode === "WETH"
+      ? (wethDisplayMeta as any)
+      : (ethDisplayMeta as any);
   }, [defaultIsETH, nativeMode, ethDisplayMeta, wethDisplayMeta, baseInput]);
 
   const isETHDisplay = displayToken?.symbol === "ETH";
@@ -118,20 +129,21 @@ export function useSingleStartPanel(item: FarmSingle) {
   const getBal = (addr?: `0x${string}` | string | null) => {
     if (!addr) return null;
     const lower = (addr as string).toLowerCase() as `0x${string}`;
-    return balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null;
+    return (
+      balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null
+    );
   };
 
   // 잔액/승인 베이스
   const inputAddress = getTokenAddress({ token: baseInput, chainId });
   const balanceBase = useBalance(baseInput);
 
-    // 표시 잔액: ETH 모드면 네이티브, WETH 모드면 WETH, 일반 ERC20이면 기존 balance
+  // 표시 잔액: ETH 모드면 네이티브, WETH 모드면 WETH, 일반 ERC20이면 기존 balance
   const displayBalance = defaultIsETH
     ? nativeMode === "WETH"
       ? getBal(WETH_ADDRESS)
       : getBal(ETH_ZERO_ADDRESS)
     : balanceBase;
-
 
   const [amount, setAmount] = useState<BigDecimal | null>(null);
 
@@ -154,53 +166,54 @@ export function useSingleStartPanel(item: FarmSingle) {
     [isETHDisplay, WRAPPER_PROVIDER, ROUTER_PROVIDER_FALLBACK]
   );
 
-  console.log("useSingleStartPanel", spenderProvider, approveTargetToken, isETHDisplay, WRAPPER_PROVIDER, ROUTER_PROVIDER_FALLBACK, ROUTER_ADDRESS, WRAPPER_ADDRESS, routerAddress, displayToken)
+  // console.log("useSingleStartPanel", spenderProvider, approveTargetToken, isETHDisplay, WRAPPER_PROVIDER, ROUTER_PROVIDER_FALLBACK, ROUTER_ADDRESS, WRAPPER_ADDRESS, routerAddress, displayToken)
 
   // 훅은 조건부 호출이 불가하므로 항상 호출하되, ETH일 때 결과는 UI에서 무시
   const { allowance, query: allowanceQuery } = useAllowance({
     token: (approveTargetToken ?? wethDisplayMeta) as any, // ETH일 때도 호출 유지를 위해 더미 WETH
     spender: spenderProvider,
   });
-  
 
   const isApproved = useMemo<boolean>(() => {
     if (isETHDisplay) return true;
     const amt = amount || BigDecimal.ZERO();
     return allowance.gte(amt);
-  }, [isETHDisplay,allowance, amount]);
+  }, [isETHDisplay, allowance, amount]);
 
   // Approve 훅 (refetch 추가)
   const approve = useApprove({
     client,
     pool: stakeToken,
     poolAddress: stakeTokenAddress as `0x${string}`,
-    routerAddress: (isETHDisplay
-      ? (WRAPPER_ADDRESS as `0x${string}` | undefined)
-      : (ROUTER_ADDRESS as `0x${string}`)) ?? (ROUTER_ADDRESS as `0x${string}`),
+    routerAddress:
+      (isETHDisplay
+        ? (WRAPPER_ADDRESS as `0x${string}` | undefined)
+        : (ROUTER_ADDRESS as `0x${string}`)) ??
+      (ROUTER_ADDRESS as `0x${string}`),
     transactionContext,
     refetch: () =>
-      Promise.all([
-        allowanceQuery.refetch(),
-        assetsContext.refetchAll?.(),
-      ]),
+      Promise.all([allowanceQuery.refetch(), assetsContext.refetchAll?.()]),
     writeContract,
   });
 
   const [isApprovePending, setIsApprovePending] = useState(false);
 
-  const approveWithPending = useCallback(async (token: any) => {
-    setIsApprovePending(true);
-    try {
-      await approve(token);         // useApprove가 Promise를 반환하지 않는다면 그대로 호출만 해도 OK
-    } finally {
-      setIsApprovePending(false);   // 성공/실패 모두 off
-    }
-  }, [approve]);
+  const approveWithPending = useCallback(
+    async (token: any) => {
+      setIsApprovePending(true);
+      try {
+        await approve(token); // useApprove가 Promise를 반환하지 않는다면 그대로 호출만 해도 OK
+      } finally {
+        setIsApprovePending(false); // 성공/실패 모두 off
+      }
+    },
+    [approve]
+  );
   // tokenStatus: 싱글 항목
   const tokenStatus: FarmStartTokenStatus = useMemo(
     () => ({
       index: 0 as 0,
-      input: displayToken,         // ETH/WETH 반영된 메타
+      input: displayToken, // ETH/WETH 반영된 메타
       balance: displayBalance as any,
       amount: amount,
       isApproved,
@@ -209,7 +222,8 @@ export function useSingleStartPanel(item: FarmSingle) {
         insolvency !== undefined && new BigDecimal(insolvency).lt(amount || 0),
       impermanentInsolvency: insolvency,
       isInsufficientBalance: displayBalance?.lt(amount || 0) ?? false,
-      isApprovable: isConnected && !isApproved && !isETHDisplay && !isApprovePending,
+      isApprovable:
+        isConnected && !isApproved && !isETHDisplay && !isApprovePending,
       approve: () => {
         if (isETHDisplay) return;
         return approveWithPending(displayToken as any);
@@ -236,7 +250,8 @@ export function useSingleStartPanel(item: FarmSingle) {
   const startFarming = useCallback(() => {
     if (!address) return;
 
-    const transactionProps: TransactionStatusProps & StartFarmingTransactionProps = {
+    const transactionProps: TransactionStatusProps &
+      StartFarmingTransactionProps = {
       chainId,
       transactionType: TransactionType.START_FARMING,
       input: [{ token: displayToken as any, amount: amount ?? undefined }],
@@ -259,7 +274,10 @@ export function useSingleStartPanel(item: FarmSingle) {
     // === (A) ETH 모드: wrapper + payable(value) ===
     if (isETHDisplay) {
       if (!WRAPPER_ADDRESS) {
-        console.error("[startFarming] Missing WRAPPER_ADDRESS for chain:", chainId);
+        console.error(
+          "[startFarming] Missing WRAPPER_ADDRESS for chain:",
+          chainId
+        );
         return;
       }
 
@@ -268,8 +286,8 @@ export function useSingleStartPanel(item: FarmSingle) {
         (amount ?? BigDecimal.ZERO()).toString(),
         18 // ETH decimals
       );
-  
-      console.log("useSingleStartPanel wrapper nativeValue", nativeValue);
+
+      // console.log("useSingleStartPanel wrapper nativeValue", nativeValue);
 
       // writeContract: wrapper 호출 + value 첨부
       writeContract(
@@ -295,20 +313,22 @@ export function useSingleStartPanel(item: FarmSingle) {
       return;
     }
 
-    console.log("useSingleStartPanel routerAddress", routerAddress, inputAddress, "Amount",parseUnits((amount ?? BigDecimal.ZERO()).toString(), displayToken.decimals), "displayedToken", displayToken.addresses[chainId])
+    // console.log("useSingleStartPanel routerAddress", routerAddress, inputAddress, "Amount",parseUnits((amount ?? BigDecimal.ZERO()).toString(), displayToken.decimals), "displayedToken", displayToken.addresses[chainId])
     // === (B) WETH 또는 일반 ERC20: 기존 router 경로 ===
-    const tokenAddr = (displayToken as any)?.addresses?.[chainId] as `0x${string}`;
-    const parsed = parseUnits((amount ?? BigDecimal.ZERO()).toString(), (displayToken as any).decimals);
+    const tokenAddr = (displayToken as any)?.addresses?.[
+      chainId
+    ] as `0x${string}`;
+    const parsed = parseUnits(
+      (amount ?? BigDecimal.ZERO()).toString(),
+      (displayToken as any).decimals
+    );
 
     writeContract(
       {
         address: ROUTER_ADDRESS as `0x${string}`,
         abi: birdieswap_router_abi,
         functionName: "singleDeposit", // ← 기존 단일 예시. 실제 함수명과 시그니처에 맞게 조정.
-        args: [
-          tokenAddr,
-          parsed,
-        ] as any,
+        args: [tokenAddr, parsed] as any,
       },
       {
         onError: handlers.onError,
@@ -355,7 +375,6 @@ export function useSingleStartPanel(item: FarmSingle) {
     transactionContext.transactionProps?.transactionStatus ===
       TransactionStatus.PENDING ||
     isApprovePending;
-    
 
   return {
     // === 기존 API 유지 ===

@@ -18,6 +18,8 @@ export function StakeExecuteButtons({
   executeText,
   tokenStatuses,
   variant,
+  showErrorMessages,
+  hasRewards,
 }: {
   isConnected: boolean;
   isExecutable: boolean;
@@ -27,10 +29,14 @@ export function StakeExecuteButtons({
   executeText: string;
   tokenStatuses: StakeTokenStatus[];
   variant?: ThemedButtonVariant;
+  showErrorMessages?: boolean;
+  hasRewards: boolean;
 }) {
-  console.log("tokenStatus", tokenStatuses);
+  // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
-    isConnected && tokenStatuses.some((v) => v.isApproved == false);
+    isConnected &&
+    hasRewards &&
+    tokenStatuses.some((v) => v.isApproved == false);
 
   return (
     <motion.div layout {...defaultTransition} className="flex w-full flex-col">
@@ -60,9 +66,11 @@ export function StakeExecuteButtons({
         variant={variant}
         onPress={execute}
       />
-      <div className="min-h-[38px]">
-        <StakeErrorMessages tokenStatuses={tokenStatuses} />
-      </div>
+      {showErrorMessages && (
+        <div className="min-h-[38px]">
+          <StakeErrorMessages tokenStatuses={tokenStatuses} />
+        </div>
+      )}
     </motion.div>
   );
 }
