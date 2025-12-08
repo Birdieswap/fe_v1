@@ -1,17 +1,17 @@
 // components/(main)/pay/common/ReceiveAddress.tsx
 "use client";
 
-import { useState } from "react";
-import dynamic from "next/dynamic";
+import { useCallback, useState } from "react";
 import type React from "react";
+import dynamic from "next/dynamic";
 import {
+  Button,
   Input,
   Modal,
   ModalBody,
   ModalContent,
   ModalFooter,
   ModalHeader,
-  Button,
 } from "@heroui/react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import clsx from "clsx";
@@ -20,18 +20,40 @@ import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-// =====================================================
-// QR 스캐너 컴포넌트 (Scanner named export를 확실히 가져오도록 캐스팅)
-// =====================================================
-const QrScanner = dynamic<any>(
+// ====== @yudiel/react-qr-scanner 타입 최소 정의 ======
+
+type IDetectedBarcode = {
+  rawValue: string;
+};
+
+interface QrScannerProps {
+  onScan: (codes: IDetectedBarcode[]) => void;
+  onError?: (error: unknown) => void;
+  constraints?: MediaTrackConstraints;
+  formats?: string[];
+  scanDelay?: number;
+  components?: {
+    finder?: boolean;
+    torch?: boolean;
+    zoom?: boolean;
+    onOff?: boolean;
+  };
+}
+
+// Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
+const QrScanner = dynamic<QrScannerProps>(
   () =>
-    import("@yudiel/react-qr-scanner").then((mod: any) => {
-      // 모듈 안에서 Scanner 컴포넌트만 골라서 반환
-      const Component =
-        mod.Scanner || mod.QrScanner || mod.default || (() => null);
-      return Component as React.ComponentType<any>;
-    }),
-  { ssr: false }
+    import("@yudiel/react-qr-scanner").then(
+      (mod) => mod.Scanner as React.ComponentType<QrScannerProps>
+    ),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-64 items-center justify-center text-default-300">
+        Opening camera…
+      </div>
+    ),
+  }
 );
 
 type ReceiveAddressProps = {
@@ -39,17 +61,23 @@ type ReceiveAddressProps = {
   onChange?: (value: string) => void;
 };
 
-export default function ReceiveAddress(props: ReceiveAddressProps) {
+export default function ReceiveAddress({
+  value,
+  onChange,
+}: ReceiveAddressProps) {
   const [internalValue, setInternalValue] = useState("");
   const [isScannerOpen, setIsScannerOpen] = useState(false);
   const [isNoCameraModalOpen, setIsNoCameraModalOpen] = useState(false);
 
-  const value = props.value ?? internalValue;
+  const controlledValue = value ?? internalValue;
 
-  const handleChange = (v: string) => {
-    props.onChange?.(v);
-    if (!props.onChange) setInternalValue(v);
-  };
+  const updateValue = useCallback(
+    (next: string) => {
+      onChange?.(next);
+      if (!onChange) setInternalValue(next);
+    },
+    [onChange]
+  );
 
   const handleClickScan = () => {
     // 브라우저 & 카메라 API 체크
@@ -65,55 +93,32 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
     setIsScannerOpen(true);
   };
 
-  const handleDecoded = (result: string) => {
-    if (!result) return;
-    const trimmed = result.trim();
+  const handleDecoded = (raw: string) => {
+    if (!raw) return;
+    const trimmed = raw.trim();
 
     // ethereum:0x... 형식이면 prefix 제거
     const normalized = trimmed.replace(/^ethereum:/i, "");
-    handleChange(normalized);
+    console.log("[QR] decoded:", normalized);
+
+    updateValue(normalized);
     setIsScannerOpen(false);
   };
 
-  // 라이브러리 버전에 따라 콜백 형태가 달라질 수 있으므로
-  // 어떤 형태로 오든 문자열만 잘 추출해서 handleDecoded로 넘긴다.
-  const handleScanAny = (result: any) => {
-    if (!result) return;
+  const handleScan = (codes: IDetectedBarcode[]) => {
+    if (!codes || codes.length === 0) return;
+    console.log("[QR] onScan:", codes);
 
-    console.log("QR RAW:", result);
+    const first = codes[0];
+    if (!first?.rawValue) return;
 
-    let raw: string | undefined;
+    handleDecoded(first.rawValue);
+  };
 
-    // 1) 배열 형태 (신버전 IDetectedBarcode[])
-    if (Array.isArray(result) && result.length > 0) {
-      const first = result[0] as any;
-      raw =
-        typeof first === "string"
-          ? first
-          : ((first?.rawValue as string | undefined) ??
-            (first?.text as string | undefined) ??
-            (first?.data as string | undefined));
-    }
-    // 2) 단일 객체 형태
-    else if (typeof result === "object" && result !== null) {
-      const anyRes = result as any;
-      raw =
-        (anyRes?.rawValue as string | undefined) ??
-        (anyRes?.text as string | undefined) ??
-        (anyRes?.data as string | undefined);
-    }
-    // 3) 그냥 문자열
-    else if (typeof result === "string") {
-      raw = result;
-    }
-
-    if (!raw) {
-      console.log("QR: decoded callback fired, but no usable text");
-      return;
-    }
-
-    console.log("QR DETECTED:", raw);
-    handleDecoded(raw);
+  const handleError = (error: unknown) => {
+    console.error("[QR] onError:", error);
+    setIsScannerOpen(false);
+    setIsNoCameraModalOpen(true);
   };
 
   return (
@@ -125,9 +130,9 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
           radius="none"
           variant="bordered"
           size="lg"
-          placeholder="Enter or Scan the recipient's wallet address"
-          value={value}
-          onValueChange={handleChange}
+          placeholder="Enter or scan the recipient's wallet address"
+          value={controlledValue}
+          onValueChange={updateValue}
           classNames={{
             inputWrapper: clsx(
               "h-11 min-h-11 rounded-lg border border-default-300 dark:border-default-100 bg-transparent px-3 py-2 shadow-none",
@@ -189,6 +194,7 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
               address manually or try another device.
             </p>
           </ModalBody>
+
           <ModalFooter className="p-0">
             <ThemedButton
               variant="MINT"
@@ -217,22 +223,35 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
               <p className="text-sm text-default-200">
                 Align the QR code within the frame
               </p>
+
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
-                  // 후면 카메라 우선
+                  // QR만 인식하게 포맷 좁히기
+                  formats={["qr_code"]}
+                  // 뒷면 카메라 우선
                   constraints={{ facingMode: "environment" }}
-                  // 라이브러리 버전에 따라 어느 쪽으로 콜백이 올지 몰라서 전부 연결
-                  onDecode={handleScanAny}
-                  onScan={handleScanAny}
-                  onResult={handleScanAny}
-                  onError={(error: unknown) => {
-                    console.error("QR SCAN ERROR:", error);
-                    onClose();
-                    setIsNoCameraModalOpen(true);
+                  // 스캔 결과 / 에러 핸들러
+                  onScan={handleScan}
+                  onError={handleError}
+                  // 토치/줌 등 기본 UI 컴포넌트
+                  components={{
+                    finder: true,
+                    torch: true,
+                    zoom: true,
+                    onOff: false,
                   }}
+                  // 같은 코드 중복 스캔 딜레이
+                  scanDelay={300}
                 />
               </div>
-              <Button variant="light" onPress={onClose}>
+
+              <Button
+                variant="light"
+                onPress={() => {
+                  onClose();
+                  setIsScannerOpen(false);
+                }}
+              >
                 Cancel
               </Button>
             </div>
