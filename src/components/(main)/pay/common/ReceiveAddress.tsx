@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import dynamic from "next/dynamic";
 import type React from "react";
+import dynamic from "next/dynamic";
 import {
   Input,
   Modal,
@@ -20,14 +20,11 @@ import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-// 👇 라이브러리에서 공식 타입 import
-import type { IDetectedBarcode, IScannerProps } from "@yudiel/react-qr-scanner";
-
-// Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
-const QrScanner = dynamic<IScannerProps>(
+// === QR 스캐너 컴포넌트 (SSR off) ===
+const QrScanner = dynamic(
   () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
   { ssr: false }
-);
+) as React.ComponentType<any>;
 
 type ReceiveAddressProps = {
   value?: string;
@@ -70,17 +67,42 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
     setIsScannerOpen(false);
   };
 
-  // 👇 라이브러리에서 넘겨주는 공식 타입 그대로 사용
-  const handleScan = (detectedCodes: IDetectedBarcode[]) => {
-    if (!detectedCodes || detectedCodes.length === 0) return;
+  // onScan 결과를 어떤 형태로 받더라도 처리하도록 방어적으로 작성
+  const handleScan = (result: any) => {
+    if (!result) return;
 
-    const first = detectedCodes[0];
-    if (!first?.rawValue) return;
+    console.log("SCAN RESULT RAW:", result);
 
-    // 디버깅 해보고 싶으면 한 번 찍어보면 됨
-    // console.log("DETECTED:", first);
+    let raw: string | undefined;
 
-    handleDecoded(first.rawValue);
+    // v2+ : IDetectedBarcode[]
+    if (Array.isArray(result)) {
+      if (!result.length) return;
+      const first = result[0] as any;
+      if (first) {
+        raw =
+          typeof first === "string"
+            ? first
+            : (first.rawValue as string | undefined);
+      }
+    }
+    // 혹시 단일 객체로 들어오는 경우
+    else if (typeof result === "object" && result !== null) {
+      const anyRes = result as any;
+      raw = typeof anyRes.rawValue === "string" ? anyRes.rawValue : undefined;
+    }
+    // 구버전처럼 문자열로만 들어오는 경우
+    else if (typeof result === "string") {
+      raw = result;
+    }
+
+    if (!raw) {
+      console.log("SCAN: callback fired but no usable(rawValue) data");
+      return;
+    }
+
+    console.log("SCAN DETECTED:", raw);
+    handleDecoded(raw);
   };
 
   return (
@@ -126,7 +148,7 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
         </Button>
       </div>
 
-      {/* ===== 카메라 없음 / 미지원 모달 ===== */}
+      {/* ===== 카메라 없음 / 미지원 모달 (공통 포맷) ===== */}
       <ModalBase
         isOpen={isNoCameraModalOpen}
         onOpenChange={(open) => {
@@ -184,38 +206,26 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
               <p className="text-sm text-default-200">
                 Align the QR code within the frame
               </p>
-
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
-                  // ✅ 인식 콜백
+                  // 후면 카메라 사용
+                  constraints={{
+                    facingMode: "environment",
+                  }}
+                  // QR 코드만 탐지
+                  formats={["qr_code"]}
+                  // 기본 finder UI
+                  components={{
+                    finder: true,
+                  }}
                   onScan={handleScan}
-                  // ✅ 에러 콜백
-                  onError={(error) => {
-                    console.error(error);
+                  onError={(error: unknown) => {
+                    console.error("QR SCAN ERROR:", error);
                     onClose();
                     setIsNoCameraModalOpen(true);
                   }}
-                  // ✅ 카메라 옵션: 후면 + 적당한 해상도
-                  constraints={{
-                    facingMode: "environment",
-                    aspectRatio: 1,
-                    width: { ideal: 1920 },
-                    height: { ideal: 1080 },
-                  }}
-                  // ✅ QR 코드만 탐지 (성능/안정성 ↑)
-                  formats={["qr_code"]}
-                  // 필요하면 조금 더 자주/덜 자주 스캔
-                  scanDelay={500}
-                  components={{
-                    finder: true,
-                    torch: true,
-                  }}
-                  styles={{
-                    container: { width: "100%", aspectRatio: "1 / 1" },
-                  }}
                 />
               </div>
-
               <Button variant="light" onPress={onClose}>
                 Cancel
               </Button>
