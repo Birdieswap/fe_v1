@@ -2,8 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import type React from "react";
 import dynamic from "next/dynamic";
+import type React from "react";
 import {
   Input,
   Modal,
@@ -20,11 +20,19 @@ import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-// === QR 스캐너 컴포넌트 (SSR off) ===
-const QrScanner = dynamic(
-  () => import("@yudiel/react-qr-scanner").then((m) => m.Scanner),
+// =====================================================
+// QR 스캐너 컴포넌트 (Scanner named export를 확실히 가져오도록 캐스팅)
+// =====================================================
+const QrScanner = dynamic<any>(
+  () =>
+    import("@yudiel/react-qr-scanner").then((mod: any) => {
+      // 모듈 안에서 Scanner 컴포넌트만 골라서 반환
+      const Component =
+        mod.Scanner || mod.QrScanner || mod.default || (() => null);
+      return Component as React.ComponentType<any>;
+    }),
   { ssr: false }
-) as React.ComponentType<any>;
+);
 
 type ReceiveAddressProps = {
   value?: string;
@@ -67,47 +75,50 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
     setIsScannerOpen(false);
   };
 
-  // onScan 결과를 어떤 형태로 받더라도 처리하도록 방어적으로 작성
-  const handleScan = (result: any) => {
+  // 라이브러리 버전에 따라 콜백 형태가 달라질 수 있으므로
+  // 어떤 형태로 오든 문자열만 잘 추출해서 handleDecoded로 넘긴다.
+  const handleScanAny = (result: any) => {
     if (!result) return;
 
-    console.log("SCAN RESULT RAW:", result);
+    console.log("QR RAW:", result);
 
     let raw: string | undefined;
 
-    // v2+ : IDetectedBarcode[]
-    if (Array.isArray(result)) {
-      if (!result.length) return;
+    // 1) 배열 형태 (신버전 IDetectedBarcode[])
+    if (Array.isArray(result) && result.length > 0) {
       const first = result[0] as any;
-      if (first) {
-        raw =
-          typeof first === "string"
-            ? first
-            : (first.rawValue as string | undefined);
-      }
+      raw =
+        typeof first === "string"
+          ? first
+          : ((first?.rawValue as string | undefined) ??
+            (first?.text as string | undefined) ??
+            (first?.data as string | undefined));
     }
-    // 혹시 단일 객체로 들어오는 경우
+    // 2) 단일 객체 형태
     else if (typeof result === "object" && result !== null) {
       const anyRes = result as any;
-      raw = typeof anyRes.rawValue === "string" ? anyRes.rawValue : undefined;
+      raw =
+        (anyRes?.rawValue as string | undefined) ??
+        (anyRes?.text as string | undefined) ??
+        (anyRes?.data as string | undefined);
     }
-    // 구버전처럼 문자열로만 들어오는 경우
+    // 3) 그냥 문자열
     else if (typeof result === "string") {
       raw = result;
     }
 
     if (!raw) {
-      console.log("SCAN: callback fired but no usable(rawValue) data");
+      console.log("QR: decoded callback fired, but no usable text");
       return;
     }
 
-    console.log("SCAN DETECTED:", raw);
+    console.log("QR DETECTED:", raw);
     handleDecoded(raw);
   };
 
   return (
     <>
-      {/* 입력창 + 스캔 아이콘 */}
+      {/* ===== 입력창 + 스캔 아이콘 ===== */}
       <div className="mb-3 flex w-full items-stretch gap-2">
         <Input
           className="flex-1"
@@ -208,17 +219,12 @@ export default function ReceiveAddress(props: ReceiveAddressProps) {
               </p>
               <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
                 <QrScanner
-                  // 후면 카메라 사용
-                  constraints={{
-                    facingMode: "environment",
-                  }}
-                  // QR 코드만 탐지
-                  formats={["qr_code"]}
-                  // 기본 finder UI
-                  components={{
-                    finder: true,
-                  }}
-                  onScan={handleScan}
+                  // 후면 카메라 우선
+                  constraints={{ facingMode: "environment" }}
+                  // 라이브러리 버전에 따라 어느 쪽으로 콜백이 올지 몰라서 전부 연결
+                  onDecode={handleScanAny}
+                  onScan={handleScanAny}
+                  onResult={handleScanAny}
                   onError={(error: unknown) => {
                     console.error("QR SCAN ERROR:", error);
                     onClose();
