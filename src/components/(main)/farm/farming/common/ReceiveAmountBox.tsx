@@ -79,13 +79,13 @@ export default function ReceiveAmountBox({
             aria-label={`Switch to ${nativeToggle.value === "ETH" ? "WETH" : "ETH"}`}
             title="Change ETH/WETH"
             className="
-        min-w-0 size-8 p-0
-        bg-transparent shadow-none
-        data-[hover=true]:bg-transparent
-        data-[pressed=true]:bg-transparent
-        data-[disabled=true]:bg-transparent
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-      "
+              min-w-0 size-8 p-0
+              bg-transparent shadow-none
+              data-[hover=true]:bg-transparent
+              data-[pressed=true]:bg-transparent
+              data-[disabled=true]:bg-transparent
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+            "
           >
             <Icons.Change />
           </Button>
