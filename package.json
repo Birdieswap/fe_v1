@@ -87,6 +87,8 @@
     "@tailwindcss/postcss": "^4.1.11",
     "@types/jsdom": "^21.1.7",
     "@types/node": "^20.19.6",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.21",
     "browserslist": "^4.26.3",
     "encoding": "^0.1.13",

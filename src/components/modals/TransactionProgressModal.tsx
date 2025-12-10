@@ -1,3 +1,4 @@
+// components/modals/TransactionProgressModal.tsx
 "use client";
 
 import type { LottieRefCurrentProps } from "lottie-react";
@@ -29,7 +30,9 @@ import IconTransactionCanceled from "./transactionProgress/transaction_canceled.
 
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
-  { ssr: false }
+  {
+    ssr: false,
+  }
 );
 
 const transition = {
@@ -47,10 +50,6 @@ export type TransactionProgressModalProps = {
   transactionProps: TransactionStatusProps | null;
 };
 
-/**
- * "123.45000" -> "123.45"
- * "5.000" -> "5"
- */
 function trimTrailingZeros(numStr: string): string {
   if (!numStr.includes(".")) return numStr;
   const [intPart, decPartRaw] = numStr.split(".");
@@ -59,42 +58,29 @@ function trimTrailingZeros(numStr: string): string {
   return `${intPart}.${decPart}`;
 }
 
-/**
- * 다양한 형태의 amount 객체를 문자열로 포맷
- * - string / number / bigint
- * - { formatted }
- * - { value, decimals }
- */
 function formatTokenAmount(raw: any): string {
   if (raw == null) return "";
 
-  // 이미 문자열/숫자/bigint
   if (
     typeof raw === "string" ||
     typeof raw === "number" ||
     typeof raw === "bigint"
   ) {
     const s = String(raw);
-    // 숫자 형태면 의미 없는 0 제거
-    if (/^-?\d+(\.\d+)?$/.test(s)) {
-      return trimTrailingZeros(s);
-    }
+    if (/^-?\d+(\.\d+)?$/.test(s)) return trimTrailingZeros(s);
     return s;
   }
 
-  // wagmi/viem 스타일: { formatted }
   if (typeof raw === "object" && "formatted" in raw) {
     return formatTokenAmount((raw as any).formatted);
   }
 
-  // { value, decimals } 형태
   if (typeof raw === "object" && "value" in raw && "decimals" in raw) {
     try {
       const v = BigInt((raw as any).value);
       const d = Number((raw as any).decimals);
-      if (!Number.isFinite(d) || d < 0 || d > 36) {
+      if (!Number.isFinite(d) || d < 0 || d > 36)
         return String((raw as any).value ?? "");
-      }
       const base = 10n ** BigInt(d);
       const whole = v / base;
       const frac = v % base;
@@ -107,7 +93,6 @@ function formatTokenAmount(raw: any): string {
     }
   }
 
-  // fallback
   return "";
 }
 
@@ -116,13 +101,13 @@ function AddToWallet(props: { token?: IToken }) {
   const { watchAsset, data, isPending, isError } = useWatchAsset();
   const [isRequested, setIsRequested] = useState(false);
   const { token } = props;
-  const address = useMemo(() => {
-    return token?.addresses[chainId];
-  }, [chainId, token?.addresses]);
 
-  useEffect(() => {
-    setIsRequested(false);
-  }, [token]);
+  const address = useMemo(
+    () => token?.addresses[chainId],
+    [chainId, token?.addresses]
+  );
+
+  useEffect(() => setIsRequested(false), [token]);
 
   const isDone = isRequested && data && !isError && !isPending;
 
@@ -139,7 +124,7 @@ function AddToWallet(props: { token?: IToken }) {
           watchAsset({
             type: "ERC20",
             options: {
-              address: address,
+              address,
               symbol: token.symbol,
               decimals: token.decimals || 18,
             },
@@ -157,11 +142,11 @@ export default function TransactionProgressModal(
 ) {
   const { selectedNetwork } = useContext(WalletContext);
   const transactionStatus = props.transactionProps?.transactionStatus;
+
   const lightAnimRef = useRef<LottieRefCurrentProps>(null);
   const darkAnimRef = useRef<LottieRefCurrentProps>(null);
   const [isCompleted, setIsCompleted] = useState(false);
 
-  // ✅ confetti 1회만
   const didConfettiRef = useRef(false);
 
   useEffect(() => {
@@ -195,6 +180,25 @@ export default function TransactionProgressModal(
     transactionStatus === TransactionStatus.CANCELED ||
     transactionStatus === TransactionStatus.CONFIRM_NEEDED;
 
+  // ✅ 커스텀 info 노드 선택 (PAY/ENTER에서 쓰는 핵심)
+  const customInfoNode = useMemo(() => {
+    const p = props.transactionProps;
+    if (!p) return null;
+
+    if (
+      transactionStatus === TransactionStatus.CONFIRM_NEEDED ||
+      transactionStatus === TransactionStatus.PENDING
+    ) {
+      return p.onSubmittedInfo ?? null;
+    }
+
+    if (transactionStatus === TransactionStatus.SUCCESS) {
+      return p.onConfirmedInfo ?? null;
+    }
+
+    return null;
+  }, [props.transactionProps, transactionStatus]);
+
   // ✅ SUCCESS + fireConfetti + swapBenchmarkInfo 있을 때 폭죽
   useEffect(() => {
     const p: any = props.transactionProps;
@@ -205,11 +209,7 @@ export default function TransactionProgressModal(
       !didConfettiRef.current
     ) {
       didConfettiRef.current = true;
-      confetti({
-        particleCount: 120,
-        spread: 70,
-        origin: { y: 0.72 },
-      });
+      confetti({ particleCount: 120, spread: 70, origin: { y: 0.72 } });
     }
   }, [transactionStatus, props.transactionProps]);
 
@@ -217,42 +217,28 @@ export default function TransactionProgressModal(
     transactionStatus === TransactionStatus.SUCCESS &&
     (props.transactionProps as any)?.swapBenchmarkInfo;
 
-  // if (typeof window !== "undefined" && props.transactionProps) {
-  //   const p: any = props.transactionProps;
-  //   console.log("tx props", p);
-  //   console.log("input", p.input);
-  //   console.log("output", p.output);
-  //   console.log("swapBenchmarkInfo", p.swapBenchmarkInfo);
-  //   console.log("input.token", p.input?.token);
-  //   console.log("output.token", p.output?.token);
-  // }
-
   const benchmarkBlock = useMemo(() => {
     const p: any = props.transactionProps;
     if (!hasBenchmark || !p) return null;
 
     const info = p.swapBenchmarkInfo;
 
-    // 🔹 from token (input)
     const fromToken = p.input?.token;
-    const fromAmountRaw = p.input?.amount; // BigDecimal { value, decimals }
+    const fromAmountRaw = p.input?.amount;
     const fromAmount = formatTokenAmount(fromAmountRaw);
     const fromSymbol = fromToken?.symbol ?? "";
-    const fromLogo = fromToken?.iconSrc; //  여기!
+    const fromLogo = fromToken?.iconSrc;
 
-    // 🔹 to token (output)
     const toToken = p.output?.token;
     const toSymbol = toToken?.symbol ?? "";
-    const toLogo = toToken?.iconSrc; //  여기!
+    const toLogo = toToken?.iconSrc;
 
-    // 🔹 benchmark / profit 수치
     const profitUsd = formatTokenAmount(info.profitUsd);
     const actualOut = formatTokenAmount(info.actualOut);
     const benchmarkOut = formatTokenAmount(info.benchmarkOutAfterFee);
 
     return (
-      <div className="w-full rounded-2xl border border-default-200 dark:border-default-100 bg-background p-4 text-foreground shadow-sm  ">
-        {/* Hero + Birdie 아이콘 */}
+      <div className="w-full rounded-2xl border border-default-200 dark:border-default-100 bg-background p-4 text-foreground shadow-sm">
         <div className="flex items-start gap-3">
           <div className="flex-1">
             <p className="text-lg font-bold text-foreground">
@@ -275,9 +261,7 @@ export default function TransactionProgressModal(
           </div>
         </div>
 
-        {/* 🔹 from token 정보 + 비교 카드 */}
-        <div className="mt-4 rounded-xl  p-3 text-base bg-default-100 dark:bg-dark-popup-bg">
-          {/* 위쪽: 넌 이번 거래에 XXX를 사용했어 */}
+        <div className="mt-4 rounded-xl p-3 text-base bg-default-100 dark:bg-dark-popup-bg">
           <div className="flex flex-wrap items-center gap-1">
             <span className="text-xs text-default-700 dark:text-default-300">
               You kicked this trade off with
@@ -294,7 +278,6 @@ export default function TransactionProgressModal(
             </span>
           </div>
 
-          {/* 아래: You earned / Uniswap 좌우 배치 + to token 아이콘 */}
           <div className="mt-5 grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-default-800 dark:text-default-800">
@@ -334,7 +317,6 @@ export default function TransactionProgressModal(
           </div>
         </div>
 
-        {/* 카드 아래 한 줄 문구 */}
         <p className="mt-3 text-center text-base text-default-700 dark:text-default-600">
           Can’t wait to see your next smart trade.
         </p>
@@ -362,6 +344,7 @@ export default function TransactionProgressModal(
                     <IconTransactionFailed />
                   </motion.div>
                 )}
+
                 {transactionStatus === TransactionStatus.CANCELED && (
                   <motion.div
                     key="image_canceled"
@@ -371,6 +354,7 @@ export default function TransactionProgressModal(
                     <IconTransactionCanceled />
                   </motion.div>
                 )}
+
                 {(transactionStatus === TransactionStatus.CONFIRM_NEEDED ||
                   transactionStatus === TransactionStatus.SUCCESS ||
                   transactionStatus === TransactionStatus.PENDING) && (
@@ -426,14 +410,23 @@ export default function TransactionProgressModal(
 
             <motion.div
               layout
-              className="flex flex-col items-center gap-4 pt-6"
+              className="flex flex-col items-center gap-4 pt-6 w-full"
             >
-              <h1 className="text-xl font-semibold text-foreground">
-                {message}
-              </h1>
+              {/* ✅ benchmark가 있을 땐 message 숨김 */}
+              {!hasBenchmark && message ? (
+                <h1 className="text-xl font-semibold text-foreground">
+                  {message}
+                </h1>
+              ) : null}
 
-              {/* ✅ 기본 정보(기본 블럭) - benchmarkBlock 없을 때만 */}
-              {!hasBenchmark && (
+              {/* ✅ 우선순위: (1) Swap benchmark (2) PAY/ENTER custom node (3) 기존 TransactionProgressInfo */}
+              {benchmarkBlock}
+
+              {!hasBenchmark && customInfoNode && (
+                <div className="w-full">{customInfoNode}</div>
+              )}
+
+              {!hasBenchmark && !customInfoNode && (
                 <AnimatePresence initial={false}>
                   {props.transactionProps &&
                     props.transactionProps.transactionStatus !==
@@ -444,9 +437,6 @@ export default function TransactionProgressModal(
                     )}
                 </AnimatePresence>
               )}
-
-              {/* ✅ 추가 문구(벤치마크 있을 때) */}
-              {benchmarkBlock}
 
               <Link
                 className={
@@ -485,12 +475,7 @@ export default function TransactionProgressModal(
           </motion.div>
 
           <div className="flex w-full flex-col">
-            <ThemedButton
-              variant="MINT"
-              onClick={() => {
-                props.onClose();
-              }}
-            >
+            <ThemedButton variant="MINT" onClick={props.onClose}>
               Close
             </ThemedButton>
           </div>

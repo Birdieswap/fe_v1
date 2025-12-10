@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useAccount, useChainId, usePublicClient } from "wagmi"; //farmValue를 위해 추가
+import { useAccount, useChainId, usePublicClient } from "wagmi";
 
 import useAccountBalances from "./useAccountBalances";
 import { useAssetValues } from "./useAssetValues";
@@ -30,7 +30,7 @@ type FarmRawSingle = {
   displayDecimals?: number;
   fullName?: string;
   iconSrc?: string;
-  input: [any]; // farm.input 그대로
+  input: [any];
   totalUnderlyingToken: [
     { address: `0x${string}` | null; value: BigDecimal | null },
   ];
@@ -45,7 +45,7 @@ type FarmRawLP = {
   displayDecimals?: number;
   fullName?: string;
   iconSrc?: string;
-  input: [any, any]; // farm.swap.input[0], [1]
+  input: [any, any];
   totalUnderlyingToken: [
     { address: `0x${string}` | null; value: BigDecimal | null },
     { address: `0x${string}` | null; value: BigDecimal | null },
@@ -55,7 +55,6 @@ type FarmRawLP = {
 
 type FarmRaw = FarmRawSingle | FarmRawLP;
 
-// BigDecimal 맵을 값 문자열로 normalize
 function normalizeBDMapFromMap(
   m: Map<string, BigDecimal | null>
 ): Record<string, string | null> {
@@ -66,7 +65,6 @@ function normalizeBDMapFromMap(
   return out;
 }
 
-// 문자열 normalize된 두 Record 얕은 비교
 function shallowEqualNormalized(
   a: Record<string, string | null>,
   b: Record<string, string | null>
@@ -90,9 +88,7 @@ function toScaled1e18FromDecimalString(s: string | null | undefined): bigint {
   const raw = String(s).trim();
   if (!raw || raw === "NaN") return BigInt(0);
 
-  // 부호/공백/쉼표 제거 (필요시)
   const cleaned = raw.replace(/,/g, "");
-  // 정수부/소수부 분리
   const [intPartRaw, fracRaw = ""] = cleaned.split(".");
   const intPart = intPartRaw.replace(/[^0-9]/g, "");
   const frac18 = (fracRaw.replace(/[^0-9]/g, "") + "0".repeat(18)).slice(0, 18);
@@ -105,19 +101,16 @@ function toScaled1e18FromDecimalString(s: string | null | undefined): bigint {
   }
 }
 
-const TargetBlockTime = 24 * 60 * 60; // seconds
-const annualBlockQty = Math.floor((365 * 24 * 60 * 60) / TargetBlockTime); // 정수
+const TargetBlockTime = 24 * 60 * 60;
+const annualBlockQty = Math.floor((365 * 24 * 60 * 60) / TargetBlockTime);
 
 export default function useAssets() {
-  // 1) 여기서만 훅 호출 (고정 순서)
   const { address } = useAccount();
-
   const chainId = useChainId();
   const client = usePublicClient();
 
   const assetValues = useAssetValues();
   const [aprDataState, setAprDataState] = useState<AprDataState | null>(null);
-  // apr 데이터 캐시용 ref (rerender를 억제하기 위해 useRef로 보관)
   const aprDataRef = useRef<AprDataState | null>(null);
 
   const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
@@ -125,7 +118,6 @@ export default function useAssets() {
 
   const pointsQ = useAccountPoints(address);
 
-  // 2) FarmList에서 현재 체인 주소 확정
   const farms = useMemo(() => {
     return FarmList.map((f) => {
       const farm = f?.wip_stakeToken as
@@ -151,9 +143,6 @@ export default function useAssets() {
     );
   }, [chainId]);
 
-  // console.log("useAssets farms", farms);
-
-  // 2) 결과를 Map으로 관리
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());
   const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(
     new Map()
@@ -163,13 +152,8 @@ export default function useAssets() {
   );
 
   const [farmRawMap, setFarmRawMap] = useState<Map<string, FarmRaw>>(new Map());
-  // aprData (raw parsed data) — 한 번만 fetch하고 forceRefresh 시 초기화
-
   const [refreshIndex, setRefreshIndex] = useState(0);
 
-  const refetch = useCallback(() => setRefreshIndex((i) => i + 1), []);
-
-  // 이전 출력 스냅샷(ref)도 Map으로 유지
   const lastOutputsRef = useRef<{
     apyMap: Map<string, BigDecimal>;
     tvlMap: Map<string, BigDecimal | null>;
@@ -180,11 +164,9 @@ export default function useAssets() {
     priceMap: new Map(),
   });
 
-  // [수정] chainlink/uniswap 맵의 버전 문자열 생성 (reference 변하지 않아도 값 변하면 캐치)
   const chainLinkVersion = useMemo(() => {
     const arr: string[] = [];
     assetValues.chainLinkPriceMap.forEach((v, k) => {
-      // v.price.toString() + 메타로 버전화
       arr.push(
         `${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`
       );
@@ -202,9 +184,10 @@ export default function useAssets() {
     return arr.sort().join("|");
   }, [assetValues.uniswapPriceMap]);
 
-  // [수정] balances의 버전 키 (토큰 주소별 balance 총합의 해시 유사 문자열)
+  // ✅ balancesVersion 계산은 이미 OK. 단, 이걸 assets로 노출해야 함.
   const balancesVersion = useMemo(() => {
     const arr: string[] = [];
+
     baseBalances.tokenBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
@@ -214,13 +197,16 @@ export default function useAssets() {
     baseBalances.lpVaultBalances.balanceMap.forEach((v, k) => {
       arr.push(`${k}:${v?.toString?.() ?? "0"}`);
     });
+
     const stakedByInput = (baseBalances as any)?.stakedBalances
       ?.byInputTokenAddress as Map<string, { value: any }> | undefined;
+
     if (stakedByInput) {
       stakedByInput.forEach((entry, k) => {
         arr.push(`staked:${k}:${entry?.value?.toString?.() ?? "0"}`);
       });
     }
+
     return arr.sort().join("|");
   }, [
     baseBalances.tokenBalances.balanceMap,
@@ -229,7 +215,6 @@ export default function useAssets() {
     (baseBalances as any)?.stakedBalances?.byInputTokenAddress,
   ]);
 
-  // ✅ useAccountBalances가 이미 통합해줌 → 그대로 패스스루
   const balances = baseBalances;
 
   const refetchAll = useCallback(async () => {
@@ -246,28 +231,44 @@ export default function useAssets() {
     balances?.query?.refetch,
   ]);
 
-  // [수정] 강제 재계산 도우미 (refetch 후 refreshIndex bump)
   const forceRefresh = useCallback(async () => {
     try {
-      // aprData를 null로 만들어 다음 run에서 /apr를 재요청하게 함
       await refetchAll();
-      await new Promise((res) => setTimeout(res, 50)); // 최신 블록 반영 대기
+      // ✅ 50ms는 너무 짧을 수 있어. 일단 500ms 추천
+      await new Promise((res) => setTimeout(res, 500));
     } finally {
       setRefreshIndex((i) => i + 1);
     }
   }, [refetchAll]);
 
+  // ✅ “리렌더(=balancesVersion 반영)”까지 기다리는 함수
+  const waitForBalancesVersionChange = useCallback(
+    async (
+      prevVersion: string,
+      opts?: { timeoutMs?: number; intervalMs?: number }
+    ) => {
+      const timeoutMs = opts?.timeoutMs ?? 10000;
+      const intervalMs = opts?.intervalMs ?? 80;
+
+      const start = Date.now();
+      while (Date.now() - start < timeoutMs) {
+        if (balancesVersion !== prevVersion) return true;
+        await new Promise((r) => setTimeout(r, intervalMs));
+      }
+      return false;
+    },
+    [balancesVersion]
+  );
+
   useEffect(() => {
     let cancelled = false;
 
     async function run() {
-      // client/ farms 없으면 초기화
       if (!client || farms.length === 0) {
         if (!cancelled) {
           setApyMap(new Map());
           setTvlMap(new Map());
           setPriceMap(new Map());
-          // Data는 유지해도 무방하나, 초기 화면 단순화를 위해 null로
           setAprDataState(null);
           lastOutputsRef.current = {
             apyMap: new Map(),
@@ -278,7 +279,6 @@ export default function useAssets() {
         return;
       }
 
-      // a) on-chain 계산 (기본값)
       const nextApy = new Map<string, BigDecimal>();
       const nextTvl = new Map<string, BigDecimal | null>();
       const nextPrice = new Map<string, BigDecimal | null>();
@@ -293,8 +293,7 @@ export default function useAssets() {
           nextApy.set(address, apy);
           nextTvl.set(address, tvl);
           nextPrice.set(address, price);
-        } catch (e) {
-          // 실패한 vault도 앱 멈추지 않도록 안전한 기본값
+        } catch {
           nextApy.set(address, BigDecimal.ZERO());
           nextTvl.set(address, null);
           nextPrice.set(address, null);
@@ -302,15 +301,11 @@ export default function useAssets() {
       }
       if (cancelled) return;
 
-      // b) TVL 변경 감지
       const lastOut = lastOutputsRef.current;
       const lastTvlNorm = normalizeBDMapFromMap(lastOut.tvlMap as any);
       const nextTvlNorm = normalizeBDMapFromMap(nextTvl as any);
       const tvlChanged = !shallowEqualNormalized(lastTvlNorm, nextTvlNorm);
 
-      // c) /apr 필요 시 fetch (최초 or TVL 변경)
-      //    - /apr 실패 → 기존 aprDataRef 유지(화면은 유지)
-      //    - 우선 /apr 시도, 실패 시 /apr_data.json 폴백
       const chainIdStr = (() => {
         const mode = (process?.env?.NEXT_PUBLIC_OPERATION_MODE ?? "")
           .toString()
@@ -328,7 +323,6 @@ export default function useAssets() {
             });
             data = await res.json();
           } catch {
-            // fallback
             const res2 = await fetch("/apr_data.json", { cache: "no-store" });
             data = await res2.json();
           }
@@ -336,21 +330,17 @@ export default function useAssets() {
 
           aprDataRef.current = data;
           setAprDataState(data);
-        } catch (err) {
-          // 실패해도 멈추지 않음: 기존 Data 유지
-          // aprDataRef.current 그대로 두기 (처음부터 실패라면 null 유지)
-          // console.warn("fetch /apr failed", err);
+        } catch {
+          // ignore
         }
       }
 
-      // d) APY 오버레이: aprDataRef가 있으면 오버레이 계산
       if (
         aprDataRef.current &&
         aprDataRef.current.apr &&
         Array.isArray(aprDataRef.current.apr)
       ) {
         const list = aprDataRef.current.apr as any[];
-        // compositeKey -> apy(decimal number)
         const apyByComposite = new Map<string, number>();
 
         for (const entry of list) {
@@ -365,7 +355,7 @@ export default function useAssets() {
           const SUM_LIMIT = BigInt(4644420100000000000);
           const APY_CAP_PERCENT = 99.99999;
 
-          let sum = BigInt(0); // apr_7d (정수문자열, 18 decimals)
+          let sum = BigInt(0);
           for (let i = 0; i < Math.min(3, vaults.length); i++) {
             const s = vaults[i]?.apr7d ?? "0";
             try {
@@ -373,14 +363,12 @@ export default function useAssets() {
             } catch {}
           }
 
-          // console.log("useAssets vault apr7d", vaults.map(v=>v.apr7d), "sum", sum.toString(), "addr", addr)
-          let extraScaledTotal = BigInt(0); // (연 APR fraction) × 1e18
+          let extraScaledTotal = BigInt(0);
           const extraList: any[] = Array.isArray(entry?.staking?.extraRewards)
             ? entry.staking.extraRewards
             : [];
 
           if (extraList.length > 0) {
-            // price: 해당 엔트리 contractAddress의 가격(BigDecimal)을 1e18 스케일로 변환
             const pBD = nextPrice.get(addr as `0x${string}`);
             const priceScaled = toScaled1e18FromDecimalString(
               pBD?.toString?.()
@@ -388,7 +376,6 @@ export default function useAssets() {
 
             if (priceScaled > BigInt(0)) {
               for (const er of extraList) {
-                // 주: 원 필드명이 dailyRewardPerTokenX18 (x18 스케일)
                 const rawX18 =
                   er?.dailyRewardPerTokenX18 ??
                   er?.dailyRewardPerTokkenX18 ??
@@ -397,81 +384,66 @@ export default function useAssets() {
                 let dailyX18 = BigInt(0);
                 try {
                   dailyX18 = BigInt(rawX18);
-                } catch {
-                  dailyX18 = BigInt(0);
-                }
+                } catch {}
 
                 if (dailyX18 <= BigInt(0)) continue;
                 const denomPow = BigInt(10) ** BigInt(Math.max(0, decimals));
 
-                // extraScaled = floor( (dailyX18 / 10^decimals) * 365 / price ) × 1e18
-                // = floor( dailyX18 * 365 * 1e18 / (10^decimals * priceScaled) )
                 const numerator =
                   dailyX18 * BigInt(365) * BigInt(10) ** BigInt(18);
                 const denominator = denomPow * priceScaled;
                 if (denominator === BigInt(0)) continue;
 
-                const extraScaled = numerator / denominator; // BigInt (x1e18)
+                const extraScaled = numerator / denominator;
                 if (extraScaled > BigInt(0)) extraScaledTotal += extraScaled;
               }
             }
           }
 
-          // 3) vault APR 합 + extra APR 합 (모두 x1e18) → totalScaled
           const totalScaled = sum + extraScaledTotal;
 
           let apyNumber: number;
           if (totalScaled > SUM_LIMIT) {
             apyNumber = APY_CAP_PERCENT;
           } else {
-            // totalAprDecimal: fraction (예: 0.05)
             const totalAprDecimal = Number(totalScaled) / 1e18;
             const base = 1 + totalAprDecimal / annualBlockQty;
-            apyNumber = Math.pow(base, annualBlockQty) - 1; // fraction
+            apyNumber = Math.pow(base, annualBlockQty) - 1;
           }
-          // console.log("useAssets sum",sum, "apyNumber",apyNumber, "addr", addr, "vaults",vaults)
 
           apyByComposite.set(makeCompositeKey(cid, addr), apyNumber);
-          //console.log("useAssets apyByComposite", apyByComposite)
         }
 
-        // farms에 덮어쓰기
         for (const { address } of farms) {
           const key = makeCompositeKey(chainId, address);
           if (apyByComposite.has(key)) {
             const apyNumber = apyByComposite.get(key)!;
-            //console.log("useAssets apyNumber",apyNumber)
             try {
-              const bd = new BigDecimal(apyNumber, 18); // 소수(18자리)로 저장 (표시는 % 변환)
+              const bd = new BigDecimal(apyNumber, 18);
               nextApy.set(address, bd);
-              //console.log("useAssets bd",bd,"addr",address)
-            } catch {
-              // 변환 실패 시 on-chain 값 유지
-            }
+            } catch {}
           }
         }
       }
 
       if (cancelled) return;
 
-      // e) 변경분만 반영
       const lastApyNorm = normalizeBDMapFromMap(lastOut.apyMap as any);
       const nextApyNorm = normalizeBDMapFromMap(nextApy as any);
       const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
       const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
 
       const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
-      const tvlChangedFinal = tvlChanged; // 위에서 계산
       const priceChanged = !shallowEqualNormalized(
         lastPriceNorm,
         nextPriceNorm
       );
 
       if (apyChanged) setApyMap(nextApy);
-      if (tvlChangedFinal) setTvlMap(nextTvl);
+      if (tvlChanged) setTvlMap(nextTvl);
       if (priceChanged) setPriceMap(nextPrice);
 
-      if (apyChanged || tvlChangedFinal || priceChanged) {
+      if (apyChanged || tvlChanged || priceChanged) {
         lastOutputsRef.current = {
           apyMap: nextApy,
           tvlMap: nextTvl,
@@ -481,11 +453,9 @@ export default function useAssets() {
     }
 
     run();
-
     return () => {
       cancelled = true;
     };
-    // 가격/밸런스/유니스왑 버전 + farms + refreshIndex 변화 시 run
   }, [
     client,
     farms,
@@ -505,22 +475,8 @@ export default function useAssets() {
         return;
       }
 
-      const refreshKey = String(refreshIndex);
       const next = new Map<string, FarmRaw>();
 
-      // --- 디버그: 들어온 farms 요약 (주소/타입/심볼)
-      // try {
-      //   console.debug(
-      //     "[farmRaw] farms",
-      //     farms.map(({ farm, address }) => ({
-      //       address,
-      //       type: farm?.type,
-      //       symbol: farm?.symbol
-      //     }))
-      //   );
-      // } catch {}
-
-      // 개별 타임아웃 유틸 (멈춤 탐지)
       const withTimeout = <T>(p: Promise<T>, ms: number, label: string) =>
         new Promise<T>((resolve, reject) => {
           const t = setTimeout(() => reject(new Error(`timeout:${label}`)), ms);
@@ -533,27 +489,18 @@ export default function useAssets() {
           });
         });
 
-      // 모든 팜 병렬 실행 (개별 12초 타임아웃)
       const results = await Promise.allSettled(
         farms.map(async ({ farm, address }) => {
           const tag = `${farm.type}:${farm.symbol}:${address}`;
           console.debug("[farmRaw] start", tag);
 
-          // prefetch 호출 전후로 로그
           const { liquidity, totalSupply } = await withTimeout(
-            prefetchFarmData(client, farm), // 기존 그대로 (assetValues 미전달 유지)
+            prefetchFarmData(client, farm),
             12000,
             `prefetch:${tag}`
           );
 
-          console.debug("[farmRaw] prefetch done", tag, {
-            liq: Array.isArray(liquidity)
-              ? "LP-4tuple"
-              : liquidity
-                ? "Single-BD"
-                : "null",
-            supply: !!totalSupply,
-          });
+          console.debug("[farmRaw] prefetch done", tag);
 
           if (farm.type === "BirdieSingle") {
             const underlyingAddr =
@@ -622,11 +569,9 @@ export default function useAssets() {
         })
       );
 
-      // 실패/타임아웃 원인 요약
       results.forEach((r, idx) => {
         const { farm, address } = farms[idx]!;
         const tag = `${farm.type}:${farm.symbol}:${address}`;
-
         if (r.status === "rejected") {
           console.warn("[farmRaw] failed", tag, r.reason?.message ?? r.reason);
         }
@@ -641,15 +586,9 @@ export default function useAssets() {
     };
   }, [client, farms, chainId, refreshIndex]);
 
-  // 4) farmValues 안에 세 Map을 그대로 넣어서 노출
   const farmValues = useMemo(() => {
-    return {
-      apyMap, // Map
-      tvlMap, // Map
-      priceMap, // Map
-    };
+    return { apyMap, tvlMap, priceMap };
   }, [apyMap, tvlMap, priceMap]);
-  // 9) refetchAll: 기존과 동일
 
   const assets = useMemo(
     () => ({
@@ -664,7 +603,12 @@ export default function useAssets() {
       refetchPoints: pointsQ.refetch,
 
       refetchAll,
-      forceRefresh, //추가
+      forceRefresh,
+
+      // ✅ 추가: 외부에서 “업데이트 완료 여부”를 기다리기 위해 노출
+      balancesVersion,
+      waitForBalancesVersionChange,
+
       isFetching:
         assetValues.isFetching || balances.isFetching || pointsQ.isLoading,
     }),
@@ -676,13 +620,15 @@ export default function useAssets() {
       farmRawMap,
       refetchAll,
       forceRefresh,
+      balancesVersion,
+      waitForBalancesVersionChange,
       assetValues.isFetching,
       balances.isFetching,
       pointsQ.data,
       pointsQ.isLoading,
     ]
   );
-  console.log("useAssets assets", assets);
 
+  console.log("useAssets assets", assets);
   return assets;
 }

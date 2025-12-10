@@ -1,88 +1,202 @@
 // components/(main)/pay/common/PayAmountInput.tsx
 "use client";
 
-import { useMemo, useState } from "react";
+import { useContext, useMemo } from "react";
 import { Button, Image, Input } from "@heroui/react";
 import { useChainId } from "wagmi";
-import clsx from "clsx";
 
 import tokens from "@/const/contracts/tokens/tokens";
 import lpVaults from "@/const/contracts/tokens/lpVaults";
 import Icons from "@/assets/icons/icons";
+import { BigDecimal } from "@/types/BigDecimal";
 
 import PayToleranceSection from "./PayToleranceSection";
-import PayPoolSelector from "./PayPoolSelector";
+import PayPoolSelector, { PoolLike } from "./PayPoolSelector";
+import { AssetsContext } from "@/app/AssetsContextProvider";
+import { usePayContext } from "@/components/(main)/pay/PayProvider";
 
 export type PayMode = "PAY" | "ENTER";
 type LpVault = (typeof lpVaults)[keyof typeof lpVaults];
 
-interface PayAmountInputProps {
-  mode: PayMode;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+function fmtBd(v?: BigDecimal, decimals = 6) {
+  if (!v) return "-";
+  if (v.isZero()) return "0";
+  return v.roundToDecimals(decimals).toPrecisionString(true, true);
 }
 
-/**
- * PAY / ENTER 공용 금액 입력 + 토큰 / 풀 선택 UI
- * - PAY: USDC 고정 + Pay tolerance + Select a Pool
- * - ENTER: ETH/WETH 토글 + Select a Pool
- */
-export default function PayAmountInput({ mode }: PayAmountInputProps) {
-  const [amount, setAmount] = useState<string>("");
-  const [tolerance, setTolerance] = useState<"auto" | number>("auto");
-  const [selectedPool, setSelectedPool] = useState<LpVault | undefined>();
+function fmtUsd(v?: BigDecimal) {
+  if (!v) return "-";
+  if (v.isZero()) return "$0.00";
+  return "$" + v.roundToDecimals(2).toPrecisionString(true, true);
+}
 
-  // ENTER 모드에서만 사용하는 ETH/WETH 토글 상태
-  const [nativeSymbol, setNativeSymbol] = useState<"ETH" | "WETH">("ETH");
+function safeLower(s?: string) {
+  return typeof s === "string" ? s.toLowerCase() : "";
+}
 
+export default function PayAmountInput({ mode }: { mode: PayMode }) {
+  const pay = usePayContext();
   const chainId = useChainId();
+  const assets = useContext(AssetsContext);
 
-  // PAY → USDC 고정 / ENTER → ETH 또는 WETH
+  const amount = mode === "PAY" ? pay.payAmount : pay.enterAmount;
+  const setAmount = mode === "PAY" ? pay.setPayAmount : pay.setEnterAmount;
+
   const token =
     mode === "PAY"
       ? tokens.USDC
-      : nativeSymbol === "ETH"
+      : pay.nativeSymbol === "ETH"
         ? tokens.ETH
         : tokens.WETH;
 
-  // 현재 체인에서 사용 가능한 풀만 필터링
-  const availablePools: LpVault[] = useMemo(() => {
-    const all = Object.values(lpVaults) as LpVault[];
-    if (!chainId) return all;
-    return all.filter(
-      (pool) =>
-        pool.addresses[chainId as keyof typeof pool.addresses] !== undefined
+  // ---- Approve UI 조건 (usePay에서 계산된 값 사용) ----
+  // showApproveUI: "WETH 선택 + pool 선택 + allowance 확인 끝 + needsApprove true" 같은 조건을 usePay에서 만들어 둔 값
+  const showLock =
+    mode === "ENTER" && pay.nativeSymbol === "WETH" && !!pay.showApproveUI;
+
+  // ===== ENTER: balance & USD conversion =====
+  const enterTokenAddressLower = useMemo(() => {
+    if (mode !== "ENTER") return null;
+    if (pay.nativeSymbol === "ETH") return ZERO_ADDRESS;
+    const addr = token.addresses?.[chainId] as string | undefined;
+    return addr ? addr.toLowerCase() : null;
+  }, [mode, pay.nativeSymbol, token.addresses, chainId]);
+
+  const enterWalletBalanceBd = useMemo(() => {
+    if (mode !== "ENTER") return null;
+    const balMap = (assets as any)?.balances?.tokenBalances?.balanceMap as
+      | Map<string, BigDecimal>
+      | undefined;
+
+    if (!balMap || !enterTokenAddressLower) return null;
+
+    const matchedKey = [...balMap.keys()].find(
+      (k) => k?.toLowerCase?.() === enterTokenAddressLower
     );
-  }, [chainId]);
+    return matchedKey ? (balMap.get(matchedKey) ?? null) : null;
+  }, [assets, enterTokenAddressLower, mode]);
 
-  // 단순 숫자 입력 (자리수 검증만)
+  const enterTokenPriceUsd = useMemo(() => {
+    if (mode !== "ENTER") return null;
+
+    const clMap = (assets as any)?.assetValues?.chainLinkPriceMap as
+      | Map<string, any>
+      | undefined;
+
+    if (!clMap) return null;
+
+    const wantedKey = `LINK:${token.symbol}_USD`.toUpperCase();
+    const matchedKey = [...clMap.keys()].find(
+      (k) => String(k).toUpperCase() === wantedKey
+    );
+    if (!matchedKey) return null;
+
+    const v = clMap.get(matchedKey);
+    const priceBd = v?.price as BigDecimal | undefined;
+    return priceBd ?? null;
+  }, [assets, mode, token.symbol]);
+
+  const enterAmountUsd = useMemo(() => {
+    if (mode !== "ENTER") return null;
+    if (!enterTokenPriceUsd) return null;
+    if (!amount || !amount.trim()) return new BigDecimal("0", 2);
+
+    const amtBd = new BigDecimal(amount, token.decimals ?? 18);
+    return amtBd.multiply(enterTokenPriceUsd);
+  }, [mode, amount, token.decimals, enterTokenPriceUsd]);
+
+  // ===== pools =====
+  const pools: PoolLike[] = useMemo(() => {
+    if (!assets || !chainId) return [];
+
+    const stakedMap = assets.balances?.stakedBalances?.byInputTokenAddress as
+      | Map<string, { token?: any; value: BigDecimal }>
+      | undefined;
+
+    if (!stakedMap) return [];
+
+    const priceMap = assets.farmValues?.priceMap as
+      | Map<string, BigDecimal>
+      | undefined;
+
+    const apyMap =
+      (assets.farmValues?.apyMap as Map<string, BigDecimal> | undefined) ??
+      undefined;
+
+    const vaultList = Object.values(lpVaults) as LpVault[];
+
+    return Array.from(stakedMap.entries())
+      .filter(([, { value }]) =>
+        mode === "PAY" ? value && !value.isZero() : true
+      )
+      .map(([address, { token, value }]) => {
+        const addrLower = address.toLowerCase();
+
+        const vault = vaultList.find((v) => {
+          const vaultAddr = v.addresses[chainId as keyof typeof v.addresses];
+          return vaultAddr && vaultAddr.toLowerCase() === addrLower;
+        });
+
+        const symbol = vault?.symbol ?? token?.symbol ?? "Unknown";
+        const fullName = vault?.fullName ?? token?.fullName ?? symbol;
+
+        const pool: PoolLike = {
+          address: addrLower,
+          symbol,
+          fullName,
+          iconSrc: "/tokens/sblp-token.svg",
+        };
+
+        if (value) {
+          pool.stakedBalance = value;
+
+          if (priceMap) {
+            const matchedKey = [...priceMap.keys()].find(
+              (k) => k.toLowerCase() === addrLower
+            );
+            const price = matchedKey ? priceMap.get(matchedKey) : undefined;
+            if (price) pool.usdValue = value.multiply(price);
+          }
+        }
+
+        if (apyMap) {
+          const matchedKey = [...apyMap.keys()].find(
+            (k) => k.toLowerCase() === addrLower
+          );
+          const apy = matchedKey ? apyMap.get(matchedKey) : undefined;
+          if (apy) pool.apy7d = apy;
+        }
+
+        return pool;
+      });
+  }, [assets, chainId, mode]);
+
   const handleAmountChange = (v: string) => {
-    if (v === "" || /^(\d+(\.\d*)?)?$/.test(v)) {
-      setAmount(v);
-    }
-  };
-
-  // ETH ⇄ WETH 토글
-  const handleToggleNative = () => {
-    setNativeSymbol((prev) => (prev === "ETH" ? "WETH" : "ETH"));
+    // 숫자/소수만 허용 (빈 문자열 허용)
+    if (v === "" || /^(\d+(\.\d*)?)?$/.test(v)) setAmount(v);
   };
 
   return (
-    <div className="flex w-full flex-col gap-4 mb-5 rounded-2xl bg-default-100 dark:bg-dark-swap-bg px-4 py-4">
-      {/* 1. 헤더: PAY / ENTER 텍스트 */}
+    <div className="mb-5 flex w-full flex-col gap-4 rounded-2xl bg-default-100 px-4 py-4 dark:bg-dark-swap-bg">
       <div className="flex items-baseline gap-1">
         <span className="text-xs font-semibold tracking-wide text-default-600">
-          {mode === "PAY" ? "PAY" : "ENTER"}
+          {mode}
         </span>
         {mode === "PAY" && (
           <span className="text-[11px] text-default-500">
-            (Exact amount the recipient receive)
+            (Exact amount the recipient receives)
           </span>
         )}
       </div>
 
-      {/* 2. 숫자 입력 + 토큰 영역 */}
       <div className="flex items-center justify-between gap-3">
         <Input
+          // ✅ 브라우저 step validation 경고 방지
           type="number"
+          step="any"
+          min="0"
           variant="bordered"
           radius="none"
           className="flex-1 bg-transparent"
@@ -90,7 +204,7 @@ export default function PayAmountInput({ mode }: PayAmountInputProps) {
             inputWrapper:
               "h-auto min-h-0 border-none bg-transparent px-0 py-0 shadow-none",
             input:
-              "textfield text-[40px] leading-[44px] font-semibold text-default-700 placeholder:text-default-400 focus:outline-none",
+              "textfield text-[40px] leading-[44px] font-semibold text-foreground placeholder:text-default-400 focus:outline-none",
           }}
           inputMode="decimal"
           placeholder="0"
@@ -98,12 +212,21 @@ export default function PayAmountInput({ mode }: PayAmountInputProps) {
           onValueChange={handleAmountChange}
           onKeyDown={(e) => {
             if (e.key === "-") e.preventDefault();
+            // Enter 입력 시 native validation/submit 트리거를 막고 싶으면:
+            if (e.key === "Enter") e.preventDefault();
           }}
           onWheel={(e) => e.currentTarget.blur()}
         />
 
-        {/* 토큰 아이콘 + 심볼 + (ENTER에서만) Change 버튼 */}
         <div className="flex items-center gap-2">
+          {/* ✅ approve 필요할 때만 lock */}
+          {showLock && (
+            <Icons.Lock
+              className="fill-default-800 dark:fill-default-300 max-[376px]:h-4 max-[376px]:w-4"
+              fillRule="evenodd"
+            />
+          )}
+
           {token.iconSrc && (
             <Image
               src={token.iconSrc}
@@ -113,27 +236,21 @@ export default function PayAmountInput({ mode }: PayAmountInputProps) {
               classNames={{ img: "object-contain" }}
             />
           )}
+
           <span className="text-base font-semibold text-default-900">
             {token.symbol}
           </span>
 
           {mode === "ENTER" && (
             <Button
-              type="button"
               isIconOnly
               radius="full"
               variant="light"
-              onPress={handleToggleNative}
-              aria-label={`Switch to ${nativeSymbol === "ETH" ? "WETH" : "ETH"}`}
-              title="Change ETH/WETH"
-              className="
-                min-w-0 size-8 p-0
-                bg-transparent shadow-none
-                data-[hover=true]:bg-transparent
-                data-[pressed=true]:bg-transparent
-                data-[disabled=true]:bg-transparent
-                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-              "
+              onPress={() =>
+                pay.setNativeSymbol((p) => (p === "ETH" ? "WETH" : "ETH"))
+              }
+              aria-label="Switch ETH/WETH"
+              className="size-8 min-w-0 bg-transparent shadow-none"
             >
               <Icons.Change className="h-6 w-6" />
             </Button>
@@ -141,16 +258,33 @@ export default function PayAmountInput({ mode }: PayAmountInputProps) {
         </div>
       </div>
 
-      {/* 3. Pay tolerance (PAY 에서만) */}
-      {mode === "PAY" && (
-        <PayToleranceSection value={tolerance} onChange={setTolerance} />
+      {/* ENTER: USD + Balance */}
+      {mode === "ENTER" && (
+        <div className="mt-[-6px] flex items-center justify-between text-[13px]">
+          <div className="min-h-[18px] text-default-500">
+            {fmtUsd(enterAmountUsd ?? undefined)}
+          </div>
+          <div className="min-h-[18px] text-default-500">
+            Balance&nbsp;
+            <span className="font-medium text-default-600">
+              {fmtBd(enterWalletBalanceBd ?? undefined, 8)}
+            </span>
+          </div>
+        </div>
       )}
 
-      {/* 4. Select a Pool 버튼 (공통) */}
+      {mode === "PAY" && (
+        <PayToleranceSection
+          value={pay.tolerance}
+          onChange={pay.setTolerance}
+        />
+      )}
+
       <PayPoolSelector
-        pools={availablePools}
-        selected={selectedPool}
-        onSelect={setSelectedPool}
+        mode={mode}
+        pools={pools}
+        selected={pay.selectedPool}
+        onSelect={pay.setSelectedPool}
       />
     </div>
   );
