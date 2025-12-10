@@ -356,14 +356,17 @@ export default function usePay() {
     return [userAddress, stakingPoolAddress] as const;
   }, [userAddress, stakingPoolAddress]);
 
-  const { data: allowanceWeth, isLoading: isAllowanceLoading } =
-    useReadContract({
-      address: wethAddr,
-      abi: erc20Abi,
-      functionName: "allowance",
-      args: allowanceArgs ?? undefined,
-      query: { enabled: shouldCheckAllowance && !!allowanceArgs },
-    });
+  const {
+    data: allowanceWeth,
+    isLoading: isAllowanceLoading,
+    refetch: refetchAllowanceWeth,
+  } = useReadContract({
+    address: wethAddr,
+    abi: erc20Abi,
+    functionName: "allowance",
+    args: allowanceArgs ?? undefined,
+    query: { enabled: shouldCheckAllowance && !!allowanceArgs },
+  });
 
   // ✅ allowanceWeth가 아직 없으면 "모름"으로 두고,
   //    showApproveUI에서 로딩 중 숨기기 여부는 선택 가능
@@ -395,7 +398,7 @@ export default function usePay() {
     if (isAllowanceLoading) return false;
 
     return needsWethApprove;
-  }, [shouldCheckAllowance, /*isAllowanceLoading,*/ needsWethApprove]);
+  }, [shouldCheckAllowance, isAllowanceLoading, needsWethApprove]);
 
   // ---- debug logs ----
   useEffect(() => {
@@ -755,6 +758,9 @@ export default function usePay() {
       publicClient, // ✅ 추가
       client,
       transactionContext: tx,
+      onAllowanceRefetch: async () => {
+        await refetchAllowanceWeth();
+      },
     });
 
     console.log("[APPROVE][DONE]");
@@ -897,19 +903,48 @@ export default function usePay() {
           ? getTokenBalanceFromAssets(assetsRef.current, finalToken1)
           : null;
 
+        const isWethAddr = (addr?: `0x${string}`) =>
+          !!addr && safeLower(addr) === safeLower(wethAddr);
+
+        // WETH로 enter할 때만 의미 있음 (ETH enter면 이 보정 로직 필요 없음)
+        const amountInBd =
+          nativeSymbol === "WETH"
+            ? new BigDecimal(enterAmount || "0", WETH.decimals ?? 18)
+            : null;
+
         const stakedDeltaBd =
           stakedAfterBd && stakedBeforeBd
             ? stakedAfterBd.subtract(stakedBeforeBd)
             : undefined;
 
+        const token0BeforeAdj =
+          finalToken0 && token0BeforeBd
+            ? isWethAddr(finalToken0) && amountInBd
+              ? BigDecimal.max(
+                  token0BeforeBd.subtract(amountInBd),
+                  new BigDecimal("0", WETH.decimals ?? 18)
+                )
+              : token0BeforeBd
+            : (token0BeforeBd ?? new BigDecimal("0", 18));
+
+        const token1BeforeAdj =
+          finalToken1 && token1BeforeBd
+            ? isWethAddr(finalToken1) && amountInBd
+              ? BigDecimal.max(
+                  token1BeforeBd.subtract(amountInBd),
+                  new BigDecimal("0", WETH.decimals ?? 18)
+                )
+              : token1BeforeBd
+            : (token1BeforeBd ?? new BigDecimal("0", 18));
+
         const token0DeltaRaw =
           finalToken0 && token0AfterBd
-            ? token0AfterBd.subtract(token0BeforeBd ?? new BigDecimal("0", 18))
+            ? token0AfterBd.subtract(token0BeforeAdj)
             : undefined;
 
         const token1DeltaRaw =
           finalToken1 && token1AfterBd
-            ? token1AfterBd.subtract(token1BeforeBd ?? new BigDecimal("0", 18))
+            ? token1AfterBd.subtract(token1BeforeAdj)
             : undefined;
 
         // ✅ refund는 "표시용": 0이어도 표시(섹션이 사라지지 않게), 음수는 0으로 clamp
