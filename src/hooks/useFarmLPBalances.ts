@@ -8,11 +8,11 @@ import { useAssetValuesReturnType } from "./assets/useAssets/useAssetValues";
 
 export default function useFarmLPBalances(
   item: FarmPair | IBirdieLPFarm,
-  assetValues?: useAssetValuesReturnType,
+  assetValues?: useAssetValuesReturnType
 ) {
   const stakeToken = useMemo(
     () => ("addresses" in item ? item : item.wip_stakeToken),
-    [item],
+    [item]
   );
   const [poolBalance0, poolBalance1] = useMemo(() => {
     const token0 = stakeToken.swap.input[0].input;
@@ -32,7 +32,12 @@ export default function useFarmLPBalances(
 
     return [BigDecimal.ZERO(), BigDecimal.ZERO()];
   }, [assetValues, stakeToken]);
-
+  console.log(
+    "useFarmLPBalances poolBalance0, poolBalance1",
+    item,
+    poolBalance0,
+    poolBalance1
+  );
   return {
     poolBalance0,
     poolBalance1,

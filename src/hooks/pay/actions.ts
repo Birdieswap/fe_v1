@@ -215,6 +215,7 @@ export async function approveWethForEnter(params: {
   publicClient: any; // ✅ approve도 receipt까지 기다리려면 필요
   client?: any;
   transactionContext: TransactionContextType;
+  onAllowanceRefetch?: () => Promise<void> | void;
 }): Promise<void> {
   const {
     chainId,
@@ -224,6 +225,7 @@ export async function approveWethForEnter(params: {
     publicClient,
     client,
     transactionContext,
+    onAllowanceRefetch,
   } = params;
 
   const WETH = tokens.WETH;
@@ -265,6 +267,13 @@ export async function approveWethForEnter(params: {
   setTxStatus(transactionContext, {
     transactionStatus: TransactionStatus.SUCCESS,
   });
+
+  try {
+    await onAllowanceRefetch?.();
+  } catch (e) {
+    // refetch 실패는 치명적이지 않아서 그냥 로그만
+    console.warn("[approveWethForEnter] allowance refetch failed", e);
+  }
 }
 
 // =====================
