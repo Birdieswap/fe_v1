@@ -21,12 +21,12 @@ export const birdieswap_wrapper_abi = [
     name: "dualDepositWithETH",
     inputs: [
       {
-        name: "_underlyingTokenAddress",
+        name: "_otherUnderlyingToken",
         type: "address",
         internalType: "address",
       },
       {
-        name: "_underlyingTokenAmount",
+        name: "_otherUnderlyingAmount",
         type: "uint256",
         internalType: "uint256",
       },
@@ -95,6 +95,16 @@ export const birdieswap_wrapper_abi = [
         type: "uint256",
         internalType: "uint256",
       },
+      {
+        name: "token0Returned",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "token1Returned",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     stateMutability: "payable",
   },
@@ -126,7 +136,7 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "function",
-    name: "getWETHAddress",
+    name: "getWethAddress",
     inputs: [],
     outputs: [
       {
@@ -274,6 +284,11 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "error",
+    name: "BirdieswapWrapperV1__InvalidBirdieswapContract",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "BirdieswapWrapperV1__NoWETHInPair",
     inputs: [],
   },
@@ -284,7 +299,12 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__OnlyWETHIsAccepted",
+    name: "BirdieswapWrapperV1__OnlyWETHAllowed",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapWrapperV1__TokenDeltaMismatch",
     inputs: [],
   },
   {
@@ -304,27 +324,17 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__UnrecognizedContract",
+    name: "BirdieswapWrapperV1__WETHInputNotAllowed",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__WETHAsOutputNotSupported",
+    name: "BirdieswapWrapperV1__WETHNotNativeETH",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__WETHIsNotAcceptedAsInput",
-    inputs: [],
-  },
-  {
-    type: "error",
-    name: "BirdieswapWrapperV1__WETHIsNotNativeEthereum",
-    inputs: [],
-  },
-  {
-    type: "error",
-    name: "BirdieswapWrapperV1__WrapperDidNotReceiveExpectedTokens",
+    name: "BirdieswapWrapperV1__WETHOutputNotAllowed",
     inputs: [],
   },
   {

@@ -1,4 +1,3 @@
-// app/(main)/pay/page.tsx
 import { cn } from "@heroui/react";
 import { Suspense } from "react";
 

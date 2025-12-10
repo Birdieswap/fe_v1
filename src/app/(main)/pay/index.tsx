@@ -1,4 +1,3 @@
-// components/(main)/pay/index.tsx
 "use client";
 
 import { useState } from "react";
