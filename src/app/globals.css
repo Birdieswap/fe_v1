@@ -225,6 +225,15 @@ html {
   color-scheme: dark;
 }
 
+.birdieswap-qr-container button {
+  color: var(--light-primary);
+}
+
+/* 예시: finder 코너(캔버스 기반이 아니라면)에 색 입히기 */
+.birdieswap-qr-container .some-finder-corner-class {
+  border-color: var(--light-primary);
+}
+
 /* Next.js 등 루트 컨테이너까지 어둡게(필요 시) */
 #root,
 #__next {

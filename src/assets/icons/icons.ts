@@ -12,6 +12,7 @@ import boostElectricPurpleLetter from "./booster_ElectricPurple_Letter.svg";
 import boostMediumSeaGreenLetter from "./booster_MediumSeaGreen_Letter.svg";
 import boostOriolesOrangeLetter from "./booster_OriolesOrange_Letter.svg";
 import boostShockingPinkLetter from "./booster_ShockingPink_Letter.svg";
+import BaseLogo from "./BaseLogo.svg";
 
 import Close from "./close.svg";
 import Dropdown from "./dropdown.svg";
@@ -97,6 +98,7 @@ import WalletUnstake from "./wallet-unstake.svg";
 export const Icons = {
   Arrow,
   ArrowRL,
+  BaseLogo,
   BirdRate,
   Birdie56,
   boostBitterSweet,

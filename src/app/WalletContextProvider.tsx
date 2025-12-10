@@ -64,7 +64,7 @@ const networks: NetworkInfo[] = [
   },
   {
     id: 8453,
-    name: "Base",
+    name: "base",
     iconSrc: "/networks/base.svg",
     blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
   },

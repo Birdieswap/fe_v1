@@ -214,30 +214,6 @@ export const birdieswap_router_abi = [
   },
   {
     type: "function",
-    name: "getBLPTokenAddress",
-    inputs: [
-      {
-        name: "_bToken0Address",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "_bToken1Address",
-        type: "address",
-        internalType: "address",
-      },
-    ],
-    outputs: [
-      {
-        name: "",
-        type: "address",
-        internalType: "address",
-      },
-    ],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
     name: "getBTokenAddress",
     inputs: [
       {
@@ -271,6 +247,30 @@ export const birdieswap_router_abi = [
         type: "address",
         internalType: "address",
       },
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getBlpTokenAddress",
+    inputs: [
+      {
+        name: "_bToken0Address",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "_bToken1Address",
+        type: "address",
+        internalType: "address",
+      },
+    ],
+    outputs: [
       {
         name: "",
         type: "address",
@@ -606,7 +606,7 @@ export const birdieswap_router_abi = [
         internalType: "address",
       },
       {
-        name: "_isTrue",
+        name: "_isAuthorized",
         type: "bool",
         internalType: "bool",
       },
@@ -652,10 +652,10 @@ export const birdieswap_router_abi = [
   },
   {
     type: "function",
-    name: "setFeeCollectingAddress",
+    name: "setFeeCollectorAddress",
     inputs: [
       {
-        name: "_address",
+        name: "_setFeeCollectorAddress",
         type: "address",
         internalType: "address",
       },
@@ -665,7 +665,7 @@ export const birdieswap_router_abi = [
   },
   {
     type: "function",
-    name: "setRewardTokenWhitelist",
+    name: "setRewardTokenWhitelisted",
     inputs: [
       {
         name: "_tokenAddress",
@@ -699,7 +699,7 @@ export const birdieswap_router_abi = [
     name: "setRouterConfigAddress",
     inputs: [
       {
-        name: "_address",
+        name: "_configAddress",
         type: "address",
         internalType: "address",
       },
@@ -1073,11 +1073,6 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapRouterV1__ApprovalNeeded",
-    inputs: [],
-  },
-  {
-    type: "error",
     name: "BirdieswapRouterV1__ConfigNotInitialized",
     inputs: [],
   },
@@ -1099,6 +1094,37 @@ export const birdieswap_router_abi = [
   {
     type: "error",
     name: "BirdieswapRouterV1__DualVaultNotFound",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapRouterV1__ERC721NotAccepted",
+    inputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "",
+        type: "bytes",
+        internalType: "bytes",
+      },
+    ],
+  },
+  {
+    type: "error",
+    name: "BirdieswapRouterV1__InsufficientAllowance",
     inputs: [],
   },
   {
@@ -1128,48 +1154,22 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapRouterV1__MinimumAmountNetReceived",
-    inputs: [],
-  },
-  {
-    type: "error",
     name: "BirdieswapRouterV1__NonStandardToken",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapRouterV1__NotAllowedNFT",
-    inputs: [
-      {
-        name: "",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "",
-        type: "uint256",
-        internalType: "uint256",
-      },
-      {
-        name: "",
-        type: "bytes",
-        internalType: "bytes",
-      },
-    ],
-  },
-  {
-    type: "error",
-    name: "BirdieswapRouterV1__RequestExpired",
+    name: "BirdieswapRouterV1__SingleVaultNotFound",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapRouterV1__SingleVaultNotFound",
+    name: "BirdieswapRouterV1__SlippageExceeded",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapRouterV1__SwapDeadlineExceeded",
     inputs: [],
   },
   {
