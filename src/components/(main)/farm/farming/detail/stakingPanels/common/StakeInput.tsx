@@ -185,7 +185,7 @@ export default function StakeInput({
                     {isSmall ? "BAL" : "Balance"}
                   </span>
                   <span className="max-[376px]:text-[10px] text-default-800 dark:text-default-300">
-                    {balanceStr ?? "..."}
+                    {balanceStr ?? "0"}
                   </span>
                 </div>
                 <p className="max-[376px]:text-[10px] self-end text-default-800 dark:text-default-300">

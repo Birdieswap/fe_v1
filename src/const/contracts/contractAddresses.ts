@@ -72,7 +72,7 @@ export const pool_tokenIds: Record<ChainKey, tokenIdMap> = {
 export const contractAddresses: Record<ChainKey, AddressMap> = {
   sepolia: {
     ROUTER: "0xECB627D9006d805Ee644c6293AeAfcb39d39A209",
-    WRAPPER: "0x0325a79BE0D133c55eCa633E34Da4e9dC96df01D",
+    WRAPPER: "0x25FC9bDC4437E8Ba3435D7cb59e6C74905ee6306",
 
     ETH: "0x0000000000000000000000000000000000000000",
     // WETH: "0x05A5d4425dada56269fCB0A56272B0b45c59b471",
