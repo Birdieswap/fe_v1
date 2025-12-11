@@ -1,11 +1,6 @@
 // this is temporary
 
-import {
-  erc20_abi,
-  birdieRouter_abi,
-  birdieLpVaults_abi,
-  birdieSingleVaults_abi,
-} from "./abis";
+import { erc20_abi, birdieLpVaults_abi, birdieSingleVaults_abi } from "./abis";
 import { birdieswap_router_abi } from "./contracts/abis/birdieswap_router_abi";
 import networks from "./contracts/networks";
 import lpVaults from "./contracts/tokens/lpVaults";
@@ -49,7 +44,6 @@ export const contracts = {
         singleVaults.bHarvestAutopilotUSDC.addresses[networks.baseFork.id],
       abi: birdieLpVaults_abi,
     },
-   
   },
   uniswapPool: {
     /*
@@ -180,4 +174,4 @@ export const contracts_sepolia = {
       abi: erc20_abi,
     },
   },
-}; 
+};
