@@ -70,41 +70,6 @@ function fmtUsd(v?: BigDecimal) {
   return "$" + v.roundToDecimals(2).toPrecisionString(true, true);
 }
 
-function getChainlinkUsdPriceFromAssets(
-  assets: any,
-  symbol: string
-): BigDecimal | null {
-  const map: Map<string, any> | undefined = assets?.chainLinkPriceMap;
-  if (!map) return null;
-
-  const key = `LINK:${symbol}_USD`;
-  const entry = map.get(key);
-  const price = entry?.price as BigDecimal | undefined;
-  return price ?? null;
-}
-
-/** ENTER 네이티브 토큰(ETH/WETH) USD 가격 */
-function getEnterTokenUsdPrice(
-  assets: any,
-  nativeSymbol: NativeSymbol
-): BigDecimal | null {
-  const map: Map<string, any> | undefined = assets?.chainLinkPriceMap;
-  if (!map) return null;
-
-  // ETH / WETH 둘 다 1:1 이라 fallback 순서만 정해줌
-  const candidates =
-    nativeSymbol === "ETH"
-      ? ["LINK:ETH_USD", "LINK:WETH_USD"]
-      : ["LINK:WETH_USD", "LINK:ETH_USD"];
-
-  for (const key of candidates) {
-    const entry = map.get(key);
-    const price = entry?.price as BigDecimal | undefined;
-    if (price) return price;
-  }
-  return null;
-}
-
 // vault decimals 찾기
 function findVaultDecimalsByPoolAddress(
   chainId: number,
@@ -354,7 +319,22 @@ export default function usePay() {
 
   // 1) 네이티브 토큰(ETH/WETH)의 USD 가격 (BigDecimal)
   const enterTokenUsdPriceBd = useMemo(() => {
-    return getEnterTokenUsdPrice(assets, nativeSymbol);
+    const map: Map<string, any> | undefined = (assets as any)?.assetValues
+      ?.chainLinkPriceMap;
+    if (!map) return null;
+
+    // ETH / WETH 둘 다 1:1 이라, 심볼에 따라 우선순위만 바꿔줌
+    const keys =
+      nativeSymbol === "ETH"
+        ? ["LINK:ETH_USD", "LINK:WETH_USD"]
+        : ["LINK:WETH_USD", "LINK:ETH_USD"];
+
+    for (const key of keys) {
+      const entry = map.get(key);
+      const price = entry?.price as BigDecimal | undefined;
+      if (price) return price;
+    }
+    return null;
   }, [assets, nativeSymbol]);
 
   // 2) 입력한 ETH/WETH 의 USD 가치
