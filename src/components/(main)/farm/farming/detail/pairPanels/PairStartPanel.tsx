@@ -19,11 +19,9 @@ import { useChainId } from "wagmi";
 
 export function PairStartPanel({
   item,
-  price,
   totalBalance,
 }: {
   item: FarmPair;
-  price: BigDecimal | null;
   totalBalance?: BigDecimal;
 }) {
   // 기존 훅: 지난 패치에서 ETH/WETH 파생값을 반환하도록 확장됨
@@ -37,6 +35,7 @@ export function PairStartPanel({
     poolAddress
   );
   const { assetValues } = useContext(AssetsContext);
+  const price = state.price ?? BigDecimal.ZERO();
 
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
 

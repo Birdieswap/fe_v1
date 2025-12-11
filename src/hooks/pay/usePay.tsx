@@ -37,7 +37,7 @@ import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
 
 import { approveWethForEnter, enter, pay as payAction } from "./actions";
 
-// ✅ Blocks UI
+// Blocks UI
 import {
   PaySummaryNode as PaySummaryBlock,
   PayResultNode as PayResultBlock,
@@ -68,6 +68,41 @@ function fmtUsd(v?: BigDecimal) {
   if (!v) return "-";
   if (v.isZero()) return "$0.00";
   return "$" + v.roundToDecimals(2).toPrecisionString(true, true);
+}
+
+function getChainlinkUsdPriceFromAssets(
+  assets: any,
+  symbol: string
+): BigDecimal | null {
+  const map: Map<string, any> | undefined = assets?.chainLinkPriceMap;
+  if (!map) return null;
+
+  const key = `LINK:${symbol}_USD`;
+  const entry = map.get(key);
+  const price = entry?.price as BigDecimal | undefined;
+  return price ?? null;
+}
+
+/** ENTER 네이티브 토큰(ETH/WETH) USD 가격 */
+function getEnterTokenUsdPrice(
+  assets: any,
+  nativeSymbol: NativeSymbol
+): BigDecimal | null {
+  const map: Map<string, any> | undefined = assets?.chainLinkPriceMap;
+  if (!map) return null;
+
+  // ETH / WETH 둘 다 1:1 이라 fallback 순서만 정해줌
+  const candidates =
+    nativeSymbol === "ETH"
+      ? ["LINK:ETH_USD", "LINK:WETH_USD"]
+      : ["LINK:WETH_USD", "LINK:ETH_USD"];
+
+  for (const key of candidates) {
+    const entry = map.get(key);
+    const price = entry?.price as BigDecimal | undefined;
+    if (price) return price;
+  }
+  return null;
 }
 
 // vault decimals 찾기
@@ -241,6 +276,21 @@ export default function usePay() {
   const [selectedPool, setSelectedPool] = useState<PoolLike | undefined>();
   const [nativeSymbol, setNativeSymbol] = useState<NativeSymbol>("ETH");
 
+  // ✨ PAY 폼 리셋
+  const resetPayPanel = useCallback(() => {
+    setReceiver("");
+    setPayAmount("");
+    setTolerance("auto");
+    setSelectedPool(undefined);
+  }, []);
+
+  // ✨ ENTER 폼 리셋
+  const resetEnterPanel = useCallback(() => {
+    setEnterAmount("");
+    setNativeSymbol("ETH");
+    setSelectedPool(undefined);
+  }, []);
+
   const USDC = tokens.USDC;
   const ETH = tokens.ETH;
   const WETH = tokens.WETH;
@@ -299,6 +349,49 @@ export default function usePay() {
     if (!stakingSharesBd) return false;
     return stakingSharesBd.gt(selectedPool.stakedBalance);
   }, [stakingSharesBd, selectedPool?.stakedBalance]);
+
+  // -------- ENTER: 체인링크 가격 기반 계산 --------
+
+  // 1) 네이티브 토큰(ETH/WETH)의 USD 가격 (BigDecimal)
+  const enterTokenUsdPriceBd = useMemo(() => {
+    return getEnterTokenUsdPrice(assets, nativeSymbol);
+  }, [assets, nativeSymbol]);
+
+  // 2) 입력한 ETH/WETH 의 USD 가치
+  const enterAmountUsdBd = useMemo(() => {
+    if (isEmptyAmount(enterAmount)) return null;
+    if (!enterTokenUsdPriceBd) return null;
+
+    const dec = enterToken.decimals ?? 18; // ETH/WETH 둘 다 18
+    const amtToken = new BigDecimal(enterAmount || "0", dec);
+    return amtToken.multiply(enterTokenUsdPriceBd); // USD 가치
+  }, [enterAmount, enterToken.decimals, enterTokenUsdPriceBd]);
+
+  // 3) 이론상 발행 BLP 수량 = (입력 USD) / (pool token USD 가격)
+  const enterIdealStakeAmountBd = useMemo(() => {
+    if (!enterAmountUsdBd) return null;
+    if (!poolPriceUsdPerToken) return null;
+    if (enterAmountUsdBd.isZero()) return null;
+
+    return enterAmountUsdBd.divide(poolPriceUsdPerToken);
+  }, [enterAmountUsdBd, poolPriceUsdPerToken]);
+
+  // 4) tolerance 적용: minBLPMintAmount = ideal * (1 - tolPct/100)
+  const enterMinStakeAmountBd = useMemo(() => {
+    if (!enterIdealStakeAmountBd) return null;
+
+    // 예: tolPct = 5 → factor = 0.95
+    const factor = new BigDecimal(String(1 - tolPct / 100), 18);
+    return enterIdealStakeAmountBd.multiply(factor);
+  }, [enterIdealStakeAmountBd, tolPct]);
+
+  console.log("[ENTER CALC]", {
+    enterTokenUsdPriceBd,
+    enterAmountUsdBd,
+    poolPriceUsdPerToken,
+    enterIdealStakeAmountBd,
+    enterMinStakeAmountBd,
+  });
 
   // ENTER balances (wagmi useBalance)
   const enterTokenAddress = useMemo(() => {
@@ -401,35 +494,35 @@ export default function usePay() {
   }, [shouldCheckAllowance, isAllowanceLoading, needsWethApprove]);
 
   // ---- debug logs ----
-  useEffect(() => {
-    if (selectedPanel !== "ENTER") return;
-    console.log("[ALLOWANCE DEBUG]", {
-      shouldCheckAllowance,
-      nativeSymbol,
-      selectedPool: !!selectedPool,
-      stakingPoolAddress,
-      wethAddr,
-      userAddress,
-      enterAmount,
-      allowanceWeth: allowanceWeth?.toString?.() ?? allowanceWeth,
-      isAllowanceLoading,
-      needsWethApprove,
-      showApproveUI,
-    });
-  }, [
-    selectedPanel,
-    shouldCheckAllowance,
-    nativeSymbol,
-    selectedPool,
-    stakingPoolAddress,
-    wethAddr,
-    userAddress,
-    enterAmount,
-    allowanceWeth,
-    isAllowanceLoading,
-    needsWethApprove,
-    showApproveUI,
-  ]);
+  // useEffect(() => {
+  //   if (selectedPanel !== "ENTER") return;
+  //   console.log("[ALLOWANCE DEBUG]", {
+  //     shouldCheckAllowance,
+  //     nativeSymbol,
+  //     selectedPool: !!selectedPool,
+  //     stakingPoolAddress,
+  //     wethAddr,
+  //     userAddress,
+  //     enterAmount,
+  //     allowanceWeth: allowanceWeth?.toString?.() ?? allowanceWeth,
+  //     isAllowanceLoading,
+  //     needsWethApprove,
+  //     showApproveUI,
+  //   });
+  // }, [
+  //   selectedPanel,
+  //   shouldCheckAllowance,
+  //   nativeSymbol,
+  //   selectedPool,
+  //   stakingPoolAddress,
+  //   wethAddr,
+  //   userAddress,
+  //   enterAmount,
+  //   allowanceWeth,
+  //   isAllowanceLoading,
+  //   needsWethApprove,
+  //   showApproveUI,
+  // ]);
 
   // -------- Buttons --------
   const payButton = useMemo(() => {
@@ -583,137 +676,154 @@ export default function usePay() {
 
   // ===== execute: PAY =====
   const executePay = useCallback(async () => {
-    if (!chainId || !publicClient) return;
-    if (!isConnected || isWrongNetwork) return;
-    if (!userAddress) return;
-    if (!selectedPool || !stakingPoolAddress) return;
-    if (!receiver?.trim()) return;
-    if (isEmptyAmount(payAmount)) return;
-    if (isPayInsufficientPoolBalance) return;
+    let didSubmit = false; // 실제 pay tx 시도 여부
 
-    const usdcAddr = USDC.addresses?.[chainId] as string | undefined;
-    const poolInputTokenAddr = selectedPool.address;
+    try {
+      if (!chainId || !publicClient) return;
+      if (!isConnected || isWrongNetwork) return;
+      if (!userAddress) return;
+      if (!selectedPool || !stakingPoolAddress) return;
+      if (!receiver?.trim()) return;
+      if (isEmptyAmount(payAmount)) return;
+      if (isPayInsufficientPoolBalance) return;
 
-    // BEFORE snapshot (assets-based)
-    const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
-      assetsRef.current,
-      poolInputTokenAddr
-    );
-    const usdcBeforeBd = getTokenBalanceFromAssets(assetsRef.current, usdcAddr);
+      const usdcAddr = USDC.addresses?.[chainId] as string | undefined;
+      const poolInputTokenAddr = selectedPool.address;
 
-    const prevKey = makeBalancesSnapshotKey({
-      assets: assetsRef.current,
-      watchTokenAddrs: [usdcAddr ?? ""],
-      watchStakedInputTokenAddrs: [poolInputTokenAddr],
-    });
+      // BEFORE snapshot (assets-based)
+      const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
+        assetsRef.current,
+        poolInputTokenAddr
+      );
+      const usdcBeforeBd = getTokenBalanceFromAssets(
+        assetsRef.current,
+        usdcAddr
+      );
 
-    console.log("[PAY][BEFORE]", {
-      stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-      usdcBefore: usdcBeforeBd?.toPrecisionString(true, true),
-      usdcAddr,
-      poolInputTokenAddr,
-      prevKey,
-      balancesVersion: assetsRef.current?.balancesVersion,
-    });
+      const prevKey = makeBalancesSnapshotKey({
+        assets: assetsRef.current,
+        watchTokenAddrs: [usdcAddr ?? ""],
+        watchStakedInputTokenAddrs: [poolInputTokenAddr],
+      });
 
-    const sharesDecimals = findVaultDecimalsByPoolAddress(
-      chainId,
-      safeLower(selectedPool.address)
-    );
+      console.log("[PAY][BEFORE]", {
+        stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
+        usdcBefore: usdcBeforeBd?.toPrecisionString(true, true),
+        usdcAddr,
+        poolInputTokenAddr,
+        prevKey,
+        balancesVersion: assetsRef.current?.balancesVersion,
+      });
 
-    // viem parseUnits 가능한 형태로
-    const sharesStr = (
-      stakingSharesBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
-    ).toPrecisionString(true, true);
+      const sharesDecimals = findVaultDecimalsByPoolAddress(
+        chainId,
+        safeLower(selectedPool.address)
+      );
 
-    await payAction({
-      chainId,
-      userAddress: userAddress as `0x${string}`,
-      stakingPoolAddress,
-      receiver: receiver as `0x${string}`,
-      payAmount,
-      stakingSharesStr: sharesStr,
-      sharesDecimals,
-      paySummaryNode: PaySummaryNode,
-      writeContract,
-      publicClient,
-      client,
-      transactionContext: tx,
+      // viem parseUnits 가능한 형태로
+      const sharesStr = (
+        stakingSharesBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
+      ).toPrecisionString(true, true);
 
-      onMinedSuccess: async () => {
-        await assetsRef.current?.forceRefresh?.();
+      didSubmit = true;
 
-        await waitForAssetsBalanceChange({
-          assetsRef,
-          prevKey,
-          watchTokenAddrs: [usdcAddr ?? ""],
-          watchStakedInputTokenAddrs: [poolInputTokenAddr],
-        });
+      await payAction({
+        chainId,
+        userAddress: userAddress as `0x${string}`,
+        stakingPoolAddress,
+        receiver: receiver as `0x${string}`,
+        payAmount,
+        stakingSharesStr: sharesStr,
+        sharesDecimals,
+        paySummaryNode: PaySummaryNode,
+        writeContract,
+        publicClient,
+        client,
+        transactionContext: tx,
 
-        const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
-          assetsRef.current,
-          poolInputTokenAddr
-        );
-        const usdcAfterBd = getTokenBalanceFromAssets(
-          assetsRef.current,
-          usdcAddr
-        );
+        onMinedSuccess: async () => {
+          await assetsRef.current?.forceRefresh?.();
 
-        // ✅ PAY stakedDelta는 “after - (before - usedShares)”
-        const usedSharesBd = stakingSharesBd ?? null;
-        const reEnterSharesBd =
-          stakedAfterBd && stakedBeforeBd && usedSharesBd
-            ? stakedAfterBd.subtract(stakedBeforeBd.subtract(usedSharesBd))
-            : null;
+          await waitForAssetsBalanceChange({
+            assetsRef,
+            prevKey,
+            watchTokenAddrs: [usdcAddr ?? ""],
+            watchStakedInputTokenAddrs: [poolInputTokenAddr],
+          });
 
-        const reEnterUsdNum =
-          reEnterSharesBd && poolPriceUsdPerToken
-            ? Number(
-                reEnterSharesBd
-                  .multiply(poolPriceUsdPerToken)
-                  .roundToDecimals(2)
-                  .toPrecisionString(true, true)
-              )
-            : undefined;
+          const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
+            assetsRef.current,
+            poolInputTokenAddr
+          );
+          const usdcAfterBd = getTokenBalanceFromAssets(
+            assetsRef.current,
+            usdcAddr
+          );
 
-        const refundBd =
-          usdcAfterBd && usdcBeforeBd
-            ? usdcAfterBd.subtract(usdcBeforeBd)
-            : null;
+          // ✅ PAY stakedDelta는 “after - (before - usedShares)”
+          const usedSharesBd = stakingSharesBd ?? null;
 
-        console.log("[PAY][AFTER]", {
-          stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
-          usdcAfter: usdcAfterBd?.toPrecisionString(true, true),
-          balancesVersion: assetsRef.current?.balancesVersion,
-        });
+          const reEnterSharesBd =
+            stakedAfterBd && stakedBeforeBd && usedSharesBd
+              ? stakedAfterBd.subtract(stakedBeforeBd.subtract(usedSharesBd))
+              : null;
 
-        console.log("[PAY][DELTA]", {
-          reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
-          refundUsdc: refundBd?.toPrecisionString(true, true),
-        });
+          const reEnterUsdNum =
+            reEnterSharesBd && poolPriceUsdPerToken
+              ? Number(
+                  reEnterSharesBd
+                    .multiply(poolPriceUsdPerToken)
+                    .roundToDecimals(2)
+                    .toPrecisionString(true, true)
+                )
+              : undefined;
 
-        const payResultNode = (
-          <PayResultBlock
-            poolIcon={selectedPool.iconSrc}
-            poolSymbol={selectedPool.symbol}
-            receiver={receiver}
-            stakedUsed={stakingSharesBd ?? undefined}
-            requiredUsdWithTol={requiredUsdWithTolNum}
-            payAmountUsdc={payAmount}
-            reEnter={reEnterSharesBd ?? undefined}
-            reEnterUsd={reEnterUsdNum}
-            refundUsdc={refundBd ?? undefined}
-          />
-        );
+          const refundBd =
+            usdcAfterBd && usdcBeforeBd
+              ? usdcAfterBd.subtract(usdcBeforeBd)
+              : null;
 
-        patchTxConfirmedInfo(
-          tx.setTransactionProps as any,
-          payResultNode,
-          TransactionType.PAY
-        );
-        tx.onOpen();
-      },
-    });
+          console.log("[PAY][AFTER]", {
+            stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
+            usdcAfter: usdcAfterBd?.toPrecisionString(true, true),
+            balancesVersion: assetsRef.current?.balancesVersion,
+          });
+
+          console.log("[PAY][DELTA]", {
+            reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
+            refundUsdc: refundBd?.toPrecisionString(true, true),
+          });
+
+          const payResultNode = (
+            <PayResultBlock
+              poolIcon={selectedPool.iconSrc}
+              poolSymbol={selectedPool.symbol}
+              receiver={receiver}
+              stakedUsed={stakingSharesBd ?? undefined}
+              requiredUsdWithTol={requiredUsdWithTolNum}
+              payAmountUsdc={payAmount}
+              reEnter={reEnterSharesBd ?? undefined}
+              reEnterUsd={reEnterUsdNum}
+              refundUsdc={refundBd ?? undefined}
+            />
+          );
+
+          patchTxConfirmedInfo(
+            tx.setTransactionProps as any,
+            payResultNode,
+            TransactionType.PAY
+          );
+          tx.onOpen();
+        },
+      });
+    } catch (e) {
+      console.warn("[PAY] executePay error", e);
+    } finally {
+      // mined 성공 / 실패 / 지갑 취소 모두 여기로 옴
+      if (didSubmit) {
+        resetPayPanel(); // ✨ PAY 폼 리셋
+      }
+    }
   }, [
     chainId,
     publicClient,
@@ -732,6 +842,7 @@ export default function usePay() {
     tx,
     USDC.addresses,
     requiredUsdWithTolNum,
+    resetPayPanel,
   ]);
 
   // ===== approve WETH (ENTER) =====
@@ -742,13 +853,13 @@ export default function usePay() {
     if (!stakingPoolAddress) return;
     if (!wethAddr) return;
 
-    console.log("[APPROVE][START]", {
-      chainId,
-      userAddress,
-      stakingPoolAddress,
-      wethAddr,
-      enterAmount,
-    });
+    // console.log("[APPROVE][START]", {
+    //   chainId,
+    //   userAddress,
+    //   stakingPoolAddress,
+    //   wethAddr,
+    //   enterAmount,
+    // });
 
     await approveWethForEnter({
       chainId,
@@ -763,7 +874,7 @@ export default function usePay() {
       },
     });
 
-    console.log("[APPROVE][DONE]");
+    // console.log("[APPROVE][DONE]");
   }, [
     chainId,
     publicClient,
@@ -780,244 +891,269 @@ export default function usePay() {
 
   // ===== execute: ENTER =====
   const executeEnter = useCallback(async () => {
-    if (!chainId || !publicClient) return;
-    if (!isConnected || isWrongNetwork) return;
-    if (!userAddress) return;
-    if (!selectedPool || !stakingPoolAddress) return;
-    if (!WRAPPER_ADDRESS) return;
+    let didSubmit = false; // 실제 enter tx 시도 여부
 
-    if (isEmptyAmount(enterAmount)) return;
-    if (isEnterInsufficientBalance) return;
-
-    // WETH 선택 + approve 필요하면 enter 막기
-    if (nativeSymbol === "WETH" && showApproveUI) return;
-
-    const poolInputTokenAddr = selectedPool.address;
-
-    // underlying token addresses (pre-read)
-    let token0Addr: `0x${string}` | undefined;
-    let token1Addr: `0x${string}` | undefined;
     try {
-      const [t0, t1] = await Promise.all([
-        publicClient.readContract({
-          address: stakingPoolAddress,
-          abi: birdieswap_staking_abi,
-          functionName: "i_underlying0",
-          args: [],
-        }),
-        publicClient.readContract({
-          address: stakingPoolAddress,
-          abi: birdieswap_staking_abi,
-          functionName: "i_underlying1",
-          args: [],
-        }),
-      ]);
-      token0Addr = t0 as `0x${string}`;
-      token1Addr = t1 as `0x${string}`;
-    } catch (e) {
-      console.warn("[ENTER][UNDERLYING READ FAIL]", e);
-    }
+      if (!chainId || !publicClient) return;
+      if (!isConnected || isWrongNetwork) return;
+      if (!userAddress) return;
+      if (!selectedPool || !stakingPoolAddress) return;
+      if (!WRAPPER_ADDRESS) return;
 
-    // BEFORE snapshot (assets-based)
-    const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
-      assetsRef.current,
-      poolInputTokenAddr
-    );
+      if (isEmptyAmount(enterAmount)) return;
+      if (isEnterInsufficientBalance) return;
 
-    const token0BeforeBd = token0Addr
-      ? getTokenBalanceFromAssets(assetsRef.current, token0Addr)
-      : null;
-    const token1BeforeBd = token1Addr
-      ? getTokenBalanceFromAssets(assetsRef.current, token1Addr)
-      : null;
+      // WETH 선택 + approve 필요하면 enter 막기
+      if (nativeSymbol === "WETH" && showApproveUI) return;
 
-    const prevKey = makeBalancesSnapshotKey({
-      assets: assetsRef.current,
-      watchTokenAddrs: [token0Addr ?? "", token1Addr ?? ""],
-      watchStakedInputTokenAddrs: [poolInputTokenAddr],
-    });
+      const poolInputTokenAddr = selectedPool.address;
 
-    console.log("[ENTER][BEFORE]", {
-      nativeSymbol,
-      enterAmount,
-      poolInputTokenAddr,
-      stakingPoolAddress,
-      stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-      token0Addr,
-      token1Addr,
-      token0Before: token0BeforeBd?.toPrecisionString(true, true),
-      token1Before: token1BeforeBd?.toPrecisionString(true, true),
-      prevKey,
-      balancesVersion: assetsRef.current?.balancesVersion,
-    });
+      // underlying token addresses (pre-read)
+      let token0Addr: `0x${string}` | undefined;
+      let token1Addr: `0x${string}` | undefined;
+      try {
+        const [t0, t1] = await Promise.all([
+          publicClient.readContract({
+            address: stakingPoolAddress,
+            abi: birdieswap_staking_abi,
+            functionName: "i_underlying0",
+            args: [],
+          }),
+          publicClient.readContract({
+            address: stakingPoolAddress,
+            abi: birdieswap_staking_abi,
+            functionName: "i_underlying1",
+            args: [],
+          }),
+        ]);
+        token0Addr = t0 as `0x${string}`;
+        token1Addr = t1 as `0x${string}`;
+      } catch (e) {
+        console.warn("[ENTER][UNDERLYING READ FAIL]", e);
+      }
 
-    await enter({
-      chainId,
-      userAddress: userAddress as `0x${string}`,
-      stakingPoolAddress,
-      wrapperAddress: WRAPPER_ADDRESS as `0x${string}`,
-      nativeSymbol,
-      amount: enterAmount,
-      enterSummaryNode: EnterSummaryNode,
-      writeContract,
-      publicClient,
-      client,
-      transactionContext: tx,
+      // BEFORE snapshot (assets-based)
+      const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
+        assetsRef.current,
+        poolInputTokenAddr
+      );
 
-      onMinedSuccess: async (m) => {
-        // actions.ts에서 token0/1을 넘겨주고 있다면 그것도 사용
-        const minedToken0 = m?.token0Addr;
-        const minedToken1 = m?.token1Addr;
+      const token0BeforeBd = token0Addr
+        ? getTokenBalanceFromAssets(assetsRef.current, token0Addr)
+        : null;
+      const token1BeforeBd = token1Addr
+        ? getTokenBalanceFromAssets(assetsRef.current, token1Addr)
+        : null;
 
-        const finalToken0 = token0Addr ?? minedToken0;
-        const finalToken1 = token1Addr ?? minedToken1;
+      const prevKey = makeBalancesSnapshotKey({
+        assets: assetsRef.current,
+        watchTokenAddrs: [token0Addr ?? "", token1Addr ?? ""],
+        watchStakedInputTokenAddrs: [poolInputTokenAddr],
+      });
 
-        console.log("[ENTER][MINED CALLBACK]", {
-          hash: m?.hash,
-          token0Addr,
-          token1Addr,
-          minedToken0,
-          minedToken1,
-          finalToken0,
-          finalToken1,
-        });
+      const sharesDecimals = findVaultDecimalsByPoolAddress(
+        chainId,
+        safeLower(selectedPool.address)
+      );
 
-        await assetsRef.current?.forceRefresh?.();
+      // viem parseUnits 가능한 형태로
+      const stakeAmountStr = (
+        enterMinStakeAmountBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
+      ).toPrecisionString(true, true);
 
-        await waitForAssetsBalanceChange({
-          assetsRef,
-          prevKey,
-          watchTokenAddrs: [finalToken0 ?? "", finalToken1 ?? ""],
-          watchStakedInputTokenAddrs: [poolInputTokenAddr],
-        });
+      console.log("[ENTER][BEFORE]", {
+        nativeSymbol,
+        enterAmount,
+        poolInputTokenAddr,
+        stakingPoolAddress,
+        stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
+        token0Addr,
+        token1Addr,
+        token0Before: token0BeforeBd?.toPrecisionString(true, true),
+        token1Before: token1BeforeBd?.toPrecisionString(true, true),
+        prevKey,
+        balancesVersion: assetsRef.current?.balancesVersion,
+        enterMinStakeAmountStr: stakeAmountStr,
+      });
 
-        const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
-          assetsRef.current,
-          poolInputTokenAddr
-        );
+      didSubmit = true;
 
-        const token0AfterBd = finalToken0
-          ? getTokenBalanceFromAssets(assetsRef.current, finalToken0)
-          : null;
-        const token1AfterBd = finalToken1
-          ? getTokenBalanceFromAssets(assetsRef.current, finalToken1)
-          : null;
+      await enter({
+        chainId,
+        userAddress: userAddress as `0x${string}`,
+        stakingPoolAddress,
+        wrapperAddress: WRAPPER_ADDRESS as `0x${string}`,
+        nativeSymbol,
+        amount: enterAmount,
+        enterMinStakeAmountStr: stakeAmountStr,
+        sharesDecimals,
+        enterSummaryNode: EnterSummaryNode,
+        writeContract,
+        publicClient,
+        client,
+        transactionContext: tx,
 
-        const isWethAddr = (addr?: `0x${string}`) =>
-          !!addr && safeLower(addr) === safeLower(wethAddr);
+        onMinedSuccess: async (m) => {
+          // actions.ts에서 token0/1을 넘겨주고 있다면 그것도 사용
+          const minedToken0 = m?.token0Addr;
+          const minedToken1 = m?.token1Addr;
 
-        // WETH로 enter할 때만 의미 있음 (ETH enter면 이 보정 로직 필요 없음)
-        const amountInBd =
-          nativeSymbol === "WETH"
-            ? new BigDecimal(enterAmount || "0", WETH.decimals ?? 18)
+          const finalToken0 = token0Addr ?? minedToken0;
+          const finalToken1 = token1Addr ?? minedToken1;
+
+          console.log("[ENTER][MINED CALLBACK]", {
+            hash: m?.hash,
+            token0Addr,
+            token1Addr,
+            minedToken0,
+            minedToken1,
+            finalToken0,
+            finalToken1,
+          });
+
+          await assetsRef.current?.forceRefresh?.();
+
+          await waitForAssetsBalanceChange({
+            assetsRef,
+            prevKey,
+            watchTokenAddrs: [finalToken0 ?? "", finalToken1 ?? ""],
+            watchStakedInputTokenAddrs: [poolInputTokenAddr],
+          });
+
+          const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
+            assetsRef.current,
+            poolInputTokenAddr
+          );
+
+          const token0AfterBd = finalToken0
+            ? getTokenBalanceFromAssets(assetsRef.current, finalToken0)
+            : null;
+          const token1AfterBd = finalToken1
+            ? getTokenBalanceFromAssets(assetsRef.current, finalToken1)
             : null;
 
-        const stakedDeltaBd =
-          stakedAfterBd && stakedBeforeBd
-            ? stakedAfterBd.subtract(stakedBeforeBd)
-            : undefined;
+          const isWethAddr = (addr?: `0x${string}`) =>
+            !!addr && safeLower(addr) === safeLower(wethAddr);
 
-        const token0BeforeAdj =
-          finalToken0 && token0BeforeBd
-            ? isWethAddr(finalToken0) && amountInBd
-              ? BigDecimal.max(
-                  token0BeforeBd.subtract(amountInBd),
-                  new BigDecimal("0", WETH.decimals ?? 18)
-                )
-              : token0BeforeBd
-            : (token0BeforeBd ?? new BigDecimal("0", 18));
+          // WETH로 enter할 때만 의미 있음 (ETH enter면 이 보정 로직 필요 없음)
+          const amountInBd =
+            nativeSymbol === "WETH"
+              ? new BigDecimal(enterAmount || "0", WETH.decimals ?? 18)
+              : null;
 
-        const token1BeforeAdj =
-          finalToken1 && token1BeforeBd
-            ? isWethAddr(finalToken1) && amountInBd
-              ? BigDecimal.max(
-                  token1BeforeBd.subtract(amountInBd),
-                  new BigDecimal("0", WETH.decimals ?? 18)
-                )
-              : token1BeforeBd
-            : (token1BeforeBd ?? new BigDecimal("0", 18));
-
-        const token0DeltaRaw =
-          finalToken0 && token0AfterBd
-            ? token0AfterBd.subtract(token0BeforeAdj)
-            : undefined;
-
-        const token1DeltaRaw =
-          finalToken1 && token1AfterBd
-            ? token1AfterBd.subtract(token1BeforeAdj)
-            : undefined;
-
-        // ✅ refund는 "표시용": 0이어도 표시(섹션이 사라지지 않게), 음수는 0으로 clamp
-        const token0RefundDisplay =
-          token0DeltaRaw && token0DeltaRaw.gt(new BigDecimal("0", 0))
-            ? token0DeltaRaw
-            : finalToken0
-              ? new BigDecimal("0", 18)
+          const stakedDeltaBd =
+            stakedAfterBd && stakedBeforeBd
+              ? stakedAfterBd.subtract(stakedBeforeBd)
               : undefined;
 
-        const token1RefundDisplay =
-          token1DeltaRaw && token1DeltaRaw.gt(new BigDecimal("0", 0))
-            ? token1DeltaRaw
-            : finalToken1
-              ? new BigDecimal("0", 18)
+          const token0BeforeAdj =
+            finalToken0 && token0BeforeBd
+              ? isWethAddr(finalToken0) && amountInBd
+                ? BigDecimal.max(
+                    token0BeforeBd.subtract(amountInBd),
+                    new BigDecimal("0", WETH.decimals ?? 18)
+                  )
+                : token0BeforeBd
+              : (token0BeforeBd ?? new BigDecimal("0", 18));
+
+          const token1BeforeAdj =
+            finalToken1 && token1BeforeBd
+              ? isWethAddr(finalToken1) && amountInBd
+                ? BigDecimal.max(
+                    token1BeforeBd.subtract(amountInBd),
+                    new BigDecimal("0", WETH.decimals ?? 18)
+                  )
+                : token1BeforeBd
+              : (token1BeforeBd ?? new BigDecimal("0", 18));
+
+          const token0DeltaRaw =
+            finalToken0 && token0AfterBd
+              ? token0AfterBd.subtract(token0BeforeAdj)
               : undefined;
 
-        const token0Meta = finalToken0
-          ? findTokenByAddress(chainId, finalToken0)
-          : undefined;
-        const token1Meta = finalToken1
-          ? findTokenByAddress(chainId, finalToken1)
-          : undefined;
+          const token1DeltaRaw =
+            finalToken1 && token1AfterBd
+              ? token1AfterBd.subtract(token1BeforeAdj)
+              : undefined;
 
-        console.log("[ENTER][AFTER]", {
-          stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
-          stakedDelta: stakedDeltaBd?.toPrecisionString(true, true),
-          token0Addr: finalToken0,
-          token1Addr: finalToken1,
-          token0After: token0AfterBd?.toPrecisionString(true, true),
-          token1After: token1AfterBd?.toPrecisionString(true, true),
-          token0DeltaRaw: token0DeltaRaw?.toPrecisionString(true, true),
-          token1DeltaRaw: token1DeltaRaw?.toPrecisionString(true, true),
-          balancesVersion: assetsRef.current?.balancesVersion,
-        });
+          // ✅ refund는 "표시용": 0이어도 표시(섹션이 사라지지 않게), 음수는 0으로 clamp
+          const token0RefundDisplay =
+            token0DeltaRaw && token0DeltaRaw.gt(new BigDecimal("0", 0))
+              ? token0DeltaRaw
+              : finalToken0
+                ? new BigDecimal("0", 18)
+                : undefined;
 
-        const resultNode = (
-          <EnterResultBlock
-            tokenIcon={enterToken.iconSrc}
-            tokenSymbol={enterToken.symbol}
-            amount={enterAmount}
-            poolIcon={selectedPool.iconSrc}
-            poolSymbol={selectedPool.symbol}
-            stakedDelta={stakedDeltaBd}
-            refund0={
-              finalToken0
-                ? {
-                    tokenIcon: token0Meta?.iconSrc,
-                    symbol: token0Meta?.symbol ?? "Token0",
-                    amount: token0RefundDisplay, // ✅ 0이어도 amount가 있으면 UI 뜸
-                  }
-                : undefined
-            }
-            refund1={
-              finalToken1
-                ? {
-                    tokenIcon: token1Meta?.iconSrc,
-                    symbol: token1Meta?.symbol ?? "Token1",
-                    amount: token1RefundDisplay,
-                  }
-                : undefined
-            }
-          />
-        );
+          const token1RefundDisplay =
+            token1DeltaRaw && token1DeltaRaw.gt(new BigDecimal("0", 0))
+              ? token1DeltaRaw
+              : finalToken1
+                ? new BigDecimal("0", 18)
+                : undefined;
 
-        patchTxConfirmedInfo(
-          tx.setTransactionProps as any,
-          resultNode,
-          TransactionType.ENTER
-        );
-        tx.onOpen();
-      },
-    });
+          const token0Meta = finalToken0
+            ? findTokenByAddress(chainId, finalToken0)
+            : undefined;
+          const token1Meta = finalToken1
+            ? findTokenByAddress(chainId, finalToken1)
+            : undefined;
+
+          console.log("[ENTER][AFTER]", {
+            stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
+            stakedDelta: stakedDeltaBd?.toPrecisionString(true, true),
+            token0Addr: finalToken0,
+            token1Addr: finalToken1,
+            token0After: token0AfterBd?.toPrecisionString(true, true),
+            token1After: token1AfterBd?.toPrecisionString(true, true),
+            token0DeltaRaw: token0DeltaRaw?.toPrecisionString(true, true),
+            token1DeltaRaw: token1DeltaRaw?.toPrecisionString(true, true),
+            balancesVersion: assetsRef.current?.balancesVersion,
+          });
+
+          const resultNode = (
+            <EnterResultBlock
+              tokenIcon={enterToken.iconSrc}
+              tokenSymbol={enterToken.symbol}
+              amount={enterAmount}
+              poolIcon={selectedPool.iconSrc}
+              poolSymbol={selectedPool.symbol}
+              stakedDelta={stakedDeltaBd}
+              refund0={
+                finalToken0
+                  ? {
+                      tokenIcon: token0Meta?.iconSrc,
+                      symbol: token0Meta?.symbol ?? "Token0",
+                      amount: token0RefundDisplay, // ✅ 0이어도 amount가 있으면 UI 뜸
+                    }
+                  : undefined
+              }
+              refund1={
+                finalToken1
+                  ? {
+                      tokenIcon: token1Meta?.iconSrc,
+                      symbol: token1Meta?.symbol ?? "Token1",
+                      amount: token1RefundDisplay,
+                    }
+                  : undefined
+              }
+            />
+          );
+
+          patchTxConfirmedInfo(
+            tx.setTransactionProps as any,
+            resultNode,
+            TransactionType.ENTER
+          );
+          tx.onOpen();
+        },
+      });
+    } catch (e) {
+      console.warn("[ENTER] executeEnter error", e);
+    } finally {
+      if (didSubmit) {
+        resetEnterPanel(); // ✨ ENTER 폼 리셋 (성공/실패/취소 모두)
+      }
+    }
   }, [
     chainId,
     publicClient,
@@ -1037,6 +1173,8 @@ export default function usePay() {
     tx,
     enterToken.iconSrc,
     enterToken.symbol,
+    wethAddr,
+    resetEnterPanel,
   ]);
 
   return {

@@ -40,7 +40,7 @@ export default function ReceiveAmountBox({
 
   // 토큰 수량 표기 (예: 123.45K / 1.23M ...)
   const formattedAmount = useMemo(
-    () => suffixNumbers(amount, 100_000, 2, true, true),
+    () => suffixNumbers(amount, 100_000, 4, true, true),
     [amount, tokenDecimals]
   );
 

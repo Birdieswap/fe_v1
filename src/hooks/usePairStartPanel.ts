@@ -6,8 +6,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { formatUnits, parseUnits, PublicClient } from "viem";
-import { Position as UniV3Position } from "@uniswap/v3-sdk";
+import { parseUnits, PublicClient } from "viem";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -24,7 +23,6 @@ import getInsolvencyAmount from "@/utils/assets/getImpermanentInsolvency";
 import useApprove from "./useApprove";
 import { FarmStartTokenStatus } from "./FarmTokenStatus";
 import useFarmPanelCommon from "./useFarmPanelCommon";
-import useFarmLPBalances from "./useFarmLPBalances";
 import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
@@ -41,10 +39,7 @@ import {
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
-import { useV3UnderlyingFromTokenId } from "./farm/useV3UnderlyingFromTokenId";
-
-import previewFullDeposit from "@/utils/farm/previewFullDeposit";
-import previewRedeem from "@/utils/farm/previewRedeem";
+import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
 
 type NativeMode = "ETH" | "WETH" | null;
 
@@ -59,6 +54,7 @@ export function usePairStartPanel(
   tokenId?: bigint,
   uniswapPoolAddress?: `0x${string}`
 ) {
+  // console.log("usePairStartPanel item", { item });
   const {
     client,
     transactionContext,
@@ -249,23 +245,20 @@ export function usePairStartPanel(
   >([null, null]);
 
   const { assetValues } = useContext(AssetsContext);
-  const { poolBalance0, poolBalance1 } = useFarmLPBalances(item, assetValues);
+
+  const farmCalc = useFarmCalcOnce(
+    client as PublicClient | undefined,
+    item.wip_stakeToken,
+    assetValues
+  );
+
+  const poolBalance0 = farmCalc?.poolBalance0 ?? BigDecimal.ZERO();
+  const poolBalance1 = farmCalc?.poolBalance1 ?? BigDecimal.ZERO();
+
+  const rawPrice = farmCalc?.price ?? null; // BigDecimal | null
+  const price = rawPrice ?? BigDecimal.ZERO(); // UI용 안전한 값
 
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
-
-  const {
-    underlying0: underlyingBalance0,
-    underlying1: underlyingBalance1,
-    v3Pool,
-    v3Position,
-  } = useV3UnderlyingFromTokenId({
-    client: client as any,
-    chainId,
-    tokenId,
-    uniswapPoolAddress,
-    bToken0,
-    bToken1,
-  });
 
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
@@ -325,139 +318,38 @@ export function usePairStartPanel(
     async (value: BigDecimal, index: 0 | 1): Promise<BigDecimal> => {
       const baseUnderlying = index === 0 ? inputToken0 : inputToken1;
       const otherUnderlyingToken = index === 0 ? inputToken1 : inputToken0;
-      const baseBToken = index === 0 ? bToken0 : bToken1;
-      const otherBToken = index === 0 ? bToken1 : bToken0;
 
-      console.log("getOtherAmount called:", {
-        value,
-        index,
-        baseUnderlying,
-        otherUnderlyingToken,
-        baseBToken,
-        otherBToken,
-      });
-      const thisUnderlying =
-        (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
-        BigDecimal.ZERO();
-      const otherUnderlying =
-        (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
-        BigDecimal.ZERO();
-
-      // 1) 기존 포지션 underlying 비율이 있으면 단순 비례로 계산
-      if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
-        return value
-          .mul(otherUnderlying)
-          .div(thisUnderlying)
-          .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
-      }
-
-      // 2) fallback: Uniswap V3 수학 + Birdieswap previewFullDeposit/previewRedeem
-      if (!client || !chainId || !v3Pool || !v3Position) {
+      // 토큰 메타 없으면 계산 불가
+      if (!baseUnderlying || !otherUnderlyingToken) {
         return BigDecimal.ZERO();
       }
 
-      try {
-        // 🔥 baseBToken 의 provider 가 Wrapper 인지 체크
-        const baseProvider = (baseBToken as any).provider;
-
-        const isWrapperProvider =
-          baseProvider === (stakingProviders as any).BIRDIESWAP_Wrapper;
-
-        // 🔥 Wrapper 이면 Router 로 override 해서 previewFullDeposit 호출
-        const providerOverride = isWrapperProvider
-          ? {
-              address: stakingProviders.BIRDIESWAP_Router.addresses?.[
-                chainId
-              ] as `0x${string}`,
-              abi: stakingProviders.BIRDIESWAP_Router.abi as any, // 실제 타입은 Abi
-            }
-          : undefined;
-
-        // 2-1) underlying 입력값 → base bToken 수량으로 변환
-        const bBase = await previewFullDeposit(
-          client as PublicClient,
-          baseBToken,
-          value,
-          providerOverride
-        );
-
-        if (!bBase || bBase.eq(0)) {
-          return BigDecimal.ZERO();
-        }
-
-        const baseBDecimals = baseBToken.decimals ?? 18;
-        const rawBase = parseUnits(
-          bBase.roundToDecimals(baseBDecimals).toString(),
-          baseBDecimals
-        );
-
-        // 2-2) Uniswap V3 SDK 로 other bToken amount 계산
-        let simulatedPos: UniV3Position;
-        if (index === 0) {
-          // base = token0 (bToken0), other = token1 (bToken1) 라고 가정
-          simulatedPos = UniV3Position.fromAmount0({
-            pool: v3Pool as any,
-            tickLower: v3Position.tickLower,
-            tickUpper: v3Position.tickUpper,
-            amount0: rawBase.toString(),
-            useFullPrecision: true,
-          });
-        } else {
-          // base = token1 (bToken1)
-          simulatedPos = UniV3Position.fromAmount1({
-            pool: v3Pool as any,
-            tickLower: v3Position.tickLower,
-            tickUpper: v3Position.tickUpper,
-            amount1: rawBase.toString(),
-          });
-        }
-
-        const amount0Raw = BigInt(
-          (simulatedPos.amount0 as any).quotient.toString()
-        );
-        const amount1Raw = BigInt(
-          (simulatedPos.amount1 as any).quotient.toString()
-        );
-
-        const otherIsToken1 = index === 0;
-        const otherRaw = otherIsToken1 ? amount1Raw : amount0Raw;
-
-        const otherBDecimals = otherBToken.decimals ?? 18;
-        const otherBHuman = formatUnits(otherRaw, otherBDecimals);
-        const otherBAmountBD = new BigDecimal(otherBHuman);
-
-        // 2-3) other bToken 수량 → underlying 수량으로 변환
-        const otherUnderlyingBD = await previewRedeem(
-          client as PublicClient,
-          otherBToken,
-          otherBAmountBD
-        );
-
-        if (!otherUnderlyingBD) {
-          return BigDecimal.ZERO();
-        }
-
-        // UI 표시용으로 상대 underlying 토큰 decimals 기준으로 라운딩
-        return otherUnderlyingBD.roundToDecimals(
-          otherUnderlyingToken.decimals ?? 18
-        );
-      } catch (e) {
-        console.error("[V3] getOtherAmount V3+Birdie fallback failed", e);
+      // 음수/0 방어
+      if (!value || value.lte(0)) {
         return BigDecimal.ZERO();
       }
+
+      // index 기준으로 thisPool / otherPool 선택
+      const thisPool = index === 0 ? poolBalance0 : poolBalance1;
+      const otherPool = index === 0 ? poolBalance1 : poolBalance0;
+
+      // 풀 데이터 없거나 0이면 계산 불가 → 0 리턴
+      if (!thisPool || !otherPool || thisPool.eq(0) || otherPool.eq(0)) {
+        return BigDecimal.ZERO();
+      }
+
+      // 풀 비율:
+      //   poolBalance0 : poolBalance1 = amount0 : amount1
+      // → thisPool : otherPool = value : x
+      // → x = value * otherPool / thisPool
+      const otherAmount = value
+        .mul(otherPool)
+        .div(thisPool)
+        .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
+
+      return otherAmount;
     },
-    [
-      client,
-      chainId,
-      inputToken0,
-      inputToken1,
-      bToken0,
-      bToken1,
-      underlyingBalance0,
-      underlyingBalance1,
-      v3Pool,
-      v3Position,
-    ]
+    [inputToken0, inputToken1, poolBalance0, poolBalance1]
   );
 
   /**
@@ -882,6 +774,7 @@ export function usePairStartPanel(
     displayTokens,
     displayBalances,
     displayApproved,
+    price,
   };
 }
 

@@ -371,22 +371,21 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                       balance.roundToDecimals(5).toPrecisionString(true, true)}
               </span>
               <span className="text-[12px] text-default-700 dark:text-default-300">
-                {!account.isConnected ? (
-                  "Connect Wallet"
-                ) : !isBalanceAvailable ? (
-                  "0" //(<LoadingPulse w="w-20" />)
-                ) : price ? (
-                  "$" +
-                  suffixNumbers(
-                    balance.mul(price).roundToDecimals(2),
-                    0,
-                    2,
-                    false,
-                    false
-                  )
-                ) : (
-                  <LoadingPulse w="w-20" />
-                )}
+                {!account.isConnected
+                  ? "Connect Wallet"
+                  : !isBalanceAvailable
+                    ? "0" //(<LoadingPulse w="w-20" />)
+                    : price
+                      ? "$" +
+                        suffixNumbers(
+                          balance.mul(price).roundToDecimals(2),
+                          0,
+                          2,
+                          false,
+                          false
+                        )
+                      : "0" //<LoadingPulse w="w-20" />
+                }
               </span>
             </div>
           </div>

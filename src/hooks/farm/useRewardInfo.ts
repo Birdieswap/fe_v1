@@ -89,17 +89,26 @@ export function useRewardInfo(item: Farm, priceBD?: BigDecimal | null) {
     },
   });
 
-  const totalEarned = useMemo(() => {
-    if (!earnedResults) return 0n;
+  type EarnedResult = {
+    status: "success" | "failure";
+    result?: bigint | null;
+  };
 
-    return earnedResults.reduce((acc, res) => {
+  const totalEarned = useMemo(() => {
+    // 👇 wagmi가 준 복잡한 타입을 여기서 한 번 단순화해서 받는다
+    const results = earnedResults as EarnedResult[] | undefined;
+
+    if (!results) return 0n;
+
+    let sum = 0n;
+
+    for (const res of results) {
       // wagmi v2: { status: "success" | "failure", result?: any, error?: Error }
-      if (res.status !== "success" || res.result == null) {
-        // 리버트 난 경우 등 -> 그냥 0으로 취급
-        return acc;
-      }
-      return acc + (res.result as bigint);
-    }, 0n);
+      if (res.status !== "success" || res.result == null) continue;
+      sum += res.result;
+    }
+
+    return sum;
   }, [earnedResults]);
 
   const hasEarned = totalEarned > 0n;

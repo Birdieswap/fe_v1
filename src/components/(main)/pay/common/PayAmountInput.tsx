@@ -21,13 +21,13 @@ type LpVault = (typeof lpVaults)[keyof typeof lpVaults];
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 function fmtBd(v?: BigDecimal, decimals = 6) {
-  if (!v) return "-";
+  if (!v) return "0";
   if (v.isZero()) return "0";
   return v.roundToDecimals(decimals).toPrecisionString(true, true);
 }
 
 function fmtUsd(v?: BigDecimal) {
-  if (!v) return "-";
+  if (!v) return "0";
   if (v.isZero()) return "$0.00";
   return "$" + v.roundToDecimals(2).toPrecisionString(true, true);
 }
@@ -273,12 +273,11 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         </div>
       )}
 
-      {mode === "PAY" && (
-        <PayToleranceSection
-          value={pay.tolerance}
-          onChange={pay.setTolerance}
-        />
-      )}
+      <PayToleranceSection
+        mode={mode}
+        value={pay.tolerance}
+        onChange={pay.setTolerance}
+      />
 
       <PayPoolSelector
         mode={mode}
