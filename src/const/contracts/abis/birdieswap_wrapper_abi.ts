@@ -88,6 +88,11 @@ export const birdieswap_wrapper_abi = [
         type: "address",
         internalType: "address",
       },
+      {
+        name: "_minStakeAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     outputs: [
       {

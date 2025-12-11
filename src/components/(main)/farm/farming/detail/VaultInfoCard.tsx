@@ -150,6 +150,8 @@ export default function VaultInfoCard({
     return out;
   }, [extraList, priceNum, totalSupply]);
 
+  console.log("VaultInfoCard", hasAnyExtra, hasPointRate, extraAprMap);
+
   // console.log("VaultInfoCard render:", {
   //   dailyPointNum,
   //   priceNum,
@@ -285,9 +287,10 @@ export default function VaultInfoCard({
               {hasAnyExtra &&
                 extraList.map((er: any) => {
                   const key = `${er.symbol}-${er.indexNumber}`;
-                  const aprPct = extraAprMap[key] ?? null;
+                  const raw = extraAprMap[key];
+                  const aprPct = raw ?? 0; // null/undefined면 0으로
 
-                  if (aprPct == null || aprPct <= 0) return null;
+                  console.log("VaultInfoCard Extra APR:", key, aprPct);
 
                   return (
                     <div
@@ -299,9 +302,7 @@ export default function VaultInfoCard({
                       </p>
                       <div className="grow" />
                       <p className="whitespace-nowrap font-normal">
-                        {aprPct == null
-                          ? "0.00% APR"
-                          : `${aprPct.toFixed(2)}% APR`}
+                        {`${aprPct.toFixed(2)}% APR`}
                       </p>
                     </div>
                   );

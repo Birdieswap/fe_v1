@@ -88,6 +88,8 @@ export default function RewardInfoPanel({
   // console.log("RewardInfoPanel render:", extraList);
   const pointRate = dailyPointNum / price / (totalSupply || 1) / 1e18;
 
+  const showPointRow = dailyPointNum > 0 || hasUserStakePoint;
+
   // console.log("RewardInfoPanel debug:", {
   //   matched,
   //   price,
@@ -148,39 +150,41 @@ export default function RewardInfoPanel({
       </div>
 
       {/* Point Row (웹 그대로) */}
-      <div className={ROW_BASE}>
-        <div className="col-span-1 justify-self-start relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
-          <Icons.PointIcon className="h-full w-full fill-primary text-background" />
-        </div>
-        <div className="col-span-3 min-w-0">
-          <p className="text-[15px] font-semibold">Birdieswap Point</p>
-        </div>
-        <span className={CELL_METRIC}>
-          {dailyPointNum
-            ? `${(dailyPointNum / (price || 1) / (totalSupply || 1) / 1e18).toFixed(4)} /$`
-            : "0.00/$"}
-        </span>
-        <div className={RIGHT_GROUP}>
-          <div className={AMOUNT_INNER}>
-            <p className="font-medium text-sans text-[14px]">
-              {Number(points).toFixed(2) ?? "0"}
-            </p>
+      {showPointRow && (
+        <div className={ROW_BASE}>
+          <div className="col-span-1 justify-self-start relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
+            <Icons.PointIcon className="h-full w-full fill-primary text-background" />
           </div>
-          <Button
-            size="sm"
-            isDisabled
-            className={clsx(
-              BTN_BASE,
-              "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
-              "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
-              "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-              "data-[disabled=true]:pointer-events-none"
-            )}
-          >
-            Point
-          </Button>
+          <div className="col-span-3 min-w-0">
+            <p className="text-[15px] font-semibold">Birdieswap Point</p>
+          </div>
+          <span className={CELL_METRIC}>
+            {dailyPointNum
+              ? `${(dailyPointNum / (price || 1) / (totalSupply || 1) / 1e18).toFixed(4)} /$`
+              : "0.00/$"}
+          </span>
+          <div className={RIGHT_GROUP}>
+            <div className={AMOUNT_INNER}>
+              <p className="font-medium text-sans text-[14px]">
+                {points != null ? Number(points).toFixed(2) : "0"}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              isDisabled
+              className={clsx(
+                BTN_BASE,
+                "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
+                "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
+                "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
+                "data-[disabled=true]:pointer-events-none"
+              )}
+            >
+              Point
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Extra Rewards */}
       <div className="mt-4 rounded-sm bg-background text-sm">

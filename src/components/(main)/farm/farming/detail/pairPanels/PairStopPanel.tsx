@@ -12,14 +12,9 @@ import PairStopAmountInput from "./pairStop/PairStopAmountInput";
 import PairStopReceiveAmountBox from "./pairStop/PairStopReceiveAmountBox";
 import PairStopSummary from "./pairStop/PairStopSummary";
 
-export function PairStopPanel({
-  item,
-  price,
-}: {
-  item: FarmPair;
-  price: BigDecimal | null;
-}) {
+export function PairStopPanel({ item }: { item: FarmPair }) {
   const state = usePairStopPanel(item);
+  const price = state.price ?? BigDecimal.ZERO();
 
   const sym0 = state.displayTokens?.[0]?.symbol;
   const sym1 = state.displayTokens?.[1]?.symbol;

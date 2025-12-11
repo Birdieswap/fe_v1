@@ -287,6 +287,8 @@ export async function enter(params: {
 
   nativeSymbol: "ETH" | "WETH";
   amount: string;
+  enterMinStakeAmountStr: string;
+  sharesDecimals: number;
   enterSummaryNode: React.ReactNode;
 
   writeContract: WriteContractMutate<Config, unknown>;
@@ -307,6 +309,8 @@ export async function enter(params: {
     wrapperAddress,
     nativeSymbol,
     amount,
+    enterMinStakeAmountStr,
+    sharesDecimals,
     enterSummaryNode,
     writeContract,
     publicClient,
@@ -318,6 +322,11 @@ export async function enter(params: {
   const WETH = tokens.WETH;
   const wethAddr = WETH.addresses?.[chainId] as `0x${string}` | undefined;
   if (!wethAddr) throw new Error("WETH address not found for chain");
+
+  const minStakeAmount = parseUnits(
+    sanitizeDecimalInput(enterMinStakeAmountStr || "0") || "0",
+    sharesDecimals
+  );
 
   // underlying0/1 (result 계산용)
   const [token0Addr, token1Addr] = await Promise.all([
@@ -367,7 +376,7 @@ export async function enter(params: {
       address: wrapperAddress,
       abi: birdieswap_wrapper_abi,
       functionName: "easyEnterWithETH",
-      args: [stakingPoolAddress],
+      args: [stakingPoolAddress, minStakeAmount],
       value,
     });
   } else {
@@ -377,7 +386,7 @@ export async function enter(params: {
       address: stakingPoolAddress,
       abi: birdieswap_staking_abi,
       functionName: "easyEnter",
-      args: [wethAddr, amountIn, userAddress, userAddress],
+      args: [wethAddr, amountIn, userAddress, userAddress, minStakeAmount],
     });
   }
 
