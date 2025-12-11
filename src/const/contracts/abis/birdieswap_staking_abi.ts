@@ -267,6 +267,11 @@ export const birdieswap_staking_abi = [
         type: "address",
         internalType: "address",
       },
+      {
+        name: "_minStakeAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
     ],
     outputs: [
       {
@@ -831,6 +836,11 @@ export const birdieswap_staking_abi = [
   {
     type: "error",
     name: "BirdieswapStakingV1__EasyEnterAlreadyPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterMinStakeNotMet",
     inputs: [],
   },
   {

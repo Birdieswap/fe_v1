@@ -13,7 +13,7 @@ import PanelButtons, {
 } from "@/components/(main)/pay/common/PanelButton";
 
 export default function PayIndex() {
-  const [selectedPanel, setSelectedPanel] = useState<Mode>("PAY");
+  const [selectedPanel, setSelectedPanel] = useState<Mode>("ENTER");
 
   const ENTER = { type: "tween", duration: 0.5, ease: [0.22, 0.61, 0.36, 1] };
   const EXIT = { type: "tween", duration: 0.32, ease: [0.4, 0.0, 1, 1] };
@@ -43,11 +43,11 @@ export default function PayIndex() {
             {...defaultTransition}
             className="flex h-12 flex-row"
           >
-            <PanelButtons.Pay
+            <PanelButtons.Enter
               selectedPanel={selectedPanel}
               setSelectedPanel={setSelectedPanel}
             />
-            <PanelButtons.Enter
+            <PanelButtons.Pay
               selectedPanel={selectedPanel}
               setSelectedPanel={setSelectedPanel}
             />

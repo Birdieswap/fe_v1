@@ -5,13 +5,14 @@ import { BigDecimal } from "@/types/BigDecimal";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import useFarmStopPanelCommon, { StopRoute } from "./useFarmStopPanelCommon";
-import useFarmLPBalances from "./useFarmLPBalances";
-import { parseUnits } from "viem";
+import { parseUnits, PublicClient } from "viem";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
 import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
+import { useClient } from "wagmi";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -22,8 +23,18 @@ export enum InvalidStatuses {
 type NativeMode = "ETH" | "WETH" | null;
 
 export function usePairStopPanel(item: FarmPair) {
+  const client = useClient();
   const { assetValues } = useContext(AssetsContext);
-  const { poolBalance0, poolBalance1 } = useFarmLPBalances(item, assetValues);
+  const farmCalc = useFarmCalcOnce(
+    client as PublicClient | undefined,
+    item.wip_stakeToken,
+    assetValues
+  );
+
+  const poolBalance0 = farmCalc?.poolBalance0 ?? BigDecimal.ZERO();
+  const poolBalance1 = farmCalc?.poolBalance1 ?? BigDecimal.ZERO();
+  const rawPrice = farmCalc?.price ?? null; // BigDecimal | null
+  const price = rawPrice ?? BigDecimal.ZERO(); // UI용 안전한 값
 
   const [bToken0, bToken1] = item.wip_stakeToken.swap.input;
   const inputToken0 = bToken0.input;
@@ -256,6 +267,7 @@ export function usePairStopPanel(item: FarmPair) {
     chainId,
     poolBalance0,
     poolBalance1,
+    price,
   };
 }
 

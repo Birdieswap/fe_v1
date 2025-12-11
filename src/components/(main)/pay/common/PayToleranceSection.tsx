@@ -21,6 +21,7 @@ import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
 interface Props {
+  mode: "PAY" | "ENTER";
   value: "auto" | number;
   onChange: (value: "auto" | number) => void;
 }
@@ -28,13 +29,14 @@ interface Props {
 // Auto 기본값: 5%
 const DEFAULT_AUTO_STR = "5";
 
-export default function PayToleranceSection({ value, onChange }: Props) {
+export default function PayToleranceSection({ mode, value, onChange }: Props) {
   const [custom, setCustom] = useState<string>(DEFAULT_AUTO_STR);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isAuto = value === "auto";
 
   const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const isPay = mode === "PAY";
 
   // value가 "auto" 로 바뀔 때만 표시값을 5로 리셋
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function PayToleranceSection({ value, onChange }: Props) {
           {/* 모바일: Pay tolerance + i 버튼 한 줄 */}
           <div className="flex items-center gap-1 sm:hidden">
             <span className="text-sm font-semibold text-default-700">
-              Pay tolerance
+              {isPay ? "Pay tolerance" : "Enter tolerance"}
             </span>
             <InfoIconButton onClick={onOpen} />
           </div>
@@ -120,10 +122,10 @@ export default function PayToleranceSection({ value, onChange }: Props) {
           {/* 데스크탑: Pay / tolerance 두 줄 + 가운데 정렬된 i 버튼 */}
           <div className="hidden sm:flex items-center gap-1">
             <div className="flex flex-col leading-tight">
-              <span className="text-sm font-semibold text-default-700">
-                Pay
+              <span className="text-sm text-center font-semibold text-default-700">
+                {isPay ? "Pay" : "Enter"}
               </span>
-              <span className="text-sm font-semibold text-default-700">
+              <span className="text-sm text-center font-semibold text-default-700">
                 tolerance
               </span>
             </div>
@@ -230,20 +232,35 @@ export default function PayToleranceSection({ value, onChange }: Props) {
         <ModalContent>
           <ModalHeader className="px-0 pb-5 flex justify-center">
             <h1 className="text-xl font-semibold text-foreground">
-              Pay Tolerance
+              {isPay ? "Pay Tolerance" : "Enter Tolerance"}
             </h1>
           </ModalHeader>
 
           <ModalBody className="px-0 py-3">
-            <p className="text-base text-foreground">
-              To ensure the exact amount is delivered in a Pay transaction, we
-              temporarily withdraw an additional amount based on the Pay
-              tolerance (in USD value).
-            </p>
-            <p className="mt-3 mb-5 text-base text-foreground">
-              Any remaining USDC after the payment is completed is returned to
-              your wallet.
-            </p>
+            {isPay ? (
+              <>
+                <p className="text-base text-foreground">
+                  To ensure the exact amount is delivered in a Pay transaction,
+                  we temporarily withdraw an additional amount based on the Pay
+                  tolerance (in USD value).
+                </p>
+                <p className="mt-3 mb-5 text-base text-foreground">
+                  Any remaining USDC after the payment is completed is returned
+                  to your wallet.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-base text-foreground">
+                  Sets the maximum allowed loss (in USD) from price impact and
+                  slippage during Easy Enter.
+                </p>
+                <p className="mt-3 mb-5 text-base text-foreground">
+                  If the expected loss exceeds this tolerance, the transaction
+                  is halted to protect your assets.
+                </p>
+              </>
+            )}
           </ModalBody>
           <ModalFooter className="p-0">
             <ThemedButton variant="MINT" onPress={onClose}>
