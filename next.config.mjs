@@ -31,6 +31,15 @@ const nextConfig = {
     ],
   },
 
+  compiler: {
+    // prod 빌드에서 console.* 제거
+    // 에러/경고는 남기고 싶으면 exclude 사용
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? { exclude: ["error", "warn"] }
+        : false,
+  },
+
   webpack(config, { isServer, dev }) {
     //  dev에서 파일시스템 캐시 대신 메모리 캐시 → ENOENT 방지
     if (dev) {

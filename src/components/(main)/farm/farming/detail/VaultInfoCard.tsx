@@ -150,7 +150,7 @@ export default function VaultInfoCard({
     return out;
   }, [extraList, priceNum, totalSupply]);
 
-  console.log("VaultInfoCard", hasAnyExtra, hasPointRate, extraAprMap);
+  // console.log("VaultInfoCard", hasAnyExtra, hasPointRate, extraAprMap);
 
   // console.log("VaultInfoCard render:", {
   //   dailyPointNum,
@@ -290,7 +290,7 @@ export default function VaultInfoCard({
                   const raw = extraAprMap[key];
                   const aprPct = raw ?? 0; // null/undefined면 0으로
 
-                  console.log("VaultInfoCard Extra APR:", key, aprPct);
+                  // console.log("VaultInfoCard Extra APR:", key, aprPct);
 
                   return (
                     <div

@@ -273,15 +273,15 @@ export default function useSwapTokens({
       lastPIRef.current = key;
       setPriceImpact?.(pi);
 
-      if (DEBUG_SWAP_PI) {
-        console.log("[swap PI]", {
-          pairKey,
-          midOwner: midOwnerRef.current,
-          exchangeRate: exchangeRateBD.toPrecisionString(true, false),
-          midPoolPrice: midPoolPrice.toPrecisionString(true, false),
-          pi: pi.toPrecisionString(true, false),
-        });
-      }
+      // if (DEBUG_SWAP_PI) {
+      //   console.log("[swap PI]", {
+      //     pairKey,
+      //     midOwner: midOwnerRef.current,
+      //     exchangeRate: exchangeRateBD.toPrecisionString(true, false),
+      //     midPoolPrice: midPoolPrice.toPrecisionString(true, false),
+      //     pi: pi.toPrecisionString(true, false),
+      //   });
+      // }
     }
   }, [exchangeRateBD, midPoolPrice, pairKey, setPriceImpact]);
 

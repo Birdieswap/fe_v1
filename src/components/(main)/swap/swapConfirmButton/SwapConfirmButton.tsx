@@ -19,6 +19,7 @@ import ThemedButton, {
 import { useSwapContext } from "@/components/(main)/swap/SwapProvider";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { BigDecimal } from "@/types/BigDecimal";
+import useIsWrongNetwork from "@/hooks/useIsWrongNetwork";
 
 export function ButtonWithPresence(props: PropsWithoutRef<ThemedButtonProps>) {
   return (
@@ -110,7 +111,7 @@ export default function SwapConfirmButton() {
 
     return new BigDecimal(fromAmount, fromToken.decimals).gt(fromBalance);
   }, [fromAmount, fromToken, fromBalance]);
-  const isWrongNetwork = chainId !== 11155111 && chainId !== 8453;
+  const isWrongNetwork = useIsWrongNetwork(chainId);
   const { onPress, isDisabled, buttonText, buttonVariant } = useMemo(() => {
     const isLoading =
       isLoadingFrom || isLoadingTo || isPending || isApprovePending;
