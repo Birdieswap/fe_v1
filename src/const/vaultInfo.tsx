@@ -1,4 +1,5 @@
 import { Vault } from "@/types/FarmListTableRowProps";
+import { contractAddresses } from "./contracts/contractAddresses";
 
 const BUSDC_harvest_autopilot_V1: Vault = {
   name: "bUSDC_Harvest_Autopilot_v1",
@@ -238,6 +239,25 @@ const REWARD_BIRDIE: Vault = {
     underlyingProtocolName: "Crypttempo",
     underlyingProtocolInfo: {
       rewardToken: "WETH",
+      rewardTokenContract: "0x0000000000000000000000000000000000000000",
+      rewardAPR: "12.3%",
+    },
+    vaultContract: "0x0000000000000000000000000000000000000000",
+    receiptToken: "0x0000000000000000000000000000000000000000",
+  },
+  apy: 1.17,
+};
+
+const REWARD_iFARM: Vault = {
+  name: "Reward - Birdie",
+  details: {
+    summary:
+      "This Vault offers users a streamlined way to earn competitive returns on their assets by utilizing automated, low-risk strategies across multiple DeFi protocols.",
+    title: "Caging reward information",
+    subtitle: "iFARM",
+    underlyingProtocolName: "Harvest Finance",
+    underlyingProtocolInfo: {
+      rewardToken: "iFARM",
       rewardTokenContract: "0x0000000000000000000000000000000000000000",
       rewardAPR: "12.3%",
     },

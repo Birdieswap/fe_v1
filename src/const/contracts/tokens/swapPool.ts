@@ -232,6 +232,58 @@ const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
   },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
+const blpUniswapHarvestAutopilotiFARMWETH = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "biFARMETH",
+  fullName: "Birdieswap iFARM 10000 ETH",
+  addresses: {
+    [networks.base.id]: contractAddresses.base.IFARM_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .IFARM_WETH_POOL as `0x${string}`,
+  },
+  decimals: 8,
+  fee_tier: 10000,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotiFARM,
+    singleVaults.bHarvestAutopilotWETH,
+  ],
+  tokenId: {
+    [networks.base.id]: pool_tokenIds.base.WBTC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
+const blpUniswapHarvestAutopilotiFARMETH = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "biFARMETH",
+  fullName: "Birdieswap iFARM 10000 ETH",
+  addresses: {
+    [networks.base.id]: contractAddresses.base.IFARM_WETH_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .IFARM_WETH_POOL as `0x${string}`,
+  },
+  decimals: 8,
+  fee_tier: 10000,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotiFARM,
+    singleVaults.bHarvestAutopilotETH,
+  ],
+  tokenId: {
+    [networks.base.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
+      | string
+      | number,
+  },
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
+
 const swapPools = {
   blpUniswapHarvestAutopilotWETHUSDC,
   blpUniswapHarvestAutopilotETHUSDC,
@@ -242,6 +294,8 @@ const swapPools = {
   blpUniswapHarvestAutopilotUSDCWBTC,
   blpUniswapHarvestAutopilotWBTCWETH,
   blpUniswapHarvestAutopilotWBTCETH,
+  blpUniswapHarvestAutopilotiFARMWETH,
+  blpUniswapHarvestAutopilotiFARMETH,
 };
 
 export default swapPools;
