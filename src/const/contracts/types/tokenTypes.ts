@@ -106,6 +106,7 @@ export type ISwapPool<T extends ITokenBase = ITokenBase> = IContractBase & {
   protocol: string; // i.e. Uniswap V2, etc.
   isInternal?: boolean; // Whether this is an internal pool (e.g. Birdie LP)
   input: [T, T];
+  lpVaultKey?: string;
   tokenId?: {
     [networkId: number]: string | number;
   };

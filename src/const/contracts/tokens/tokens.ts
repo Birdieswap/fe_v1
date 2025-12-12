@@ -93,13 +93,28 @@ const EURC = CurrencyGuard({
   iconSrc: "/tokens/EURC.svg",
 } as const);
 
+const iFARM = CurrencyGuard({
+  type: EContractType.CURRENCY,
+  symbol: "iFARM",
+  fullName: "IFARM",
+  addresses: {
+    [networks.base.id]: contractAddresses.base.IFARM as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.IFARM as `0x${string}`,
+  },
+  abi: erc20_abi,
+  decimals: 18,
+  displayDecimals: 6,
+  iconSrc: "/tokens/iFARM.svg",
+} as const);
+
 const tokens = {
   ETH,
   WETH,
   USDC,
   WBTC,
   CBBTC,
-  // EURC
+  // EURC,
+  iFARM,
 };
 
 export default tokens;

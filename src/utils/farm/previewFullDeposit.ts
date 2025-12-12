@@ -40,7 +40,7 @@ export default async function previewFullDeposit(
   const abi: Abi =
     (providerOverride?.abi as Abi | undefined) ?? (farm.provider.abi as Abi);
 
-  console.log("previewFulDeposit ", farm);
+  // console.log("previewFulDeposit ", farm);
 
   if (!farmAddress) return null;
 

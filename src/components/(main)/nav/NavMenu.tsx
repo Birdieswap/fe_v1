@@ -94,9 +94,9 @@ export default function NavMenu(props: ReturnType<typeof useDisclosure>) {
                 <span>FARM</span>
               </MobileNavLink>
 
-              <MobileNavLink href="/pay" onClick={onClose}>
+              {/* <MobileNavLink href="/pay" onClick={onClose}>
                 <span>PAY</span>
-              </MobileNavLink>
+              </MobileNavLink> */}
 
               <MobileNavLink
                 href="https://docs.birdieswap.com"

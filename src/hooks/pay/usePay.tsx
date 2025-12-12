@@ -365,13 +365,13 @@ export default function usePay() {
     return enterIdealStakeAmountBd.multiply(factor);
   }, [enterIdealStakeAmountBd, tolPct]);
 
-  console.log("[ENTER CALC]", {
-    enterTokenUsdPriceBd,
-    enterAmountUsdBd,
-    poolPriceUsdPerToken,
-    enterIdealStakeAmountBd,
-    enterMinStakeAmountBd,
-  });
+  // console.log("[ENTER CALC]", {
+  //   enterTokenUsdPriceBd,
+  //   enterAmountUsdBd,
+  //   poolPriceUsdPerToken,
+  //   enterIdealStakeAmountBd,
+  //   enterMinStakeAmountBd,
+  // });
 
   // ENTER balances (wagmi useBalance)
   const enterTokenAddress = useMemo(() => {
@@ -686,14 +686,14 @@ export default function usePay() {
         watchStakedInputTokenAddrs: [poolInputTokenAddr],
       });
 
-      console.log("[PAY][BEFORE]", {
-        stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-        usdcBefore: usdcBeforeBd?.toPrecisionString(true, true),
-        usdcAddr,
-        poolInputTokenAddr,
-        prevKey,
-        balancesVersion: assetsRef.current?.balancesVersion,
-      });
+      // console.log("[PAY][BEFORE]", {
+      //   stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
+      //   usdcBefore: usdcBeforeBd?.toPrecisionString(true, true),
+      //   usdcAddr,
+      //   poolInputTokenAddr,
+      //   prevKey,
+      //   balancesVersion: assetsRef.current?.balancesVersion,
+      // });
 
       const sharesDecimals = findVaultDecimalsByPoolAddress(
         chainId,
@@ -763,16 +763,16 @@ export default function usePay() {
               ? usdcAfterBd.subtract(usdcBeforeBd)
               : null;
 
-          console.log("[PAY][AFTER]", {
-            stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
-            usdcAfter: usdcAfterBd?.toPrecisionString(true, true),
-            balancesVersion: assetsRef.current?.balancesVersion,
-          });
+          // console.log("[PAY][AFTER]", {
+          //   stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
+          //   usdcAfter: usdcAfterBd?.toPrecisionString(true, true),
+          //   balancesVersion: assetsRef.current?.balancesVersion,
+          // });
 
-          console.log("[PAY][DELTA]", {
-            reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
-            refundUsdc: refundBd?.toPrecisionString(true, true),
-          });
+          // console.log("[PAY][DELTA]", {
+          //   reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
+          //   refundUsdc: refundBd?.toPrecisionString(true, true),
+          // });
 
           const payResultNode = (
             <PayResultBlock
@@ -941,20 +941,20 @@ export default function usePay() {
         enterMinStakeAmountBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
       ).toPrecisionString(true, true);
 
-      console.log("[ENTER][BEFORE]", {
-        nativeSymbol,
-        enterAmount,
-        poolInputTokenAddr,
-        stakingPoolAddress,
-        stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-        token0Addr,
-        token1Addr,
-        token0Before: token0BeforeBd?.toPrecisionString(true, true),
-        token1Before: token1BeforeBd?.toPrecisionString(true, true),
-        prevKey,
-        balancesVersion: assetsRef.current?.balancesVersion,
-        enterMinStakeAmountStr: stakeAmountStr,
-      });
+      // console.log("[ENTER][BEFORE]", {
+      //   nativeSymbol,
+      //   enterAmount,
+      //   poolInputTokenAddr,
+      //   stakingPoolAddress,
+      //   stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
+      //   token0Addr,
+      //   token1Addr,
+      //   token0Before: token0BeforeBd?.toPrecisionString(true, true),
+      //   token1Before: token1BeforeBd?.toPrecisionString(true, true),
+      //   prevKey,
+      //   balancesVersion: assetsRef.current?.balancesVersion,
+      //   enterMinStakeAmountStr: stakeAmountStr,
+      // });
 
       didSubmit = true;
 
@@ -981,15 +981,15 @@ export default function usePay() {
           const finalToken0 = token0Addr ?? minedToken0;
           const finalToken1 = token1Addr ?? minedToken1;
 
-          console.log("[ENTER][MINED CALLBACK]", {
-            hash: m?.hash,
-            token0Addr,
-            token1Addr,
-            minedToken0,
-            minedToken1,
-            finalToken0,
-            finalToken1,
-          });
+          // console.log("[ENTER][MINED CALLBACK]", {
+          //   hash: m?.hash,
+          //   token0Addr,
+          //   token1Addr,
+          //   minedToken0,
+          //   minedToken1,
+          //   finalToken0,
+          //   finalToken1,
+          // });
 
           await assetsRef.current?.forceRefresh?.();
 
@@ -1078,17 +1078,17 @@ export default function usePay() {
             ? findTokenByAddress(chainId, finalToken1)
             : undefined;
 
-          console.log("[ENTER][AFTER]", {
-            stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
-            stakedDelta: stakedDeltaBd?.toPrecisionString(true, true),
-            token0Addr: finalToken0,
-            token1Addr: finalToken1,
-            token0After: token0AfterBd?.toPrecisionString(true, true),
-            token1After: token1AfterBd?.toPrecisionString(true, true),
-            token0DeltaRaw: token0DeltaRaw?.toPrecisionString(true, true),
-            token1DeltaRaw: token1DeltaRaw?.toPrecisionString(true, true),
-            balancesVersion: assetsRef.current?.balancesVersion,
-          });
+          // console.log("[ENTER][AFTER]", {
+          //   stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
+          //   stakedDelta: stakedDeltaBd?.toPrecisionString(true, true),
+          //   token0Addr: finalToken0,
+          //   token1Addr: finalToken1,
+          //   token0After: token0AfterBd?.toPrecisionString(true, true),
+          //   token1After: token1AfterBd?.toPrecisionString(true, true),
+          //   token0DeltaRaw: token0DeltaRaw?.toPrecisionString(true, true),
+          //   token1DeltaRaw: token1DeltaRaw?.toPrecisionString(true, true),
+          //   balancesVersion: assetsRef.current?.balancesVersion,
+          // });
 
           const resultNode = (
             <EnterResultBlock

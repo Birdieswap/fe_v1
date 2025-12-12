@@ -30,9 +30,7 @@ import IconTransactionCanceled from "./transactionProgress/transaction_canceled.
 
 const Lottie = dynamic(
   () => import("lottie-react").then((mod) => mod.default),
-  {
-    ssr: false,
-  }
+  { ssr: false }
 );
 
 const transition = {
@@ -94,6 +92,67 @@ function formatTokenAmount(raw: any): string {
   }
 
   return "";
+}
+
+/**
+ * ✅ viewport(window) 기준으로, 좌/우 하단에서 동시에 안쪽(약 45도)으로
+ * 더 풍성하고 더 높게 터지는 confetti
+ */
+function fireCornerConfettiRich() {
+  if (typeof window === "undefined") return;
+
+  const canvas = document.createElement("canvas");
+  canvas.style.position = "fixed";
+  canvas.style.inset = "0";
+  canvas.style.width = "100vw";
+  canvas.style.height = "100vh";
+  canvas.style.pointerEvents = "none";
+  canvas.style.zIndex = "9999";
+  document.body.appendChild(canvas);
+
+  const myConfetti = confetti.create(canvas, {
+    resize: true,
+    useWorker: true,
+  });
+
+  const common = {
+    spread: 78,
+    startVelocity: 70, // ✅ 더 높게(초기 속도↑)
+    ticks: 320, // ✅ 더 오래 날아가게
+    gravity: 0.8, // ✅ 조금 더 높게 유지
+    decay: 0.92, // ✅ 속도 감쇠 완만
+    scalar: 1.1, // ✅ 약간 더 큼(풍성)
+  };
+
+  const shootBothSides = (particleCount: number) => {
+    // ✅ 왼쪽/오른쪽 "동시에" (같은 tick 안에서 2번 호출)
+    myConfetti({
+      ...common,
+      particleCount,
+      angle: 55, // 왼쪽 아래 -> 오른쪽 위
+      origin: { x: 0.03, y: 0.98 },
+    });
+    myConfetti({
+      ...common,
+      particleCount,
+      angle: 125, // 오른쪽 아래 -> 왼쪽 위
+      origin: { x: 0.97, y: 0.98 },
+    });
+  };
+
+  // ✅ 더 풍성하게: 짧은 간격으로 3연발 (각 연발은 좌/우 동시)
+  shootBothSides(160);
+  window.setTimeout(() => shootBothSides(140), 120);
+  window.setTimeout(() => shootBothSides(120), 240);
+
+  // cleanup
+  window.setTimeout(() => {
+    try {
+      myConfetti.reset();
+    } finally {
+      canvas.remove();
+    }
+  }, 4500);
 }
 
 function AddToWallet(props: { token?: IToken }) {
@@ -199,7 +258,7 @@ export default function TransactionProgressModal(
     return null;
   }, [props.transactionProps, transactionStatus]);
 
-  // ✅ SUCCESS + fireConfetti + swapBenchmarkInfo 있을 때 폭죽
+  // ✅ SUCCESS + fireConfetti + swapBenchmarkInfo 있을 때: viewport 기준 좌/우 동시 풍성 confetti
   useEffect(() => {
     const p: any = props.transactionProps;
     if (
@@ -209,7 +268,7 @@ export default function TransactionProgressModal(
       !didConfettiRef.current
     ) {
       didConfettiRef.current = true;
-      confetti({ particleCount: 120, spread: 70, origin: { y: 0.72 } });
+      fireCornerConfettiRich();
     }
   }, [transactionStatus, props.transactionProps]);
 

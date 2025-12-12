@@ -13,9 +13,11 @@ const blpHarvestAutopilotETHUSDC = BirdieLPFarmGuard({
   symbol: "bUSDCWETH",
   fullName: "Birdieswap USDC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_VAULT as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.USDC_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .USDC_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Wrapper,
@@ -31,9 +33,11 @@ const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
   symbol: "bUSDCWETH",
   fullName: "Birdieswap USDC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.USDC_WETH_VAULT as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.USDC_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .USDC_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
@@ -103,8 +107,10 @@ const blpHarvestAutopilotUSDCWBTC = BirdieLPFarmGuard({
   symbol: "bUSDCWBTC",
   fullName: "Birdieswap USDC 3000 WBTC",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_USDC_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_USDC_VAULT as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_USDC_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_USDC_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
@@ -120,8 +126,10 @@ const blpHarvestAutopilotWBTCWETH = BirdieLPFarmGuard({
   symbol: "bWBTCWETH",
   fullName: "Birdieswap WBTC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_WETH_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_WETH_VAULT as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
@@ -137,13 +145,53 @@ const blpHarvestAutopilotWBTCETH = BirdieLPFarmGuard({
   symbol: "bWBTCWETH",
   fullName: "Birdieswap WBTC 3000 WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC_WETH_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC_WETH_VAULT as `0x${string}`,
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .WBTC_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .WBTC_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Wrapper,
   swap: swapPools.blpUniswapHarvestAutopilotWBTCETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotWBTCETH,
+  decimals: 8,
+  displayDecimals: 4,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
+
+const blpHarvestAutopilotiFARMWETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "biFARMWETH",
+  fullName: "Birdieswap iFARM 10000 WETH",
+  addresses: {
+    [networks.base.id]: contractAddresses.base
+      .IFARM_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .IFARM_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Router,
+  swap: swapPools.blpUniswapHarvestAutopilotiFARMWETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotiFARMWETH,
+  decimals: 8,
+  displayDecimals: 4,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
+
+const blpHarvestAutopilotiFARMETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "biFARMETH",
+  fullName: "Birdieswap iFARM 10000 ETH",
+  addresses: {
+    [networks.base.id]: contractAddresses.base
+      .IFARM_WETH_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .IFARM_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotiFARMETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotiFARMETH,
   decimals: 8,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
@@ -173,6 +221,8 @@ const lpVaults = {
   blpHarvestAutopilotUSDCWBTC,
   blpHarvestAutopilotWBTCWETH,
   blpHarvestAutopilotWBTCETH,
+  blpHarvestAutopilotiFARMWETH,
+  blpHarvestAutopilotiFARMETH,
   // blpHarvestAutopilotCBBTCUSDC,
   // blpHarvestAutopilotCBBTCWETH,
   // blpHarvestAutopilotCBBTCETH,

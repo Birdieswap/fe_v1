@@ -1,4 +1,10 @@
-import { Abi, Chain, erc20Abi, PublicClient, ReadContractParameters } from "viem";
+import {
+  Abi,
+  Chain,
+  erc20Abi,
+  PublicClient,
+  ReadContractParameters,
+} from "viem";
 import { readContract } from "viem/actions";
 
 import {
@@ -10,27 +16,17 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { BigDecimal } from "@/types/BigDecimal";
-import { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 
 import getTokenAddress from "../assets/getTokenAddress";
-import getLPPoolBalances from "../assets/getLPPoolBalances";
-
-import previewRedeem from "./previewRedeem";
-import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
-import { aave_pool_abi } from "@/const/contracts/abis/aave_pool_abi";
-import totalDualUnderlyingTokens from "./totalDualUnderlyingTokens";
-
 
 export default async function getTotalSupply(
   client: PublicClient,
-  farm:IBirdieLPFarm | IBirdieSingleFarm,
+  farm: IBirdieLPFarm | IBirdieSingleFarm
 ): Promise<BigDecimal | null> {
-
-
   const chainId = client.chain?.id;
 
   if (!chainId) return null;
-  
+
   const farmAddress = getTokenAddress({
     token: farm,
     chainId,
@@ -45,9 +41,9 @@ export default async function getTotalSupply(
     abi: stakingProviders.BIRDIESWAP_Router.abi as Abi,
     functionName: "totalSupply",
     args: [farmAddress],
-    blockTag: "latest" // 강제 최신 블록
+    blockTag: "latest", // 강제 최신 블록
   };
-  const data = await readContract(client, args) as bigint;
+  const data = (await readContract(client, args)) as bigint;
 
   if (!data) return null;
 
