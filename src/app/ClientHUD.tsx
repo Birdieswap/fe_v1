@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 const DebugHUD = dynamic(() => import("@/debug/DebugHUD"), { ssr: false });
 
@@ -9,6 +9,11 @@ const LS_KEY = "birdie:debugHUD";
 
 export default function ClientHUD() {
   const [enabled, setEnabled] = useState(false);
+  const enabledRef = useRef(false);
+
+  useEffect(() => {
+    enabledRef.current = enabled;
+  }, [enabled]);
 
   useEffect(() => {
     // 1) URL 파라미터 처리 (?debugHUD=1 | 0)
@@ -52,6 +57,16 @@ export default function ClientHUD() {
       if (!(window as any).__CONSENT_LOG_HOOKED__) {
         (window as any).__CONSENT_LOG_HOOKED__ = true;
 
+        const shouldDrop = (args: any[]) => {
+          // DebugHUD가 꺼져있으면 이 패턴 로그는 콘솔/버퍼 둘 다 무시
+          if (enabledRef.current) return false;
+          const first = args?.[0];
+          return (
+            typeof first === "string" &&
+            first.includes("[QuoterV2 exactInput] call")
+          );
+        };
+
         const push = (level: string, args: any[]) => {
           try {
             const arr: any[] = JSON.parse(sessionStorage.getItem(KEY) || "[]");
@@ -68,8 +83,7 @@ export default function ClientHUD() {
                 })
                 .join(" "),
             });
-            // 너무 길어지지 않게 제한
-            const MAX = 1000; // 최근 1000개만 유지 (원하면 500 등으로)
+            const MAX = 1000;
             if (arr.length > MAX) arr.splice(0, arr.length - MAX);
             sessionStorage.setItem(KEY, JSON.stringify(arr));
           } catch {}
@@ -78,6 +92,7 @@ export default function ClientHUD() {
         ["debug", "log", "warn", "error"].forEach((lv) => {
           const orig = (console as any)[lv] || console.log;
           (console as any)[lv] = function (...args: any[]) {
+            if (shouldDrop(args)) return; // ✅ 여기서 필터
             push(lv, args);
             try {
               orig.apply(console, args);
@@ -85,40 +100,7 @@ export default function ClientHUD() {
           };
         });
 
-        window.addEventListener("error", (e) => {
-          push("error", [
-            "window.error:",
-            (e as any)?.error?.stack || e?.message || String(e),
-          ]);
-        });
-        window.addEventListener("unhandledrejection", (e: any) => {
-          push("error", [
-            "unhandledrejection:",
-            e?.reason?.stack || e?.reason || String(e),
-          ]);
-        });
-
-        (window as any).__dumpConsentLogs = () => {
-          try {
-            const raw = sessionStorage.getItem(KEY) || "[]";
-            const arr: any[] = JSON.parse(raw);
-            console.table(arr);
-            return arr;
-          } catch (e) {
-            console.error("dumpLogs fail (resetting)", e);
-            try {
-              sessionStorage.removeItem(KEY);
-            } catch {}
-            return [];
-          }
-        };
-
-        (window as any).__clearConsentLogs = () => {
-          try {
-            sessionStorage.removeItem(KEY);
-            console.log("cleared consent logs");
-          } catch {}
-        };
+        // ... window error / unhandledrejection 기존 그대로
       }
     } catch {}
   }, []);

@@ -31,7 +31,7 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
           width={24}
         />
       ) : (
-        <div className="size-6 rounded-full bg-default-300 dark:bg-default-900" />
+        <div className="size-6 rounded-full bg-default-300 dark:bg-white" />
       )}
     </div>
   );
