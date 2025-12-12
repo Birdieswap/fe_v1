@@ -7,6 +7,7 @@ import { Farm } from "@/types/FarmListTableRowProps";
 
 import useTokenAddress from "./useTokenAddress";
 import useProviderAddress from "./useProviderAddress";
+import useIsWrongNetwork from "./useIsWrongNetwork";
 
 export default function useFarmPanelCommon<T extends Farm>(item: T) {
   const client = useClient();
@@ -18,11 +19,11 @@ export default function useFarmPanelCommon<T extends Farm>(item: T) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
 
-  const isWrongNetwork = chainId !== 11155111 && chainId !== 9998453; // TODO: allow mainnet and other networks
+  const isWrongNetwork = useIsWrongNetwork(chainId); // TODO: allow mainnet and other networks
   //sepolia chainId = 11155111, BaseFork = 9998453
   const stakeToken = item.wip_stakeToken;
   const stakeTokenAddress = useTokenAddress(stakeToken);
-  const routerAddress = useProviderAddress(stakeToken.provider)
+  const routerAddress = useProviderAddress(stakeToken.provider);
 
   return {
     client,

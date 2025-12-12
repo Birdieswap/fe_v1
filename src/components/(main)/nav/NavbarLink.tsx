@@ -75,9 +75,9 @@ export function NavbarLink() {
       <NavbarLinkItem currentPage={currentPage} href="/farm">
         FARM
       </NavbarLinkItem>
-      <NavbarLinkItem currentPage={currentPage} href="/pay">
+      {/* <NavbarLinkItem currentPage={currentPage} href="/pay">
         PAY
-      </NavbarLinkItem>
+      </NavbarLinkItem> */}
       <NavbarLinkItem
         currentPage={currentPage}
         href="https://docs.birdieswap.com"
