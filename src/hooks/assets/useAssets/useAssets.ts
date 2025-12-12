@@ -219,14 +219,12 @@ export default function useAssets() {
 
   const refetchAll = useCallback(async () => {
     await Promise.all([
-      assetValues?.uniswapBaseTokenData?.refetch(),
-      assetValues?.uniswapQuoteTokenData?.refetch(),
-      assetValues?.chainLinkData?.refetch(),
+      assetValues?.refetchUnderlying?.(),
+      assetValues?.chainLinkData?.refetch?.(),
       balances?.query?.refetch?.(),
     ]);
   }, [
-    assetValues?.uniswapBaseTokenData?.refetch,
-    assetValues?.uniswapQuoteTokenData?.refetch,
+    assetValues?.refetchUnderlying,
     assetValues?.chainLinkData?.refetch,
     balances?.query?.refetch,
   ]);
