@@ -33,6 +33,7 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWETH,
     singleVaults.bHarvestAutopilotUSDC,
   ],
+  lpVaultKey: "blpHarvestAutopilotWETHUSDC",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
       | string
@@ -61,6 +62,7 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
     singleVaults.bHarvestAutopilotETH,
     singleVaults.bHarvestAutopilotUSDC,
   ],
+  lpVaultKey: "blpHarvestAutopilotWETHUSDC",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
       | string
@@ -171,6 +173,7 @@ const blpUniswapHarvestAutopilotUSDCWBTC = SwapPoolGuard({
     singleVaults.bHarvestAutopilotUSDC,
     singleVaults.bHarvestAutopilotWBTC,
   ],
+  lpVaultKey: "blpHarvestAutopilotUSDCWBTC",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_USDC_TOKEN_ID as
       | string
@@ -198,6 +201,7 @@ const blpUniswapHarvestAutopilotWBTCWETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWBTC,
     singleVaults.bHarvestAutopilotWETH,
   ],
+  lpVaultKey: "blpHarvestAutopilotWBTCWETH",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
       | string
@@ -225,6 +229,7 @@ const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotWBTC,
     singleVaults.bHarvestAutopilotETH,
   ],
+  lpVaultKey: "blpHarvestAutopilotWBTCWETH",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
       | string
@@ -251,8 +256,9 @@ const blpUniswapHarvestAutopilotiFARMWETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotiFARM,
     singleVaults.bHarvestAutopilotWETH,
   ],
+  lpVaultKey: "blpHarvestAutopilotiFARMWETH",
   tokenId: {
-    [networks.base.id]: pool_tokenIds.base.WBTC_WETH_TOKEN_ID as
+    [networks.base.id]: pool_tokenIds.base.IFARM_WETH_TOKEN_ID as
       | string
       | number,
   },
@@ -277,8 +283,9 @@ const blpUniswapHarvestAutopilotiFARMETH = SwapPoolGuard({
     singleVaults.bHarvestAutopilotiFARM,
     singleVaults.bHarvestAutopilotETH,
   ],
+  lpVaultKey: "blpHarvestAutopilotiFARMWETH",
   tokenId: {
-    [networks.base.id]: pool_tokenIds.sepolia.WBTC_WETH_TOKEN_ID as
+    [networks.base.id]: pool_tokenIds.base.IFARM_WETH_TOKEN_ID as
       | string
       | number,
   },

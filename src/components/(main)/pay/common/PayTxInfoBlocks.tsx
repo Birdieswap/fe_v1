@@ -307,7 +307,9 @@ export function EnterResultNode(props: {
   refund0?: { tokenIcon?: string; symbol?: string; amount?: BigDecimal };
   refund1?: { tokenIcon?: string; symbol?: string; amount?: BigDecimal };
 }) {
-  const hasRefund = !!(props.refund0?.amount || props.refund1?.amount);
+  const hasRefund0 = !!props.refund0?.amount && !props.refund0.amount.isZero();
+  const hasRefund1 = !!props.refund1?.amount && !props.refund1.amount.isZero();
+  const hasRefund = hasRefund0 || hasRefund1;
 
   return (
     <div className="w-full rounded-2xl bg-default-100 dark:bg-dark-swap-bg p-4 text-left">
@@ -367,10 +369,10 @@ export function EnterResultNode(props: {
           <div className="mt-2 border-t border-default-200/60 pt-2 dark:border-default-100/20">
             <div className="text-[11px] text-default-500">Refund</div>
 
-            {props.refund0?.amount && (
+            {hasRefund0 && (
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  {!!props.refund0.tokenIcon && (
+                  {!!props.refund0?.tokenIcon && (
                     <img
                       src={props.refund0.tokenIcon}
                       alt={props.refund0.symbol ?? "token0"}
@@ -378,20 +380,19 @@ export function EnterResultNode(props: {
                     />
                   )}
                   <span className="truncate font-semibold">
-                    {props.refund0.symbol ?? ""}
+                    {props.refund0?.symbol ?? ""}
                   </span>
                 </div>
-
                 <span className="text-foreground font-semibold">
-                  {fmtBd(props.refund0.amount, 6)}
+                  {fmtBd(props.refund0!.amount!, 6)}
                 </span>
               </div>
             )}
 
-            {props.refund1?.amount && (
+            {hasRefund1 && (
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
-                  {!!props.refund1.tokenIcon && (
+                  {!!props.refund1?.tokenIcon && (
                     <img
                       src={props.refund1.tokenIcon}
                       alt={props.refund1.symbol ?? "token1"}
@@ -399,12 +400,11 @@ export function EnterResultNode(props: {
                     />
                   )}
                   <span className="truncate font-semibold">
-                    {props.refund1.symbol ?? ""}
+                    {props.refund1?.symbol ?? ""}
                   </span>
                 </div>
-
                 <span className="text-foreground font-semibold">
-                  {fmtBd(props.refund1.amount, 6)}
+                  {fmtBd(props.refund1!.amount!, 6)}
                 </span>
               </div>
             )}
