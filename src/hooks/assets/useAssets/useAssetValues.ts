@@ -1,7 +1,7 @@
 // hooks/assets/useAssets/useAssetValues.ts
 import { useChainId, usePublicClient, useReadContracts } from "wagmi";
 import { ContractFunctionParameters } from "viem";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   WIP_ChainLinkPriceFeed,
@@ -136,12 +136,17 @@ export function useAssetValues() {
 
   /**
    * ✅ underlying 값 갱신 주기(60s)
-   * wagmi의 staleTime 캐시 느낌을 맞추려고 간단 타이머로 refresh tick을 둠
    */
   const [underlyingRefreshTick, setUnderlyingRefreshTick] = useState(0);
   const [isUnderlyingFetching, setIsUnderlyingFetching] = useState(false);
 
+  // ✅ 외부에서 강제로 underlying 갱신 트리거할 수 있도록 노출
+  const refetchUnderlying = useCallback(async () => {
+    setUnderlyingRefreshTick((x) => x + 1);
+  }, []);
+
   useEffect(() => {
+    if (typeof window === "undefined") return;
     const id = window.setInterval(() => {
       setUnderlyingRefreshTick((x) => x + 1);
     }, 60_000);
@@ -200,10 +205,6 @@ export function useAssetValues() {
 
   /**
    * ✅ Underlying 기준 uniswapPriceMap 구성
-   * - availableLpPools에서 lpVaultKey 추출
-   * - lpVaultKey 중복 제거(= RPC 절약)
-   * - totalDualUnderlyingTokens(client, farm)로 underlying balances 획득
-   * - pool.input[0].input / pool.input[1].input (underlying token object) 기준으로 base/quote 매핑
    */
   useEffect(() => {
     if (!client || !chainId) return;
@@ -213,14 +214,13 @@ export function useAssetValues() {
 
     const norm = (addr?: string) => {
       if (!addr) return "";
-      const low = addr.toLowerCase();
-      if (isNativeLike(low)) {
+      if (isNativeLike(addr)) {
         return toLower((WETH_ADDRESS ?? (addr as any)) as `0x${string}`);
       }
       return toLower(addr as `0x${string}`);
     };
 
-    // ✅ lpVaultKey 기준으로 중복 제거
+    // ✅ lpVaultKey 기준으로 중복 제거 (RPC 절약)
     const uniqueVaultKeys = Array.from(
       new Set(
         availableLpPools
@@ -271,9 +271,9 @@ export function useAssetValues() {
               BigDecimal,
             ];
 
-            // ✅ underlying token objects
-            const baseToken = pool.input[0].input; // underlying
-            const quoteToken = pool.input[1].input; // underlying
+            // ✅ underlying token objects (IBirdieSingleFarm.input)
+            const baseToken = pool.input[0].input;
+            const quoteToken = pool.input[1].input;
             if (!baseToken || !quoteToken) continue;
 
             const baseAddrRaw = getTokenAddress({
@@ -354,6 +354,9 @@ export function useAssetValues() {
     chainLinkPriceMap,
     uniswapPriceMap,
     isFetching,
+
+    // ✅ 새로 추가 (useAssets.ts에서 refetchAll에 사용)
+    refetchUnderlying,
   };
 }
 
