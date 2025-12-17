@@ -18,6 +18,7 @@ import {
   uniswapWallet,
   braveWallet,
   phantomWallet,
+  rabbyWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { createConfig, WagmiProvider } from "wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -38,6 +39,7 @@ import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 import { ReferralProvider } from "./ReferralContextProvider";
 import { http, fallback, webSocket } from "viem";
+import { NetworkSelectionProvider } from "./NetworkSelectionProvider";
 
 function ThemeColorMetaSync() {
   const { theme, resolvedTheme } = useTheme();
@@ -82,7 +84,6 @@ function ThemeColorMetaSync() {
 const sepoliaUrls = [
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
-  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_QUICKNODE,
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK,
   "https://sepolia.drpc.org",
 ].filter(Boolean) as string[];
@@ -255,6 +256,7 @@ const connectors = connectorsForWallets(
         trustWallet,
         braveWallet,
         phantomWallet,
+        rabbyWallet,
       ],
     },
   ],
@@ -319,7 +321,9 @@ export default function Providers({
               <HeroUIProvider>
                 <ReferralProvider>
                   <WalletContextProvider>
-                    <SettingsProvider>{children}</SettingsProvider>
+                    <NetworkSelectionProvider>
+                      <SettingsProvider>{children}</SettingsProvider>
+                    </NetworkSelectionProvider>
                   </WalletContextProvider>
                 </ReferralProvider>
               </HeroUIProvider>

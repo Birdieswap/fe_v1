@@ -13,7 +13,7 @@ import { motion } from "framer-motion";
 import clsx from "clsx";
 import { useChainId } from "wagmi";
 
-import { Farm, FarmTag, FarmType } from "@/types/FarmListTableRowProps";
+import { Farm, FarmTag } from "@/types/FarmListTableRowProps";
 import { FarmList } from "@/const/farmInfo";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -37,7 +37,7 @@ type FarmStatus = {
 export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
   return (
     <div className="flex -space-x-1 items-center shrink-0">
-      {profiles.map((token, i) =>
+      {profiles.map((token) =>
         token.iconSrc ? (
           <Image
             key={token.symbol}
@@ -55,12 +55,12 @@ export function CryptoTokenIcons({ profiles }: { profiles: IToken[] }) {
 }
 
 export default function FarmListTable({
+  items: itemsProp, // ✅ 전달된 items를 받음
   sortColumn,
   sortDirection,
   filter,
   searchTerm,
   overrideQuery,
-  ...props
 }: {
   items?: Farm[];
   filter?: Filter | null;
@@ -69,24 +69,29 @@ export default function FarmListTable({
   searchTerm?: string;
   overrideQuery?: string;
 }) {
-  // const [selectedRow, setSelectedRow] = useState<string | null>(null);
   const chainId = useChainId();
 
   const total = useContext(AssetsContext);
-  // console.log("FarmListTable total:", total);
   const balances = total?.balances;
 
   const [farmStatusMap, setFarmStatusMap] = useState<
     Record<`0x${string}`, FarmStatus>
   >({});
 
-  // 각 맵들: 없으면 빈 Map로 처리해 안정성 확보
+  // ✅ props.items가 들어오면 그걸 쓰고, 없으면 기존 FarmList를 fallback
+  const sourceItems = useMemo(() => {
+    return itemsProp ?? FarmList;
+  }, [itemsProp]);
+
+  // 각 맵들: 없으면 undefined
   const apyMap = total?.farmValues?.apyMap as
     | Map<`0x${string}`, BigDecimal>
     | undefined;
+
   const tvlMap = total?.farmValues?.tvlMap as
     | Map<`0x${string}`, BigDecimal | null>
     | undefined;
+
   const priceMap = total?.farmValues?.priceMap as
     | Map<`0x${string}`, BigDecimal | null>
     | undefined;
@@ -94,10 +99,11 @@ export default function FarmListTable({
   const singleBalanceMap = balances?.singleVaultBalances?.balanceMap as
     | Map<`0x${string}`, BigDecimal>
     | undefined;
+
   const lpBalanceMap = balances?.lpVaultBalances?.balanceMap as
     | Map<`0x${string}`, BigDecimal>
     | undefined;
-  // 상단 맵 추출부 근처에 추가
+
   const stakedByInput = balances?.stakedBalances?.byInputTokenAddress as
     | Map<`0x${string}`, { token: any; value: BigDecimal }>
     | undefined;
@@ -108,8 +114,10 @@ export default function FarmListTable({
 
       const lp =
         lpBalanceMap?.get(address) ?? singleBalanceMap?.get(address) ?? null;
+
       const staked =
         stakedByInput?.get(address.toLowerCase() as any)?.value ?? null;
+
       const total = lp && staked ? lp.add(staked) : (lp ?? staked ?? null);
 
       return { lp, staked, total };
@@ -117,15 +125,22 @@ export default function FarmListTable({
     [singleBalanceMap, lpBalanceMap, stakedByInput]
   );
 
+  /**
+   * ✅ (중요 수정 1)
+   * 기존에는 FarmList를 직접 순회했는데,
+   * 이제는 sourceItems(= props.items ?? FarmList)를 순회합니다.
+   */
   useEffect(() => {
     if (!apyMap || !tvlMap || !priceMap) return;
 
     setFarmStatusMap((prev) => {
       let next = prev;
-      for (const farm of FarmList) {
+
+      for (const farm of sourceItems) {
         const address = farm.wip_stakeToken.addresses?.[chainId] as
           | `0x${string}`
           | undefined;
+
         if (!address) continue;
 
         const apy = apyMap.get(address) ?? BigDecimal.ZERO();
@@ -148,21 +163,27 @@ export default function FarmListTable({
           },
         };
       }
+
       return next;
     });
-  }, [chainId, apyMap, tvlMap, priceMap, getFarmBalances]);
+  }, [chainId, apyMap, tvlMap, priceMap, getFarmBalances, sourceItems]);
 
+  /**
+   * ✅ (중요 수정 2)
+   * updatedFarmList도 FarmList.map이 아니라 sourceItems.map을 사용해야
+   * props.items로 전달된 목록만 정확히 렌더링됩니다.
+   */
   const updatedFarmList = useMemo(() => {
-    return FarmList.map((farm) => {
+    return sourceItems.map((farm) => {
       const address = farm.wip_stakeToken.addresses?.[chainId] as
         | `0x${string}`
         | undefined;
+
       const stat = address ? farmStatusMap[address] : undefined;
 
       const toNum = (v: BigDecimal | null | undefined): number => {
         if (!v) return 0;
         try {
-          // 소수점 반영된 문자열을 number로 변환(표시·정렬 목적)
           return parseFloat(v.toString());
         } catch {
           return 0;
@@ -179,8 +200,7 @@ export default function FarmListTable({
         totalBalance: stat?.totalBalance,
       };
     });
-  }, [chainId, farmStatusMap]);
-  //console.log("FarmListTable updatedFarmList:", updatedFarmList);
+  }, [chainId, farmStatusMap, sourceItems]);
 
   const qSearchTerm = (searchTerm ?? "").trim().toLowerCase();
   const qOverride = (overrideQuery ?? "").trim().toLowerCase();
@@ -191,19 +211,23 @@ export default function FarmListTable({
 
   const searchedItems = useMemo(() => {
     if (!q) return updatedFarmList;
+
     return updatedFarmList.filter((item) => {
       if (item.name && String(item.name).toLowerCase().includes(q)) return true;
+
       if (
         Array.isArray(item.tags) &&
         item.tags.some((t) => String(t).toLowerCase().includes(q))
       )
         return true;
+
       const providerName = item.wip_stakeToken?.provider?.name;
       if (providerName && String(providerName).toLowerCase().includes(q))
         return true;
+
       return false;
     });
-  }, [updatedFarmList, q, filter, overrideQuery, searchTerm]); // ★ overrideQuery 포함
+  }, [updatedFarmList, q, filter, overrideQuery, searchTerm]);
 
   const items = searchedItems;
 
@@ -233,34 +257,29 @@ export default function FarmListTable({
       }
     });
 
-    if (col === null) {
-      return filteredItems;
-    } else {
-      return filteredItems.sort((a, b) => {
-        if (a[col] === b[col]) return 0;
+    if (col === null) return filteredItems;
 
-        // a[col], b[col]이 BigDecimal 또는 객체인 경우 문자열→숫자 변환 시도
-        const valA =
-          typeof a[col] === "object" &&
-          a[col] != null &&
-          typeof a[col].toString === "function"
-            ? Number(a[col].toString())
-            : Number(a[col]);
+    return filteredItems.sort((a, b) => {
+      if (a[col] === b[col]) return 0;
 
-        const valB =
-          typeof b[col] === "object" &&
-          b[col] != null &&
-          typeof b[col].toString === "function"
-            ? Number(b[col].toString())
-            : Number(b[col]);
+      const valA =
+        typeof a[col] === "object" &&
+        a[col] != null &&
+        typeof (a[col] as any).toString === "function"
+          ? Number((a[col] as any).toString())
+          : Number(a[col]);
 
-        // 숫자 비교
-        if (valA < valB) return sortDirection === "asc" ? -1 : 1;
-        if (valA > valB) return sortDirection === "asc" ? 1 : -1;
-        //(console.log("FarmListTable sorting:", filteredItems));
-        return 0;
-      });
-    }
+      const valB =
+        typeof b[col] === "object" &&
+        b[col] != null &&
+        typeof (b[col] as any).toString === "function"
+          ? Number((b[col] as any).toString())
+          : Number(b[col]);
+
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
   }, [
     sortColumn,
     items,
@@ -269,6 +288,7 @@ export default function FarmListTable({
     balances?.singleVaultBalances.balanceMap,
     balances?.lpVaultBalances.balanceMap,
     sortDirection,
+    getFarmBalances,
   ]);
 
   // ★ next/navigation 훅들
@@ -276,16 +296,16 @@ export default function FarmListTable({
   const router = useRouter();
   const pathname = usePathname();
 
-  //주소 정규식 체크 (0x + 40 hex)
   const isHexAddress = useCallback(
     (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v),
     []
   );
 
-  //주소/이름 → fullName 변환 (updatedFarmList를 사용)
+  // 주소/이름 → fullName 변환 (updatedFarmList를 사용)
   const resolveFullName = useCallback(
     (key: string | null): string | null => {
       if (!key) return null;
+
       if (isHexAddress(key)) {
         const lower = key.toLowerCase();
         const found = updatedFarmList.find((f) => {
@@ -296,6 +316,7 @@ export default function FarmListTable({
         });
         return found?.wip_stakeToken.fullName ?? null;
       }
+
       try {
         return decodeURIComponent(key);
       } catch {
@@ -308,9 +329,9 @@ export default function FarmListTable({
   const [activeFullName, setActiveFullName] = useState<string | null>(null);
 
   const ANIM = {
-    exitMs: 360, // FarmDetail의 EXIT.duration에 준하는 값
-    enterMs: 500, // FarmDetail의 ENTER.duration
-    gapMs: 75, // 닫힘 후 열기까지 숨 고르는 간격
+    exitMs: 360,
+    enterMs: 500,
+    gapMs: 75,
   };
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -332,7 +353,6 @@ export default function FarmListTable({
     []
   );
 
-  // ▼ 닫힘/정렬로 레이아웃이 바뀌어도 화면이 '그대로' 보이게 역보정
   const stabilizeAround = useCallback(
     (fullName: string | null) => {
       if (!fullName) return;
@@ -345,32 +365,30 @@ export default function FarmListTable({
         const postTop = el.getBoundingClientRect().top;
         const diff = postTop - preTop;
         if (Math.abs(diff) > 0.5) {
-          window.scrollBy({ top: diff, left: 0 }); // 즉시 보정
+          window.scrollBy({ top: diff, left: 0 });
         }
       };
 
-      requestAnimationFrame(fix); // 레이아웃 변화 시작 직후
-      setTimeout(fix, ANIM.exitMs); // EXIT 끝 무렵 한 번 더
+      requestAnimationFrame(fix);
+      setTimeout(fix, ANIM.exitMs);
     },
     [ANIM.exitMs]
   );
 
-  // --- [A] URL 읽기 유틸 (searchParams 대신 window.location 사용) ---
   const getOpenFromLocation = useCallback((): string | null => {
     if (typeof window === "undefined") return null;
     const sp = new URLSearchParams(window.location.search);
     const raw = sp.get("open");
-    return resolveFullName(raw); // (네가 이미 만든 resolveFullName 재사용)
+    return resolveFullName(raw);
   }, [resolveFullName]);
 
-  // --- [B] URL 동기화: router.replace 대신 history.replaceState 우선 ---
   const syncUrlOpen = useCallback(
     (address: `0x${string}` | null) => {
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
         const curr = url.searchParams.get("open");
         const next = address ? address.toLowerCase() : null;
-        if ((curr ?? null) === next) return; // 동일이면 건너뜀
+        if ((curr ?? null) === next) return;
 
         if (next) url.searchParams.set("open", next);
         else {
@@ -378,12 +396,11 @@ export default function FarmListTable({
           url.searchParams.delete("stakePanel");
         }
 
-        window.history.replaceState(null, "", url.toString()); // ★ 핵심
-        // 내부 업데이트 알림 (WalletTokens에서도 동일 이벤트 발행)
+        window.history.replaceState(null, "", url.toString());
         window.dispatchEvent(new CustomEvent("farm:query-updated"));
         return;
       }
-      // 서버/안전망: 기존 라우터(최소 사용, scroll:false)
+
       const sp = new URLSearchParams(searchParams.toString());
       if (address) sp.set("open", address.toLowerCase());
       else {
@@ -403,7 +420,7 @@ export default function FarmListTable({
       if (current === clickedFullName) {
         animatingRef.current = true;
         clearTimer();
-        stabilizeAround(current); // ★ 화면 고정
+        stabilizeAround(current);
         setActiveFullName(null);
         timerRef.current = setTimeout(() => {
           syncUrlOpen(null);
@@ -415,7 +432,7 @@ export default function FarmListTable({
       if (current && current !== clickedFullName) {
         animatingRef.current = true;
         clearTimer();
-        stabilizeAround(current); // ★ 화면 고정
+        stabilizeAround(current);
         setActiveFullName(null);
         timerRef.current = setTimeout(() => {
           setActiveFullName(clickedFullName);
@@ -427,7 +444,6 @@ export default function FarmListTable({
         return;
       }
 
-      // 아무 것도 안 열려 있으면 바로 열기
       animatingRef.current = true;
       clearTimer();
       setActiveFullName(clickedFullName);
@@ -448,7 +464,6 @@ export default function FarmListTable({
 
   const FUSE_MS = 1200;
 
-  // --- [C] URL 변화 감지: popstate + farm:query-updated ---
   useEffect(() => {
     const run = () => {
       const desiredFull = getOpenFromLocation();
@@ -458,15 +473,10 @@ export default function FarmListTable({
 
       if (animatingRef.current) {
         setTimeout(() => {
-          const desiredAfter = getOpenFromLocation();
-          const currentAfter = activeFullName;
-          if (desiredAfter !== currentAfter) {
-          }
+          // noop
         }, ANIM.enterMs + 30);
         return;
       }
-
-      // clearTimer();
 
       if (!desiredFull && currentFull) {
         animatingRef.current = true;
@@ -510,7 +520,6 @@ export default function FarmListTable({
       }
     };
 
-    // 최초 1회 + 브라우저 뒤/앞으로 + 내부 커스텀 이벤트 모두 동일하게 처리
     run();
     window.addEventListener("popstate", run);
     window.addEventListener("farm:query-updated", run as EventListener);
@@ -525,7 +534,6 @@ export default function FarmListTable({
     ANIM.gapMs,
     stabilizeAround,
     getOpenFromLocation,
-    clearTimer,
   ]);
 
   useEffect(() => {
@@ -546,7 +554,6 @@ export default function FarmListTable({
   );
 
   const GRID_COLS =
-    // [Crypto, APY, TVL, YourBalance(숫자+달러), Donut+Arrow]
     "md:grid-cols-[minmax(200px,1.5fr)_minmax(150px,1.2fr)_minmax(150px,1.7fr)_minmax(230px,2fr)_120px]";
 
   return (
@@ -557,9 +564,9 @@ export default function FarmListTable({
         "text-foreground max-md:grid-cols-[minmax(15%,min-content)_1fr_48px]"
       )}
       layout={false}
-      // transition={{ delay: -0.2 }}
     >
       <FarmListTableHeader gridCols={GRID_COLS} />
+
       {sortedItems.map((item) => {
         const address = item.wip_stakeToken.addresses?.[chainId] as
           | `0x${string}`
