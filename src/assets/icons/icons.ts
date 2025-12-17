@@ -40,6 +40,7 @@ import PiggyBankStopOn from "./piggybank-stop-on.svg";
 import PiggyBankStopOnDark from "./piggybank-stop-on-dark.svg";
 import PiggyBankStopOff from "./piggybank-stop-off.svg";
 import PiggyBankStopOffDark from "./piggybank-stop-off-dark.svg";
+import Power from "./power.svg";
 import Rocket from "./Rocket.svg";
 import ChangeArrow from "./change-arrow.svg";
 import Search from "./search.svg";
@@ -138,6 +139,7 @@ export const Icons = {
   PiggyBankStopOnDark,
   PiggyBankStopOff,
   PiggyBankStopOffDark,
+  Power,
   Rocket,
   StakeOn,
   StakeOnDark,

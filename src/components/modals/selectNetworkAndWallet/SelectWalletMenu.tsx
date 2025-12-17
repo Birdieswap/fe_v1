@@ -38,6 +38,8 @@ import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 import { waitForRiskHost } from "@/utils/wallet/waitForRiskHost";
 import { dbg } from "@/debug/dbg";
 
+import { apiSanctionsCheck } from "@/utils/wallet/sanctionsApi";
+
 declare global {
   interface Window {
     __CONSENT_INTERACTIVE_ACTIVE__?: boolean;
@@ -46,6 +48,8 @@ declare global {
 
 const ALLOW_HARD_RELOAD =
   (process.env.NEXT_PUBLIC_WALLET_ALLOW_HARD_RELOAD ?? "0") === "1";
+
+const SANCTIONS_DEBUG = (process.env.NEXT_PUBLIC_DEBUG ?? "0") === "1";
 
 export function WalletIcon({
   provider,
@@ -94,6 +98,7 @@ export function SelectWalletListBox(props: {
         // "trust",
         // "phantom",
         // "brave",
+        //"rabby",
       ] as const,
     []
   );
@@ -213,6 +218,79 @@ export function SelectWalletListBox(props: {
 
       // 메타마스크 인앱 감지
       const provider = await connector?.getProvider?.().catch(() => undefined);
+
+      // ============================================================
+      // ★ NEW: TRM sanctions check (1회)
+      // ============================================================
+      const openSanctionsDenyModal = async (addr: string) => {
+        // disconnect 포함해서 “진짜 차단 UX” 그대로 재현
+        const doHardReload = isInjectedLike(connector?.id, provider);
+        await safeDisconnect({
+          config,
+          connector,
+          provider,
+          hardReloadOnInjected:
+            ALLOW_HARD_RELOAD && doHardReload ? true : false,
+        });
+
+        await new Promise((r) => setTimeout(r, 10));
+
+        openDenyWalletModal(addr, {
+          title: "This wallet can't be used",
+          body: [
+            "For compliance reasons, this wallet cannot access the service.",
+            "If you believe this is a mistake, please contact our support channel.",
+          ],
+          supportEmail: "support@birdieswap.com",
+          supportLink: {
+            label: "Visit Birdieswap support channel",
+            href: "https://discord.com/",
+          },
+          cta: null, // ✅ 커스텀에서 default CTA 완전 차단
+        });
+      };
+
+      try {
+        if (SANCTIONS_DEBUG)
+          console.log("[TRM] sanctions check address:", address);
+
+        // ✅ DEV 강제 차단(특정 주소만)
+        const FORCE_BLOCK =
+          process.env.NODE_ENV !== "production" &&
+          (process.env.NEXT_PUBLIC_SANCTIONS_TEST_BLOCK ?? "0") === "1";
+        const FORCE_ADDR = (
+          process.env.NEXT_PUBLIC_SANCTIONS_TEST_ADDRESS ?? ""
+        ).toLowerCase();
+
+        if (FORCE_BLOCK && FORCE_ADDR && address.toLowerCase() === FORCE_ADDR) {
+          console.log("[TEST] forcing sanctions deny modal for:", address);
+          dbg("swm:denyBySanctions:forced", { address });
+
+          await openSanctionsDenyModal(address);
+          return;
+        }
+
+        // ✅ 실제 TRM 판정
+        const result = await apiSanctionsCheck(address);
+
+        if (SANCTIONS_DEBUG) {
+          console.log("[TRM] sanctions check response:", result);
+          if (result.ok)
+            console.log("[TRM] isSanctioned:", result.isSanctioned);
+        }
+
+        if (result.ok && result.isSanctioned) {
+          dbg("swm:denyBySanctions", { address });
+
+          await openSanctionsDenyModal(address);
+          return;
+        }
+      } catch (e) {
+        // 정책: fail-open (TRM 장애면 기존 흐름 계속)
+        if (SANCTIONS_DEBUG)
+          console.log("[TRM] sanctions check failed:", address, e);
+      }
+      // ============================================================
 
       // 4) 화이트리스트(있다면)
       if (WALLET_ACCESS_MODE === "closed" && !isWalletAllowed(address)) {
@@ -405,7 +483,7 @@ export default function SelectWalletMenu() {
       classNames={{ content: "z-[1000]" }}
     >
       <PopoverTrigger>
-        <Button className="connect-btn">
+        <Button className="connect-btn min-w-[170px]">
           <Icons.Wallet className="stroke-background" />
           <span ref={popoverRef}>Connect Wallet</span>
         </Button>
