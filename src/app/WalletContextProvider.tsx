@@ -188,6 +188,7 @@ export default function WalletContextProvider({
          * 4) injected/metaMask fallback
          */
         let key:
+          | "rabby"
           | "phantom"
           | "brave"
           | "trust"
@@ -206,6 +207,7 @@ export default function WalletContextProvider({
         else if (p?.isBraveWallet) key = "brave";
         else if (p?.isTrust) key = "trust";
         else if (p?.isCoinbaseWallet) key = "coinbase";
+        else if (p?.isRabbyWallet) key = "rabby";
         // 3) 메타마스크 (일부 지갑이 isMetaMask를 켜기도 하므로 뒤쪽에 둠)
         else if (p?.isMetaMask) key = "metaMask";
         // 4) injected → metaMask로 보정

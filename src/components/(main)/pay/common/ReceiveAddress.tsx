@@ -139,7 +139,7 @@ export default function ReceiveAddress({
 
     // ethereum:0x... 형식이면 prefix 제거
     const normalized = trimmed.replace(/^ethereum:/i, "").trim();
-    console.log("[QR] decoded:", normalized);
+    // console.log("[QR] decoded:", normalized);
 
     // ✅ QR은 "완성 주소"여야 하니까 바로 유효성 체크
     if (!isValidEvmAddress(normalized)) {

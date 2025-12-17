@@ -6,28 +6,28 @@ import { IBaseNetwork, ViemChainToBaseNetwork } from "./types/tokenTypes";
 
 const Sepolia: IBaseNetwork = ViemChainToBaseNetwork(
   sepolia,
-  "/networks/sepolia.svg",
+  "/networks/sepolia.svg"
 );
 const Arbitrum: IBaseNetwork = ViemChainToBaseNetwork(
   chains.arbitrum,
-  "/networks/arbitrum.svg",
+  "/networks/arbitrum.svg"
 );
 const Base: IBaseNetwork = ViemChainToBaseNetwork(
   chains.base,
-  "/networks/base.svg",
+  "/networks/base.svg"
 );
 const Optimism: IBaseNetwork = ViemChainToBaseNetwork(
   chains.optimism,
-  "/networks/optimism.svg",
+  "/networks/optimism.svg"
 );
 const BSC: IBaseNetwork = ViemChainToBaseNetwork(bsc, "/networks/bsc.svg");
 const Polygon: IBaseNetwork = ViemChainToBaseNetwork(
   chains.polygon,
-  "/networks/polygon.svg",
+  "/networks/polygon.svg"
 );
 const Scroll: IBaseNetwork = ViemChainToBaseNetwork(
   chains.scroll,
-  "/networks/scroll.svg",
+  "/networks/scroll.svg"
 );
 const BaseFork: IBaseNetwork = ViemChainToBaseNetwork(baseFork);
 

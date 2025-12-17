@@ -28,6 +28,8 @@ export default function NavbarImpl() {
   const { account } = useContext(WalletContext);
   const isAccountConnected = !!account?.address;
 
+  const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL!;
+
   return (
     <Navbar
       className="gap-4 bg-background lg:gap-10"
@@ -38,15 +40,7 @@ export default function NavbarImpl() {
       position="sticky"
     >
       <NavbarBrand className="grow-0">
-        <Link
-          href="/"
-          onClick={(e) => {
-            if (window?.location.pathname === "/") {
-              e.preventDefault();
-              window?.location.reload();
-            }
-          }}
-        >
+        <Link href={WEB_URL} prefetch={false}>
           <BirdieLogo className="hidden text-foreground lg:block" />
           {/* <BirdieLogoBeta className="hidden text-foreground lg:block" /> */}
           {/* <BirdieLogoMobile className="block lg:hidden" /> */}
