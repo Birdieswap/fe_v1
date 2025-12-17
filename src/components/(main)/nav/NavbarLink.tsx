@@ -1,37 +1,42 @@
 "use client";
 
+"use client";
+
 import { cn, NavbarItem } from "@heroui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Fragment, ReactNode } from "react";
+
+function isExternalHref(href: string) {
+  return href.startsWith("http://") || href.startsWith("https://");
+}
+
+function toAppHref(appOrigin: string, path: string) {
+  const base = appOrigin.endsWith("/") ? appOrigin : `${appOrigin}/`;
+  return new URL(path, base).toString();
+}
 
 export function NavbarLinkItem({
   currentPage,
   href,
   children,
   target,
+  appOrigin,
 }: Readonly<{
   currentPage: string;
   href: string;
   children: ReactNode;
   target?: string;
+  appOrigin?: string;
 }>) {
-  //const isActive =
-  //  currentPage.split("/")[1] === href.split("/")[1] &&
-  //  href.includes("https") == false;
+  const willGoToApp =
+    !!appOrigin && href.startsWith("/") && !isExternalHref(href);
+  const resolvedHref = willGoToApp ? toAppHref(appOrigin!, href) : href;
 
-  // ⭐ 홈페이지("/") 특별 처리 로직 수정
+  // landing(appOrigin 있음)에서는 active/reload 의미가 거의 없으니 비활성 처리
   const isActive = (() => {
-    // 홈페이지인 경우 정확히 "/" 경로일 때만 active
-    if (href === "/") {
-      return currentPage === "/";
-    }
-    // 외부 링크는 active 처리 안함
-    if (href.includes("https")) {
-      return false;
-    }
-
-    // 다른 내부 페이지는 기존 로직 사용
+    if (willGoToApp || isExternalHref(href)) return false;
+    if (href === "/") return currentPage === "/";
     return currentPage.split("/")[1] === href.split("/")[1];
   })();
 
@@ -49,8 +54,9 @@ export function NavbarLinkItem({
       isActive={isActive}
     >
       <Link
-        href={href}
+        href={resolvedHref}
         target={target}
+        prefetch={false}
         onClick={(e) => {
           if (isActive) {
             e.preventDefault();
@@ -64,20 +70,23 @@ export function NavbarLinkItem({
   );
 }
 
-export function NavbarLink() {
+export function NavbarLink({ appOrigin }: { appOrigin?: string }) {
   const currentPage = usePathname();
 
   return (
     <Fragment>
-      <NavbarLinkItem currentPage={currentPage} href="/">
+      <NavbarLinkItem currentPage={currentPage} href="/" appOrigin={appOrigin}>
         SWAP
       </NavbarLinkItem>
-      <NavbarLinkItem currentPage={currentPage} href="/farm">
+
+      <NavbarLinkItem
+        currentPage={currentPage}
+        href="/farm"
+        appOrigin={appOrigin}
+      >
         FARM
       </NavbarLinkItem>
-      {/* <NavbarLinkItem currentPage={currentPage} href="/pay">
-        PAY
-      </NavbarLinkItem> */}
+
       <NavbarLinkItem
         currentPage={currentPage}
         href="https://docs.birdieswap.com"
@@ -85,7 +94,12 @@ export function NavbarLink() {
       >
         DOCS
       </NavbarLinkItem>
-      <NavbarLinkItem currentPage={currentPage} href="/faq">
+
+      <NavbarLinkItem
+        currentPage={currentPage}
+        href="/faq"
+        appOrigin={appOrigin}
+      >
         FAQ
       </NavbarLinkItem>
     </Fragment>
