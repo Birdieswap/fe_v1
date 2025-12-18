@@ -42,6 +42,8 @@ export function middleware(req: NextRequest) {
 
   // next/api/static 등은 건드리지 않기 (불필요한 rewrite 방지)
   if (
+    pathname.startsWith("/apr") || // /apr, /apr/11155111 전부
+    pathname === "/apr_data.json" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname === "/favicon.ico" ||
