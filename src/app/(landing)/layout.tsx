@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import Footer from "@/components/Footer";
 import NavbarLanding from "@/components/(landing)/nav/NavbarLanding";
-import AssetsContextProvider from "../AssetsContextProvider";
 
 export default function LandingLayout({
   children,

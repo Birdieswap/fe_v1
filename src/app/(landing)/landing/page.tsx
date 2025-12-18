@@ -15,7 +15,7 @@ export default function LandingPage() {
       <TrustSection />
       <FaqSection />
       <CommunitySection />
-      <NewsletterSection />
+      {/* <NewsletterSection /> */}
     </>
   );
 }
