@@ -2,7 +2,7 @@
 
 import { useContext, useMemo } from "react";
 import Link from "next/link";
-import { useChainId } from "wagmi";
+
 import { Image as HeroImage, Skeleton } from "@heroui/react";
 
 import Container from "@/app/(landing)/landing/Container";
@@ -13,6 +13,7 @@ import { FarmList } from "@/const/farmInfo";
 import { BigDecimal } from "@/types/BigDecimal";
 import suffixNumbers from "@/utils/suffixNumbers";
 import { isBirdieLPFarm, IToken } from "@/const/contracts/types/tokenTypes";
+import { useNetworkSelection } from "@/app/NetworkSelectionProvider";
 
 const appUrl = (
   process.env.NEXT_PUBLIC_APP_URL || "https://app.birdieswap.com"
@@ -128,7 +129,7 @@ type Row = {
 };
 
 export default function StartInOneClickSection({ items }: { items?: Farm[] }) {
-  const chainId = useChainId();
+  const { selectedChainId: chainId } = useNetworkSelection();
   const total = useContext(AssetsContext);
 
   const apyMap = total?.farmValues?.apyMap as
@@ -193,6 +194,8 @@ export default function StartInOneClickSection({ items }: { items?: Farm[] }) {
       })
       .filter(Boolean) as Row[];
   }, [items, chainId, apyMap, tvlMap, aprDataState]);
+
+  console.log("[NS] startIN selectedChainId", chainId);
 
   return (
     <section className="w-full bg-background py-14 sm:py-20">

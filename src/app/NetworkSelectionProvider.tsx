@@ -6,9 +6,11 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useSwitchChain } from "wagmi";
+import { usePathname } from "next/navigation";
 
 import { WalletContext } from "@/app/WalletContextProvider";
 import type { NetworkInfo } from "@/types/NetworkInfo";
@@ -25,32 +27,73 @@ const NetworkSelectionContext =
 
 const STORAGE_KEY = "birdieswap:selectedChainId";
 
+function isLandingPath(pathname: string | null) {
+  if (!pathname) return true;
+  // ✅ 너희 라우팅에 맞게 랜딩 경로를 여기에 추가
+  return pathname === "/" || pathname.startsWith("/landing");
+}
+
 export function NetworkSelectionProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ “원래 필터된 목록” 그대로 가져오기
+  const pathname = usePathname();
+  const landingMode = isLandingPath(pathname);
+
   const { networks, chainId, account } = useContext(WalletContext);
   const isConnected = !!account?.address;
-
   const { switchChainAsync } = useSwitchChain();
 
+  // ✅ app(스왑/팜 등)에서만 지갑 체인 lock + switchChain을 하도록
+  const lockToWalletChain = !landingMode;
+  const enableWalletSwitch = !landingMode;
+
   const defaultChainId = useMemo(() => {
-    // wagmi chainId가 네트워크 목록 안에 있으면 그걸 기본으로, 아니면 첫번째
     const inList = chainId && networks.some((n) => n.id === chainId);
     return inList ? (chainId as number) : (networks[0]?.id ?? 11155111);
   }, [chainId, networks]);
 
-  const [selectedChainId, setSelectedChainId] = useState<number>(() => {
-    if (typeof window === "undefined") return defaultChainId;
+  const [selectedChainId, setSelectedChainId] =
+    useState<number>(defaultChainId);
+
+  const didHydrateRef = useRef(false);
+  const didUserSelectRef = useRef(false);
+
+  // ✅ localStorage는 “처음 한번만” 반영
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const saved = window.localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? Number(saved) : NaN;
-    return Number.isFinite(parsed) ? parsed : defaultChainId;
-  });
 
-  // ✅ 지갑이 연결되어 있으면 “지갑 체인”이 진짜 상태이므로 UI 선택을 거기에 맞춰 동기화
+    if (Number.isFinite(parsed)) {
+      setSelectedChainId(parsed);
+    } else {
+      setSelectedChainId(defaultChainId);
+      window.localStorage.setItem(STORAGE_KEY, String(defaultChainId));
+    }
+
+    didHydrateRef.current = true;
+  }, []); // 🔥 defaultChainId 넣지 않음(덮어쓰기 방지)
+
+  // ✅ networks/chainId가 늦게 준비되어 defaultChainId가 바뀌어도,
+  // 사용자가 이미 선택한 적이 있으면 덮어쓰지 않음.
   useEffect(() => {
+    if (!didHydrateRef.current) return;
+    if (didUserSelectRef.current) return;
+
+    // 선택값이 “아직 초기값 상태”일 때만 defaultChainId 반영
+    setSelectedChainId((prev) => {
+      if (prev === defaultChainId) return prev;
+      // prev가 저장된 값이면 그대로 유지
+      return prev;
+    });
+  }, [defaultChainId]);
+
+  // ✅ app 모드에서만 “지갑 체인 = 선택 체인” 동기화
+  useEffect(() => {
+    if (!lockToWalletChain) return;
     if (!isConnected) return;
     if (!chainId) return;
     if (!networks.some((n) => n.id === chainId)) return;
@@ -61,7 +104,7 @@ export function NetworkSelectionProvider({
         window.localStorage.setItem(STORAGE_KEY, String(chainId));
       }
     }
-  }, [isConnected, chainId, networks, selectedChainId]);
+  }, [lockToWalletChain, isConnected, chainId, networks, selectedChainId]);
 
   const selectedNetwork = useMemo(() => {
     return networks.find((n) => n.id === selectedChainId) ?? networks[0];
@@ -69,19 +112,25 @@ export function NetworkSelectionProvider({
 
   const selectNetwork = useCallback(
     async (nextChainId: number) => {
-      // 1) 랜딩에서도 무조건 선택 변경(=테이블 필터)
+      console.log("[selectNetwork] called", { nextChainId, landingMode });
+
+      didUserSelectRef.current = true;
+
+      // 1) UI는 즉시 바뀌게
       setSelectedChainId(nextChainId);
       if (typeof window !== "undefined") {
         window.localStorage.setItem(STORAGE_KEY, String(nextChainId));
       }
 
-      // 2) 지갑 연결된 경우에만 체인 스위치 시도(app에서의 기존 동작)
+      // 2) 랜딩에서는 지갑 스위치 안 함
+      if (!enableWalletSwitch) return;
+
+      // 3) app + 지갑 연결된 경우만 switchChain
       if (isConnected) {
         try {
           await switchChainAsync({ chainId: nextChainId });
-          // 성공하면 effect가 chainId로 동기화해줌
         } catch {
-          // 실패 시 UX 혼란 방지: 지갑 체인(가능하면)으로 롤백
+          // 실패 시 지갑 체인으로 롤백
           const fallback =
             chainId && networks.some((n) => n.id === chainId)
               ? chainId
@@ -94,7 +143,14 @@ export function NetworkSelectionProvider({
         }
       }
     },
-    [isConnected, switchChainAsync, chainId, networks, defaultChainId]
+    [
+      enableWalletSwitch,
+      isConnected,
+      switchChainAsync,
+      chainId,
+      networks,
+      defaultChainId,
+    ]
   );
 
   const value = useMemo(
@@ -107,6 +163,12 @@ export function NetworkSelectionProvider({
     [networks, selectedChainId, selectedNetwork, selectNetwork]
   );
 
+  useEffect(() => {
+    console.log("[NetworkSelectionProvider] MOUNT", { pathname });
+    return () =>
+      console.log("[NetworkSelectionProvider] UNMOUNT", { pathname });
+  }, [pathname]);
+
   return (
     <NetworkSelectionContext.Provider value={value}>
       {children}
@@ -116,9 +178,10 @@ export function NetworkSelectionProvider({
 
 export function useNetworkSelection() {
   const ctx = useContext(NetworkSelectionContext);
-  if (!ctx)
+  if (!ctx) {
     throw new Error(
       "useNetworkSelection must be used within <NetworkSelectionProvider />"
     );
+  }
   return ctx;
 }

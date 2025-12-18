@@ -74,7 +74,7 @@ export default function NavbarLanding() {
         className="max-sm:gap-2 gap-2 flex items-center"
         justify="end"
       >
-        <NavbarItem className="hidden sm:flex">
+        <NavbarItem className="hidden sm:flex relative z-[50] pointer-events-auto">
           <SelectNetworkMenu />
         </NavbarItem>
 
