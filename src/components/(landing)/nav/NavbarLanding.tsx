@@ -9,6 +9,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import Link from "next/link";
+import { useContext, useEffect, useState } from "react";
 
 import BirdieLogo from "@/assets/logo.svg";
 import BirdieLogoBetaMobile from "@/assets/BirdieLogoBetaMobile.svg";
@@ -19,6 +20,21 @@ import NavMenu from "@/components/(main)/nav/NavMenu";
 
 import SelectNetworkMenu from "@/components/modals/selectNetworkAndWallet/SelectNetworkMenu";
 import SelectNetworkModal from "@/components/modals/selectNetworkAndWallet/SelectNetworkModal";
+import { WalletContext } from "@/app/WalletContextProvider";
+
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
+  return isMobile;
+}
 
 function normalizeOrigin(origin: string) {
   return origin.endsWith("/") ? origin.slice(0, -1) : origin;
@@ -26,6 +42,13 @@ function normalizeOrigin(origin: string) {
 
 export default function NavbarLanding() {
   const menuDisclosure = useDisclosure();
+  const { setIsNetworkModalOpen } = useContext(WalletContext);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    // 뷰포트 전환 시 열려 있던 네트워크 선택 UI는 닫아서 중복 포털을 방지
+    setIsNetworkModalOpen(false);
+  }, [isMobile, setIsNetworkModalOpen]);
 
   const appOrigin = normalizeOrigin(
     process.env.NEXT_PUBLIC_APP_URL || "https://app.birdieswap.com"
@@ -70,17 +93,16 @@ export default function NavbarLanding() {
       </NavbarContent>
 
       {/* 우측: 네트워크 선택 + Open dApp */}
-      <NavbarContent
-        className="max-sm:gap-2 gap-2 flex items-center"
-        justify="end"
-      >
-        <NavbarItem className="hidden sm:flex relative z-[50] pointer-events-auto">
-          <SelectNetworkMenu />
-        </NavbarItem>
-
-        <NavbarItem className="flex sm:hidden">
-          <SelectNetworkModal />
-        </NavbarItem>
+      <NavbarContent className="max-sm:gap-2 gap-2 flex items-center" justify="end">
+        {isMobile ? (
+          <NavbarItem className="flex items-center">
+            <SelectNetworkModal />
+          </NavbarItem>
+        ) : (
+          <NavbarItem className="relative z-[50] pointer-events-auto">
+            <SelectNetworkMenu />
+          </NavbarItem>
+        )}
 
         {/* ✅ 데스크탑: 아이콘 + 텍스트 */}
         <NavbarItem className="sm:flex">
