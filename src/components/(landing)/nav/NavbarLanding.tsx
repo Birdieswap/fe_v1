@@ -9,7 +9,7 @@ import {
   useDisclosure,
 } from "@heroui/react";
 import Link from "next/link";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import BirdieLogo from "@/assets/logo.svg";
 import BirdieLogoBetaMobile from "@/assets/BirdieLogoBetaMobile.svg";
@@ -18,9 +18,13 @@ import Icons from "@/assets/icons/icons";
 import { NavbarLink } from "@/components/(main)/nav/NavbarLink";
 import NavMenu from "@/components/(main)/nav/NavMenu";
 
-import SelectNetworkMenu from "@/components/modals/selectNetworkAndWallet/SelectNetworkMenu";
-import SelectNetworkModal from "@/components/modals/selectNetworkAndWallet/SelectNetworkModal";
-import { WalletContext } from "@/app/WalletContextProvider";
+// ✅ landing 전용 네트워크 선택 UI로 교체
+
+import SelectNetworkModalLanding from "@/components/modals/landing/SelectNetworkModalLanding";
+
+// ✅ landing 전용 상태(열림/닫힘) 제어
+import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
+import SelectNetworkMenuLanding from "@/components/modals/landing/selectNetworkMenuLanding";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -42,13 +46,15 @@ function normalizeOrigin(origin: string) {
 
 export default function NavbarLanding() {
   const menuDisclosure = useDisclosure();
-  const { setIsNetworkModalOpen } = useContext(WalletContext);
   const isMobile = useIsMobile();
 
+  // ✅ landing 전용 네트워크 선택 open/close
+  const { setIsOpen: setLandingNetworkOpen } = useLandingNetwork();
+
   useEffect(() => {
-    // 뷰포트 전환 시 열려 있던 네트워크 선택 UI는 닫아서 중복 포털을 방지
-    setIsNetworkModalOpen(false);
-  }, [isMobile, setIsNetworkModalOpen]);
+    // 뷰포트 전환 시 열려 있던 네트워크 선택 UI는 닫아서 중복 포털/상태 꼬임 방지
+    setLandingNetworkOpen(false);
+  }, [isMobile, setLandingNetworkOpen]);
 
   const appOrigin = normalizeOrigin(
     process.env.NEXT_PUBLIC_APP_URL || "https://app.birdieswap.com"
@@ -74,8 +80,6 @@ export default function NavbarLanding() {
           }}
         >
           <BirdieLogo className="hidden text-foreground lg:block" />
-          {/* <BirdieLogoBeta className="hidden text-foreground lg:block" /> */}
-          {/* <BirdieLogoMobile className="block lg:hidden" /> */}
           <BirdieLogoBetaMobile className="block lg:hidden" />
         </Link>
       </NavbarBrand>
@@ -87,24 +91,26 @@ export default function NavbarLanding() {
         </Button>
       </NavbarContent>
 
-      {/* 데스크탑 링크: ✅ landing에서는 app 도메인으로 보내기 */}
+      {/* 데스크탑 링크: landing에서는 app 도메인으로 보내기 */}
       <NavbarContent className="hidden grow sm:flex" justify="start">
         <NavbarLink appOrigin={appOrigin} />
       </NavbarContent>
 
-      {/* 우측: 네트워크 선택 + Open dApp */}
-      <NavbarContent className="max-sm:gap-2 gap-2 flex items-center" justify="end">
+      {/* 우측: landing 전용 네트워크 선택 + Open dApp */}
+      <NavbarContent
+        className="max-sm:gap-2 gap-2 flex items-center"
+        justify="end"
+      >
         {isMobile ? (
           <NavbarItem className="flex items-center">
-            <SelectNetworkModal />
+            <SelectNetworkModalLanding />
           </NavbarItem>
         ) : (
           <NavbarItem className="relative z-[50] pointer-events-auto">
-            <SelectNetworkMenu />
+            <SelectNetworkMenuLanding />
           </NavbarItem>
         )}
 
-        {/* ✅ 데스크탑: 아이콘 + 텍스트 */}
         <NavbarItem className="sm:flex">
           <Button
             as={Link}
@@ -120,24 +126,9 @@ export default function NavbarLanding() {
             <span className="ml-0.5">Open dApp</span>
           </Button>
         </NavbarItem>
-
-        {/* ✅ 모바일: 아이콘만
-        <NavbarItem className="flex sm:hidden">
-          <Button
-            isIconOnly
-            as={Link}
-            href={`${appOrigin}/swap`}
-            color="primary"
-            prefetch={false}
-            aria-label="Open dApp"
-          >
-            <Icons.Power className="fill-Background" />
-            <span className="ml-1">Open dApp</span>
-          </Button>
-        </NavbarItem> */}
       </NavbarContent>
 
-      {/* ✅ 모바일 메뉴: landing에서는 app 도메인으로 보내기 */}
+      {/* 모바일 메뉴: landing에서는 app 도메인으로 보내기 */}
       <NavMenu {...menuDisclosure} appOrigin={appOrigin} />
     </Navbar>
   );
