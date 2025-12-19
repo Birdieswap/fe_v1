@@ -34,6 +34,8 @@ export function ExecuteButtons({
   const isApproveVisible =
     isConnected && tokenStatuses.some((v) => v.isApproved == false);
 
+  const isApprovePending = isPending && isApproveVisible;
+  const isExecutePending = isPending && !isApproveVisible;
   return (
     <motion.div layout {...defaultTransition} className="flex w-full flex-col">
       <ApproveButtonsContainer isVisible={isApproveVisible}>
@@ -45,7 +47,7 @@ export function ExecuteButtons({
                 key={v.input?.symbol}
                 isActive={v.isActive}
                 isApproved={v.isApproved}
-                isPending={isPending}
+                isPending={isApprovePending}
                 token={v.input}
                 onClick={() => {
                   if (v.input) v.approve?.();
@@ -56,7 +58,7 @@ export function ExecuteButtons({
       <FarmConfirmButton
         isConnected={isConnected}
         isDisabled={!isExecutable}
-        isPending={isPending}
+        isPending={isExecutePending}
         isWrongNetwork={isWrongNetwork}
         text={executeText}
         variant={variant}

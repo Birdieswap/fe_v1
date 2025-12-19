@@ -20,6 +20,7 @@ import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 import { AnimatePresence, motion } from "framer-motion";
 import Arrow from "@/assets/icons/arrow.svg";
+import { copyToClipboard } from "@/utils/wallet/copyToClipboard";
 
 function TabSelector(props: {
   selected: "History" | "Assets";
@@ -151,9 +152,9 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
-                  onPress={() =>
-                    navigator.clipboard.writeText(wallet?.address ?? "")
-                  }
+                  onPress={() => {
+                    copyToClipboard(wallet?.address ?? "");
+                  }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
                 </Button>
@@ -203,9 +204,9 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
                   variant="light"
-                  onPress={() =>
-                    navigator.clipboard.writeText(ReferralLink ?? "")
-                  }
+                  onPress={() => {
+                    copyToClipboard(ReferralLink ?? "");
+                  }}
                   aria-label="Copy referral link"
                 >
                   <Icons.WalletCopy className="fill-foreground" />
@@ -243,9 +244,9 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
-                  onPress={() =>
-                    navigator.clipboard.writeText(wallet?.address ?? "")
-                  }
+                  onPress={() => {
+                    copyToClipboard(wallet?.address ?? "");
+                  }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
                 </Button>
@@ -317,9 +318,9 @@ function WalletDisplay({
                       isIconOnly
                       className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
                       variant="light"
-                      onPress={() =>
-                        navigator.clipboard.writeText(ReferralLink ?? "")
-                      }
+                      onPress={() => {
+                        copyToClipboard(ReferralLink ?? "");
+                      }}
                       aria-label="Copy referral link"
                     >
                       <Icons.WalletCopy className="fill-foreground" />

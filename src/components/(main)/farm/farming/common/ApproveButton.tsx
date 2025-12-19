@@ -2,6 +2,7 @@ import { Fragment } from "react";
 
 import ThemedButton from "@/components/atoms/ThemedButton";
 import { IToken } from "@/const/contracts/types/tokenTypes";
+import ButtonWithPresence from "@/components/common/ButtonWithPresence";
 
 export default function ApproveButton({
   isApproved,
@@ -16,13 +17,20 @@ export default function ApproveButton({
   token?: IToken;
   onClick: () => void | Promise<void>;
 }) {
+  const isBusy = !!isPending && (isActive === undefined || isActive);
+
   return (
     <Fragment>
       {!isApproved && token && (isActive === undefined || isActive) && (
-        <ThemedButton isDisabled={isPending} variant="MINT" onPress={onClick}>
-          {/* {isPending ? "Pending..." : `Approve ${token?.symbol}`} */}
-          {`Approve ${token?.symbol}`}
-        </ThemedButton>
+        <ButtonWithPresence
+          fullWidth
+          isDisabled={!!isPending}
+          variant="MINT"
+          onPress={onClick}
+          aria-busy={isBusy ? true : undefined} // approve pending이면 pulse
+        >
+          {isPending ? `Approving ${token.symbol}` : `Approve ${token.symbol}`}
+        </ButtonWithPresence>
       )}
     </Fragment>
   );
