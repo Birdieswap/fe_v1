@@ -3,15 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type React from "react";
 import dynamic from "next/dynamic";
-import {
-  Button,
-  Input,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from "@heroui/react";
+import { Button, Input, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import clsx from "clsx";
 
@@ -299,13 +291,29 @@ export default function ReceiveAddress({
       </ModalBase>
 
       {/* ===== QR 스캐너 모달 ===== */}
-      <Modal
+      <ModalBase
         isOpen={isScannerOpen}
         onOpenChange={setIsScannerOpen}
         size="full"
-        placement="center"
-        hideCloseButton={false}
-        classNames={{ base: "bg-black/80" }}
+        className="bg-black/85 text-default-100 !border-none dark:!border-none shadow-none"
+        classNames={{
+          wrapper: "items-end justify-center sm:items-center sm:justify-center",
+          backdrop: "bg-black/80",
+        }}
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.28, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.28, ease: "easeIn" },
+            },
+          },
+        }}
       >
         <ModalContent>
           {(onClose) => (
@@ -368,7 +376,7 @@ export default function ReceiveAddress({
             </div>
           )}
         </ModalContent>
-      </Modal>
+      </ModalBase>
     </>
   );
 }
