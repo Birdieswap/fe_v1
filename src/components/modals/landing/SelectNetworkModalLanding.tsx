@@ -2,12 +2,14 @@
 
 import "../selectNetworkAndWallet/SelectNetworkMenu.css";
 import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { Fragment, useMemo } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import clsx from "clsx";
 
 import ModalBase from "@/components/atoms/ModalBase";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
+
+// ✅ 케이스 주의 (Vercel에서 중요)
 import { NetworkIcon } from "./SelectNetworkMenuLanding";
 
 export default function SelectNetworkModalLanding() {
@@ -20,11 +22,22 @@ export default function SelectNetworkModalLanding() {
     setIsOpen,
   } = useLandingNetwork();
 
+  const modalRef = useRef<HTMLButtonElement>(null);
   const isBase = selectedNetwork?.name?.toLowerCase() === "base";
+
+  // (선택) 데스크탑 전환 시 닫기 – app 모달과 동일한 UX
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 640 && isOpen) setIsOpen(false);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isOpen, setIsOpen]);
 
   return (
     <Fragment>
       <Button
+        ref={modalRef}
         isIconOnly
         radius={isBase ? "none" : "full"}
         className={clsx(
@@ -62,6 +75,20 @@ export default function SelectNetworkModalLanding() {
           body: "p-0 h-full flex flex-col",
         }}
         isOpen={isOpen}
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.3, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.3, ease: "easeIn" },
+            },
+          },
+        }}
         placement="bottom"
         scrollBehavior="inside"
         size="lg"
@@ -79,7 +106,9 @@ export default function SelectNetworkModalLanding() {
               {networks.map((network) => (
                 <Button
                   key={network.id}
-                  className="select-network-list-item min-w-[172px]"
+                  // ✅ 핵심: 행 전체 폭으로 늘려서 app처럼 보이게
+                  fullWidth
+                  className="select-network-list-item w-full"
                   disabled={network.id === selectedChainId}
                   data-disabled={network.id === selectedChainId}
                   data-selected={network.id === selectedChainId}

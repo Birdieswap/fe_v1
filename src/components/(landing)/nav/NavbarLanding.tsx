@@ -6,6 +6,7 @@ import {
   NavbarBrand,
   NavbarContent,
   NavbarItem,
+  select,
   useDisclosure,
 } from "@heroui/react";
 import Link from "next/link";
@@ -24,7 +25,7 @@ import SelectNetworkModalLanding from "@/components/modals/landing/SelectNetwork
 
 // ✅ landing 전용 상태(열림/닫힘) 제어
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
-import SelectNetworkMenuLanding from "@/components/modals/landing/SelectNetworkMenuLanding";
+import SelectNetworkMenuLanding from "@/components/modals/landing/selectNetworkMenuLanding";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
