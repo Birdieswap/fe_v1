@@ -315,9 +315,9 @@ export default function ReceiveAddress({
           },
         }}
       >
-        <ModalContent>
+        <ModalContent className="max-h-[90vh]">
           {(onClose) => (
-            <div className="flex h-[80vh] flex-col items-center justify-center gap-4 px-4">
+            <div className="flex w-full max-h-[85vh] flex-col items-center gap-4 overflow-y-auto px-4 py-6">
               <h1 className="text-xl font-semibold text-light-primary">
                 Birdieswap Pay
               </h1>
