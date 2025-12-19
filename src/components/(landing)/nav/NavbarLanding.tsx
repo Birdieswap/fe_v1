@@ -19,13 +19,10 @@ import Icons from "@/assets/icons/icons";
 import { NavbarLink } from "@/components/(main)/nav/NavbarLink";
 import NavMenu from "@/components/(main)/nav/NavMenu";
 
-// ✅ landing 전용 네트워크 선택 UI로 교체
-
-import SelectNetworkModalLanding from "@/components/modals/landing/SelectNetworkModalLanding";
-
 // ✅ landing 전용 상태(열림/닫힘) 제어
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
-import SelectNetworkMenuLanding from "@/components/modals/landing/selectNetworkMenuLanding";
+import SelectNetworkMenuLand from "@/components/modals/landing/SelectNetworkMenuLand";
+import SelectNetworkModalLand from "@/components/modals/landing/SelectNetworkModalLand";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);
@@ -104,11 +101,11 @@ export default function NavbarLanding() {
       >
         {isMobile ? (
           <NavbarItem className="flex items-center">
-            <SelectNetworkModalLanding />
+            <SelectNetworkModalLand />
           </NavbarItem>
         ) : (
           <NavbarItem className="relative z-[50] pointer-events-auto">
-            <SelectNetworkMenuLanding />
+            <SelectNetworkMenuLand />
           </NavbarItem>
         )}
 

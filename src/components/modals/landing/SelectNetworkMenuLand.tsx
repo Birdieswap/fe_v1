@@ -34,7 +34,7 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
   );
 }
 
-export default function SelectNetworkMenuLanding() {
+export default function SelectNetworkMenuLand() {
   const {
     networks,
     selectedNetwork,
