@@ -8,11 +8,11 @@ import clsx from "clsx";
 import ModalBase from "@/components/atoms/ModalBase";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
+import { NetworkIcon } from "./SelectNetworkMenuLand";
 
 // ✅ 케이스 주의 (Vercel에서 중요)
-import { NetworkIcon } from "./SelectNetworkMenuLanding";
 
-export default function SelectNetworkModalLanding() {
+export default function SelectNetworkModalLand() {
   const {
     networks,
     selectedNetwork,
