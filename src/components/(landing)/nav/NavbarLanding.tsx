@@ -24,7 +24,7 @@ import SelectNetworkModalLanding from "@/components/modals/landing/SelectNetwork
 
 // ✅ landing 전용 상태(열림/닫힘) 제어
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
-import SelectNetworkMenuLanding from "@/components/modals/landing/selectNetworkMenuLanding";
+import SelectNetworkMenuLanding from "@/components/modals/landing/SelectNetworkMenuLanding";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false);

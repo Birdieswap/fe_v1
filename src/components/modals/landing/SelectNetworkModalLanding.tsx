@@ -8,7 +8,7 @@ import clsx from "clsx";
 import ModalBase from "@/components/atoms/ModalBase";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
-import { NetworkIcon } from "./selectNetworkMenuLanding";
+import { NetworkIcon } from "./SelectNetworkMenuLanding";
 
 export default function SelectNetworkModalLanding() {
   const {
