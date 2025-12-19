@@ -2,17 +2,11 @@
 "use client";
 
 import Icons from "@/assets/icons/icons";
-import {
-  Button,
-  Image,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalHeader,
-} from "@heroui/react";
+import { Button, Image, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import clsx from "clsx";
 import { BigDecimal } from "@/types/BigDecimal";
+import ModalBase from "@/components/atoms/ModalBase";
 
 export type PoolLike = {
   address: string; // input token address (byInputTokenAddress 의 key)
@@ -130,11 +124,28 @@ export default function PayPoolSelector({
       </Button>
 
       {/* 풀 선택 모달 */}
-      <Modal
+      <ModalBase
         isOpen={isOpen}
         onOpenChange={onOpenChange}
         size="lg"
         scrollBehavior="inside"
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: { duration: 0.28, ease: "easeOut" },
+            },
+            exit: {
+              y: "100%",
+              opacity: 0,
+              transition: { duration: 0.28, ease: "easeIn" },
+            },
+          },
+        }}
+        classNames={{
+          wrapper: "items-end justify-center sm:items-center sm:justify-center",
+        }}
       >
         <ModalContent>
           {() => (
@@ -211,7 +222,7 @@ export default function PayPoolSelector({
             </>
           )}
         </ModalContent>
-      </Modal>
+      </ModalBase>
     </>
   );
 }

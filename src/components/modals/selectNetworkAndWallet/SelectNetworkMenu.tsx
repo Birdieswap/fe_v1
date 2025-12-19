@@ -53,9 +53,9 @@ export function SelectNetworkListBox(props: {
           data-selected={network.id === props.selectedChainId}
           disabled={network.id === props.selectedChainId}
           startContent={<NetworkIcon network={network} />}
-          onPress={async () => {
+          onPressStart={async () => {
             console.log("[SelectNetworkListBox] click", network.id);
-            void props.onSelect(network.id);
+            await props.onSelect(network.id);
             props.onClose();
           }}
         >
