@@ -297,7 +297,7 @@ export default function ReceiveAddress({
         size="full"
         className="bg-black/85 text-default-100 !border-none dark:!border-none shadow-none"
         classNames={{
-          wrapper: "items-end justify-center sm:items-center sm:justify-center",
+          wrapper: "items-end justify-end sm:items-center sm:justify-center",
           backdrop: "bg-black/80",
         }}
         motionProps={{
