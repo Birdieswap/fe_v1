@@ -3,7 +3,14 @@
 import { useCallback, useMemo, useState } from "react";
 import type React from "react";
 import dynamic from "next/dynamic";
-import { Button, Input, ModalBody, ModalContent, ModalFooter, ModalHeader } from "@heroui/react";
+import {
+  Button,
+  Input,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from "@heroui/react";
 import { MdOutlineQrCodeScanner } from "react-icons/md";
 import clsx from "clsx";
 
@@ -294,10 +301,15 @@ export default function ReceiveAddress({
       <ModalBase
         isOpen={isScannerOpen}
         onOpenChange={setIsScannerOpen}
+        placement="bottom" // ✅ 항상 bottom
+        scrollBehavior="inside" // ✅ 길면 내부 스크롤
         size="full"
-        className="bg-black/85 text-default-100 !border-none dark:!border-none shadow-none"
+        className="bg-black/85 text-default-100 !border-none dark:!border-none shadow-none !rounded-none"
         classNames={{
-          wrapper: "items-end justify-end sm:items-center sm:justify-center",
+          // ✅ 바깥 여백/정렬 고정
+          wrapper: "!items-end !justify-end !p-0",
+          // ✅ full-screen base를 '진짜 화면 높이'로 (ModalBase의 --app-vh를 그대로 사용)
+          base: "!m-0 !w-full !max-w-full !rounded-none !h-[calc(var(--app-vh,1vh)*100)] !max-h-none",
           backdrop: "bg-black/80",
         }}
         motionProps={{
@@ -315,56 +327,68 @@ export default function ReceiveAddress({
           },
         }}
       >
-        <ModalContent className="max-h-[90vh]">
+        <ModalContent className="!h-[calc(var(--app-vh,1vh)*100)] !max-h-none !rounded-none">
           {(onClose) => (
-            <div className="flex w-full max-h-[85vh] flex-col items-center gap-4 overflow-y-auto px-4 py-6">
-              <h1 className="text-xl font-semibold text-light-primary">
-                Birdieswap Pay
-              </h1>
+            <div
+              className="
+          flex h-full w-full flex-col
+          px-4 pt-6
+          pb-[calc(env(safe-area-inset-bottom)+16px)]
+        "
+            >
+              {/* ✅ 위/가운데: 스크롤 영역 */}
+              <div className="flex-1 overflow-y-auto">
+                <div className="flex flex-col items-center gap-4">
+                  <h1 className="text-xl font-semibold text-light-primary">
+                    Birdieswap Pay
+                  </h1>
 
-              <p className="mt-3 text-sm text-default-200">
-                Align the QR code within the frame
-              </p>
+                  <p className="mt-3 text-sm text-default-200">
+                    Align the QR code within the frame
+                  </p>
 
-              <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
-                <QrScanner
-                  formats={["qr_code"]}
-                  constraints={{ facingMode: "environment" }}
-                  onScan={handleScan}
-                  onError={handleError}
-                  components={{
-                    finder: false,
-                    torch: true,
-                    zoom: true,
-                    onOff: false,
-                  }}
-                  styles={{
-                    container: { position: "relative", borderRadius: 16 },
-                    video: { borderRadius: 16, objectFit: "cover" },
-                    finderBorder: 0,
-                  }}
-                  classNames={{ container: "birdieswap-qr-container" }}
-                >
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <div className="relative h-3/4 w-3/4 max-w-xs">
-                      <span className="absolute left-0 top-0 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-light-primary" />
-                      <span className="absolute right-0 top-0 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-light-primary" />
-                      <span className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-light-primary" />
-                      <span className="absolute bottom-0 right-0 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-light-primary" />
-                    </div>
+                  <div className="w-full max-w-sm overflow-hidden rounded-2xl bg-black">
+                    <QrScanner
+                      formats={["qr_code"]}
+                      constraints={{ facingMode: "environment" }}
+                      onScan={handleScan}
+                      onError={handleError}
+                      components={{
+                        finder: false,
+                        torch: true,
+                        zoom: true,
+                        onOff: false,
+                      }}
+                      styles={{
+                        container: { position: "relative", borderRadius: 16 },
+                        video: { borderRadius: 16, objectFit: "cover" },
+                        finderBorder: 0,
+                      }}
+                      classNames={{ container: "birdieswap-qr-container" }}
+                    >
+                      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                        <div className="relative h-3/4 w-3/4 max-w-xs">
+                          <span className="absolute left-0 top-0 h-6 w-6 rounded-tl-lg border-l-2 border-t-2 border-light-primary" />
+                          <span className="absolute right-0 top-0 h-6 w-6 rounded-tr-lg border-r-2 border-t-2 border-light-primary" />
+                          <span className="absolute bottom-0 left-0 h-6 w-6 rounded-bl-lg border-b-2 border-l-2 border-light-primary" />
+                          <span className="absolute bottom-0 right-0 h-6 w-6 rounded-br-lg border-b-2 border-r-2 border-light-primary" />
+                        </div>
+                      </div>
+                    </QrScanner>
                   </div>
-                </QrScanner>
+
+                  <div className="mb-2 mt-2 space-y-1 text-center text-sm text-default-300">
+                    <p>Scanning may be less reliable in dark mode.</p>
+                    <p>If detection fails, please try again in light mode.</p>
+                  </div>
+                </div>
               </div>
 
-              <div className="mb-2 mt-2 space-y-1 text-center text-sm text-default-300">
-                <p>Scanning may be less reliable in dark mode.</p>
-                <p>If detection fails, please try again in light mode.</p>
-              </div>
-
-              <div className="mt-2 w-full max-w-sm">
+              {/* ✅ 아래: footer(항상 바닥에 붙음) */}
+              <div className="w-full max-w-sm self-center pt-4">
                 <ThemedButton
                   variant="MINT"
-                  className="h-11 w-full grow-0 text-base"
+                  className="h-11 w-full text-base"
                   onPress={() => {
                     onClose();
                     setIsScannerOpen(false);

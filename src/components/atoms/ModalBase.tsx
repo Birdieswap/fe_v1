@@ -11,7 +11,6 @@ function useVisualViewportVhVar() {
     const set = () => {
       const vv = window.visualViewport;
       const h = vv?.height ?? window.innerHeight;
-      // 1vh 값을 px로 저장
       document.documentElement.style.setProperty("--app-vh", `${h * 0.01}px`);
     };
 
@@ -19,7 +18,7 @@ function useVisualViewportVhVar() {
 
     window.addEventListener("resize", set);
     window.visualViewport?.addEventListener("resize", set);
-    window.visualViewport?.addEventListener("scroll", set); // iOS에서 주소창 변화가 scroll로 잡히는 경우가 있음
+    window.visualViewport?.addEventListener("scroll", set);
 
     return () => {
       window.removeEventListener("resize", set);
@@ -33,11 +32,18 @@ function useVisualViewportVhVar() {
  * - portalContainer: 기본값 body 고정 (iOS 16 이슈 완화)
  * - 모바일 bottom-sheet: 항상 하단에 붙도록 wrapper/base 강제
  * - iOS 동적 툴바: 100dvh + visualViewport fallback(--app-vh)
+ * - ✅ 권장2: className을 Modal prop으로 넘기지 않고, base 슬롯(classNames.base)에 흡수
  */
 export default function ModalBase(props: ModalProps) {
   useVisualViewportVhVar();
 
-  const { className, classNames, portalContainer, placement, ...rest } = props;
+  const {
+    className, // ✅ Modal prop으로 전달하지 않고 base 슬롯에 합침
+    classNames,
+    portalContainer,
+    placement,
+    ...rest
+  } = props;
 
   const mergedBackdrop = clsx(
     classNames?.backdrop,
@@ -47,27 +53,30 @@ export default function ModalBase(props: ModalProps) {
   const mergedWrapper = clsx(
     classNames?.wrapper,
 
-    // ✅ 무조건 bottom 정렬 (외부에서 wrapper에 items-center가 와도 못 이기게 !)
+    // ✅ 모바일: 무조건 하단 정렬
     "max-sm:!items-end max-sm:!justify-end",
     "md:items-center md:justify-center",
 
-    // ✅ wrapper 패딩이 갭의 주범인 경우가 많아서 모바일에서 전부 제거
+    // ✅ 모바일: wrapper 패딩 제거(갭 방지)
     "max-sm:!p-0 max-sm:!pt-0 max-sm:!pr-0 max-sm:!pb-0 max-sm:!pl-0",
 
-    // ✅ iOS/인앱브라우저 동적 툴바 대응: 100vh 대신 100dvh / fallback(--app-vh)
+    // ✅ iOS/인앱브라우저 동적 툴바 대응
     "max-sm:!h-[100dvh] max-sm:!min-h-[100dvh]",
     "max-sm:!h-[calc(var(--app-vh,1vh)*100)] max-sm:!min-h-[calc(var(--app-vh,1vh)*100)]"
   );
 
   const mergedBase = clsx(
     classNames?.base,
-    className,
 
+    // 기본 스타일
     "rounded-2xl bg-background dark:border dark:border-dark-popup-bg dark:bg-dark-popup-bg",
 
-    // ✅ 모바일에서는 바깥 마진/여백 제거 + full width
-    "max-sm:!m-0 max-sm:!my-0 max-sm:!mx-0 max-sm:w-full max-sm:max-w-full",
-    "max-sm:rounded-b-none max-sm:rounded-t-2xl"
+    // ✅ 모바일: 바깥 마진/여백 제거 + full width
+    "max-sm:!m-0 max-sm:!my-0 max-sm:!mx-0 max-sm:!w-full max-sm:!max-w-full",
+    "max-sm:rounded-b-none max-sm:rounded-t-2xl",
+
+    // ✅ 권장2 핵심: 외부에서 주는 className을 base에 합침
+    className
   );
 
   return (
@@ -84,6 +93,7 @@ export default function ModalBase(props: ModalProps) {
         wrapper: mergedWrapper,
         base: mergedBase,
       }}
+      // ✅ 여기서 className은 넘기지 않음 (base 슬롯에서 처리)
     />
   );
 }
