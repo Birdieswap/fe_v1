@@ -13,7 +13,7 @@ import { FarmList } from "@/const/farmInfo";
 import { BigDecimal } from "@/types/BigDecimal";
 import suffixNumbers from "@/utils/suffixNumbers";
 import { isBirdieLPFarm, IToken } from "@/const/contracts/types/tokenTypes";
-import { useNetworkSelection } from "@/app/NetworkSelectionProvider";
+import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
 
 const appUrl = (
   process.env.NEXT_PUBLIC_APP_URL || "https://app.birdieswap.com"
@@ -129,7 +129,7 @@ type Row = {
 };
 
 export default function StartInOneClickSection({ items }: { items?: Farm[] }) {
-  const { selectedChainId: chainId } = useNetworkSelection();
+  const { selectedChainId: chainId } = useLandingNetwork();
   const total = useContext(AssetsContext);
 
   const apyMap = total?.farmValues?.apyMap as

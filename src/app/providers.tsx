@@ -39,7 +39,6 @@ import WalletContextProvider from "./WalletContextProvider";
 import AssetsContextProvider from "./AssetsContextProvider";
 import { ReferralProvider } from "./ReferralContextProvider";
 import { http, fallback, webSocket } from "viem";
-import { NetworkSelectionProvider } from "./NetworkSelectionProvider";
 
 function ThemeColorMetaSync() {
   const { theme, resolvedTheme } = useTheme();
@@ -321,9 +320,7 @@ export default function Providers({
               <HeroUIProvider>
                 <ReferralProvider>
                   <WalletContextProvider>
-                    <NetworkSelectionProvider>
-                      <SettingsProvider>{children}</SettingsProvider>
-                    </NetworkSelectionProvider>
+                    <SettingsProvider>{children}</SettingsProvider>
                   </WalletContextProvider>
                 </ReferralProvider>
               </HeroUIProvider>
