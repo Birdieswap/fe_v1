@@ -388,16 +388,9 @@ export default function TransactionProgressModal(
       closeButton={<ModalCloseButton />}
       isOpen={props.isOpen}
       onClose={props.onClose}
-      placement="bottom" // ✅ 항상 bottom (auto 안 씀)
-      scrollBehavior="inside" // ✅ 길면 내부 스크롤
-      classNames={{
-        // ✅ wrapper/base의 여백 때문에 갭이 생기는 걸 원천 차단
-        wrapper: "!items-end !justify-end !p-0 !pt-0 !pr-0 !pb-0 !pl-0",
-        base: "!m-0 !my-0 !mx-0 !w-full !max-w-full !rounded-b-none !rounded-t-2xl",
-      }}
     >
       <ModalContent>
-        <ModalBody className="flex flex-col gap-6 p-6 pb-[calc(env(safe-area-inset-bottom)+24px)]">
+        <ModalBody className="flex flex-col gap-6 p-6">
           <motion.div layout className="flex w-full flex-col items-center">
             <div className="relative size-[84px] pt-6">
               <AnimatePresence initial={false}>

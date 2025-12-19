@@ -20,14 +20,8 @@ import { useSwapContext } from "@/components/(main)/swap/SwapProvider";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { BigDecimal } from "@/types/BigDecimal";
 import useIsWrongNetwork from "@/hooks/useIsWrongNetwork";
-
-export function ButtonWithPresence(props: PropsWithoutRef<ThemedButtonProps>) {
-  return (
-    <motion.div key="1" {...presenceTransition} className="w-full">
-      <ThemedButton {...props} />
-    </motion.div>
-  );
-}
+import clsx from "clsx";
+import ButtonWithPresence from "@/components/common/ButtonWithPresence";
 
 export function CommonDisabledButtons(props: {
   isConnected: boolean;
@@ -37,14 +31,11 @@ export function CommonDisabledButtons(props: {
 }) {
   const { setIsConnectModalOpen, setIsNetworkModalOpen } =
     useContext(WalletContext);
+
   const onPress = useCallback(() => {
-    if (!props.isConnected) {
-      return setIsConnectModalOpen(true);
-    } else if (props.isWrongNetwork) {
-      return setIsNetworkModalOpen(true);
-    } else if (props.isPending) {
-      return;
-    }
+    if (!props.isConnected) return setIsConnectModalOpen(true);
+    if (props.isWrongNetwork) return setIsNetworkModalOpen(true);
+    if (props.isPending) return;
   }, [
     props.isConnected,
     props.isWrongNetwork,
@@ -54,22 +45,26 @@ export function CommonDisabledButtons(props: {
   ]);
 
   const isDisabled = props.isPending;
+
   const buttonText = useMemo(() => {
     if (props.isPending) return props.excuteText;
     if (!props.isConnected) return "Connect Wallet";
     if (props.isWrongNetwork) return "Wrong Network";
-
     return "";
-  }, [props.isConnected, props.isWrongNetwork, props.isPending]);
+  }, [
+    props.isConnected,
+    props.isWrongNetwork,
+    props.isPending,
+    props.excuteText,
+  ]);
+
   const buttonVariant = useMemo(() => {
     if (!props.isConnected) return "MINT";
     if (props.isWrongNetwork) return "PINK";
-
     return undefined;
   }, [props.isConnected, props.isWrongNetwork]);
 
-  const ariaBusy: true | undefined =
-    props.isPending && !buttonVariant ? true : undefined;
+  const ariaBusy: true | undefined = props.isPending ? true : undefined;
 
   return (
     <Fragment>
@@ -103,15 +98,20 @@ export default function SwapConfirmButton() {
     isLoadingTo,
     isApprovePending,
   } = useSwapContext();
+
   const { setIsConnectModalOpen, setIsNetworkModalOpen } =
     useContext(WalletContext);
 
   const isInsufficientBalance = useMemo(() => {
     if (!fromToken) return false;
-
     return new BigDecimal(fromAmount, fromToken.decimals).gt(fromBalance);
   }, [fromAmount, fromToken, fromBalance]);
+
   const isWrongNetwork = useIsWrongNetwork(chainId);
+
+  // ✅ 여기서 따로 계산하면 TS 유니온 꼬임이 아예 없어짐
+  const isBusyForSwapBtn = isPending && !isApprovePending;
+
   const { onPress, isDisabled, buttonText, buttonVariant } = useMemo(() => {
     const isLoading =
       isLoadingFrom || isLoadingTo || isPending || isApprovePending;
@@ -168,6 +168,7 @@ export default function SwapConfirmButton() {
     }
   }, [
     fromToken,
+    toToken,
     isApproved,
     isConnected,
     isInsufficientBalance,
@@ -180,7 +181,6 @@ export default function SwapConfirmButton() {
     setIsConnectModalOpen,
     setIsNetworkModalOpen,
     swap,
-    toToken,
   ]);
 
   return (
@@ -206,12 +206,15 @@ export default function SwapConfirmButton() {
             <motion.div className="h-6 w-full" {...presenceTransition} />
           </Fragment>
         )}
+
+        {/* ✅ swap 버튼에 aria-busy 전달 */}
         <ButtonWithPresence
           key="swap-button"
           fullWidth
           isDisabled={isDisabled}
           variant={buttonVariant}
           onPress={onPress}
+          aria-busy={isBusyForSwapBtn ? true : undefined}
         >
           {buttonText}
         </ButtonWithPresence>

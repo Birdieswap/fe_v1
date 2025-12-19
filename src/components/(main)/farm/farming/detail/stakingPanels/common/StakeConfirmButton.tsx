@@ -18,17 +18,12 @@ import {
   PropsWithoutRef,
 } from "react";
 import { WalletContext } from "@/app/WalletContextProvider";
+import ButtonWithPresence from "@/components/common/ButtonWithPresence";
 
 /**
  * @see SwapConfirmButton
  */
-export function ButtonWithPresence(props: PropsWithoutRef<ThemedButtonProps>) {
-  return (
-    <motion.div key="1" {...presenceTransition} className="w-full">
-      <StakeThemedButton {...props} />
-    </motion.div>
-  );
-}
+
 export function StakeDisabledButtons(props: {
   isConnected: boolean;
   isWrongNetwork: boolean;
@@ -125,6 +120,7 @@ export default function StakeConfirmButton({
             isDisabled={isDisabled}
             variant={variant ?? "MINT"}
             onPress={onPress}
+            aria-busy={isPending ? true : undefined}
           >
             {text}
           </StakeThemedButton>
