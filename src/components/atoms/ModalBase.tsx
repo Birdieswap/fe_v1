@@ -32,7 +32,7 @@ export default function ModalBase(props: ModalProps) {
           classNames?.backdrop
         ),
         wrapper: clsx(
-          "items-end justify-end sm:items-end sm:justify-end md:items-center md:justify-center",
+          "items-end justify-end sm:items-end sm:justify-end md:items-center md:justify-center max-sm:p-0",
           classNames?.wrapper
         ),
       }}
