@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useMemo } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
 import { Button, Image, Input } from "@heroui/react";
 import { useChainId } from "wagmi";
 import { useSearchParams } from "next/navigation";
@@ -20,9 +20,8 @@ type LpVault = (typeof lpVaults)[keyof typeof lpVaults];
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-// ✅ 지갑 미연결 상태에서 wagmi chainId가 undefined로 나오는 환경이면
-// 프로젝트 기본 네트워크 체인ID로 바꿔주세요.
-const DEFAULT_CHAIN_ID = 8453; // 예: Base. 프로젝트 기본값으로 변경 권장
+// 지갑 미연결에서 chainId가 undefined일 수 있으면 프로젝트 기본 체인으로 바꿔주세요.
+const DEFAULT_CHAIN_ID = 8453;
 
 function fmtBd(v?: BigDecimal, decimals = 6) {
   if (!v) return "0";
@@ -40,7 +39,6 @@ function safeLower(s?: string) {
   return typeof s === "string" ? s.toLowerCase() : "";
 }
 
-// Map에서 key 대소문자 무시하고 꺼내기
 function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
   if (!map) return undefined;
   const matchedKey = [...map.keys()].find(
@@ -49,44 +47,26 @@ function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
   return matchedKey ? map.get(matchedKey) : undefined;
 }
 
-// "WETH가 더 canonical"이라고 가정해서 중복 symbol 제거 시 WETH 포함 항목 우선
-function hasWethHint(p: PoolLike) {
-  return /weth/i.test(p.symbol ?? "") || /weth/i.test(p.fullName ?? "");
-}
-
-function preferPool(a: PoolLike, b: PoolLike) {
-  const aw = hasWethHint(a);
-  const bw = hasWethHint(b);
-  if (aw !== bw) return aw ? a : b;
-
-  const aName = a.fullName ?? "";
-  const bName = b.fullName ?? "";
-  if (aName.length !== bName.length) return aName.length > bName.length ? a : b;
-
-  // 정보가 더 많은 쪽(apy/staked/usd) 우선
-  if (!!a.apy7d !== !!b.apy7d) return a.apy7d ? a : b;
-  if (!!a.stakedBalance !== !!b.stakedBalance) return a.stakedBalance ? a : b;
-  if (!!a.usdValue !== !!b.usdValue) return a.usdValue ? a : b;
-
-  return a;
-}
-
+// ---- dedupe: address(1차) + symbol(2차) ----
 function mergePool(prev: PoolLike, next: PoolLike) {
-  const keep = preferPool(prev, next);
+  // 정보가 더 많이 채워져있는 쪽 우선
+  const score = (p: PoolLike) =>
+    (p.apy7d ? 4 : 0) + (p.stakedBalance ? 2 : 0) + (p.usdValue ? 1 : 0);
+
+  const keep = score(next) > score(prev) ? next : prev;
   const other = keep === prev ? next : prev;
 
   return {
     ...keep,
-    // 숫자 정보는 가능한 채워넣기(keep에 없으면 other에서)
+    address: safeLower(keep.address),
     stakedBalance: keep.stakedBalance ?? other.stakedBalance,
     usdValue: keep.usdValue ?? other.usdValue,
     apy7d: keep.apy7d ?? other.apy7d,
   };
 }
 
-// ✅ 1) address(소문자) 기준 dedupe  2) symbol 기준 dedupe
 function dedupePools(list: PoolLike[]) {
-  // 1차: address 기준
+  // 1) address 기준
   const byAddr = new Map<string, PoolLike>();
   for (const p of list) {
     const addr = safeLower(p.address);
@@ -95,11 +75,10 @@ function dedupePools(list: PoolLike[]) {
     else byAddr.set(addr, mergePool(prev, { ...p, address: addr }));
   }
 
-  // 2차: symbol 기준 (요구사항: symbol 같은 풀은 하나만 표시)
+  // 2) symbol 기준 (요구사항: symbol 같은 풀은 하나만 표시)
   const bySym = new Map<string, PoolLike>();
   for (const p of byAddr.values()) {
     const symKey = (p.symbol ?? "").trim().toUpperCase();
-    // symbol이 비어있으면 address로 fallback (혹시 모를 예외)
     const key = symKey || `__ADDR__:${p.address}`;
 
     const prev = bySym.get(key);
@@ -130,6 +109,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
   const showLock =
     mode === "ENTER" && pay.nativeSymbol === "WETH" && !!pay.showApproveUI;
+
+  const vaultList = useMemo(() => Object.values(lpVaults) as LpVault[], []);
 
   // ===== ENTER: balance & USD conversion =====
   const enterTokenAddressLower = useMemo(() => {
@@ -184,8 +165,6 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
   // ===== pools =====
   const pools: PoolLike[] = useMemo(() => {
-    const vaultList = Object.values(lpVaults) as LpVault[];
-
     const stakedMap = (assets as any)?.balances?.stakedBalances
       ?.byInputTokenAddress as
       | Map<string, { token?: any; value: BigDecimal }>
@@ -200,8 +179,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         | Map<string, BigDecimal>
         | undefined) ?? undefined;
 
-    // ✅ ENTER: 지갑 없어도 lpVaults 기반으로 풀 리스트 생성
     if (mode === "ENTER") {
+      // ✅ ENTER: 지갑 없이도 lpVaults 기반으로 리스트 생성
       const raw = vaultList
         .map((v) => {
           const addr = v.addresses?.[chainId as keyof typeof v.addresses] as
@@ -218,7 +197,6 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
             iconSrc: "/tokens/sblp-token.svg",
           };
 
-          // APY 있으면 표시
           const apy = getByLowerKey(apyMap, addrLower);
           if (apy) pool.apy7d = apy;
 
@@ -229,7 +207,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       return dedupePools(raw);
     }
 
-    // ✅ PAY: 기존 정책 유지 (지갑 기반)
+    // ✅ PAY: 지갑 기반(stakedMap) 유지
     if (!stakedMap) return [];
 
     const raw = Array.from(stakedMap.entries())
@@ -260,31 +238,69 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
         return pool;
       })
-      // PAY에서는 잔고 없는 풀 숨김(기존 로직)
       .filter((p) => p.stakedBalance && !p.stakedBalance.isZero());
 
-    // ✅ stakedMap에 checksum/소문자 주소가 섞여 중복될 수 있어서 dedupe 꼭!
     return dedupePools(raw);
-  }, [assets, chainId, mode]);
+  }, [assets, chainId, mode, vaultList]);
 
-  // ✅ ENTER 딥링크: pool=... 는 ENTER에서만 반영
+  // ✅ ENTER 딥링크: pool=...
   const poolParamLower = useMemo(() => {
     if (mode !== "ENTER") return "";
     return safeLower(searchParams.get("pool") ?? "");
   }, [mode, searchParams]);
 
+  // -----------------------------
+  // ✅ 딥링크 pool 값은 "최초 1회만" 적용
+  // ✅ 유저가 한번이라도 풀을 직접 선택하면 이후 URL pool로 덮어쓰기 금지
+  // -----------------------------
+  const appliedPoolFromUrlRef = useRef<string | null>(null);
+  const userPickedPoolRef = useRef(false);
+
+  const handleSelectPool = useCallback(
+    (pool: PoolLike) => {
+      // 사용자가 직접 선택하면 이후 URL pool로 덮어쓰기 방지
+      userPickedPoolRef.current = true;
+      appliedPoolFromUrlRef.current = safeLower(pool.address);
+      pay.setSelectedPool(pool);
+    },
+    [pay]
+  );
+
   useEffect(() => {
     if (mode !== "ENTER") return;
     if (!poolParamLower) return;
-    if (!pools.length) return;
 
-    const wanted = pools.find((p) => safeLower(p.address) === poolParamLower);
+    // 사용자가 이미 직접 선택했으면 URL 값을 다시 적용하지 않음
+    if (userPickedPoolRef.current) return;
+
+    // 같은 URL pool은 최초 1회만 적용
+    if (appliedPoolFromUrlRef.current === poolParamLower) return;
+
+    // URL address가 목록에 없을 수도 있으니(중복 제거 등) 한번 resolve
+    let wanted = pools.find((p) => safeLower(p.address) === poolParamLower);
+
+    if (!wanted) {
+      // address로 vault 찾고 symbol로 매칭 (주소가 dedupe로 빠진 케이스)
+      const vault = vaultList.find((v) => {
+        const a = v.addresses?.[chainId as keyof typeof v.addresses] as
+          | string
+          | undefined;
+        return a && a.toLowerCase() === poolParamLower;
+      });
+
+      const sym = (vault?.symbol ?? "").trim().toUpperCase();
+      if (sym) {
+        wanted = pools.find(
+          (p) => (p.symbol ?? "").trim().toUpperCase() === sym
+        );
+      }
+    }
+
     if (!wanted) return;
 
-    if (safeLower(pay.selectedPool?.address) !== safeLower(wanted.address)) {
-      pay.setSelectedPool(wanted);
-    }
-  }, [mode, poolParamLower, pools, pay.selectedPool?.address, pay]);
+    appliedPoolFromUrlRef.current = poolParamLower;
+    pay.setSelectedPool(wanted);
+  }, [mode, poolParamLower, pools, pay, chainId, vaultList]);
 
   const handleAmountChange = (v: string) => {
     if (v === "" || /^(\d+(\.\d*)?)?$/.test(v)) setAmount(v);
@@ -391,7 +407,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         mode={mode}
         pools={pools}
         selected={pay.selectedPool}
-        onSelect={pay.setSelectedPool}
+        onSelect={handleSelectPool} // ✅ 유저 선택 감지 래퍼
       />
     </div>
   );
