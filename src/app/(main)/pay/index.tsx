@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import clsx from "clsx";
@@ -69,6 +69,29 @@ export default function PayIndex() {
   const EXIT = { type: "tween", duration: 0.32, ease: [0.4, 0.0, 1, 1] };
 
   // --------------------
+  // ✅ 탭 전환 시 "이전 탭" 상태 초기화
+  // - Provider setState는 렌더 중에 하면 안 되므로 effect에서 수행
+  // - 깜빡임 최소화: useLayoutEffect 추천
+  // --------------------
+  const prevPanelRef = useRef<Mode>(selectedPanel);
+  const didMountRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      prevPanelRef.current = selectedPanel;
+      return;
+    }
+
+    const prev = prevPanelRef.current;
+    if (prev !== selectedPanel) {
+      if (prev === "PAY") pay.resetPayForm();
+      else pay.resetEnterForm();
+      prevPanelRef.current = selectedPanel;
+    }
+  }, [selectedPanel, pay]);
+
+  // --------------------
   // 1) URL -> 상태
   // --------------------
   useEffect(() => {
@@ -109,8 +132,6 @@ export default function PayIndex() {
       if (amount != null && amount !== pay.payAmount) pay.setPayAmount(amount);
     }
 
-    // ENTER의 pool 주입은 PayAmountInput(ENTER)에서 pools 로딩 후 매칭
-
     setIsReady(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, pathname, router]);
@@ -128,11 +149,9 @@ export default function PayIndex() {
       const amount = (pay.payAmount ?? "").trim();
       if (to) sp.set("to", to);
       if (amount) sp.set("amount", amount);
-      // ✅ pool은 넣지 않음 (선택은 UI/상태로만 존재)
     } else {
       const pool = pay.selectedPool?.address?.trim();
       if (pool) sp.set("pool", pool);
-      // ✅ ENTER에서는 pool만 반영
     }
 
     return sp.toString();
@@ -181,7 +200,7 @@ export default function PayIndex() {
             />
           </motion.div>
 
-          {/* 패널 내용: 선택된 패널만 렌더링 */}
+          {/* 패널 내용 */}
           <AnimatePresence initial={false} mode="wait">
             {selectedPanel === "PAY" ? (
               <PayPanel key="PAY" />
