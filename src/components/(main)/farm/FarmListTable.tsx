@@ -77,6 +77,7 @@ export default function FarmListTable({
   const [farmStatusMap, setFarmStatusMap] = useState<
     Record<`0x${string}`, FarmStatus>
   >({});
+  const [showUnderlying, setShowUnderlying] = useState(false);
 
   // ✅ props.items가 들어오면 그걸 쓰고, 없으면 기존 FarmList를 fallback
   const sourceItems = useMemo(() => {
@@ -93,6 +94,26 @@ export default function FarmListTable({
     | undefined;
 
   const priceMap = total?.farmValues?.priceMap as
+    | Map<`0x${string}`, BigDecimal | null>
+    | undefined;
+  const underlyingMap = total?.farmValues?.underlyingMap as
+    | Map<
+        `0x${string}`,
+        {
+          token0: {
+            address: `0x${string}` | null;
+            balance: BigDecimal | null;
+          };
+          token1:
+            | {
+                address: `0x${string}` | null;
+                balance: BigDecimal | null;
+              }
+            | null;
+        }
+      >
+    | undefined;
+  const totalSupplyMap = total?.farmValues?.totalSupplyMap as
     | Map<`0x${string}`, BigDecimal | null>
     | undefined;
 
@@ -565,7 +586,11 @@ export default function FarmListTable({
       )}
       layout={false}
     >
-      <FarmListTableHeader gridCols={GRID_COLS} />
+      <FarmListTableHeader
+        gridCols={GRID_COLS}
+        showUnderlying={showUnderlying}
+        onToggleUnderlying={() => setShowUnderlying((v) => !v)}
+      />
 
       {sortedItems.map((item) => {
         const address = item.wip_stakeToken.addresses?.[chainId] as
@@ -576,6 +601,8 @@ export default function FarmListTable({
         const apy = apyMap?.get(address)?.mul(100) ?? BigDecimal.ZERO();
         const tvl = tvlMap?.get(address) ?? null;
         const price = priceMap?.get(address) ?? null;
+        const underlying = underlyingMap?.get(address) ?? null;
+        const totalSupply = totalSupplyMap?.get(address) ?? null;
 
         const { lp, staked, total } = getFarmBalances(address);
 
@@ -589,6 +616,9 @@ export default function FarmListTable({
             balance={total ?? undefined}
             lpBalance={lp ?? undefined}
             stakedBalance={staked ?? undefined}
+            underlying={underlying ?? undefined}
+            totalSupply={totalSupply ?? undefined}
+            showUnderlying={showUnderlying}
             gridCols={GRID_COLS}
             activeFullName={activeFullName}
             onRowClick={(full, addr) => handleRowToggle(full, addr)}

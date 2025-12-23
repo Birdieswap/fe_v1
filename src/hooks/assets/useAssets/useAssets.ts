@@ -7,7 +7,10 @@ import { useAssetValues } from "./useAssetValues";
 import { FarmList } from "@/const/farmInfo";
 import { calcFarmOnce, FarmCalc } from "@/utils/farm/calcFarmOnce";
 import { BigDecimal } from "@/types/BigDecimal";
-import { prefetchFarmData } from "@/utils/farm/farmDataCache";
+import {
+  bumpFarmDataGeneration,
+  prefetchFarmData,
+} from "@/utils/farm/farmDataCache";
 import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
@@ -21,6 +24,16 @@ type FarmValuesRecord = Record<
 >;
 
 type AddrMap = Record<number | string, `0x${string}`>;
+
+type UnderlyingTokenInfo = {
+  address: `0x${string}` | null;
+  balance: BigDecimal | null;
+};
+
+type UnderlyingEntry = {
+  token0: UnderlyingTokenInfo;
+  token1: UnderlyingTokenInfo | null;
+};
 
 type FarmRawSingle = {
   type: string;
@@ -61,6 +74,20 @@ function normalizeBDMapFromMap(
   const out: Record<string, string | null> = {};
   m.forEach((v, k) => {
     out[k] = v ? v.toString() : null;
+  });
+  return out;
+}
+
+function normalizeUnderlyingMap(
+  m: Map<string, UnderlyingEntry>
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  m.forEach((v, k) => {
+    const t0 = v?.token0;
+    const t1 = v?.token1;
+    out[k] =
+      `${t0?.address ?? "null"}:${t0?.balance?.toString?.() ?? "null"}|` +
+      `${t1?.address ?? "null"}:${t1?.balance?.toString?.() ?? "null"}`;
   });
   return out;
 }
@@ -150,6 +177,12 @@ export default function useAssets() {
   const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(
     new Map()
   );
+  const [underlyingMap, setUnderlyingMap] = useState<
+    Map<string, UnderlyingEntry>
+  >(new Map());
+  const [totalSupplyMap, setTotalSupplyMap] = useState<
+    Map<string, BigDecimal | null>
+  >(new Map());
 
   const [farmRawMap, setFarmRawMap] = useState<Map<string, FarmRaw>>(new Map());
   const [refreshIndex, setRefreshIndex] = useState(0);
@@ -158,10 +191,14 @@ export default function useAssets() {
     apyMap: Map<string, BigDecimal>;
     tvlMap: Map<string, BigDecimal | null>;
     priceMap: Map<string, BigDecimal | null>;
+    underlyingMap: Map<string, UnderlyingEntry>;
+    totalSupplyMap: Map<string, BigDecimal | null>;
   }>({
     apyMap: new Map(),
     tvlMap: new Map(),
     priceMap: new Map(),
+    underlyingMap: new Map(),
+    totalSupplyMap: new Map(),
   });
 
   const chainLinkVersion = useMemo(() => {
@@ -231,6 +268,8 @@ export default function useAssets() {
 
   const forceRefresh = useCallback(async () => {
     try {
+      // Farm TVL/price는 캐시를 쓰므로 강제 갱신 시 무효화 필요
+      bumpFarmDataGeneration();
       await refetchAll();
       // ✅ 50ms는 너무 짧을 수 있어. 일단 500ms 추천
       await new Promise((res) => setTimeout(res, 500));
@@ -267,11 +306,15 @@ export default function useAssets() {
           setApyMap(new Map());
           setTvlMap(new Map());
           setPriceMap(new Map());
+          setUnderlyingMap(new Map());
+          setTotalSupplyMap(new Map());
           setAprDataState(null);
           lastOutputsRef.current = {
             apyMap: new Map(),
             tvlMap: new Map(),
             priceMap: new Map(),
+            underlyingMap: new Map(),
+            totalSupplyMap: new Map(),
           };
         }
         return;
@@ -280,10 +323,18 @@ export default function useAssets() {
       const nextApy = new Map<string, BigDecimal>();
       const nextTvl = new Map<string, BigDecimal | null>();
       const nextPrice = new Map<string, BigDecimal | null>();
+      const nextUnderlying = new Map<string, UnderlyingEntry>();
+      const nextTotalSupply = new Map<string, BigDecimal | null>();
 
       for (const { farm, address } of farms) {
         try {
-          const { apy, tvl, price }: FarmCalc = await calcFarmOnce(
+          const {
+            apy,
+            tvl,
+            price,
+            underlying,
+            totalSupply,
+          }: FarmCalc = await calcFarmOnce(
             client,
             farm as any,
             assetValues
@@ -291,10 +342,17 @@ export default function useAssets() {
           nextApy.set(address, apy);
           nextTvl.set(address, tvl);
           nextPrice.set(address, price);
+          nextUnderlying.set(address, underlying);
+          nextTotalSupply.set(address, totalSupply ?? null);
         } catch {
           nextApy.set(address, BigDecimal.ZERO());
           nextTvl.set(address, null);
           nextPrice.set(address, null);
+          nextUnderlying.set(address, {
+            token0: { address: null, balance: null },
+            token1: null,
+          });
+          nextTotalSupply.set(address, null);
         }
       }
       if (cancelled) return;
@@ -430,22 +488,48 @@ export default function useAssets() {
       const nextApyNorm = normalizeBDMapFromMap(nextApy as any);
       const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
       const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
+      const lastUnderlyingNorm = normalizeUnderlyingMap(
+        lastOut.underlyingMap as any
+      );
+      const nextUnderlyingNorm = normalizeUnderlyingMap(nextUnderlying as any);
+      const lastSupplyNorm = normalizeBDMapFromMap(
+        lastOut.totalSupplyMap as any
+      );
+      const nextSupplyNorm = normalizeBDMapFromMap(nextTotalSupply as any);
 
       const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
       const priceChanged = !shallowEqualNormalized(
         lastPriceNorm,
         nextPriceNorm
       );
+      const underlyingChanged = !shallowEqualNormalized(
+        lastUnderlyingNorm,
+        nextUnderlyingNorm
+      );
+      const totalSupplyChanged = !shallowEqualNormalized(
+        lastSupplyNorm,
+        nextSupplyNorm
+      );
 
       if (apyChanged) setApyMap(nextApy);
       if (tvlChanged) setTvlMap(nextTvl);
       if (priceChanged) setPriceMap(nextPrice);
+      if (underlyingChanged) setUnderlyingMap(nextUnderlying);
+      if (totalSupplyChanged) setTotalSupplyMap(nextTotalSupply);
 
-      if (apyChanged || tvlChanged || priceChanged) {
+      if (
+        apyChanged ||
+        tvlChanged ||
+        priceChanged ||
+        underlyingChanged ||
+        totalSupplyChanged
+      ) {
         lastOutputsRef.current = {
           apyMap: nextApy,
           tvlMap: nextTvl,
           priceMap: nextPrice,
+          underlyingMap: nextUnderlying,
+          totalSupplyMap: nextTotalSupply,
         };
       }
     }
@@ -585,8 +669,8 @@ export default function useAssets() {
   }, [client, farms, chainId, refreshIndex]);
 
   const farmValues = useMemo(() => {
-    return { apyMap, tvlMap, priceMap };
-  }, [apyMap, tvlMap, priceMap]);
+    return { apyMap, tvlMap, priceMap, underlyingMap, totalSupplyMap };
+  }, [apyMap, tvlMap, priceMap, underlyingMap, totalSupplyMap]);
 
   const assets = useMemo(
     () => ({
