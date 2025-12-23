@@ -299,7 +299,7 @@ export const birdieswap_wrapper_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapWrapperV1__NonStandardToken",
+    name: "BirdieswapWrapperV1__NonStandardERC20",
     inputs: [],
   },
   {
