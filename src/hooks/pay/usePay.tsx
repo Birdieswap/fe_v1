@@ -16,7 +16,7 @@ import {
   useReadContract,
   useWriteContract,
 } from "wagmi";
-import { erc20Abi, parseUnits } from "viem";
+import { erc20Abi, parseUnits, getAddress } from "viem";
 
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import { WalletContext } from "@/app/WalletContextProvider";
@@ -297,11 +297,54 @@ export default function usePay() {
   }, [payAmount, tolPct, USDC.decimals]);
 
   const poolPriceUsdPerToken = useMemo(() => {
-    const bal = selectedPool?.stakedBalance;
-    const usd = selectedPool?.usdValue;
-    if (!bal || !usd || bal.isZero()) return null;
-    return usd.divide(bal);
-  }, [selectedPool?.stakedBalance, selectedPool?.usdValue]);
+    const pm: any = (assets as any)?.farmValues?.priceMap;
+    const addr = selectedPool?.address;
+    if (!pm || !addr) return null;
+
+    // ✅ priceMap 키가 체크섬이므로 key도 체크섬으로 맞춤
+    const key = getAddress(addr as `0x${string}`);
+
+    const entry = typeof pm.get === "function" ? pm.get(key) : pm[key];
+    if (!entry) return null;
+
+    // ✅ 1) 진짜 BigDecimal 인스턴스(또는 BigDecimal-like)면 그대로 반환
+    //    (instanceof 대신 메서드 존재 여부로 판별)
+    if (
+      typeof entry.divide === "function" &&
+      typeof entry.multiply === "function"
+    ) {
+      return entry as BigDecimal;
+    }
+
+    // ✅ 2) 지금 로그처럼 { value, decimals } 형태면 BigDecimal로 재구성
+    if (
+      typeof entry === "object" &&
+      entry &&
+      "value" in entry &&
+      "decimals" in entry
+    ) {
+      try {
+        return new BigDecimal((entry as any).value, (entry as any).decimals);
+      } catch {
+        return null;
+      }
+    }
+
+    // ✅ 3) 혹시 그냥 string/number로 들어오면 (보정)
+    if (
+      typeof entry === "string" ||
+      typeof entry === "number" ||
+      typeof entry === "bigint"
+    ) {
+      return new BigDecimal(String(entry), 18);
+    }
+
+    return null;
+  }, [
+    // assets 전체를 의존성으로 두면 in-place mutate 때문에 갱신이 안 잡힐 수 있어요.
+    (assets as any)?.farmValues?.priceMap,
+    selectedPool?.address,
+  ]);
 
   const stakingSharesBd = useMemo(() => {
     if (!poolPriceUsdPerToken) return null;
