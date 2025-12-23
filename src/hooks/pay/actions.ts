@@ -328,6 +328,12 @@ export async function enter(params: {
     sharesDecimals
   );
 
+  console.log("[ENTER] minStakeAmount:", {
+    enterMinStakeAmountStr,
+    sharesDecimals,
+    minStakeAmount,
+  });
+
   // underlying0/1 (result 계산용)
   const [token0Addr, token1Addr] = await Promise.all([
     publicClient.readContract({
