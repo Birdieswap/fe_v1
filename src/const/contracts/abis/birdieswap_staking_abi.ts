@@ -258,16 +258,6 @@ export const birdieswap_staking_abi = [
         internalType: "uint256",
       },
       {
-        name: "_beneficiary",
-        type: "address",
-        internalType: "address",
-      },
-      {
-        name: "_dustReceiver",
-        type: "address",
-        internalType: "address",
-      },
-      {
         name: "_minStakeAmount",
         type: "uint256",
         internalType: "uint256",
@@ -275,17 +265,17 @@ export const birdieswap_staking_abi = [
     ],
     outputs: [
       {
-        name: "sharesMinted",
+        name: "",
         type: "uint256",
         internalType: "uint256",
       },
       {
-        name: "token0Returned",
+        name: "",
         type: "uint256",
         internalType: "uint256",
       },
       {
-        name: "token1Returned",
+        name: "",
         type: "uint256",
         internalType: "uint256",
       },
@@ -825,7 +815,7 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__DuplicatedClaimIndex",
+    name: "BirdieswapStakingV1__DuplicatedRewardIndex",
     inputs: [],
   },
   {
@@ -836,6 +826,11 @@ export const birdieswap_staking_abi = [
   {
     type: "error",
     name: "BirdieswapStakingV1__EasyEnterAlreadyPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterBalanceInvariantViolated",
     inputs: [],
   },
   {
@@ -895,12 +890,22 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
+    name: "BirdieswapStakingV1__EasyPayInvalidBeneficiary",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "BirdieswapStakingV1__EasyPayNotPaused",
     inputs: [],
   },
   {
     type: "error",
     name: "BirdieswapStakingV1__EasyPayPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayUnderlyingBalanceWentDown",
     inputs: [],
   },
   {
@@ -960,7 +965,12 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__NonStandardToken",
+    name: "BirdieswapStakingV1__InvariantFailure",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__NonStandardERC20",
     inputs: [],
   },
   {
@@ -980,7 +990,7 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__RewardRateTooHigh",
+    name: "BirdieswapStakingV1__RewardRateInvalid",
     inputs: [],
   },
   {

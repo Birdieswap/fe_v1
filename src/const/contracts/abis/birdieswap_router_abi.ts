@@ -134,7 +134,7 @@ export const birdieswap_router_abi = [
     name: "dualDeposit",
     inputs: [
       {
-        name: "_accountForAccounting",
+        name: "_accountForAccountingOnly",
         type: "address",
         internalType: "address",
       },
@@ -183,7 +183,7 @@ export const birdieswap_router_abi = [
     name: "dualRedeem",
     inputs: [
       {
-        name: "_accountForAccounting",
+        name: "_accountForAccountingOnly",
         type: "address",
         internalType: "address",
       },
@@ -418,6 +418,84 @@ export const birdieswap_router_abi = [
       },
     ],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "onERC1155BatchReceived",
+    inputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
+      {
+        name: "",
+        type: "uint256[]",
+        internalType: "uint256[]",
+      },
+      {
+        name: "",
+        type: "bytes",
+        internalType: "bytes",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    stateMutability: "pure",
+  },
+  {
+    type: "function",
+    name: "onERC1155Received",
+    inputs: [
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "",
+        type: "bytes",
+        internalType: "bytes",
+      },
+    ],
+    outputs: [
+      {
+        name: "",
+        type: "bytes4",
+        internalType: "bytes4",
+      },
+    ],
+    stateMutability: "pure",
   },
   {
     type: "function",
@@ -665,6 +743,58 @@ export const birdieswap_router_abi = [
   },
   {
     type: "function",
+    name: "setLiquidityTwapWindowSeconds",
+    inputs: [
+      {
+        name: "_liquidityTwapWindowSeconds",
+        type: "uint32",
+        internalType: "uint32",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setMaxSlippageRateLiquidityBps",
+    inputs: [
+      {
+        name: "_maxSlippageRateLiquidityBps",
+        type: "uint24",
+        internalType: "uint24",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setMaxSlippageRateSwapBps",
+    inputs: [
+      {
+        name: "_maxSlippageRateSwapBps",
+        type: "uint24",
+        internalType: "uint24",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setMaxTwapDriftRateBps",
+    inputs: [
+      {
+        name: "_maxTwapDriftRateBps",
+        type: "uint24",
+        internalType: "uint24",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "setRewardTokenWhitelisted",
     inputs: [
       {
@@ -720,6 +850,32 @@ export const birdieswap_router_abi = [
         name: "_bTokenAddress",
         type: "address",
         internalType: "address",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setSwapTimeoutSeconds",
+    inputs: [
+      {
+        name: "_swapTimeoutSeconds",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setSwapTwapWindowSeconds",
+    inputs: [
+      {
+        name: "_swapTwapWindowSeconds",
+        type: "uint32",
+        internalType: "uint32",
       },
     ],
     outputs: [],
@@ -1098,6 +1254,11 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
+    name: "BirdieswapRouterV1__ERC1155NotAccepted",
+    inputs: [],
+  },
+  {
+    type: "error",
     name: "BirdieswapRouterV1__ERC721NotAccepted",
     inputs: [
       {
@@ -1154,7 +1315,7 @@ export const birdieswap_router_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapRouterV1__NonStandardToken",
+    name: "BirdieswapRouterV1__NonStandardERC20",
     inputs: [],
   },
   {
