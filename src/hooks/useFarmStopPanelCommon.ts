@@ -198,6 +198,7 @@ export default function useFarmStopPanelCommon(
         refetch: async () => {
           await Promise.all([assetsContext.refetchAll()]);
         },
+        afterReceipt: assetsContext.forceRefresh,
       });
 
       if (route === "WRAPPER_SINGLE") {

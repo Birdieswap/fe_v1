@@ -718,6 +718,7 @@ export function usePairStartPanel(
           assetsContext.refetchAll(),
         ]);
       },
+      afterReceipt: assetsContext.forceRefresh,
     });
 
     const anyETHLocal = isETH0 || isETH1;
