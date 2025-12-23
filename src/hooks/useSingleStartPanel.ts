@@ -269,6 +269,7 @@ export function useSingleStartPanel(item: FarmSingle) {
           assetsContext.refetchAll(),
         ]);
       },
+      afterReceipt: assetsContext.forceRefresh,
     });
 
     // === (A) ETH 모드: wrapper + payable(value) ===

@@ -109,11 +109,13 @@ export function getWriteTransactionHandlers({
   transactionContext,
   transactionProps,
   refetch,
+  afterReceipt,
 }: {
   client?: Client;
   transactionContext: TransactionContextType;
   transactionProps: TransactionStatusProps;
   refetch?: () => Promise<unknown>;
+  afterReceipt?: () => Promise<unknown> | void;
 }) {
   transactionContext.setTransactionProps({
     ...transactionProps,
@@ -170,6 +172,9 @@ export function getWriteTransactionHandlers({
         waitForTransactionReceipt(client, { hash: tx })
           .then((receipt) => {
             if (receipt.status === "success") {
+              Promise.resolve(afterReceipt?.()).catch((e) => {
+                console.error("[handleWriteTransaction] afterReceipt failed", e);
+              });
               refetch?.();
 
               if (
