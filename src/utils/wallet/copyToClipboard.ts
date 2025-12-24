@@ -1,20 +1,21 @@
 export function copyToClipboard(text: string): boolean {
   if (!text) return false;
 
-  // ✅ 1) 동기 fallback 먼저 (user gesture 유지에 유리)
+  // ✅ 1) 동기 fallback (user gesture 유지에 유리)
   const ok = copyWithExecCommand(text);
   if (ok) return true;
 
-  // ✅ 2) Clipboard API는 비동기라 여기서는 fire-and-forget으로만 시도
+  // ✅ 2) Clipboard API (지원되는 환경에선 이 경로가 가장 안정적)
   try {
-    if (
-      typeof navigator !== "undefined" &&
-      navigator.clipboard?.writeText &&
-      typeof window !== "undefined" &&
-      window.isSecureContext
-    ) {
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).catch(() => {
-        // ignore
+        try {
+          if (typeof window !== "undefined") {
+            window.prompt("Copy to clipboard:", text);
+          }
+        } catch {
+          // ignore
+        }
       });
       return true; // "시도"는 됨
     }
