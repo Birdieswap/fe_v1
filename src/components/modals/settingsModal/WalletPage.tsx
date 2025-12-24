@@ -152,7 +152,7 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
-                  onPress={() => {
+                  onClick={() => {
                     copyToClipboard(wallet?.address ?? "");
                   }}
                 >
@@ -204,7 +204,7 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
                   variant="light"
-                  onPress={() => {
+                  onClick={() => {
                     copyToClipboard(ReferralLink ?? "");
                   }}
                   aria-label="Copy referral link"
@@ -244,7 +244,7 @@ function WalletDisplay({
                   isIconOnly
                   className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
-                  onPress={() => {
+                  onClick={() => {
                     copyToClipboard(wallet?.address ?? "");
                   }}
                 >
@@ -318,7 +318,7 @@ function WalletDisplay({
                       isIconOnly
                       className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
                       variant="light"
-                      onPress={() => {
+                      onClick={() => {
                         copyToClipboard(ReferralLink ?? "");
                       }}
                       aria-label="Copy referral link"
