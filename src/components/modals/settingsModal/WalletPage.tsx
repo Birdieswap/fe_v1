@@ -1,7 +1,7 @@
 "use client";
 
 import { ModalHeader, Button, ModalBody, cn, Divider } from "@heroui/react";
-import { Fragment, useContext, useMemo, useState } from "react";
+import { Fragment, useContext, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains, useConfig } from "wagmi";
 
@@ -127,6 +127,12 @@ function WalletDisplay({
   const { referralAddress } = useReferral();
   const isSelfReferral = wallet?.address === referralAddress;
 
+  const handleCopy = async (label: string, text: string) => {
+    console.log("[WalletPage] copy click", { label, text });
+    const ok = await copyToClipboard(text);
+    console.log("[WalletPage] copy result", { label, ok });
+  };
+
   return (
     <>
       {/* ====== 데스크톱(>=sm): 기존 레이아웃 유지 ====== */}
@@ -148,16 +154,17 @@ function WalletDisplay({
                 <span className="text-[15px] font-semibold leading-[18px] truncate">
                   {address}
                 </span>
-                <Button
-                  isIconOnly
-                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
-                  variant="light"
-                  onClick={() => {
-                    copyToClipboard(wallet?.address ?? "");
-                  }}
+                <button
+                  type="button"
+                  className="inline-flex size-[18px] min-w-[18px] max-w-[18px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                  onClick={() =>
+                    handleCopy("address-desktop-click", wallet?.address ?? "")
+                  }
+                  aria-label="Copy wallet address"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -200,17 +207,17 @@ function WalletDisplay({
               </div>
 
               <div className="shrink-0">
-                <Button
-                  isIconOnly
-                  className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
-                  variant="light"
-                  onClick={() => {
-                    copyToClipboard(ReferralLink ?? "");
-                  }}
+                <button
+                  type="button"
+                  className="inline-flex size-[20px] min-w-[20px] max-w-[20px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                  onClick={() =>
+                    handleCopy("referral-desktop-click", ReferralLink ?? "")
+                  }
                   aria-label="Copy referral link"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </Button>
+                </button>
               </div>
             </div>
             <div className="mt-3 font-regular text-[11px] text-light-primary dark:text-dark-green-key">
@@ -240,19 +247,21 @@ function WalletDisplay({
                 <span className="text-[15px] font-semibold leading-[18px] truncate">
                   {address}
                 </span>
-                <Button
-                  isIconOnly
-                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
-                  variant="light"
-                  onClick={() => {
-                    copyToClipboard(wallet?.address ?? "");
-                  }}
+                <button
+                  type="button"
+                  className="inline-flex size-[18px] min-w-[18px] max-w-[18px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                  onClick={() =>
+                    handleCopy("address-mobile-click", wallet?.address ?? "")
+                  }
+                  aria-label="Copy wallet address"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>
+
           {/* 우측: 토글 버튼 (row1 col2) */}
           <div className="row-start-1 col-start-2 justify-self-end">
             <button
@@ -314,17 +323,17 @@ function WalletDisplay({
                     {ReferralLink}
                   </div>
                   <div className="shrink-0">
-                    <Button
-                      isIconOnly
-                      className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
-                      variant="light"
-                      onClick={() => {
-                        copyToClipboard(ReferralLink ?? "");
-                      }}
+                    <button
+                      type="button"
+                      className="inline-flex size-[20px] min-w-[20px] max-w-[20px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                      onClick={() =>
+                        handleCopy("referral-mobile-click", ReferralLink ?? "")
+                      }
                       aria-label="Copy referral link"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Icons.WalletCopy className="fill-foreground" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 <div className="mt-3 text-[11px] font-regular text-light-primary dark:text-dark-green-key">
@@ -345,7 +354,6 @@ export default function WalletPage(props: {
 }) {
   const config = useConfig();
   const [tab, setTab] = useState<"History" | "Assets">("Assets");
-  // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
   const {
     selectedProvider,
@@ -355,9 +363,9 @@ export default function WalletPage(props: {
     walletData,
   } = useContext(WalletContext);
 
-  // console.log("WalletPage walletData", account, walletData);
   const { referralAddress } = useReferral();
   const isSelfReferral = account?.address === referralAddress;
+
   return (
     <Fragment>
       <ModalHeader className="max-sm:px-6">
@@ -382,14 +390,12 @@ export default function WalletPage(props: {
                   ?.getProvider?.()
                   .catch(() => undefined);
 
-                // RainbowKit 최근 커넥터 캐시도 함께 지워 재연결 소스 제거
                 try {
                   localStorage.removeItem("rk-last-connector");
                   localStorage.removeItem("rainbowkit.connectedWallets");
                   localStorage.removeItem("rainbowkit:connectedWallets");
                 } catch {}
 
-                const doHardReload = isInjectedLike(connector?.id, provider);
                 await safeDisconnect({
                   config,
                   connector,
@@ -399,10 +405,8 @@ export default function WalletPage(props: {
                     isInjectedLike(connector?.id, provider),
                 });
 
-                // 아주 짧은 틱으로 펜딩 이벤트 정리
                 await new Promise((r) => setTimeout(r, 10));
               } finally {
-                // UI 정리
                 props.onClose();
                 setIsConnectModalOpen(false);
               }
@@ -419,6 +423,7 @@ export default function WalletPage(props: {
           </Button>
         </div>
       </ModalHeader>
+
       <ModalBody className="max-h-full overflow-hidden p-0">
         <div className="flex max-h-full w-full grow flex-col items-center overflow-auto max-sm:gap-0">
           <div className="flex w-full flex-col items-center px-4 max-sm:px-6">
