@@ -2,77 +2,45 @@
 export async function copyToClipboard(text: string): Promise<boolean> {
   if (!text) return false;
 
-  // ✅ 1) 먼저 동기 복사 (user gesture 유지에 가장 유리)
-  const okSync = copyWithExecCommand(text);
-  if (okSync) return true;
-
-  // ✅ 2) Clipboard API (지원되는 환경에서만)
-  try {
-    if (typeof window !== "undefined") {
-      console.log("[copyToClipboard] trying clipboard api", {
-        isSecureContext: window.isSecureContext,
-      });
-    }
-    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+  // 1. Modern API (Navigator Clipboard) 우선 사용
+  if (
+    typeof window !== "undefined" &&
+    navigator.clipboard &&
+    window.isSecureContext
+  ) {
+    try {
       await navigator.clipboard.writeText(text);
       return true;
+    } catch (err) {
+      console.error("Clipboard API failed, falling back...", err);
     }
-  } catch (error) {
-    console.log("[copyToClipboard] clipboard api failed", error);
   }
 
-  // ✅ 3) 최후의 보루: prompt
-  try {
-    if (typeof window !== "undefined") {
-      window.prompt("Copy to clipboard:", text);
-      return true;
-    }
-  } catch {}
-
-  return false;
+  // 2. Fallback: execCommand('copy')
+  return copyFallback(text);
 }
 
-function copyWithExecCommand(text: string): boolean {
+function copyFallback(text: string): boolean {
   try {
-    if (typeof document === "undefined") return false;
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
 
-    // ✅ input보다 textarea가 iOS/WebView에서 더 안정적인 편
-    const el = document.createElement("textarea");
-    el.value = text;
+    // 화면 밖으로 완전히 밀어내기
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
 
-    el.setAttribute("readonly", "");
-    el.setAttribute("aria-hidden", "true");
+    textArea.focus();
+    textArea.select();
 
-    // 화면에 영향 최소화
-    el.style.position = "fixed";
-    el.style.top = "0";
-    el.style.left = "0";
-    el.style.width = "1px";
-    el.style.height = "1px";
-    el.style.opacity = "0";
-    el.style.pointerEvents = "none";
-    el.style.userSelect = "text";
-    // @ts-ignore
-    el.style.webkitUserSelect = "text";
-    el.style.fontSize = "16px";
-
-    document.body.appendChild(el);
-
-    el.focus();
-    el.select();
-    try {
-      el.setSelectionRange(0, text.length);
-    } catch {
-      // ignore
-    }
-
-    const ok = document.execCommand("copy");
-
-    document.body.removeChild(el);
-    document.getSelection()?.removeAllRanges();
-
-    return ok;
-  } catch {
+    const successful = document.execCommand("copy");
+    document.body.removeChild(textArea);
+    return successful;
+  } catch (err) {
+    console.error("Fallback copy failed", err);
+    // 3. 최후의 보루: Prompt (필요 시 유지)
+    // window.prompt("Copy to clipboard: Ctrl+C, Enter", text);
     return false;
   }
 }
