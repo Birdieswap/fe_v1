@@ -154,17 +154,18 @@ function WalletDisplay({
                 <span className="text-[15px] font-semibold leading-[18px] truncate">
                   {address}
                 </span>
-                <button
-                  type="button"
-                  className="inline-flex size-[18px] min-w-[18px] max-w-[18px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
-                  onClick={() =>
+                <Button
+                  isIconOnly
+                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+                  variant="light"
+                  onPress={() =>
                     handleCopy("address-desktop-click", wallet?.address ?? "")
                   }
                   aria-label="Copy wallet address"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -207,17 +208,18 @@ function WalletDisplay({
               </div>
 
               <div className="shrink-0">
-                <button
-                  type="button"
-                  className="inline-flex size-[20px] min-w-[20px] max-w-[20px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
-                  onClick={() =>
+                <Button
+                  isIconOnly
+                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
+                  variant="light"
+                  onPress={() =>
                     handleCopy("referral-desktop-click", ReferralLink ?? "")
                   }
                   aria-label="Copy referral link"
                   style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </button>
+                </Button>
               </div>
             </div>
             <div className="mt-3 font-regular text-[11px] text-light-primary dark:text-dark-green-key">
