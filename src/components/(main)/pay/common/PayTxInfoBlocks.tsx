@@ -178,7 +178,7 @@ export function PayResultNode(props: {
           <div className="mt-2 border-t border-default-200/60 pt-2 dark:border-default-100/20">
             <div className="text-[11px] text-default-500">Settlement</div>
 
-            {props.reEnter && (
+            {/* {props.reEnter && (
               <div className="mt-2 flex items-start justify-between gap-3">
                 <div className="text-[13px] text-default-700 dark:text-default-300">
                   Re-Enter
@@ -202,7 +202,7 @@ export function PayResultNode(props: {
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {props.refundUsdc && (
               <div className="mt-2 flex items-center justify-between gap-3">

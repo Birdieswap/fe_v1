@@ -56,6 +56,8 @@ interface QrScannerProps {
 const isValidEvmAddress = (value: string) =>
   /^0x[0-9a-fA-F]{40}$/.test(value.trim());
 
+const MAX_EVM_ADDRESS_LENGTH = 42;
+
 // ✅ 입력 중 상태에서, 언제 에러를 보여줄지 결정
 function getReceiverErrorMessage(input: string): string | null {
   const v = input.trim();
@@ -178,9 +180,10 @@ export default function ReceiveAddress({
           size="lg"
           placeholder="Enter or scan the recipient's wallet address"
           value={controlledValue}
+          maxLength={MAX_EVM_ADDRESS_LENGTH}
           onValueChange={(v) => {
             if (!receiverTouched) setReceiverTouched(true);
-            updateValue(v);
+            updateValue(v.slice(0, MAX_EVM_ADDRESS_LENGTH));
           }}
           classNames={{
             inputWrapper: clsx(

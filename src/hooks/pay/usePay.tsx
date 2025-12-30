@@ -587,7 +587,7 @@ export default function usePay() {
         variant: "MINT" as const,
       };
 
-    return { text: "Start Paying", disabled: false, variant: "MINT" as const };
+    return { text: "Pay", disabled: false, variant: "MINT" as const };
   }, [
     isConnected,
     isWrongNetwork,
@@ -632,13 +632,13 @@ export default function usePay() {
 
     if (showApproveUI)
       return {
-        text: "Start Entering",
+        text: "Enter",
         disabled: true,
         variant: "MINT" as const,
       };
 
     return {
-      text: "Start Entering",
+      text: "Enter",
       disabled: false,
       variant: "MINT" as const,
     };
