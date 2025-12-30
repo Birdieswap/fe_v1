@@ -29,7 +29,7 @@ export default function ApproveButton({
           onPress={onClick}
           aria-busy={isBusy ? true : undefined} // approve pending이면 pulse
         >
-          {isPending ? `Approving ${token.symbol}` : `Approve ${token.symbol}`}
+          {isPending ? `Approve ${token.symbol}` : `Approve ${token.symbol}`}
         </ButtonWithPresence>
       )}
     </Fragment>
