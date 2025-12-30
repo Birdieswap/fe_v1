@@ -7,6 +7,7 @@ import {
   type TypedDataDomain,
 } from "viem";
 import { signTypedData } from "wagmi/actions";
+import { getPublicClient } from "@wagmi/core";
 import type {
   RuntimeEIP712Types,
   NormalizedConsentMessage,
@@ -82,6 +83,44 @@ function extractMessageAndNonceRaw(
     },
     nonceRaw: typeof nonceAny === "bigint" ? nonceAny.toString() : nonceAny,
   };
+}
+
+async function verifyTypedDataWithClient(params: {
+  config: any;
+  chainId: number;
+  address: `0x${string}`;
+  domain: TypedDataDomain;
+  types: TypedData;
+  primaryType: string;
+  message: Record<string, unknown>;
+  signature: `0x${string}`;
+}) {
+  try {
+    const publicClient = getPublicClient(params.config, {
+      chainId: params.chainId,
+    });
+    if (publicClient?.verifyTypedData) {
+      return await publicClient.verifyTypedData({
+        address: params.address,
+        domain: params.domain,
+        types: params.types,
+        primaryType: params.primaryType,
+        message: params.message,
+        signature: params.signature,
+      });
+    }
+  } catch (err) {
+    if (DEBUG) console.error("[consent] public verifyTypedData error", err);
+  }
+
+  return verifyTypedData({
+    address: params.address,
+    domain: params.domain,
+    types: params.types,
+    primaryType: params.primaryType,
+    message: params.message,
+    signature: params.signature,
+  });
 }
 
 export async function verifyConsentFlow(
@@ -243,7 +282,9 @@ export async function verifyConsentFlow(
             // (d) 로컬 검증
             let ok = false;
             try {
-              ok = await verifyTypedData({
+              ok = await verifyTypedDataWithClient({
+                config,
+                chainId,
                 address,
                 domain: domain as TypedDataDomain,
                 types: types as unknown as TypedData,
