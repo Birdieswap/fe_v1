@@ -94,7 +94,7 @@ export function SelectWalletListBox(props: {
         "metaMask",
         //"walletConnect",
         //"uniswap",
-        //"coinbase", // ⭐ 수정: "coinbaseWallet" → "coinbase"로 통일
+        "coinbase", // ⭐ 수정: "coinbaseWallet" → "coinbase"로 통일
         // "trust",
         // "phantom",
         // "brave",

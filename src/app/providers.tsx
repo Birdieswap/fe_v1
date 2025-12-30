@@ -243,6 +243,10 @@ const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id";
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap";
 
+const coinbaseWalletAll = Object.assign(coinbaseWallet, {
+  preference: { options: "all" },
+});
+
 const connectors = connectorsForWallets(
   [
     {
@@ -251,7 +255,7 @@ const connectors = connectorsForWallets(
         metaMaskWallet,
         walletConnectWallet,
         uniswapWallet,
-        coinbaseWallet,
+        coinbaseWalletAll,
         trustWallet,
         braveWallet,
         phantomWallet,
