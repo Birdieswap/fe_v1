@@ -162,8 +162,8 @@ function BaseTransactionItem(props: TransactionProps) {
         setSliceLength(30); // iPhone mini 이하
       else if (width < 440)
         setSliceLength(36); //iphone x 이하
-      // else if (width >= 641) setSliceLength(45); // sm 이상 (tablet, desktop)
-      else setSliceLength(45); // 일반
+      // else if (width >= 641) setSliceLength(42); // sm 이상 (tablet, desktop)
+      else setSliceLength(42); // 일반
     };
 
     updateSliceLength();
