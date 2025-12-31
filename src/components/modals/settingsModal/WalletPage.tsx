@@ -1,7 +1,14 @@
 "use client";
 
 import { ModalHeader, Button, ModalBody, cn, Divider } from "@heroui/react";
-import { Fragment, useContext, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains, useConfig } from "wagmi";
 
@@ -368,6 +375,18 @@ export default function WalletPage(props: {
   const { referralAddress } = useReferral();
   const isSelfReferral = account?.address === referralAddress;
 
+  const handleTabChange = useCallback(
+    (value: "History" | "Assets") => {
+      if (value === "History" && tab !== "History") {
+        walletData?.refetchAll();
+      }
+      setTab(value);
+    },
+    [tab, walletData]
+  );
+
+  console.log("[WalletPage]", { walletData });
+
   return (
     <Fragment>
       <ModalHeader className="max-sm:px-6">
@@ -441,13 +460,13 @@ export default function WalletPage(props: {
               <TabSelector
                 name="Assets"
                 selected={tab}
-                setTab={setTab}
+                setTab={handleTabChange}
                 value="Assets"
               />
               <TabSelector
                 name="History"
                 selected={tab}
-                setTab={setTab}
+                setTab={handleTabChange}
                 value="History"
               />
             </div>
