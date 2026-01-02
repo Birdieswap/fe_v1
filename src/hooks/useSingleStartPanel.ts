@@ -73,21 +73,29 @@ export function useSingleStartPanel(item: FarmSingle) {
   );
 
   const WRAPPER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
+  const ROUTER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Router;
+  const ROUTER_ADDRESS_FROM_CONTRACTS = getFromContracts(
+    ADDRESS.ROUTER,
+    chainId
+  );
   const ROUTER_PROVIDER_FALLBACK = useMemo(() => {
     // stakingProviders에 Router 메타가 없을 때 대비
-    const meta = (stakingProviders as any)?.BIRDIESWAP_Router;
     return (
-      meta ?? {
+      ROUTER_PROVIDER ?? {
         name: "BIRDIESWAP_Router",
-        addresses: { [chainId]: routerAddress },
+        addresses: {
+          [chainId]:
+            ROUTER_ADDRESS_FROM_CONTRACTS ?? ROUTER_PROVIDER?.addresses?.[chainId] ?? routerAddress,
+        },
       }
     );
-  }, [chainId, routerAddress]);
+  }, [ROUTER_PROVIDER, chainId, ROUTER_ADDRESS_FROM_CONTRACTS, routerAddress]);
 
   // 기본 spender (provider) 주소
   const ROUTER_ADDRESS: `0x${string}` | null =
-    getFromContracts(ADDRESS.ROUTER, chainId) ??
-    ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; //NEW: router 주소
+    ROUTER_ADDRESS_FROM_CONTRACTS ??
+    ROUTER_PROVIDER?.addresses?.[chainId] ??
+    ROUTER_PROVIDER_FALLBACK?.addresses?.[chainId]; // NEW: router 주소
   const WRAPPER_ADDRESS: `0x${string}` | null = getFromContracts(
     ADDRESS.WRAPPER,
     chainId
