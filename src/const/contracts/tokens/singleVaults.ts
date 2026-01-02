@@ -98,18 +98,18 @@ const bHarvestAutopilotUSDC = BirdieSingleFarmGuard({
   iconSrc: "/tokens/b-token.svg",
 } as const);
 
-const bHarvestAutopilotiFARM = BirdieSingleFarmGuard({
+const bHarvestAutopilotFARM = BirdieSingleFarmGuard({
   type: EContractType.BIRDIE_SINGLE,
-  symbol: "biFARM",
-  fullName: "Birdieswap iFARM",
+  symbol: "bFARM",
+  fullName: "Birdieswap FARM",
   addresses: {
-    [networks.base.id]: contractAddresses.base.IFARM_VAULT as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.FARM_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
-      .IFARM_VAULT as `0x${string}`,
+      .FARM_VAULT as `0x${string}`,
   },
   abi: erc20_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
-  input: tokens.iFARM,
+  input: tokens.FARM,
   decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/b-token.svg",
@@ -139,7 +139,7 @@ const singleVaults = {
   bHarvestAutopilotWBTC,
   bHarvestAutopilotUSDC,
   // bHarvestAutopilotEURC,
-  bHarvestAutopilotiFARM,
+  bHarvestAutopilotFARM,
 };
 
 export default singleVaults;
