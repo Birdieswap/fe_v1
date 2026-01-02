@@ -104,6 +104,26 @@ const USDC_harvest_autopilot: Farm = {
   point: 0,
 };
 
+const FARM_harvest_autopilot: Farm = {
+  type: FarmType.SINGLE,
+  tags: [FarmTag.SINGLE],
+  name: "FARM",
+  wip_stakeToken: const_contracts.singleVaults.bHarvestAutopilotFARM,
+  details: {
+    vaults: [VaultInfo.BUSDC_harvest_autopilot_V1, VaultInfo.REWARD_BIRDIE],
+    rewards: [
+      {
+        token: TokenInfo.BIRDIE,
+      },
+    ],
+  },
+  apy: 0,
+  tvl: 0,
+  MyBalance: 0,
+  feeTier: 0.05,
+  point: 0,
+};
+
 const WETH_USDC_harvest_autopilot: Farm = {
   type: FarmType.PAIR,
   tags: [FarmTag.LP, FarmTag.STABLE],
@@ -381,8 +401,9 @@ const FARM_WETH_harvest_autopilot: Farm = {
 
 export const FarmList = [
   // CBBTC_harvest_autopilot,
-  // ETH_harvest_autopilot,
-  // USDC_harvest_autopilot,
+  ETH_harvest_autopilot,
+  USDC_harvest_autopilot,
+  FARM_harvest_autopilot,
   // WETH_USDC_harvest_autopilot,
   ETH_USDC_harvest_autopilot,
   USDC_WBTC_harvest_autopilot,
@@ -395,8 +416,9 @@ export const FarmList = [
 ];
 export const FarmInfo = {
   // CBBTC_harvest_autopilot,
-  // WETH_harvest_autopilot,
-  // USDC_harvest_autopilot,
+  WETH_harvest_autopilot,
+  USDC_harvest_autopilot,
+  FARM_harvest_autopilot,
   WETH_USDC_harvest_autopilot,
   ETH_USDC_harvest_autopilot,
   USDC_WBTC_harvest_autopilot,
