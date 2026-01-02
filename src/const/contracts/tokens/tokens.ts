@@ -93,18 +93,18 @@ const EURC = CurrencyGuard({
   iconSrc: "/tokens/EURC.svg",
 } as const);
 
-const iFARM = CurrencyGuard({
+const FARM = CurrencyGuard({
   type: EContractType.CURRENCY,
-  symbol: "iFARM",
-  fullName: "IFARM",
+  symbol: "FARM",
+  fullName: "FARM",
   addresses: {
-    [networks.base.id]: contractAddresses.base.IFARM as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum.IFARM as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.FARM as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum.FARM as `0x${string}`,
   },
   abi: erc20_abi,
   decimals: 18,
   displayDecimals: 6,
-  iconSrc: "/tokens/iFARM.svg",
+  iconSrc: "/tokens/FARM.svg",
 } as const);
 
 const tokens = {
@@ -114,7 +114,7 @@ const tokens = {
   WBTC,
   CBBTC,
   // EURC,
-  iFARM,
+  FARM,
 };
 
 export default tokens;

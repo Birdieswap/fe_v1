@@ -329,11 +329,11 @@ const WBTC_ETH_harvest_autopilot: Farm = {
   point: 0,
 };
 
-const iFARM_ETH_harvest_autopilot: Farm = {
+const FARM_ETH_harvest_autopilot: Farm = {
   type: FarmType.PAIR,
   tags: [FarmTag.LP],
-  name: "iFARM-ETH",
-  wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotiFARMETH,
+  name: "FARM-ETH",
+  wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotFARMETH,
   details: {
     vaults: [
       VaultInfo.BWETH_harvest_autopilot_V1,
@@ -354,11 +354,11 @@ const iFARM_ETH_harvest_autopilot: Farm = {
   point: 0,
 };
 
-const iFARM_WETH_harvest_autopilot: Farm = {
+const FARM_WETH_harvest_autopilot: Farm = {
   type: FarmType.PAIR,
   tags: [FarmTag.LP],
-  name: "iFARM-WETH",
-  wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotiFARMWETH,
+  name: "FARM-WETH",
+  wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotFARMWETH,
   details: {
     vaults: [
       VaultInfo.BWETH_harvest_autopilot_V1,
@@ -387,7 +387,7 @@ export const FarmList = [
   ETH_USDC_harvest_autopilot,
   USDC_WBTC_harvest_autopilot,
   WBTC_ETH_harvest_autopilot,
-  iFARM_ETH_harvest_autopilot,
+  FARM_ETH_harvest_autopilot,
   // CBBTC_USDC_harvest_autopilot,
   // CBBTC_WETH_harvest_autopilot,
   // CBBTC_ETH_harvest_autopilot,
@@ -402,8 +402,8 @@ export const FarmInfo = {
   USDC_WBTC_harvest_autopilot,
   WBTC_WETH_harvest_autopilot,
   WBTC_ETH_harvest_autopilot,
-  iFARM_WETH_harvest_autopilot,
-  iFARM_ETH_harvest_autopilot,
+  FARM_WETH_harvest_autopilot,
+  FARM_ETH_harvest_autopilot,
   // CBBTC_USDC_harvest_autopilot,
   // CBBTC_WETH_harvest_autopilot,
   // CBBTC_ETH_harvest_autopilot,

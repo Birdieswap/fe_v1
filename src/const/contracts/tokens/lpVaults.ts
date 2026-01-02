@@ -159,39 +159,37 @@ const blpHarvestAutopilotWBTCETH = BirdieLPFarmGuard({
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
-const blpHarvestAutopilotiFARMWETH = BirdieLPFarmGuard({
+const blpHarvestAutopilotFARMWETH = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
-  symbol: "biFARMWETH",
-  fullName: "Birdieswap iFARM 10000 WETH",
+  symbol: "bFARMWETH",
+  fullName: "Birdieswap FARM 10000 WETH",
   addresses: {
-    [networks.base.id]: contractAddresses.base
-      .IFARM_WETH_VAULT as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.FARM_WETH_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
-      .IFARM_WETH_VAULT as `0x${string}`,
+      .FARM_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
-  swap: swapPools.blpUniswapHarvestAutopilotiFARMWETH,
-  lpPool: swapPools.blpUniswapHarvestAutopilotiFARMWETH,
+  swap: swapPools.blpUniswapHarvestAutopilotFARMWETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotFARMWETH,
   decimals: 8,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
-const blpHarvestAutopilotiFARMETH = BirdieLPFarmGuard({
+const blpHarvestAutopilotFARMETH = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
-  symbol: "biFARMETH",
-  fullName: "Birdieswap iFARM 10000 ETH",
+  symbol: "bFARMETH",
+  fullName: "Birdieswap FARM 10000 ETH",
   addresses: {
-    [networks.base.id]: contractAddresses.base
-      .IFARM_WETH_VAULT as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.FARM_WETH_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
-      .IFARM_WETH_VAULT as `0x${string}`,
+      .FARM_WETH_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Wrapper,
-  swap: swapPools.blpUniswapHarvestAutopilotiFARMETH,
-  lpPool: swapPools.blpUniswapHarvestAutopilotiFARMETH,
+  swap: swapPools.blpUniswapHarvestAutopilotFARMETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotFARMETH,
   decimals: 8,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
@@ -221,8 +219,8 @@ const lpVaults = {
   blpHarvestAutopilotUSDCWBTC,
   blpHarvestAutopilotWBTCWETH,
   blpHarvestAutopilotWBTCETH,
-  blpHarvestAutopilotiFARMWETH,
-  blpHarvestAutopilotiFARMETH,
+  blpHarvestAutopilotFARMWETH,
+  blpHarvestAutopilotFARMETH,
   // blpHarvestAutopilotCBBTCUSDC,
   // blpHarvestAutopilotCBBTCWETH,
   // blpHarvestAutopilotCBBTCETH,
