@@ -13,7 +13,7 @@ const bHarvestAutopilotETH = BirdieSingleFarmGuard({
   symbol: "bWETH",
   fullName: "Birdieswap WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.ETH_VAULT as `0x${string}`,
+    // [networks.sepolia.id]: contractAddresses.sepolia.ETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.ETH_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .ETH_VAULT as `0x${string}`,
@@ -31,8 +31,8 @@ const bHarvestAutopilotWETH = BirdieSingleFarmGuard({
   symbol: "bWETH",
   fullName: "Birdieswap WETH",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia
-      .WETH_VAULT as `0x${string}`,
+    // [networks.sepolia.id]: contractAddresses.sepolia
+    //   .WETH_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.WETH_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .WETH_VAULT as `0x${string}`,
@@ -84,8 +84,8 @@ const bHarvestAutopilotUSDC = BirdieSingleFarmGuard({
   symbol: "bUSDC",
   fullName: "Birdieswap USDC",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia
-      .USDC_VAULT as `0x${string}`,
+    // [networks.sepolia.id]: contractAddresses.sepolia
+    //   .USDC_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .USDC_VAULT as `0x${string}`,
