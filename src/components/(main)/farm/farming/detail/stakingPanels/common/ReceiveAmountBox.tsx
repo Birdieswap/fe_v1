@@ -2,13 +2,13 @@
 
 import { Image } from "@heroui/react";
 import { motion } from "framer-motion";
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 
 import { BigDecimal } from "@/types/BigDecimal";
 import { setPrecisionString } from "@/utils/setPrecision";
 import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
-import { AssetsContext } from "@/app/AssetsContextProvider";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 export default function ReceiveAmountBox({
   amount,
@@ -17,16 +17,11 @@ export default function ReceiveAmountBox({
   amount: BigDecimal;
   bToken: IBirdieSingleFarm;
 }) {
-  const { assetValues } = useContext(AssetsContext);
-  const activePrice = useMemo(() => {
-    if (bToken?.input.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(
-        `LINK:${bToken?.input.symbol}_USD`
-      )?.price;
-    }
-
-    return undefined;
-  }, [bToken?.input.symbol, assetValues?.chainLinkPriceMap]);
+  const { priceUsd } = useTokenUsdPrice(bToken?.input as any);
+  const activePrice = useMemo(
+    () => (priceUsd != null ? new BigDecimal(String(priceUsd), 8) : undefined),
+    [priceUsd]
+  );
 
   return (
     <motion.div

@@ -9,10 +9,101 @@ import {
 import { BigDecimal } from "@/types/BigDecimal";
 import type { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 import { findSymbolByAddress } from "../assets/getTokenSymbol";
+import { ADDRESS } from "@/const/contracts/contractAddresses";
 import {
   getLiquidityCached,
   getTotalSupplyCached,
 } from "@/utils/farm/farmDataCache";
+import {
+  getFromContracts,
+  isHexAddress,
+  isZeroAddress,
+  toLower,
+} from "@/utils/farm/getAddressHelpers";
+
+const COINGECKO_CACHE_MS = 60_000;
+const coingeckoCache = new Map<
+  string,
+  { ts: number; price: BigDecimal | null; inflight?: Promise<BigDecimal | null> }
+>();
+
+function getChainlinkUsdPrice(
+  assetValues: useAssetValuesReturnType,
+  symbol?: string
+): BigDecimal | null {
+  if (!symbol) return null;
+  const map = assetValues?.chainLinkPriceMap;
+  if (!map) return null;
+  const direct = map.get(`LINK:${symbol}_USD`)?.price ?? null;
+  if (direct) return direct;
+  if (symbol === "ETH") return map.get("LINK:WETH_USD")?.price ?? null;
+  if (symbol === "WETH") return map.get("LINK:ETH_USD")?.price ?? null;
+  return null;
+}
+
+function normalizeCoingeckoAddress(
+  address: string | null,
+  chainId?: number
+): string | null {
+  if (!address || !chainId) return null;
+  const lower = toLower(address);
+  if (!lower) return null;
+  if (isZeroAddress(lower) || lower === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+    const weth = getFromContracts(ADDRESS.WETH, chainId);
+    return weth ? toLower(weth) : null;
+  }
+  if (!isHexAddress(address)) return null;
+  return lower;
+}
+
+async function fetchCoingeckoUsdPrice(
+  chainId: number,
+  address: string
+): Promise<BigDecimal | null> {
+  if (typeof window === "undefined") return null;
+  const key = `${chainId}:${address}`;
+  const now = Date.now();
+  const cached = coingeckoCache.get(key);
+  if (cached && cached.inflight) return cached.inflight;
+  if (cached && now - cached.ts < COINGECKO_CACHE_MS) return cached.price;
+
+  const inflight = (async () => {
+    try {
+      const qs = new URLSearchParams({
+        chainId: String(chainId),
+        address,
+      });
+      const res = await fetch(`/api/coingecko/usd?${qs.toString()}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      const usd = Number(data?.usd);
+      return Number.isFinite(usd) ? new BigDecimal(String(usd), 8) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  coingeckoCache.set(key, { ts: now, price: cached?.price ?? null, inflight });
+  const price = await inflight;
+  coingeckoCache.set(key, { ts: Date.now(), price });
+  return price;
+}
+
+async function getUsdPriceWithFallback(params: {
+  assetValues: useAssetValuesReturnType;
+  chainId?: number;
+  symbol?: string;
+  address?: string | null;
+}): Promise<BigDecimal | null> {
+  const { assetValues, chainId, symbol, address } = params;
+  const chainlink = getChainlinkUsdPrice(assetValues, symbol);
+  if (chainlink) return chainlink;
+  if (!chainId) return null;
+  const normalized = normalizeCoingeckoAddress(address ?? null, chainId);
+  if (!normalized) return null;
+  return await fetchCoingeckoUsdPrice(chainId, normalized);
+}
 
 export type FarmCalc = {
   apy: BigDecimal;
@@ -120,12 +211,18 @@ export async function calcFarmOnce(
         : undefined;
 
       // 주의: 심볼 기반 키는 충돌 위험. 추후 주소 기반으로 개선 권장.
-      const price0 = symbol0
-        ? assetValues.chainLinkPriceMap.get(`LINK:${symbol0}_USD`)?.price
-        : undefined;
-      const price1 = symbol1
-        ? assetValues.chainLinkPriceMap.get(`LINK:${symbol1}_USD`)?.price
-        : undefined;
+      const price0 = await getUsdPriceWithFallback({
+        assetValues,
+        chainId: chainId as number | undefined,
+        symbol: symbol0,
+        address: token0Addr,
+      });
+      const price1 = await getUsdPriceWithFallback({
+        assetValues,
+        chainId: chainId as number | undefined,
+        symbol: symbol1,
+        address: token1Addr,
+      });
 
       if (liq0 && liq1 && price0 && price1) {
         tvl = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
@@ -139,9 +236,12 @@ export async function calcFarmOnce(
       token1Addr = null;
       underlyingToken0Bal = data;
       underlyingToken1Bal = null;
-      const tokenPrice = assetValues.chainLinkPriceMap.get(
-        `LINK:${farm.input.symbol}_USD`
-      )?.price;
+      const tokenPrice = await getUsdPriceWithFallback({
+        assetValues,
+        chainId: chainId as number | undefined,
+        symbol: farm.input?.symbol,
+        address: token0Addr,
+      });
       if (tokenPrice) {
         tvl = new BigDecimal(data.mul(tokenPrice).toString());
       }

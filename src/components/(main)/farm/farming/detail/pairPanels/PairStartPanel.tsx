@@ -13,8 +13,7 @@ import { ExecuteButtons } from "../../common/ExecuteButtons";
 import PairStartAmountInput from "./pairStart/PairStartAmountInput";
 import PairStartSummary from "./pairStart/PairStartSummary";
 import { BigDecimal } from "@/types/BigDecimal";
-import { useContext } from "react";
-import { AssetsContext } from "@/app/AssetsContextProvider";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 import { useChainId } from "wagmi";
 
 export function PairStartPanel({
@@ -34,7 +33,6 @@ export function PairStartPanel({
     tokenId,
     poolAddress
   );
-  const { assetValues } = useContext(AssetsContext);
   const price = state.price ?? BigDecimal.ZERO();
 
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
@@ -65,21 +63,21 @@ export function PairStartPanel({
     price && totalBalance ? totalBalance.mul(price) : BigDecimal.ZERO();
 
   // ✅ 토큰별 Chainlink 가격으로 입력금액 USD 계산 (배열로 분리)
-  const tokenUsdValues = state.tokenStatuses.map((tokenStatus) => {
+  const token0 = state.tokenStatuses[0]?.input;
+  const token1 = state.tokenStatuses[1]?.input;
+  const symbol0 = token0?.symbol;
+  const { priceUsd: token0Usd } = useTokenUsdPrice(token0 as any);
+  const { priceUsd: token1Usd } = useTokenUsdPrice(token1 as any);
+  const priceUsd0 =
+    token0Usd != null ? new BigDecimal(String(token0Usd), 8) : BigDecimal.ZERO();
+  const priceUsd1 =
+    token1Usd != null ? new BigDecimal(String(token1Usd), 8) : BigDecimal.ZERO();
+
+  const tokenUsdValues = state.tokenStatuses.map((tokenStatus, index) => {
     const amt = tokenStatus.amount ?? BigDecimal.ZERO();
     if (amt.lte(0)) return BigDecimal.ZERO();
-
-    const token = tokenStatus.input;
-    const symbol = token?.symbol;
-    if (!symbol) return BigDecimal.ZERO();
-
-    const priceEntry = assetValues?.chainLinkPriceMap?.get(
-      `LINK:${symbol}_USD`
-    );
-    const tokenPriceUsd =
-      (priceEntry?.price as BigDecimal | undefined) ?? BigDecimal.ZERO();
-
-    return amt.mul(tokenPriceUsd);
+    const tokenPriceUsd = index === 0 ? priceUsd0 : priceUsd1;
+    return tokenPriceUsd.gt(0) ? amt.mul(tokenPriceUsd) : BigDecimal.ZERO();
   });
 
   // 총 입력 USD
@@ -120,26 +118,6 @@ export function PairStartPanel({
   // 지갑 잔고 (USD 기준 normal max 계산용)
   const walletBal0 = ts0?.balance ?? BigDecimal.ZERO();
   const walletBal1 = ts1?.balance ?? BigDecimal.ZERO();
-
-  const token0 = ts0?.input;
-  const token1 = ts1?.input;
-
-  const symbol0 = token0?.symbol;
-  const symbol1 = token1?.symbol;
-
-  const priceEntry0 = symbol0
-    ? assetValues?.chainLinkPriceMap?.get(`LINK:${symbol0}_USD`)
-    : null;
-  const priceEntry1 = symbol1
-    ? assetValues?.chainLinkPriceMap?.get(`LINK:${symbol1}_USD`)
-    : null;
-
-  const priceUsd0 = priceEntry0?.price
-    ? new BigDecimal(priceEntry0.price.toString())
-    : BigDecimal.ZERO();
-  const priceUsd1 = priceEntry1?.price
-    ? new BigDecimal(priceEntry1.price.toString())
-    : BigDecimal.ZERO();
 
   // ─────────────────────────────────────────────
   // ✅ 1. 일반 모드용 normalMaxAmount (두 토큰 중 달러 환산 balance 작은 쪽 기준)
