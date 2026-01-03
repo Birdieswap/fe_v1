@@ -50,7 +50,7 @@ function normalizeCoingeckoAddress(
   if (!lower) return null;
   if (isZeroAddress(lower) || lower === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
     const weth = getFromContracts(ADDRESS.WETH, chainId);
-    return weth ? toLower(weth) : null;
+    return weth ? weth.toLowerCase() : null;
   }
   if (!isHexAddress(address)) return null;
   return lower;
