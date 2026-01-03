@@ -54,7 +54,9 @@ export function approve(params: {
   });
 
   const spender =
-    spenderAddress ?? (contracts.birdieRouter.address as `0x${string}`);
+    spenderAddress ??
+    (getFromContracts("ROUTER", chainId) as `0x${string}` | null) ??
+    (contracts.birdieRouter.address as `0x${string}`);
 
   return new Promise<void>((resolve, reject) => {
     writeContract(
@@ -154,6 +156,9 @@ export async function swap(params: {
   const inputAmountBD = new BigDecimal(fromAmount, fromToken?.decimals);
   const outputAmountBD = new BigDecimal(toAmount, toToken?.decimals);
   const deadline = BigInt(Math.floor(Date.now() / 1000) + 300);
+  const routerAddress =
+    (getFromContracts("ROUTER", chainId) as `0x${string}` | null) ??
+    (contracts.birdieRouter.address as `0x${string}`);
 
   const transactionProps = {
     transactionType: TransactionType.SWAP,
@@ -417,7 +422,7 @@ export async function swap(params: {
   const sqrtPriceLimit = sqrtPriceLimitX96 * BigInt(0);
 
   const hash = await writeWithHandlers({
-    address: contracts.birdieRouter.address as `0x${string}`,
+    address: routerAddress,
     abi: contracts.birdieRouter.abi,
     functionName: "swap",
     args: [
