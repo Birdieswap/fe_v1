@@ -1,12 +1,12 @@
 import { AnimatePresence } from "framer-motion";
-import { useCallback, useContext, useMemo } from "react";
+import { useMemo } from "react";
 
 import { UsePairStartPanelReturn } from "@/hooks/usePairStartPanel";
 import { setPrecisionString } from "@/utils/setPrecision";
 import { BigDecimal } from "@/types/BigDecimal";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import usePriceImpact from "@/hooks/swap/usePriceImpact";
 import { FarmPair } from "@/types/FarmListTableRowProps";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 import { SwapSummaryComponents as Components } from "../../../common/SwapSummaryComponents";
 
@@ -17,7 +17,6 @@ export default function PairStartSummary({
   item: FarmPair;
   state: UsePairStartPanelReturn;
 }) {
-  const { assetValues } = useContext(AssetsContext);
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
   const otherIndex: 0 | 1 = activeIndex === 0 ? 1 : 0;
 
@@ -30,29 +29,21 @@ export default function PairStartSummary({
   // const activeToken = activeTokenStatus?.input;
   // const otherToken = otherTokenStatus?.input;
 
-  // [ADDED] ETH/WETH 가격 fallback
-  const priceOf = useCallback(
-    (sym?: string) => {
-      if (!sym || !assetValues?.chainLinkPriceMap) return undefined;
-      const map = assetValues.chainLinkPriceMap;
-      // 우선 해당 심볼
-      const p = map.get(`LINK:${sym}_USD`)?.price;
-      if (p !== undefined) return p;
-      // ETH/WETH 상호 fallback
-      if (sym === "ETH") return map.get("LINK:WETH_USD")?.price;
-      if (sym === "WETH") return map.get("LINK:ETH_USD")?.price;
-      return undefined;
-    },
-    [assetValues?.chainLinkPriceMap]
-  );
-
+  const { priceUsd: activePriceUsd } = useTokenUsdPrice(activeToken as any);
+  const { priceUsd: otherPriceUsd } = useTokenUsdPrice(otherToken as any);
   const activePrice = useMemo(
-    () => priceOf(activeToken?.symbol),
-    [priceOf, activeToken?.symbol]
+    () =>
+      activePriceUsd != null
+        ? new BigDecimal(String(activePriceUsd), 8)
+        : undefined,
+    [activePriceUsd]
   );
   const otherPrice = useMemo(
-    () => priceOf(otherToken?.symbol),
-    [priceOf, otherToken?.symbol]
+    () =>
+      otherPriceUsd != null
+        ? new BigDecimal(String(otherPriceUsd), 8)
+        : undefined,
+    [otherPriceUsd]
   );
 
   // const activePrice = useMemo(() => {

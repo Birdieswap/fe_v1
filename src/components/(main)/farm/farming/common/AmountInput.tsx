@@ -4,16 +4,16 @@ import { Button, Image } from "@heroui/react";
 import clsx from "clsx";
 import { AnimatePresence, motion } from "framer-motion";
 import { Input } from "@heroui/react";
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { setPrecisionString } from "@/utils/setPrecision";
 import Icons from "@/assets/icons/icons";
 import { BigDecimal } from "@/types/BigDecimal";
 import { presenceTransition } from "@/const/presenceTransition";
 import { onAmountValueChange } from "@/utils/onAmountValueChange";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import { IToken } from "@/const/contracts/types/tokenTypes";
 import suffixNumbers from "@/utils/suffixNumbers";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
   return (
@@ -70,7 +70,7 @@ export default function AmountInput({
   normalMaxAmount?: BigDecimal;
   limitMaxAmount?: BigDecimal;
 }) {
-  const { assetValues } = useContext(AssetsContext);
+  const { priceUsd } = useTokenUsdPrice(token as any);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
 
   const [isSmall, setIsSmall] = useState(false);
@@ -96,9 +96,7 @@ export default function AmountInput({
 
   const tokenPrice =
     tokenPriceProp ??
-    (assetValues &&
-      token &&
-      assetValues.chainLinkPriceMap.get(`LINK:${token.symbol}_USD`)?.price);
+    (priceUsd != null ? new BigDecimal(String(priceUsd), 8) : undefined);
 
   const chosenPrice = panel === "stop" ? price : tokenPrice;
 

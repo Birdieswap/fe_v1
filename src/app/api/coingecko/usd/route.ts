@@ -44,6 +44,8 @@ function chainIdToCgPlatform(chainId: number): string | null {
       return "ethereum";
     case 8453:
       return "base";
+    case 9998453:
+      return "base";
     case 42161:
       return "arbitrum-one";
     case 10:
@@ -75,6 +77,11 @@ export async function GET(req: Request) {
   }
 
   const platform = chainIdToCgPlatform(chainId);
+  console.log("[coingecko.usd] request", {
+    chainId,
+    address,
+    platform,
+  });
   if (!platform) {
     return NextResponse.json({ usd: null, reason: "unsupported_chain" });
   }
@@ -82,7 +89,7 @@ export async function GET(req: Request) {
   const key = `${platform}:${address}`;
   const now = Date.now();
   const cached = cache.get(key);
-  if (cached && cached.expiresAt > now) {
+  if (cached && cached.expiresAt > now && cached.usd != null) {
     return NextResponse.json({ usd: cached.usd, cached: true, platform });
   }
 
@@ -97,30 +104,47 @@ export async function GET(req: Request) {
   const baseUrl = getCgBaseUrl(plan);
   const headers = getHeaders(plan);
 
-  // Coin data by token contract address endpoint (price 포함) :contentReference[oaicite:5]{index=5}
+  // Coin data by token contract address endpoint (price 포함)
   const url = `${baseUrl}/coins/${platform}/contract/${address}`;
+  // Onchain simple price endpoint (fallback)
+  const onchainUrl = `${baseUrl}/onchain/simple/networks/${platform}/token_price/${address}`;
+
+  console.log("[coingecko usd] fetching", { url, onchainUrl, plan });
 
   try {
     const res = await fetch(url, { headers, cache: "no-store" });
+    let usd: number | null = null;
+    let status = res.status;
 
-    // rate limit / auth 등 실패는 그냥 null로
-    if (!res.ok) {
-      cache.set(key, { usd: null, expiresAt: now + TTL });
-      return NextResponse.json({
-        usd: null,
-        ok: false,
-        status: res.status,
-        platform,
-      });
+    if (res.ok) {
+      const json = await res.json();
+      const primaryUsd = Number(json?.market_data?.current_price?.usd);
+      usd = Number.isFinite(primaryUsd) ? primaryUsd : null;
     }
 
-    const json = await res.json();
-    const usd = Number(json?.market_data?.current_price?.usd);
+    // fallback: onchain simple price
+    if (usd == null) {
+      const res2 = await fetch(onchainUrl, { headers, cache: "no-store" });
+      status = res2.status;
+      if (res2.ok) {
+        const json2 = await res2.json();
+        const raw =
+          json2?.data?.attributes?.token_prices?.[address?.toLowerCase?.()] ??
+          json2?.data?.attributes?.token_prices?.[address];
+        const fallbackUsd = Number(raw);
+        usd = Number.isFinite(fallbackUsd) ? fallbackUsd : null;
+      }
+    }
 
     const finalUsd = Number.isFinite(usd) ? usd : null;
     cache.set(key, { usd: finalUsd, expiresAt: now + TTL });
 
-    return NextResponse.json({ usd: finalUsd, ok: true, platform });
+    return NextResponse.json({
+      usd: finalUsd,
+      ok: finalUsd != null,
+      status,
+      platform,
+    });
   } catch {
     cache.set(key, { usd: null, expiresAt: now + TTL });
     return NextResponse.json({ usd: null, ok: false, platform });
