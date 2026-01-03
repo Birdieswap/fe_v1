@@ -10,6 +10,9 @@ type TokenLike = {
   addresses?: Record<number, string> | string;
 };
 
+const CG_SUPPORTED_CHAINS = new Set([1, 8453, 42161, 10, 137, 56]);
+const CG_FALLBACK_CHAIN_ORDER = [8453, 42161, 1, 10, 137, 56];
+
 function getTokenAddressByChain(token?: any, chainId?: number): string | null {
   if (!token || !chainId) return null;
 
@@ -24,6 +27,35 @@ function getTokenAddressByChain(token?: any, chainId?: number): string | null {
       : token.addresses?.[chainId];
 
   return typeof addr === "string" && addr.length > 0 ? addr : null;
+}
+
+function resolveCgTarget(
+  token?: any,
+  chainId?: number
+): { address: string; chainId: number } | null {
+  if (!token) return null;
+
+  if (chainId && CG_SUPPORTED_CHAINS.has(chainId)) {
+    const addr = getTokenAddressByChain(token, chainId);
+    if (addr) return { address: addr, chainId };
+  }
+
+  if (typeof token.addresses === "string") {
+    if (chainId && CG_SUPPORTED_CHAINS.has(chainId)) {
+      return { address: token.addresses, chainId };
+    }
+    return null;
+  }
+
+  const map = token.addresses as Record<number, string> | undefined;
+  if (!map) return null;
+
+  for (const cid of CG_FALLBACK_CHAIN_ORDER) {
+    const addr = map[cid];
+    if (addr) return { address: addr, chainId: cid };
+  }
+
+  return null;
 }
 
 export default function useTokenUsdPrice(token?: TokenLike) {
@@ -43,8 +75,8 @@ export default function useTokenUsdPrice(token?: TokenLike) {
 
   const [cgUsd, setCgUsd] = useState<number | null>(null);
 
-  const tokenAddress = useMemo(
-    () => getTokenAddressByChain(token, chainId),
+  const cgTarget = useMemo(
+    () => resolveCgTarget(token, chainId),
     [token, chainId]
   );
 
@@ -52,14 +84,14 @@ export default function useTokenUsdPrice(token?: TokenLike) {
     // chainlink가 있으면 끝
     if (chainlinkUsd != null && Number.isFinite(chainlinkUsd)) return false;
     // 주소가 없으면 못 침
-    if (!tokenAddress) return false;
+    if (!cgTarget?.address || !cgTarget?.chainId) return false;
     // (선택) native ETH는 chainlink로 처리한다고 가정 → cg 미사용
     // if (String(token?.symbol ?? "").toUpperCase() === "ETH") return false;
     return true;
-  }, [chainlinkUsd, tokenAddress, token?.symbol]);
+  }, [chainlinkUsd, cgTarget, token?.symbol]);
 
   useEffect(() => {
-    if (!shouldUseCg || !chainId || !tokenAddress) {
+    if (!shouldUseCg || !cgTarget?.chainId || !cgTarget?.address) {
       setCgUsd(null);
       return;
     }
@@ -69,16 +101,17 @@ export default function useTokenUsdPrice(token?: TokenLike) {
     (async () => {
       try {
         const qs = new URLSearchParams({
-          chainId: String(chainId),
-          address: tokenAddress,
+          chainId: String(cgTarget.chainId),
+          address: cgTarget.address,
         });
         const res = await fetch(`/api/coingecko/usd?${qs.toString()}`, {
           cache: "no-store",
         });
         const data = await res.json();
         console.log("[coingecko usd]", {
-          chainId,
-          tokenAddress,
+          qs: qs.toString(),
+          chainId: cgTarget.chainId,
+          tokenAddress: cgTarget.address,
           httpStatus: res.status,
           data, // { usd, reason, ok, platform, ... }
         });
@@ -93,7 +126,18 @@ export default function useTokenUsdPrice(token?: TokenLike) {
     return () => {
       cancelled = true;
     };
-  }, [shouldUseCg, chainId, tokenAddress]);
+  }, [shouldUseCg, cgTarget]);
+
+  console.log("[useTokenUsdPrice]", {
+    cgTarget,
+    token: token?.symbol,
+    chainId,
+    chainlinkUsd,
+    cgUsd,
+    finalUsd: chainlinkUsd != null ? chainlinkUsd : shouldUseCg ? cgUsd : null,
+    source:
+      chainlinkUsd != null ? "chainlink" : shouldUseCg ? "coingecko" : "none",
+  });
 
   return {
     priceUsd: chainlinkUsd ?? cgUsd, // 최종
