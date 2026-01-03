@@ -401,9 +401,9 @@ const FARM_WETH_harvest_autopilot: Farm = {
 
 export const FarmList = [
   // CBBTC_harvest_autopilot,
-  ETH_harvest_autopilot,
-  USDC_harvest_autopilot,
-  FARM_harvest_autopilot,
+  // ETH_harvest_autopilot,
+  // USDC_harvest_autopilot,
+  // FARM_harvest_autopilot,
   // WETH_USDC_harvest_autopilot,
   ETH_USDC_harvest_autopilot,
   USDC_WBTC_harvest_autopilot,
@@ -416,9 +416,9 @@ export const FarmList = [
 ];
 export const FarmInfo = {
   // CBBTC_harvest_autopilot,
-  WETH_harvest_autopilot,
-  USDC_harvest_autopilot,
-  FARM_harvest_autopilot,
+  // WETH_harvest_autopilot,
+  // USDC_harvest_autopilot,
+  // FARM_harvest_autopilot,
   WETH_USDC_harvest_autopilot,
   ETH_USDC_harvest_autopilot,
   USDC_WBTC_harvest_autopilot,

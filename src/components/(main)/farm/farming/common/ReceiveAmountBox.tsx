@@ -2,14 +2,14 @@
 
 import { Button, Image } from "@heroui/react";
 import { motion } from "framer-motion";
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 
 import { BigDecimal } from "@/types/BigDecimal";
 import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import suffixNumbers from "@/utils/suffixNumbers";
 import Icons from "@/assets/icons/icons";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 export default function ReceiveAmountBox({
   amount,
@@ -20,16 +20,11 @@ export default function ReceiveAmountBox({
   bToken: IBirdieSingleFarm;
   nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
 }) {
-  const { assetValues } = useContext(AssetsContext);
-  const activePrice = useMemo(() => {
-    if (bToken?.input.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(
-        `LINK:${bToken?.input.symbol}_USD`
-      )?.price;
-    }
-
-    return undefined;
-  }, [bToken?.input.symbol, assetValues?.chainLinkPriceMap]);
+  const { priceUsd } = useTokenUsdPrice(bToken?.input as any);
+  const activePrice = useMemo(
+    () => (priceUsd != null ? new BigDecimal(String(priceUsd), 8) : undefined),
+    [priceUsd]
+  );
 
   // 표시용 소수 자릿수 (displayDecimals > decimals > fallback)
   const tokenDecimals =
