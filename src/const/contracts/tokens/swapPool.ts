@@ -23,7 +23,7 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .USDC_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -52,7 +52,7 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .USDC_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -163,7 +163,7 @@ const blpUniswapHarvestAutopilotUSDCWBTC = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .WBTC_USDC_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -191,7 +191,7 @@ const blpUniswapHarvestAutopilotWBTCWETH = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .WBTC_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -219,7 +219,7 @@ const blpUniswapHarvestAutopilotWBTCETH = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .WBTC_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 3000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -246,7 +246,7 @@ const blpUniswapHarvestAutopilotFARMWETH = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .FARM_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 10000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
@@ -273,7 +273,7 @@ const blpUniswapHarvestAutopilotFARMETH = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .FARM_WETH_POOL as `0x${string}`,
   },
-  decimals: 8,
+  decimals: 18,
   fee_tier: 10000,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
