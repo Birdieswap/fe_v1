@@ -65,7 +65,7 @@ export default function useStakedBalances(params: {
           fullName: `Staked ${stakingTokenSymbol}`,
           inputTokenAddress: inputAddr,
           stakingPoolAddress: poolAddr,
-          decimals: 8,
+          decimals: 18,
           abi: birdieswap_staking_abi,
           iconSrc: "tokens/sblp-token.svg",
         } as StakedToken;
