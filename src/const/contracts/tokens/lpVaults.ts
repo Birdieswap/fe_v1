@@ -23,7 +23,7 @@ const blpHarvestAutopilotETHUSDC = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Wrapper,
   swap: swapPools.blpUniswapHarvestAutopilotETHUSDC,
   lpPool: swapPools.blpUniswapHarvestAutopilotETHUSDC,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 6,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
@@ -43,7 +43,7 @@ const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Router,
   swap: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
   lpPool: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 6,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
@@ -116,7 +116,7 @@ const blpHarvestAutopilotUSDCWBTC = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Router,
   swap: swapPools.blpUniswapHarvestAutopilotUSDCWBTC,
   lpPool: swapPools.blpUniswapHarvestAutopilotUSDCWBTC,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
@@ -135,7 +135,7 @@ const blpHarvestAutopilotWBTCWETH = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Router,
   swap: swapPools.blpUniswapHarvestAutopilotWBTCWETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotWBTCWETH,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
@@ -154,7 +154,7 @@ const blpHarvestAutopilotWBTCETH = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Wrapper,
   swap: swapPools.blpUniswapHarvestAutopilotWBTCETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotWBTCETH,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
@@ -172,15 +172,15 @@ const blpHarvestAutopilotFARMWETH = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Router,
   swap: swapPools.blpUniswapHarvestAutopilotFARMWETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotFARMWETH,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
 const blpHarvestAutopilotFARMETH = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
-  symbol: "bFARMETH",
-  fullName: "Birdieswap FARM 10000 ETH",
+  symbol: "bFARMWETH",
+  fullName: "Birdieswap FARM 10000 WETH",
   addresses: {
     [networks.base.id]: contractAddresses.base.FARM_WETH_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
@@ -190,7 +190,7 @@ const blpHarvestAutopilotFARMETH = BirdieLPFarmGuard({
   provider: stakingProviders.BIRDIESWAP_Wrapper,
   swap: swapPools.blpUniswapHarvestAutopilotFARMETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotFARMETH,
-  decimals: 8,
+  decimals: 18,
   displayDecimals: 4,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
