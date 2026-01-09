@@ -24,7 +24,7 @@ const blpHarvestAutopilotETHUSDC = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotETHUSDC,
   lpPool: swapPools.blpUniswapHarvestAutopilotETHUSDC,
   decimals: 18,
-  displayDecimals: 6,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -44,7 +44,7 @@ const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
   lpPool: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
   decimals: 18,
-  displayDecimals: 6,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -117,7 +117,7 @@ const blpHarvestAutopilotUSDCWBTC = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotUSDCWBTC,
   lpPool: swapPools.blpUniswapHarvestAutopilotUSDCWBTC,
   decimals: 18,
-  displayDecimals: 4,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -136,7 +136,7 @@ const blpHarvestAutopilotWBTCWETH = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotWBTCWETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotWBTCWETH,
   decimals: 18,
-  displayDecimals: 4,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -155,7 +155,7 @@ const blpHarvestAutopilotWBTCETH = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotWBTCETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotWBTCETH,
   decimals: 18,
-  displayDecimals: 4,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -173,7 +173,7 @@ const blpHarvestAutopilotFARMWETH = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotFARMWETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotFARMWETH,
   decimals: 18,
-  displayDecimals: 4,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 
@@ -191,7 +191,7 @@ const blpHarvestAutopilotFARMETH = BirdieLPFarmGuard({
   swap: swapPools.blpUniswapHarvestAutopilotFARMETH,
   lpPool: swapPools.blpUniswapHarvestAutopilotFARMETH,
   decimals: 18,
-  displayDecimals: 4,
+  displayDecimals: 8,
   iconSrc: "/tokens/blp-token.svg",
 } as const);
 

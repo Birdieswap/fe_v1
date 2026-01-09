@@ -20,8 +20,8 @@ import {
 
 // landing에서 보여줄 네트워크 목록(원하는 것만)
 const LANDING_NETWORKS: NetworkInfo[] = [
-  { id: sepolia.id, name: sepolia.name, iconSrc: "/networks/sepolia.svg" },
   { id: base_custom.id, name: base_custom.name, iconSrc: "/networks/base.svg" },
+  { id: sepolia.id, name: sepolia.name, iconSrc: "/networks/sepolia.svg" },
   // { id: arbitrum.id, name: arbitrum.name, iconSrc: "/icons/arbitrum.svg" },
   // {
   //   id: optimism_custom.id,
@@ -34,6 +34,7 @@ const LANDING_NETWORKS: NetworkInfo[] = [
 ];
 
 const STORAGE_KEY = "birdieswap:landing:selectedChainId";
+const DEFAULT_CHAIN_ID = base_custom.id;
 
 type LandingNetworkContextValue = {
   networks: NetworkInfo[];
@@ -58,7 +59,7 @@ export function LandingNetworkProvider({
   const networks = LANDING_NETWORKS;
 
   const [selectedChainId, setSelectedChainIdState] = useState<number>(
-    networks[0]?.id ?? 11155111
+    networks[0]?.id ?? DEFAULT_CHAIN_ID
   );
   const [isOpen, setIsOpen] = useState(false);
 
