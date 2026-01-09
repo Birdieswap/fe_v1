@@ -206,9 +206,9 @@ function makeRandomRpcTransport(
 }
 
 const chains = [
+  base_custom,
   sepolia,
   arbitrum,
-  base_custom,
   optimism_custom,
   bsc,
   polygon,
@@ -316,7 +316,7 @@ export default function Providers({
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
             <RainbowKitProvider
-              initialChain={sepolia}
+              initialChain={base_custom}
               locale="en"
               showRecentTransactions={true}
               theme={theme}

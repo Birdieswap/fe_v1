@@ -57,17 +57,18 @@ export type WalletContextType = {
 
 const networks: NetworkInfo[] = [
   {
-    id: 11155111,
-    name: "Sepolia",
-    iconSrc: "/networks/sepolia.svg",
-    blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
-  },
-  {
     id: 8453,
     name: "base",
     iconSrc: "/networks/base.svg",
     blockExplorer: { name: "Basescan", url: "https://basescan.org/" },
   },
+  {
+    id: 11155111,
+    name: "Sepolia",
+    iconSrc: "/networks/sepolia.svg",
+    blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
+  },
+
   // {
   //   id: 42161,
   //   name: "Arbitrum",
