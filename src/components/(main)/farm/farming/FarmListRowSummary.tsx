@@ -65,9 +65,10 @@ type Props = {
   stakedBalance?: BigDecimal;
   underlying?: {
     token0: { address: `0x${string}` | null; balance: BigDecimal | null };
-    token1:
-      | { address: `0x${string}` | null; balance: BigDecimal | null }
-      | null;
+    token1: {
+      address: `0x${string}` | null;
+      balance: BigDecimal | null;
+    } | null;
   };
   totalSupply?: BigDecimal | null;
   showUnderlying?: boolean;
@@ -113,12 +114,10 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
     if (!underlying?.token0?.balance) return null;
 
     const buildLine = (
-      token?:
-        | {
-            address: `0x${string}` | null;
-            balance: BigDecimal | null;
-          }
-        | null
+      token?: {
+        address: `0x${string}` | null;
+        balance: BigDecimal | null;
+      } | null
     ) => {
       if (!token?.balance) return null;
       const addr = token.address;
@@ -339,7 +338,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
               ) : !isBalanceAvailable ? (
                 <LoadingPulse w="w-16" />
               ) : (
-                balance.roundToDecimals(5).toPrecisionString(true, true)
+                balance.roundToDecimals(8).toPrecisionString(true, true)
               )}
             </div>
             <div className="font-medium text-default-700 dark:text-default-300">
@@ -460,7 +459,7 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
                         ? "0"
                         : // ( <LoadingPulse w="w-16" />)
                           balance
-                            .roundToDecimals(5)
+                            .roundToDecimals(8)
                             .toPrecisionString(true, true)}
                   </span>
                   <span className="text-[12px] text-default-700 dark:text-default-300">
