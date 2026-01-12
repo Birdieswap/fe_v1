@@ -57,7 +57,7 @@ export async function finalizeAfterTxSuccess(args: {
     benchmarkOut,
     toTokenUsd,
     preToBalance,
-    usdThreshold = 0.1,
+    usdThreshold = 1,
   } = args;
 
   // 1) 모달 핸들러 성공 콜백 (기존 순서 유지)
