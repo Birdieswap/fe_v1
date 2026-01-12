@@ -103,6 +103,8 @@ const bHarvestAutopilotFARM = BirdieSingleFarmGuard({
   symbol: "bFARM",
   fullName: "Birdieswap FARM",
   addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .FARM_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.FARM_VAULT as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .FARM_VAULT as `0x${string}`,
