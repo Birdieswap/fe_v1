@@ -98,6 +98,7 @@ const FARM = CurrencyGuard({
   symbol: "FARM",
   fullName: "FARM",
   addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.FARM as `0x${string}`,
     [networks.base.id]: contractAddresses.base.FARM as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum.FARM as `0x${string}`,
   },

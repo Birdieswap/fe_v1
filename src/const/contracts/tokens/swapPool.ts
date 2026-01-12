@@ -242,6 +242,8 @@ const blpUniswapHarvestAutopilotFARMWETH = SwapPoolGuard({
   symbol: "bFARMETH",
   fullName: "Birdieswap FARM 10000 ETH",
   addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .FARM_WETH_POOL as `0x${string}`,
     [networks.base.id]: contractAddresses.base.FARM_WETH_POOL as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .FARM_WETH_POOL as `0x${string}`,
@@ -258,6 +260,9 @@ const blpUniswapHarvestAutopilotFARMWETH = SwapPoolGuard({
   ],
   lpVaultKey: "blpHarvestAutopilotFARMWETH",
   tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.FARM_WETH_TOKEN_ID as
+      | string
+      | number,
     [networks.base.id]: pool_tokenIds.base.FARM_WETH_TOKEN_ID as
       | string
       | number,
@@ -269,6 +274,8 @@ const blpUniswapHarvestAutopilotFARMETH = SwapPoolGuard({
   symbol: "bFARMETH",
   fullName: "Birdieswap FARM 10000 ETH",
   addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .FARM_WETH_POOL as `0x${string}`,
     [networks.base.id]: contractAddresses.base.FARM_WETH_POOL as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .FARM_WETH_POOL as `0x${string}`,
@@ -285,6 +292,9 @@ const blpUniswapHarvestAutopilotFARMETH = SwapPoolGuard({
   ],
   lpVaultKey: "blpHarvestAutopilotFARMWETH",
   tokenId: {
+    [networks.sepolia.id]: pool_tokenIds.sepolia.FARM_WETH_TOKEN_ID as
+      | string
+      | number,
     [networks.base.id]: pool_tokenIds.base.FARM_WETH_TOKEN_ID as
       | string
       | number,
