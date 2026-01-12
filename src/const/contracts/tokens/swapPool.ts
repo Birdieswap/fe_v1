@@ -298,9 +298,9 @@ const swapPools = {
   // blpUniswapHarvestAutopilotCBBTCWETH,
   // blpUniswapHarvestAutopilotCBBTCETH,
   // blpUniswapHarvestAutopilotEURCUSDC,
-  blpUniswapHarvestAutopilotUSDCWBTC,
-  blpUniswapHarvestAutopilotWBTCWETH,
-  blpUniswapHarvestAutopilotWBTCETH,
+  // blpUniswapHarvestAutopilotUSDCWBTC,
+  // blpUniswapHarvestAutopilotWBTCWETH,
+  // blpUniswapHarvestAutopilotWBTCETH,
   blpUniswapHarvestAutopilotFARMWETH,
   blpUniswapHarvestAutopilotFARMETH,
 };
