@@ -38,6 +38,9 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
       | string
       | number,
+    [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
+      | string
+      | number,
   },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
@@ -65,6 +68,9 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
   lpVaultKey: "blpHarvestAutopilotWETHUSDC",
   tokenId: {
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
+      | string
+      | number,
+    [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
       | string
       | number,
   },
