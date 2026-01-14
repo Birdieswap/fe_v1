@@ -271,6 +271,16 @@ export function usePairStartPanel(
     bToken1,
   });
 
+  console.log("[V3] usePairStartPanel V3 inputs", {
+    chainId,
+    tokenId: tokenId?.toString?.(),
+    uniswapPoolAddress,
+    bToken0: bToken0?.symbol,
+    bToken1: bToken1?.symbol,
+    bToken0Address: bToken0?.addresses?.[chainId as number],
+    bToken1Address: bToken1?.addresses?.[chainId as number],
+  });
+
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
     false,
@@ -373,10 +383,31 @@ export function usePairStartPanel(
 
       // 3) ✅ fallback: Uniswap V3 수학 + Birdieswap preview (slot0 기반 v3Pool/v3Position 사용)
       if (!client || !chainId || !v3Pool || !v3Position) {
+        console.log("[V3] getOtherAmount fallback skipped: missing deps", {
+          hasClient: !!client,
+          chainId,
+          hasV3Pool: !!v3Pool,
+          hasV3Position: !!v3Position,
+        });
         return BigDecimal.ZERO();
       }
 
       try {
+        console.log("[V3] getOtherAmount fallback start", {
+          chainId,
+          baseIndex: index,
+          baseUnderlying: baseUnderlying?.symbol,
+          otherUnderlying: otherUnderlyingToken?.symbol,
+          baseBToken: baseBToken?.symbol,
+          otherBToken: otherBToken?.symbol,
+          baseAddress: baseBToken?.addresses?.[chainId],
+          otherAddress: otherBToken?.addresses?.[chainId],
+          poolToken0: v3Pool?.token0?.address,
+          poolToken1: v3Pool?.token1?.address,
+          tickLower: v3Position?.tickLower,
+          tickUpper: v3Position?.tickUpper,
+          inputValue: value?.toString?.(),
+        });
         const baseProvider = (baseBToken as any)?.provider;
         const wrapperProvider = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
         const routerProvider = (stakingProviders as any)?.BIRDIESWAP_Router;
@@ -398,7 +429,14 @@ export function usePairStartPanel(
           value,
           providerOverride
         );
-        if (!bBase || bBase.eq(0)) return BigDecimal.ZERO();
+        if (!bBase || bBase.eq(0)) {
+          console.log("[V3] previewFullDeposit empty", {
+            bBase: bBase?.toString?.(),
+            baseBToken: baseBToken?.symbol,
+            baseAddress: baseBToken?.addresses?.[chainId],
+          });
+          return BigDecimal.ZERO();
+        }
 
         const baseBDecimals = baseBToken.decimals ?? 18;
         const rawBase = parseUnits(
@@ -463,7 +501,22 @@ export function usePairStartPanel(
           otherBToken,
           otherBAmountBD
         );
-        if (!otherUnderlyingBD) return BigDecimal.ZERO();
+        if (!otherUnderlyingBD) {
+          console.log("[V3] previewRedeem empty", {
+            otherBAmount: otherBAmountBD?.toString?.(),
+            otherBToken: otherBToken?.symbol,
+            otherAddress: otherBToken?.addresses?.[chainId],
+          });
+          return BigDecimal.ZERO();
+        }
+
+        console.log("[V3] getOtherAmount fallback result", {
+          baseIsToken0,
+          amount0Raw: amount0Raw.toString(),
+          amount1Raw: amount1Raw.toString(),
+          otherRaw: otherRaw.toString(),
+          otherUnderlying: otherUnderlyingBD?.toString?.(),
+        });
 
         return otherUnderlyingBD.roundToDecimals(
           otherUnderlyingToken.decimals ?? 18
