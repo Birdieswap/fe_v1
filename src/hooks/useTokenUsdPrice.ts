@@ -79,20 +79,22 @@ export default function useTokenUsdPrice(token?: TokenLike) {
         );
         const data = await res.json();
         const dataKeys = Object.keys(data ?? {});
-        console.log("[coingecko usd]", {
-          qs: qs.toString(),
-          symbol: cgSymbol,
-          symbolLower: cgSymbolLower,
-          dataKeys,
-          httpStatus: res.status,
-          data, // { usd, reason, ok, platform, ... }
-        });
+        // console.log("[coingecko usd]", {
+        //   qs: qs.toString(),
+        //   symbol: cgSymbol,
+        //   symbolLower: cgSymbolLower,
+        //   dataKeys,
+        //   httpStatus: res.status,
+        //   data, // { usd, reason, ok, platform, ... }
+        // });
         const direct =
           data?.[cgSymbolLower] ??
           data?.[cgSymbol ?? ""] ??
           (dataKeys.find((k) => k.toLowerCase() === cgSymbolLower)
             ? data?.[
-                dataKeys.find((k) => k.toLowerCase() === cgSymbolLower) as string
+                dataKeys.find(
+                  (k) => k.toLowerCase() === cgSymbolLower
+                ) as string
               ]
             : null);
         const usd = Number(direct?.usd);
@@ -109,15 +111,15 @@ export default function useTokenUsdPrice(token?: TokenLike) {
     };
   }, [shouldUseCg, cgSymbol, cgSymbolLower]);
 
-  console.log("[useTokenUsdPrice]", {
-    token: token?.symbol,
-    cgSymbol,
-    chainlinkUsd,
-    cgUsd,
-    finalUsd: chainlinkUsd != null ? chainlinkUsd : shouldUseCg ? cgUsd : null,
-    source:
-      chainlinkUsd != null ? "chainlink" : shouldUseCg ? "coingecko" : "none",
-  });
+  // console.log("[useTokenUsdPrice]", {
+  //   token: token?.symbol,
+  //   cgSymbol,
+  //   chainlinkUsd,
+  //   cgUsd,
+  //   finalUsd: chainlinkUsd != null ? chainlinkUsd : shouldUseCg ? cgUsd : null,
+  //   source:
+  //     chainlinkUsd != null ? "chainlink" : shouldUseCg ? "coingecko" : "none",
+  // });
 
   return {
     priceUsd: chainlinkUsd ?? cgUsd, // 최종

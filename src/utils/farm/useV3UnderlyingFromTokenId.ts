@@ -95,6 +95,10 @@ export function useV3UnderlyingFromTokenId(
     (async () => {
       try {
         // 1. NFPM position
+        console.log("[V3] fetchV3Position start", {
+          nfpmAddress,
+          tokenId: tokenId.toString(),
+        });
         const pos = await fetchV3Position(
           client as PublicClient,
           nfpmAddress,
@@ -116,6 +120,9 @@ export function useV3UnderlyingFromTokenId(
         });
 
         // 2. Pool slot0/liquidity
+        console.log("[V3] readContract slot0/liquidity start", {
+          uniswapPoolAddress,
+        });
         const [slot0Raw, poolLiquidityRaw] = await Promise.all([
           readContract(client as PublicClient, {
             address: uniswapPoolAddress,
@@ -315,7 +322,15 @@ export function useV3UnderlyingFromTokenId(
           setUnderlying1(under1 ?? BigDecimal.ZERO());
         }
       } catch (e) {
-        console.error("[V3] useV3UnderlyingFromTokenId failed", e);
+        console.error("[V3] useV3UnderlyingFromTokenId failed", {
+          error: e,
+          chainId,
+          tokenId: tokenId?.toString?.(),
+          uniswapPoolAddress,
+          nfpmAddress: miscContracts.UniswapNonfungiblePositionManager
+            .addresses[chainId as number],
+          hasClient: !!client,
+        });
         if (!cancelled) {
           setV3Position(null);
           setV3Pool(null);
