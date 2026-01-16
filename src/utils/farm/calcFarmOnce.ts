@@ -9,23 +9,14 @@ import {
 import { BigDecimal } from "@/types/BigDecimal";
 import type { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 import { findSymbolByAddress } from "../assets/getTokenSymbol";
-import { ADDRESS } from "@/const/contracts/contractAddresses";
+import {
+  fetchCoingeckoUsdPrice,
+  normalizeCoingeckoAddress,
+} from "@/utils/prices/coingeckoUsd";
 import {
   getLiquidityCached,
   getTotalSupplyCached,
 } from "@/utils/farm/farmDataCache";
-import {
-  getFromContracts,
-  isHexAddress,
-  isZeroAddress,
-  toLower,
-} from "@/utils/farm/getAddressHelpers";
-
-const COINGECKO_CACHE_MS = 60_000;
-const coingeckoCache = new Map<
-  string,
-  { ts: number; price: BigDecimal | null; inflight?: Promise<BigDecimal | null> }
->();
 
 function getChainlinkUsdPrice(
   assetValues: useAssetValuesReturnType,
@@ -35,59 +26,16 @@ function getChainlinkUsdPrice(
   const map = assetValues?.chainLinkPriceMap;
   if (!map) return null;
   const direct = map.get(`LINK:${symbol}_USD`)?.price ?? null;
-  if (direct) return direct;
-  if (symbol === "ETH") return map.get("LINK:WETH_USD")?.price ?? null;
-  if (symbol === "WETH") return map.get("LINK:ETH_USD")?.price ?? null;
-  return null;
-}
-
-function normalizeCoingeckoAddress(
-  address: string | null,
-  chainId?: number
-): string | null {
-  if (!address || !chainId) return null;
-  const lower = toLower(address);
-  if (!lower) return null;
-  if (isZeroAddress(lower) || lower === "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
-    const weth = getFromContracts(ADDRESS.WETH, chainId);
-    return weth ? weth.toLowerCase() : null;
+  if (direct && !direct.isZero()) return direct;
+  if (symbol === "ETH") {
+    const price = map.get("LINK:WETH_USD")?.price ?? null;
+    return price && !price.isZero() ? price : null;
   }
-  if (!isHexAddress(address)) return null;
-  return lower;
-}
-
-async function fetchCoingeckoUsdPrice(
-  chainId: number,
-  address: string
-): Promise<BigDecimal | null> {
-  if (typeof window === "undefined") return null;
-  const key = `${chainId}:${address}`;
-  const now = Date.now();
-  const cached = coingeckoCache.get(key);
-  if (cached && cached.inflight) return cached.inflight;
-  if (cached && now - cached.ts < COINGECKO_CACHE_MS) return cached.price;
-
-  const inflight = (async () => {
-    try {
-      const qs = new URLSearchParams({
-        chainId: String(chainId),
-        address,
-      });
-      const res = await fetch(`/api/coingecko/usd?${qs.toString()}`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      const usd = Number(data?.usd);
-      return Number.isFinite(usd) ? new BigDecimal(String(usd), 8) : null;
-    } catch {
-      return null;
-    }
-  })();
-
-  coingeckoCache.set(key, { ts: now, price: cached?.price ?? null, inflight });
-  const price = await inflight;
-  coingeckoCache.set(key, { ts: Date.now(), price });
-  return price;
+  if (symbol === "WETH") {
+    const price = map.get("LINK:ETH_USD")?.price ?? null;
+    return price && !price.isZero() ? price : null;
+  }
+  return null;
 }
 
 async function getUsdPriceWithFallback(params: {
@@ -99,9 +47,22 @@ async function getUsdPriceWithFallback(params: {
   const { assetValues, chainId, symbol, address } = params;
   const chainlink = getChainlinkUsdPrice(assetValues, symbol);
   if (chainlink) return chainlink;
+  const cgSymbolMap = assetValues?.coingeckoSymbolPriceMap;
+  const symbolKey = String(symbol ?? "").trim().toLowerCase();
+  if (cgSymbolMap && symbolKey && cgSymbolMap.has(symbolKey)) {
+    const cached = cgSymbolMap.get(symbolKey) ?? null;
+    if (cached && !cached.isZero()) return cached;
+    if (cached && cached.isZero()) return null;
+  }
   if (!chainId) return null;
   const normalized = normalizeCoingeckoAddress(address ?? null, chainId);
   if (!normalized) return null;
+  const cgMap = assetValues?.coingeckoPriceMap;
+  if (cgMap && cgMap.has(normalized)) {
+    const cached = cgMap.get(normalized) ?? null;
+    if (cached && !cached.isZero()) return cached;
+    if (cached && cached.isZero()) return null;
+  }
   return await fetchCoingeckoUsdPrice(chainId, normalized);
 }
 
