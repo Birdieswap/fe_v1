@@ -63,8 +63,66 @@ function chainIdToCgPlatform(chainId: number): string | null {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
+  const symbolsRaw = searchParams.get("symbols");
   const chainIdRaw = searchParams.get("chainId");
   const addressRaw = searchParams.get("address");
+
+  if (symbolsRaw) {
+    const symbol = symbolsRaw.split(",")[0]?.trim().toLowerCase();
+    if (!symbol) {
+      return NextResponse.json(
+        { usd: null, reason: "bad_request" },
+        { status: 400 }
+      );
+    }
+
+    const key = `symbol:${symbol}`;
+    const now = Date.now();
+    const cached = cache.get(key);
+    if (cached && cached.expiresAt > now && cached.usd != null) {
+      return NextResponse.json({ usd: cached.usd, cached: true, symbol });
+    }
+
+    const plan = getPlan();
+    const baseUrl = getCgBaseUrl(plan);
+    const headers = getHeaders(plan);
+
+    const url = `${baseUrl}/simple/price?vs_currencies=usd&symbols=${encodeURIComponent(
+      symbol
+    )}`;
+
+    try {
+      const res = await fetch(url, { headers, cache: "no-store" });
+      const status = res.status;
+      let usd: number | null = null;
+
+      if (res.ok) {
+        const json = await res.json();
+        const dataKeys = Object.keys(json ?? {});
+        const direct =
+          json?.[symbol] ??
+          (dataKeys.find((k) => k.toLowerCase() === symbol)
+            ? json?.[
+                dataKeys.find((k) => k.toLowerCase() === symbol) as string
+              ]
+            : null);
+        const rawUsd = Number(direct?.usd);
+        usd = Number.isFinite(rawUsd) ? rawUsd : null;
+      }
+
+      const finalUsd = Number.isFinite(usd) ? usd : null;
+      cache.set(key, { usd: finalUsd, expiresAt: now + TTL });
+      return NextResponse.json({
+        usd: finalUsd,
+        ok: finalUsd != null,
+        status,
+        symbol,
+      });
+    } catch {
+      cache.set(key, { usd: null, expiresAt: now + TTL });
+      return NextResponse.json({ usd: null, ok: false, symbol });
+    }
+  }
 
   const chainId = Number(chainIdRaw);
   const address = (addressRaw ?? "").toLowerCase();
