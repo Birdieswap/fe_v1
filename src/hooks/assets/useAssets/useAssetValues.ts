@@ -20,6 +20,11 @@ import totalDualUnderlyingTokens from "@/utils/farm/totalDualUnderlyingTokens";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { ADDRESS } from "@/const/contracts/contractAddresses";
 import {
+  fetchCoingeckoUsdPrice,
+  fetchCoingeckoUsdPriceBySymbol,
+  normalizeCoingeckoAddress,
+} from "@/utils/prices/coingeckoUsd";
+import {
   getFromContracts,
   toLower,
   ZERO_ADDRESS,
@@ -129,6 +134,13 @@ export function useAssetValues() {
     Map<string, UniswapData>
   >(new Map());
 
+  const [coingeckoPriceMap, setCoingeckoPriceMap] = useState<
+    Map<string, BigDecimal | null>
+  >(new Map());
+  const [coingeckoSymbolPriceMap, setCoingeckoSymbolPriceMap] = useState<
+    Map<string, BigDecimal | null>
+  >(new Map());
+
   const chainLinkData = useReadContracts({
     contracts: priceFeedArgs,
     query: { staleTime: 30_000 },
@@ -152,6 +164,102 @@ export function useAssetValues() {
     }, 60_000);
     return () => window.clearInterval(id);
   }, []);
+
+  useEffect(() => {
+    setCoingeckoPriceMap(new Map());
+    setCoingeckoSymbolPriceMap(new Map());
+  }, [chainId]);
+
+  const mergeCoingeckoPrices = useCallback(
+    (entries: Array<[string, BigDecimal | null]>) => {
+      if (!entries.length) return;
+      setCoingeckoPriceMap((prev) => {
+        const next = new Map(prev);
+        let changed = false;
+        for (const [addr, price] of entries) {
+          const prevVal = next.get(addr);
+          const same =
+            (prevVal == null && price == null) ||
+            (prevVal != null &&
+              price != null &&
+              prevVal.toString() === price.toString());
+          if (!same) {
+            next.set(addr, price);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    },
+    []
+  );
+
+  const mergeCoingeckoSymbolPrices = useCallback(
+    (entries: Array<[string, BigDecimal | null]>) => {
+      if (!entries.length) return;
+      setCoingeckoSymbolPriceMap((prev) => {
+        const next = new Map(prev);
+        let changed = false;
+        for (const [symbol, price] of entries) {
+          const prevVal = next.get(symbol);
+          const same =
+            (prevVal == null && price == null) ||
+            (prevVal != null &&
+              price != null &&
+              prevVal.toString() === price.toString());
+          if (!same) {
+            next.set(symbol, price);
+            changed = true;
+          }
+        }
+        return changed ? next : prev;
+      });
+    },
+    []
+  );
+
+  const refetchCoingeckoPrices = useCallback(
+    async (addresses: Array<string | null | undefined>) => {
+      if (!chainId || !addresses?.length) return;
+      const deduped = new Set<string>();
+      for (const addr of addresses) {
+        const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
+        if (normalized) deduped.add(normalized);
+      }
+      if (!deduped.size) return;
+
+      const list = Array.from(deduped);
+      const results = await Promise.all(
+        list.map(async (addr) => {
+          const price = await fetchCoingeckoUsdPrice(chainId, addr);
+          return [addr, price] as [string, BigDecimal | null];
+        })
+      );
+      mergeCoingeckoPrices(results);
+    },
+    [chainId, mergeCoingeckoPrices]
+  );
+
+  const refetchCoingeckoSymbolPrices = useCallback(
+    async (symbols: Array<string | null | undefined>) => {
+      const deduped = new Set<string>();
+      for (const symbol of symbols) {
+        const key = String(symbol ?? "").trim().toLowerCase();
+        if (key) deduped.add(key);
+      }
+      if (!deduped.size) return;
+
+      const list = Array.from(deduped);
+      const results = await Promise.all(
+        list.map(async (symbol) => {
+          const price = await fetchCoingeckoUsdPriceBySymbol(symbol);
+          return [symbol, price] as [string, BigDecimal | null];
+        })
+      );
+      mergeCoingeckoSymbolPrices(results);
+    },
+    [mergeCoingeckoSymbolPrices]
+  );
 
   /**
    * ✅ ChainLink map 갱신(기존 로직 유지)
@@ -353,10 +461,14 @@ export function useAssetValues() {
     chainLinkData,
     chainLinkPriceMap,
     uniswapPriceMap,
+    coingeckoPriceMap,
+    coingeckoSymbolPriceMap,
     isFetching,
 
     // ✅ 새로 추가 (useAssets.ts에서 refetchAll에 사용)
     refetchUnderlying,
+    refetchCoingeckoPrices,
+    refetchCoingeckoSymbolPrices,
   };
 }
 

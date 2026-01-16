@@ -31,6 +31,13 @@ import lpVaults from "@/const/contracts/tokens/lpVaults";
 import { BigDecimal } from "@/types/BigDecimal";
 import { ADDRESS } from "@/const/contracts/contractAddresses";
 import { getFromContracts } from "@/utils/farm/getAddressHelpers";
+import { FarmList } from "@/const/farmInfo";
+import {
+  isBirdieLPFarm,
+  isBirdieSingleFarm,
+} from "@/const/contracts/types/tokenTypes";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
+import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
 
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
@@ -377,8 +384,120 @@ export default function usePay() {
       const price = entry?.price as BigDecimal | undefined;
       if (price) return price;
     }
+
+    const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    const cgSymbolMap = (assets as any)?.assetValues?.coingeckoSymbolPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    if (cgMap && chainId) {
+      const normalized = normalizeCoingeckoAddress(
+        (WETH.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
+        chainId
+      );
+      if (normalized) {
+        const cgPrice = cgMap.get(normalized) ?? null;
+        if (cgPrice && !cgPrice.isZero()) return cgPrice;
+      }
+    }
+    if (cgSymbolMap) {
+      const primary = nativeSymbol.toLowerCase();
+      const fallback = primary === "eth" ? "weth" : "eth";
+      const price =
+        cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
+      if (price && !price.isZero()) return price;
+    }
     return null;
-  }, [assets, nativeSymbol]);
+  }, [assets, nativeSymbol, chainId, WETH.addresses]);
+
+  useEffect(() => {
+    if (!chainId) return;
+    if (!selectedPool?.address) return;
+    const refetchCg = (assets as any)?.assetValues?.refetchCoingeckoPrices as
+      | ((addresses: Array<string | null | undefined>) => Promise<void>)
+      | undefined;
+    if (!refetchCg) return;
+    const chainlinkData = (assets as any)?.assetValues?.chainLinkData;
+    if (!chainlinkData?.data) return;
+    if (chainlinkData?.isFetching) return;
+
+    const poolAddr = selectedPool.address.toLowerCase();
+    const farmEntry = FarmList.find((entry) => {
+      const stakeToken = entry?.wip_stakeToken as any;
+      const addr = getTokenAddress({ token: stakeToken, chainId });
+      return addr && addr.toLowerCase() === poolAddr;
+    });
+    if (!farmEntry) return;
+
+    const stakeToken = farmEntry.wip_stakeToken as any;
+    const addrs: Array<string | null | undefined> = [];
+    const symbols: Array<string | null | undefined> = [];
+    const clMap = (assets as any)?.assetValues?.chainLinkPriceMap as
+      | Map<string, any>
+      | undefined;
+    const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    const cgSymbolMap = (assets as any)?.assetValues?.coingeckoSymbolPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    const hasChainlinkPrice = (symbol?: string) => {
+      if (!symbol || !clMap) return false;
+      const direct = clMap.get(`LINK:${symbol}_USD`)?.price as
+        | BigDecimal
+        | undefined;
+      if (direct && !direct.isZero()) return true;
+      if (symbol === "ETH") {
+        const price = clMap.get("LINK:WETH_USD")?.price as
+          | BigDecimal
+          | undefined;
+        return !!price && !price.isZero();
+      }
+      if (symbol === "WETH") {
+        const price = clMap.get("LINK:ETH_USD")?.price as
+          | BigDecimal
+          | undefined;
+        return !!price && !price.isZero();
+      }
+      return false;
+    };
+
+    if (isBirdieSingleFarm(stakeToken)) {
+      const symbol = stakeToken.input?.symbol;
+      if (!hasChainlinkPrice(symbol)) {
+        const addr = getTokenAddress({ token: stakeToken.input, chainId });
+        const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
+        if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
+        const symbolKey = String(symbol ?? "").trim().toLowerCase();
+        if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
+      }
+    } else if (isBirdieLPFarm(stakeToken)) {
+      const t0 = stakeToken.swap?.input?.[0]?.input;
+      const t1 = stakeToken.swap?.input?.[1]?.input;
+      if (!hasChainlinkPrice(t0?.symbol)) {
+        const addr = getTokenAddress({ token: t0 as any, chainId });
+        const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
+        if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
+        const symbolKey = String(t0?.symbol ?? "").trim().toLowerCase();
+        if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
+      }
+      if (!hasChainlinkPrice(t1?.symbol)) {
+        const addr = getTokenAddress({ token: t1 as any, chainId });
+        const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
+        if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
+        const symbolKey = String(t1?.symbol ?? "").trim().toLowerCase();
+        if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
+      }
+    }
+
+    if (addrs.length > 0) refetchCg(addrs);
+    const refetchSymbol =
+      (assets as any)?.assetValues?.refetchCoingeckoSymbolPrices as
+        | ((symbols: Array<string | null | undefined>) => Promise<void>)
+        | undefined;
+    if (symbols.length > 0 && refetchSymbol) refetchSymbol(symbols);
+  }, [assets, chainId, selectedPool?.address]);
 
   // 2) 입력한 ETH/WETH 의 USD 가치
   const enterAmountUsdBd = useMemo(() => {

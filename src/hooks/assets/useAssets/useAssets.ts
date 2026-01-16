@@ -14,9 +14,13 @@ import {
 import {
   IBirdieLPFarm,
   IBirdieSingleFarm,
+  isBirdieLPFarm,
+  isBirdieSingleFarm,
 } from "@/const/contracts/types/tokenTypes";
 import useAccountPoints from "./useAccountPoints";
 import type { aprDataState as AprDataState } from "@/app/AssetsContextProvider";
+import getTokenAddress from "@/utils/assets/getTokenAddress";
+import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
 
 type FarmValuesRecord = Record<
   string,
@@ -221,6 +225,22 @@ export default function useAssets() {
     return arr.sort().join("|");
   }, [assetValues.uniswapPriceMap]);
 
+  const coingeckoVersion = useMemo(() => {
+    const arr: string[] = [];
+    assetValues.coingeckoPriceMap?.forEach((v, k) => {
+      arr.push(`${k}:${v?.toString?.() ?? "null"}`);
+    });
+    return arr.sort().join("|");
+  }, [assetValues.coingeckoPriceMap]);
+
+  const coingeckoSymbolVersion = useMemo(() => {
+    const arr: string[] = [];
+    assetValues.coingeckoSymbolPriceMap?.forEach((v, k) => {
+      arr.push(`${k}:${v?.toString?.() ?? "null"}`);
+    });
+    return arr.sort().join("|");
+  }, [assetValues.coingeckoSymbolPriceMap]);
+
   // ✅ balancesVersion 계산은 이미 OK. 단, 이걸 assets로 노출해야 함.
   const balancesVersion = useMemo(() => {
     const arr: string[] = [];
@@ -253,6 +273,88 @@ export default function useAssets() {
   ]);
 
   const balances = baseBalances;
+
+  const chainlinkReady = useMemo(() => {
+    const data = assetValues?.chainLinkData?.data;
+    if (!data) return false;
+    return !assetValues?.chainLinkData?.isFetching;
+  }, [assetValues?.chainLinkData?.data, assetValues?.chainLinkData?.isFetching]);
+
+  const hasChainlinkPrice = useCallback(
+    (symbol?: string) => {
+      if (!symbol) return false;
+      const map = assetValues.chainLinkPriceMap;
+      const direct = map.get(`LINK:${symbol}_USD`)?.price;
+      if (direct && !direct.isZero()) return true;
+      if (symbol === "ETH") {
+        const price = map.get("LINK:WETH_USD")?.price ?? null;
+        return !!price && !price.isZero();
+      }
+      if (symbol === "WETH") {
+        const price = map.get("LINK:ETH_USD")?.price ?? null;
+        return !!price && !price.isZero();
+      }
+      return false;
+    },
+    [assetValues.chainLinkPriceMap]
+  );
+
+  useEffect(() => {
+    if (!chainId) return;
+    if (!chainlinkReady) return;
+    if (!assetValues?.refetchCoingeckoPrices) return;
+    if (!farms.length) return;
+
+    const addrs: Array<string | null | undefined> = [];
+    const symbols: Array<string | null | undefined> = [];
+    const cgMap = assetValues.coingeckoPriceMap;
+    const cgSymbolMap = assetValues.coingeckoSymbolPriceMap;
+
+    for (const { farm } of farms) {
+      if (isBirdieSingleFarm(farm)) {
+        const token = farm.input;
+        if (!hasChainlinkPrice(token?.symbol)) {
+          const addr = getTokenAddress({ token, chainId });
+          const normalized = normalizeCoingeckoAddress(addr, chainId);
+          if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
+          const symbolKey = String(token?.symbol ?? "").trim().toLowerCase();
+          if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
+        }
+        continue;
+      }
+      if (isBirdieLPFarm(farm)) {
+        const t0 = farm.swap?.input?.[0]?.input;
+        const t1 = farm.swap?.input?.[1]?.input;
+        if (!hasChainlinkPrice(t0?.symbol)) {
+          const addr = getTokenAddress({ token: t0 as any, chainId });
+          const normalized = normalizeCoingeckoAddress(addr, chainId);
+          if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
+          const symbolKey = String(t0?.symbol ?? "").trim().toLowerCase();
+          if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
+        }
+        if (!hasChainlinkPrice(t1?.symbol)) {
+          const addr = getTokenAddress({ token: t1 as any, chainId });
+          const normalized = normalizeCoingeckoAddress(addr, chainId);
+          if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
+          const symbolKey = String(t1?.symbol ?? "").trim().toLowerCase();
+          if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
+        }
+      }
+    }
+
+    if (addrs.length > 0) assetValues.refetchCoingeckoPrices(addrs);
+    if (symbols.length > 0)
+      assetValues.refetchCoingeckoSymbolPrices?.(symbols);
+  }, [
+    assetValues?.refetchCoingeckoPrices,
+    assetValues?.refetchCoingeckoSymbolPrices,
+    assetValues.coingeckoPriceMap,
+    assetValues.coingeckoSymbolPriceMap,
+    chainId,
+    chainlinkReady,
+    farms,
+    hasChainlinkPrice,
+  ]);
 
   const refetchAll = useCallback(async () => {
     await Promise.all([
@@ -543,6 +645,8 @@ export default function useAssets() {
     farms,
     chainLinkVersion,
     uniswapVersion,
+    coingeckoVersion,
+    coingeckoSymbolVersion,
     balancesVersion,
     refreshIndex,
     chainId,
