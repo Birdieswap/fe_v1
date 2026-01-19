@@ -366,7 +366,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
             {token.symbol}
           </span>
 
-          {mode === "ENTER" && (
+          {/* {mode === "ENTER" && (
             <Button
               isIconOnly
               radius="full"
@@ -379,7 +379,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
             >
               <Icons.Change className="h-6 w-6" />
             </Button>
-          )}
+          )} */}
         </div>
       </div>
 
