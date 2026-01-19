@@ -392,7 +392,7 @@ export async function enter(params: {
       address: stakingPoolAddress,
       abi: birdieswap_staking_abi,
       functionName: "easyEnter",
-      args: [wethAddr, amountIn, minStakeAmount],
+      args: [wethAddr, amountIn, minStakeAmount, userAddress],
     });
   }
 
