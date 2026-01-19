@@ -262,6 +262,11 @@ export const birdieswap_staking_abi = [
         type: "uint256",
         internalType: "uint256",
       },
+      {
+        name: "_beneficiary",
+        type: "address",
+        internalType: "address",
+      },
     ],
     outputs: [
       {
