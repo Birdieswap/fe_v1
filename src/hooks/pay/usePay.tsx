@@ -91,6 +91,13 @@ function findVaultDecimalsByPoolAddress(
   return (hit?.decimals as number | undefined) ?? 18;
 }
 
+function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
+  if (!map) return undefined;
+  if (map.has(keyLower)) return map.get(keyLower);
+  const found = [...map.keys()].find((k) => k.toLowerCase() === keyLower);
+  return found ? map.get(found) : undefined;
+}
+
 /** tokens.ts에서 address로 토큰 찾기 (ETH는 제외) */
 function findTokenByAddress(chainId: number, address?: string) {
   if (!address) return undefined;
@@ -308,10 +315,20 @@ export default function usePay() {
     const addr = selectedPool?.address;
     if (!pm || !addr) return null;
 
-    // ✅ priceMap 키가 체크섬이므로 key도 체크섬으로 맞춤
-    const key = getAddress(addr as `0x${string}`);
+    const keyLower = addr.toLowerCase();
+    const checksumKey = (() => {
+      try {
+        return getAddress(addr as `0x${string}`);
+      } catch {
+        return null;
+      }
+    })();
 
-    const entry = typeof pm.get === "function" ? pm.get(key) : pm[key];
+    const entry =
+      typeof pm.get === "function"
+        ? (checksumKey ? pm.get(checksumKey) : undefined) ??
+          getByLowerKey(pm, keyLower)
+        : pm[addr] ?? pm[keyLower];
     if (!entry) return null;
 
     // ✅ 1) 진짜 BigDecimal 인스턴스(또는 BigDecimal-like)면 그대로 반환
@@ -1100,7 +1117,8 @@ export default function usePay() {
 
       // viem parseUnits 가능한 형태로
       const stakeAmountStr = (
-        enterMinStakeAmountBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
+        enterMinStakeAmountBd?.roundToDecimals(sharesDecimals) ??
+        new BigDecimal("0", sharesDecimals)
       ).toPrecisionString(true, true);
 
       // console.log("[ENTER][BEFORE]", {
