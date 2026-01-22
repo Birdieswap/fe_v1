@@ -12,6 +12,12 @@ import {
 const lc = (s?: string) => (s ? s.toLowerCase() : "");
 const isObj = (x: unknown): x is Record<string, unknown> =>
   typeof x === "object" && x !== null;
+const NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
+function normalizeTokenAddress(tokenAddress: string, chainId: number): string {
+  if (lc(tokenAddress) !== NATIVE_PLACEHOLDER) return tokenAddress;
+  return tokensDefault.ETH.addresses?.[chainId] ?? tokenAddress;
+}
 
 // BigDecimal → "decimals 반영 + 뒤 0 제거"
 const toExactTrimmed = (bd: BigDecimal) => bd.toPrecisionString(true, false);
@@ -46,8 +52,9 @@ function findPriceMeta(
   chainId: number,
   priceMap: ChainLinkPriceMapLike
 ): { value: bigint; decimals: number } | null {
+  const normalizedAddr = normalizeTokenAddress(tokenAddress, chainId);
   const items = normalizeToArray(priceMap);
-  const addrL = lc(tokenAddress);
+  const addrL = lc(normalizedAddr);
   for (const item of items) {
     const matchAddr =
       lc(item?.value?.base?.addresses?.[chainId]) ||
@@ -165,20 +172,21 @@ function makeTokenInfo(
   vaultsOverride?: any,
   externalTokensOverride?: any // 추가
 ): TransactionTokenInfo | null {
+  const normalizedAddr = normalizeTokenAddress(tokenAddr, chainId);
   const baseMeta = preferLpMeta
-    ? (findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride) ??
+    ? (findTokenMetaFromLpVaults(normalizedAddr, chainId, vaultsOverride) ??
       findTokenMetaFromTokens(
-        tokenAddr,
+        normalizedAddr,
         chainId,
         tokensOverride,
         externalTokensOverride
       ))
     : (findTokenMetaFromTokens(
-        tokenAddr,
+        normalizedAddr,
         chainId,
         tokensOverride,
         externalTokensOverride
-      ) ?? findTokenMetaFromLpVaults(tokenAddr, chainId, vaultsOverride));
+      ) ?? findTokenMetaFromLpVaults(normalizedAddr, chainId, vaultsOverride));
 
   if (!baseMeta) return null; // [SAFE] 메타 없으면 null 반환
 
@@ -192,7 +200,7 @@ function makeTokenInfo(
   const amount = toExactTrimmed(amountBD);
 
   let usdAmount: string | undefined;
-  const priceMeta = findPriceMeta(tokenAddr, chainId, priceMap);
+  const priceMeta = findPriceMeta(normalizedAddr, chainId, priceMap);
   if (priceMeta) {
     const priceBD = new BigDecimal(priceMeta.value, priceMeta.decimals);
     usdAmount = toExactTrimmed(amountBD.mul(priceBD) as BigDecimal);
