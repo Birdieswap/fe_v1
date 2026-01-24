@@ -198,6 +198,7 @@ export default function useStakePanel(item: any): StakePanelState {
           assetsContext.refetchAll(),
         ]);
       },
+      afterReceipt: assetsContext.forceRefresh,
     });
 
     const parsed = parseUnits(
@@ -217,11 +218,6 @@ export default function useStakePanel(item: any): StakePanelState {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
-          try {
-            await assetsContext.forceRefresh?.();
-          } catch (e) {
-            console.error("forceRefresh failed", e);
-          }
         },
       }
     );
