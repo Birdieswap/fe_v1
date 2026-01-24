@@ -23,7 +23,10 @@ export type UseAccountBalancesReturnType = ReturnType<
  * @param aprList  /apr에서 파싱된 리스트(필요한 필드만)
  */
 
-export default function useAccountBalances(aprList?: AprLike[]) {
+export default function useAccountBalances(
+  aprList?: AprLike[],
+  refreshKey?: string | number
+) {
   const chainId = useChainId();
   const { address } = useAccount();
   // 지갑 보유
@@ -44,14 +47,20 @@ export default function useAccountBalances(aprList?: AprLike[]) {
   const singleVaultList = useMemo(() => Object.values(singleVaults), []);
   const lpVaultList = useMemo(() => Object.values(lpVaults), []);
 
-  const tokenBalances = useBalances(tokenList, chainId, address);
-  const singleVaultBalances = useBalances(singleVaultList, chainId, address);
-  const lpVaultBalances = useBalances(lpVaultList, chainId, address);
+  const tokenBalances = useBalances(tokenList, chainId, address, refreshKey);
+  const singleVaultBalances = useBalances(
+    singleVaultList,
+    chainId,
+    address,
+    refreshKey
+  );
+  const lpVaultBalances = useBalances(lpVaultList, chainId, address, refreshKey);
 
   // 스테이킹 잔고 (여기는 aprKey 최적화가 useStakedBalances 안에 있음)
   const stakedBalances = useStakedBalances({
     aprList: aprList ?? [],
     address: address as `0x${string}` | undefined,
+    refreshKey,
   });
 
   // 통합 isFetching / refetch
