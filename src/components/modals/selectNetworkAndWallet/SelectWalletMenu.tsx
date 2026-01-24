@@ -220,7 +220,7 @@ export function SelectWalletListBox(props: {
       const provider = await connector?.getProvider?.().catch(() => undefined);
 
       // ============================================================
-      // ★ NEW: TRM sanctions check (1회)
+      // ★ NEW: Chainalysis sanctions check (1회)
       // ============================================================
       const openSanctionsDenyModal = async (addr: string) => {
         // disconnect 포함해서 “진짜 차단 UX” 그대로 재현
@@ -252,7 +252,7 @@ export function SelectWalletListBox(props: {
 
       try {
         if (SANCTIONS_DEBUG)
-          console.log("[TRM] sanctions check address:", address);
+          console.log("[Chainalysis] sanctions check address:", address);
 
         // ✅ DEV 강제 차단(특정 주소만)
         const FORCE_BLOCK =
@@ -270,13 +270,15 @@ export function SelectWalletListBox(props: {
           return;
         }
 
-        // ✅ 실제 TRM 판정
+        // ✅ 실제 Chainalysis 판정
         const result = await apiSanctionsCheck(address);
 
         if (SANCTIONS_DEBUG) {
-          console.log("[TRM] sanctions check response:", result);
+          console.log("[Chainalysis] sanctions check response:", result);
           if (result.ok)
-            console.log("[TRM] isSanctioned:", result.isSanctioned);
+            console.log("[Chainalysis] isSanctioned:", result.isSanctioned);
+          if (result.ok && result.raw != null)
+            console.log("[Chainalysis] raw response:", result.raw);
         }
 
         if (result.ok && result.isSanctioned) {
@@ -286,9 +288,9 @@ export function SelectWalletListBox(props: {
           return;
         }
       } catch (e) {
-        // 정책: fail-open (TRM 장애면 기존 흐름 계속)
+        // 정책: fail-open (Chainalysis 장애면 기존 흐름 계속)
         if (SANCTIONS_DEBUG)
-          console.log("[TRM] sanctions check failed:", address, e);
+          console.log("[Chainalysis] sanctions check failed:", address, e);
       }
       // ============================================================
 
