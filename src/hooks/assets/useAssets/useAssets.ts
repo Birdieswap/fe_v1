@@ -144,6 +144,7 @@ export default function useAssets() {
   const [aprDataState, setAprDataState] = useState<AprDataState | null>(null);
   const aprDataRef = useRef<AprDataState | null>(null);
   const [refreshIndex, setRefreshIndex] = useState(0);
+  const [farmRefreshIndex, setFarmRefreshIndex] = useState(0);
 
   const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
   const baseBalances = useAccountBalances(aprList, String(refreshIndex));
@@ -368,18 +369,6 @@ export default function useAssets() {
     balances?.query?.refetch,
   ]);
 
-  const forceRefresh = useCallback(async () => {
-    try {
-      // Farm TVL/price는 캐시를 쓰므로 강제 갱신 시 무효화 필요
-      bumpFarmDataGeneration();
-      await refetchAll();
-      // ✅ 50ms는 너무 짧을 수 있어. 일단 500ms 추천
-      await new Promise((res) => setTimeout(res, 500));
-    } finally {
-      setRefreshIndex((i) => i + 1);
-    }
-  }, [refetchAll]);
-
   // ✅ “리렌더(=balancesVersion 반영)”까지 기다리는 함수
   const waitForBalancesVersionChange = useCallback(
     async (
@@ -398,6 +387,24 @@ export default function useAssets() {
     },
     [balancesVersion]
   );
+
+  const forceRefresh = useCallback(async () => {
+    // Farm TVL/price는 캐시를 쓰므로 강제 갱신 시 무효화 필요
+    bumpFarmDataGeneration();
+    setFarmRefreshIndex((i) => i + 1);
+
+    const prevVersion = balancesVersion;
+    await refetchAll();
+
+    const changed = await waitForBalancesVersionChange(prevVersion, {
+      timeoutMs: 2000,
+      intervalMs: 80,
+    });
+
+    if (!changed) {
+      setRefreshIndex((i) => i + 1);
+    }
+  }, [balancesVersion, refetchAll, waitForBalancesVersionChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -770,7 +777,7 @@ export default function useAssets() {
     return () => {
       cancelled = true;
     };
-  }, [client, farms, chainId, refreshIndex]);
+  }, [client, farms, chainId, farmRefreshIndex]);
 
   const farmValues = useMemo(() => {
     return { apyMap, tvlMap, priceMap, underlyingMap, totalSupplyMap };
