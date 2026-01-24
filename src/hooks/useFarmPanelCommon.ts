@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { useAccount, useChainId, useClient, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 
 import { TransactionContext } from "@/app/TransactionContextProvider";
 import { AssetsContext } from "@/app/AssetsContextProvider";
@@ -10,7 +10,7 @@ import useProviderAddress from "./useProviderAddress";
 import useIsWrongNetwork from "./useIsWrongNetwork";
 
 export default function useFarmPanelCommon<T extends Farm>(item: T) {
-  const client = useClient();
+  const client = usePublicClient();
   const transactionContext = useContext(TransactionContext);
   const assetsContext = useContext(AssetsContext);
   const { writeContract, isPending: isPendingWriteContract } =
