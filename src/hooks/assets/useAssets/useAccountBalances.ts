@@ -25,7 +25,7 @@ export type UseAccountBalancesReturnType = ReturnType<
 
 export default function useAccountBalances(
   aprList?: AprLike[],
-  refreshKey?: string | number
+  refreshKey?: string
 ) {
   const chainId = useChainId();
   const { address } = useAccount();
