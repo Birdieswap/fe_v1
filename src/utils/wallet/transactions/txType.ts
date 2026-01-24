@@ -6,6 +6,8 @@ export enum TransactionType {
   STAKING = "StakingDeposit",
   UNSTAKING = "StakingWithdraw",
   CLAIM = "StakingClaim",
+  EASY_ENTER = "EasyEnter",
+  EASY_PAY = "EasyPay",
 }
 
 export type TransactionTokenInfo = {
@@ -56,4 +58,24 @@ export type TransactionProps =
       timestamp: string;
       from: TransactionTokenInfo;
       to: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.EASY_ENTER;
+      hash: string;
+      timestamp: string;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.EASY_PAY;
+      hash: string;
+      timestamp: string;
+      redeem: TransactionTokenInfo;
+      beneficiary: string;
+      amountPaid: TransactionTokenInfo;
+      refund: TransactionTokenInfo;
     };
+
+export type TransactionWithKey = TransactionProps & {
+  key: string;
+};
