@@ -1,12 +1,22 @@
 "use client";
 
-import { createContext, ReactNode, useState, Fragment, useMemo } from "react";
+import {
+  createContext,
+  ReactNode,
+  useState,
+  Fragment,
+  useMemo,
+  useEffect,
+  useRef,
+  useContext,
+} from "react";
 
 import TransactionProgressModal from "@/components/modals/TransactionProgressModal";
 import TransactionStatus from "@/types/TransactionStatus";
 import { TransactionType } from "@/types/TransactionTypes";
 import { BigDecimal } from "@/types/BigDecimal";
 import { IToken } from "@/const/contracts/types/tokenTypes";
+import { AssetsContext } from "@/app/AssetsContextProvider";
 
 type TransactionTokenDisplayProps = {
   token?: IToken;
@@ -142,6 +152,7 @@ export const TransactionContext = createContext<TransactionContextType>({
 export default function TransactionContextProvider(props: {
   children: ReactNode;
 }) {
+  const assetsContext = useContext(AssetsContext);
   const [isOpen, setIsOpen] = useState(false);
   const [transactionProps, setTransactionProps] =
     useState<TransactionStatusProps | null>(null);
@@ -160,6 +171,22 @@ export default function TransactionContextProvider(props: {
       st === TransactionStatus.PENDING
     );
   }, [transactionProps?.transactionStatus]);
+
+  const lastRefreshedTxRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (transactionProps?.transactionStatus !== TransactionStatus.SUCCESS)
+      return;
+    const txid = transactionProps?.txid ?? null;
+    if (!txid || lastRefreshedTxRef.current === txid) return;
+    lastRefreshedTxRef.current = txid;
+    (async () => {
+      try {
+        await assetsContext.forceRefresh?.();
+      } catch (e) {
+        console.error("forceRefresh failed", e);
+      }
+    })();
+  }, [transactionProps?.transactionStatus, transactionProps?.txid, assetsContext]);
 
   return (
     <Fragment>
