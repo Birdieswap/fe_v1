@@ -146,7 +146,7 @@ export default function useAssets() {
   const [refreshIndex, setRefreshIndex] = useState(0);
 
   const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
-  const baseBalances = useAccountBalances(aprList, refreshIndex);
+  const baseBalances = useAccountBalances(aprList, String(refreshIndex));
 
   const pointsQ = useAccountPoints(address);
 

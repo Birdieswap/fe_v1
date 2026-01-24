@@ -25,7 +25,7 @@ export type StakedBalanceEntry = {
 export default function useStakedBalances(params: {
   aprList: any[]; // ← 주입
   address?: Address; // ← 주입(상위 useAccount에서)
-  refreshKey?: string | number;
+  refreshKey?: string;
 }) {
   const { aprList, address, refreshKey } = params;
 
