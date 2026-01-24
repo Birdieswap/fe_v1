@@ -600,8 +600,8 @@ export function buildTransactions(
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
       const DEC = meta?.decimals ?? 18;
 
-      const fromSrc = meta?.iconSrc ?? "/tokens/sblp-token.svg";
-      const toSrc = meta?.iconSrc ?? "/tokens/blp-token.svg";
+      const fromSrc = "/tokens/sblp-token.svg";
+      const toSrc = "/tokens/blp-token.svg";
 
       const from = makeStakeTokenInfo(displayName, fromSrc, amtRaw, DEC);
       const to = makeStakeTokenInfo(displayName, toSrc, amtRaw, DEC);
@@ -778,5 +778,25 @@ export function buildTransactions(
   }
   // console.log("[wallet] buildTransaction useAccountWalletData", { chainId, txs });
 
-  return txs;
+  // If a hash has EasyEnter/EasyPay, keep only those for that hash.
+  const easyHashSet = new Set(
+    txs
+      .filter(
+        (t) =>
+          t.type === TransactionType.EASY_ENTER ||
+          t.type === TransactionType.EASY_PAY
+      )
+      .map((t) => t.hash)
+      .filter((h): h is string => Boolean(h))
+  );
+  if (easyHashSet.size === 0) return txs;
+
+  return txs.filter((t) => {
+    if (!t.hash) return true;
+    if (!easyHashSet.has(t.hash)) return true;
+    return (
+      t.type === TransactionType.EASY_ENTER ||
+      t.type === TransactionType.EASY_PAY
+    );
+  });
 }
