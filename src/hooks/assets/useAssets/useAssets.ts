@@ -369,42 +369,14 @@ export default function useAssets() {
     balances?.query?.refetch,
   ]);
 
-  // ✅ “리렌더(=balancesVersion 반영)”까지 기다리는 함수
-  const waitForBalancesVersionChange = useCallback(
-    async (
-      prevVersion: string,
-      opts?: { timeoutMs?: number; intervalMs?: number }
-    ) => {
-      const timeoutMs = opts?.timeoutMs ?? 10000;
-      const intervalMs = opts?.intervalMs ?? 80;
-
-      const start = Date.now();
-      while (Date.now() - start < timeoutMs) {
-        if (balancesVersion !== prevVersion) return true;
-        await new Promise((r) => setTimeout(r, intervalMs));
-      }
-      return false;
-    },
-    [balancesVersion]
-  );
-
   const forceRefresh = useCallback(async () => {
     // Farm TVL/price는 캐시를 쓰므로 강제 갱신 시 무효화 필요
     bumpFarmDataGeneration();
     setFarmRefreshIndex((i) => i + 1);
 
-    const prevVersion = balancesVersion;
+    setRefreshIndex((i) => i + 1);
     await refetchAll();
-
-    const changed = await waitForBalancesVersionChange(prevVersion, {
-      timeoutMs: 2000,
-      intervalMs: 80,
-    });
-
-    if (!changed) {
-      setRefreshIndex((i) => i + 1);
-    }
-  }, [balancesVersion, refetchAll, waitForBalancesVersionChange]);
+  }, [refetchAll]);
 
   useEffect(() => {
     let cancelled = false;
@@ -800,7 +772,6 @@ export default function useAssets() {
 
       // ✅ 추가: 외부에서 “업데이트 완료 여부”를 기다리기 위해 노출
       balancesVersion,
-      waitForBalancesVersionChange,
 
       isFetching:
         assetValues.isFetching || balances.isFetching || pointsQ.isLoading,
@@ -814,7 +785,6 @@ export default function useAssets() {
       refetchAll,
       forceRefresh,
       balancesVersion,
-      waitForBalancesVersionChange,
       assetValues.isFetching,
       balances.isFetching,
       pointsQ.data,
