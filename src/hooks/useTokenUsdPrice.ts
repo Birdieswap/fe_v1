@@ -69,13 +69,8 @@ export default function useTokenUsdPrice(token?: TokenLike) {
           symbols: cgSymbolLower,
         });
         const res = await fetch(
-          `https://api.coingecko.com/api/v3/simple/price?${qs.toString()}`,
-          {
-            cache: "no-store",
-            headers: {
-              "x-cg-demo-api-key": CG_DEMO_KEY,
-            },
-          }
+          `/api/coingecko/simple-price?${qs.toString()}`,
+          { cache: "no-store" }
         );
         const data = await res.json();
         const dataKeys = Object.keys(data ?? {});

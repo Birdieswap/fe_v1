@@ -2,7 +2,7 @@
 
 import "./WalletTransactions.css";
 
-import { cn, Link } from "@heroui/react";
+import { cn, Divider, Link } from "@heroui/react";
 import Image from "next/image";
 import {
   useCallback,
@@ -373,16 +373,16 @@ function EasyPayItem(
           {props.beneficiary}
         </span>
       </div>
-      <div className="flex justify-between items-center gap-5 pr-5">
+      <div className="flex justify-between items-center gap-5 pr-5 pb-1">
         <TransactionTokenDisplay token={props.redeem} />
         <Icons.WalletSwapArrowSmall className="fill-foreground" />
         <TransactionTokenDisplay token={props.amountPaid} />
       </div>
-      <div className="flex flex-row justify-between items-center pt-3 pr-5 gap-1">
-        <span className="text-[12px] font-medium leading-[15px] text-foreground">
-          Refund My Wallet :
-        </span>
+      <div className="flex flex-row items-center pt-1 pr-3 gap-1">
         <TransactionTokenDisplay token={props.refund} />
+        <span className="text-[12px] font-medium leading-[15px] text-foreground">
+          Refunded to my wallet
+        </span>
       </div>
     </div>
   );

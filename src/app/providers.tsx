@@ -312,7 +312,7 @@ export default function Providers({
       nonce={nonce}
     >
       <ThemeColorMetaSync />
-      <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+      <WagmiProvider config={wagmiConfig} reconnectOnMount={true}>
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
             <RainbowKitProvider

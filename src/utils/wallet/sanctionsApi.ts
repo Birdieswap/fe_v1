@@ -1,5 +1,5 @@
 export type SanctionsCheckResult =
-  | { ok: true; isSanctioned: boolean }
+  | { ok: true; isSanctioned: boolean; raw?: unknown }
   | { ok: false; error: string; retryAfter?: string | null };
 
 export async function apiSanctionsCheck(
