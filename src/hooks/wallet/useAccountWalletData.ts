@@ -53,6 +53,7 @@ export function useAccountWalletData(
   const [earliestBlock, setEarliestBlock] = useState<number | undefined>(
     undefined
   );
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   // 누적 트랜잭션(원본)과 dedupe 세트
   const [accTxs, setAccTxs] = useState<
@@ -79,6 +80,7 @@ export function useAccountWalletData(
     );
     setEndReached(false);
     setEarliestBlock(undefined);
+    setRefreshNonce(0);
 
     boostCountRef.current = 0;
     preFetchLenRef.current = 0;
@@ -94,7 +96,7 @@ export function useAccountWalletData(
   ];
 
   const txQ = useQuery({
-    queryKey: [...baseKey, "txs", cursor ?? "latest"],
+    queryKey: [...baseKey, "txs", cursor ?? "latest", refreshNonce],
     queryFn: () => {
       const raw =
         cursor ??
@@ -245,7 +247,23 @@ export function useAccountWalletData(
   const isError = txQ.isError;
   const isFetchingNextPage = !isLoading && txQ.isFetching;
 
-  const refetchAll = () => txQ.refetch();
+  const refetchAll = useCallback(() => {
+    setAccTxs([]);
+    const initial =
+      typeof blockHeight === "number"
+        ? blockHeight
+        : typeof blockHeight === "string"
+          ? parseInt(blockHeight, 10)
+          : undefined;
+    setCursor(
+      Number.isFinite(initial as number) ? (initial as number) : undefined
+    );
+    setEndReached(false);
+    setEarliestBlock(undefined);
+    boostCountRef.current = 0;
+    preFetchLenRef.current = 0;
+    setRefreshNonce((n) => n + 1);
+  }, [blockHeight]);
 
   return useMemo(
     () => ({
