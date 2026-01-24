@@ -9,7 +9,7 @@ export default function useBalances(
   tokens: IToken[],
   chainId: number,
   address?: `0x${string}`,
-  refreshKey?: string | number
+  refreshKey?: string
 ) {
   // 1) 사용할 토큰만 추림 (주소 유효한 것)
   const availableTokens = useMemo(
