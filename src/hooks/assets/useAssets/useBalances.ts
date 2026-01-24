@@ -8,7 +8,8 @@ import { IToken } from "@/const/contracts/types/tokenTypes";
 export default function useBalances(
   tokens: IToken[],
   chainId: number,
-  address?: `0x${string}`
+  address?: `0x${string}`,
+  refreshKey?: string | number
 ) {
   // 1) 사용할 토큰만 추림 (주소 유효한 것)
   const availableTokens = useMemo(
@@ -41,7 +42,10 @@ export default function useBalances(
   );
 
   // 3) ERC-20 읽기
-  const erc20Query = useReadContracts({ contracts: balanceArgs });
+  const erc20Query = useReadContracts({
+    contracts: balanceArgs,
+    scopeKey: refreshKey,
+  });
 
   // 4) 네이티브 토큰 탐색 (주소가 0인 항목)
   const nativeToken = useMemo(
