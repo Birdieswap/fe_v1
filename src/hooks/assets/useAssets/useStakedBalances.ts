@@ -25,8 +25,9 @@ export type StakedBalanceEntry = {
 export default function useStakedBalances(params: {
   aprList: any[]; // ← 주입
   address?: Address; // ← 주입(상위 useAccount에서)
+  refreshKey?: string | number;
 }) {
-  const { aprList, address } = params;
+  const { aprList, address, refreshKey } = params;
 
   // aprList에서 진짜로 필요한 필드만 추출해 "안정 키" 생성
   //   - 정렬까지 해서 순서 변화(정렬되지 않은 map→array 등)도 무시
@@ -86,7 +87,7 @@ export default function useStakedBalances(params: {
     }));
   }, [availableTokens, address]);
 
-  const query = useReadContracts({ contracts: balanceArgs });
+  const query = useReadContracts({ contracts: balanceArgs, scopeKey: refreshKey });
 
   const entries: StakedBalanceEntry[] = useMemo(() => {
     const data = query.data ?? [];

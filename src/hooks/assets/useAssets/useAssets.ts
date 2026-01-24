@@ -143,9 +143,10 @@ export default function useAssets() {
   const assetValues = useAssetValues();
   const [aprDataState, setAprDataState] = useState<AprDataState | null>(null);
   const aprDataRef = useRef<AprDataState | null>(null);
+  const [refreshIndex, setRefreshIndex] = useState(0);
 
   const aprList = useMemo(() => aprDataState?.apr ?? [], [aprDataState]);
-  const baseBalances = useAccountBalances(aprList);
+  const baseBalances = useAccountBalances(aprList, refreshIndex);
 
   const pointsQ = useAccountPoints(address);
 
@@ -189,7 +190,6 @@ export default function useAssets() {
   >(new Map());
 
   const [farmRawMap, setFarmRawMap] = useState<Map<string, FarmRaw>>(new Map());
-  const [refreshIndex, setRefreshIndex] = useState(0);
 
   const lastOutputsRef = useRef<{
     apyMap: Map<string, BigDecimal>;
