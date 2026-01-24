@@ -10,6 +10,7 @@ export type TransactionEvent = {
   blockTimestamp: string;
   transactionHash: `0x${string}`;
   transactionIndex?: string;
+  logIndex?: string;
   vaultName?: string;
   data: Record<string, string>;
 };

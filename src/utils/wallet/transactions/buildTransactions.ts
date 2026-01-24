@@ -3,9 +3,10 @@ import lpVaultsDefault from "@/const/contracts/tokens/lpVaults";
 import tokensDefault from "@/const/contracts/tokens/tokens";
 import externalTokensDefault from "@/const/contracts/tokens/externalTokens";
 import { BigDecimal } from "@/types/BigDecimal";
+import type { aprDataState } from "@/app/AssetsContextProvider";
 import {
   TransactionType,
-  type TransactionProps,
+  type TransactionWithKey,
   type TransactionTokenInfo,
 } from "./txType";
 
@@ -17,6 +18,14 @@ const NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 function normalizeTokenAddress(tokenAddress: string, chainId: number): string {
   if (lc(tokenAddress) !== NATIVE_PLACEHOLDER) return tokenAddress;
   return tokensDefault.ETH.addresses?.[chainId] ?? tokenAddress;
+}
+
+function makeTxKey(ev: any): string {
+  const block = String(ev?.blockNumber ?? "");
+  const txIndex = String(ev?.transactionIndex ?? "0").padStart(4, "0");
+  const logIndex = String(ev?.logIndex ?? "0").padStart(4, "0");
+  const key = `${block}${txIndex}${logIndex}`;
+  return key || String(ev?.transactionHash ?? ev?.hash ?? "");
 }
 
 // BigDecimal → "decimals 반영 + 뒤 0 제거"
@@ -50,7 +59,7 @@ function normalizeToArray(src: ChainLinkPriceMapLike): ChainLinkData[] {
 function findPriceMeta(
   tokenAddress: string,
   chainId: number,
-  priceMap: ChainLinkPriceMapLike
+  priceMap: ChainLinkPriceMapLike,
 ): { value: bigint; decimals: number } | null {
   const normalizedAddr = normalizeTokenAddress(tokenAddress, chainId);
   const items = normalizeToArray(priceMap);
@@ -81,7 +90,7 @@ function findTokenMetaFromTokens(
   tokenAddress: string,
   chainId: number,
   tokensOverride?: any,
-  externalTokensOverride?: any
+  externalTokensOverride?: any,
 ): {
   symbol: string;
   decimals: number;
@@ -124,7 +133,7 @@ function findTokenMetaFromTokens(
 function findTokenMetaFromLpVaults(
   tokenAddress: string,
   chainId: number,
-  vaultsOverride?: any
+  vaultsOverride?: any,
 ): {
   symbol: string;
   decimals: number;
@@ -161,6 +170,26 @@ function findTokenMetaFromLpVaults(
   return null;
 }
 
+function findLpVaultMetaFromAprStaking(
+  stakingContractAddr: string | undefined,
+  chainId: number,
+  aprData: aprDataState | null | undefined,
+  vaultsOverride?: any,
+): {
+  symbol: string;
+  decimals: number;
+  address: string;
+  iconSrc?: string;
+} | null {
+  const target = lc(stakingContractAddr);
+  if (!target) return null;
+  const list = Array.isArray(aprData?.apr) ? aprData?.apr : [];
+  const match = list.find((e) => lc(e?.staking?.contractAddress) === target);
+  const lpVaultAddr = match?.contractAddress;
+  if (!lpVaultAddr) return null;
+  return findTokenMetaFromLpVaults(lpVaultAddr, chainId, vaultsOverride);
+}
+
 // ---------- 표시/가격 포함 토큰 정보 ----------
 function makeTokenInfo(
   tokenAddr: string,
@@ -170,7 +199,7 @@ function makeTokenInfo(
   preferLpMeta = false,
   tokensOverride?: any,
   vaultsOverride?: any,
-  externalTokensOverride?: any // 추가
+  externalTokensOverride?: any, // 추가
 ): TransactionTokenInfo | null {
   const normalizedAddr = normalizeTokenAddress(tokenAddr, chainId);
   const baseMeta = preferLpMeta
@@ -179,13 +208,13 @@ function makeTokenInfo(
         normalizedAddr,
         chainId,
         tokensOverride,
-        externalTokensOverride
+        externalTokensOverride,
       ))
     : (findTokenMetaFromTokens(
         normalizedAddr,
         chainId,
         tokensOverride,
-        externalTokensOverride
+        externalTokensOverride,
       ) ?? findTokenMetaFromLpVaults(normalizedAddr, chainId, vaultsOverride));
 
   if (!baseMeta) return null; // [SAFE] 메타 없으면 null 반환
@@ -213,12 +242,42 @@ function makeStakeTokenInfo(
   symbol: string,
   src: string | undefined,
   amountRaw: string | number | bigint,
-  decimals: number // ← 여기서는 8 고정으로 사용
+  decimals: number, // ← 여기서는 8 고정으로 사용
 ): TransactionTokenInfo {
   // BigDecimal( raw, decimals ) → "정확한 문자열" (뒤 0 제거)
   const bd = new BigDecimal(BigInt(String(amountRaw)), decimals);
   const amount = toExactTrimmed(bd);
   return { symbol, amount, src };
+}
+
+function findEthIconSrc() {
+  return tokensDefault.ETH?.iconSrc ?? "/tokens/ETH.svg";
+}
+
+function normalizeWethToEth(
+  tokenAddr: string,
+  chainId: number,
+  info: TransactionTokenInfo
+): TransactionTokenInfo {
+  const wethAddr = tokensDefault.WETH?.addresses?.[chainId];
+  if (wethAddr && lc(wethAddr) === lc(tokenAddr)) {
+    return { ...info, symbol: "ETH", src: findEthIconSrc() };
+  }
+  if (info.symbol === "WETH") {
+    return { ...info, symbol: "ETH", src: findEthIconSrc() };
+  }
+  return info;
+}
+
+function getUsdcMeta(chainId: number) {
+  const meta = tokensDefault.USDC;
+  const addr = meta?.addresses?.[chainId];
+  return {
+    symbol: meta?.symbol ?? "USDC",
+    decimals: meta?.decimals ?? 6,
+    iconSrc: meta?.iconSrc ?? "/tokens/USDC.svg",
+    address: addr ?? "",
+  };
 }
 
 // ---------- singleDeposits / singleWithdraws 파싱 ----------
@@ -260,18 +319,20 @@ export function buildTransactions(
   chainId: number,
   chainLinkPriceMap: ChainLinkPriceMapLike,
   tokensOverride?: any,
-  vaultsOverride?: any
-): TransactionProps[] {
+  vaultsOverride?: any,
+  aprDataState?: aprDataState | null,
+): TransactionWithKey[] {
   if (!Array.isArray(info) || info.length === 0) return [];
 
-  const txs: TransactionProps[] = [];
+  const txs: TransactionWithKey[] = [];
 
   for (const ev of info) {
     const typeStr: string = String(ev?.type ?? "");
     const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
     const timestamp: string = String(
-      ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+      ev?.blockTimestamp ?? ev?.timestamp ?? "0",
     ); // 초 문자열
+    const key = makeTxKey(ev);
 
     // ---------- SWAP ----------
     if (typeStr === "Swap" || typeStr === "SWAP") {
@@ -289,7 +350,7 @@ export function buildTransactions(
         false,
         tokensOverride,
         vaultsOverride,
-        externalTokensDefault // 추가
+        externalTokensDefault, // 추가
       );
       const to = makeTokenInfo(
         tokenOutAddr,
@@ -299,11 +360,11 @@ export function buildTransactions(
         false,
         tokensOverride,
         vaultsOverride,
-        externalTokensDefault //  추가
+        externalTokensDefault, //  추가
       );
       if (!from || !to) continue;
 
-      txs.push({ type: TransactionType.SWAP, hash, timestamp, from, to });
+      txs.push({ type: TransactionType.SWAP, key, hash, timestamp, from, to });
       continue;
     }
 
@@ -349,8 +410,8 @@ export function buildTransactions(
             chainLinkPriceMap,
             false,
             tokensOverride,
-            vaultsOverride
-          )
+            vaultsOverride,
+          ),
         )
         .filter((x): x is TransactionTokenInfo => Boolean(x));
 
@@ -372,12 +433,19 @@ export function buildTransactions(
         chainLinkPriceMap,
         true,
         tokensOverride,
-        vaultsOverride
+        vaultsOverride,
       );
       if (!to) continue;
       delete (to as any).usdAmount; // [SAFE] LP는 usdAmount 보통 없음
 
-      txs.push({ type: TransactionType.START_FARM, hash, timestamp, from, to });
+      txs.push({
+        type: TransactionType.START_FARM,
+        key,
+        hash,
+        timestamp,
+        from,
+        to,
+      });
       continue;
     }
 
@@ -405,7 +473,7 @@ export function buildTransactions(
         chainLinkPriceMap,
         true,
         tokensOverride,
-        vaultsOverride
+        vaultsOverride,
       );
       if (!from) continue;
       delete (from as any).usdAmount; // [SAFE]
@@ -443,14 +511,21 @@ export function buildTransactions(
             chainLinkPriceMap,
             false,
             tokensOverride,
-            vaultsOverride
-          )
+            vaultsOverride,
+          ),
         )
         .filter((x): x is TransactionTokenInfo => Boolean(x));
 
       if (to.length === 0) continue; // [SAFE]
 
-      txs.push({ type: TransactionType.STOP_FARM, hash, timestamp, from, to });
+      txs.push({
+        type: TransactionType.STOP_FARM,
+        key,
+        hash,
+        timestamp,
+        from,
+        to,
+      });
       continue;
     }
 
@@ -459,7 +534,7 @@ export function buildTransactions(
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
       const timestamp: string = String(
-        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0",
       );
 
       const stakingTokenAddr: string | undefined = d?.stakingTokenAddress;
@@ -470,7 +545,7 @@ export function buildTransactions(
           ? (findTokenMetaFromLpVaults(
               stakingTokenAddr,
               chainId,
-              vaultsOverride
+              vaultsOverride,
             ) ??
             findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
           : null) ?? null;
@@ -479,7 +554,7 @@ export function buildTransactions(
 
       // amount: / 10^8 (기존 로직 유지)
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
-      const DEC = 8;
+      const DEC = meta?.decimals ?? 18;
 
       // ✅ 아이콘: 메타가 있으면 그걸 사용, 없으면 기존 기본값
       const fromSrc = "/tokens/blp-token.svg";
@@ -490,6 +565,7 @@ export function buildTransactions(
 
       txs.push({
         type: TransactionType.STAKING,
+        key,
         hash,
         timestamp,
         from,
@@ -503,7 +579,7 @@ export function buildTransactions(
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
       const timestamp: string = String(
-        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0",
       );
 
       const stakingTokenAddr: string | undefined = d?.stakingTokenAddress;
@@ -514,7 +590,7 @@ export function buildTransactions(
           ? (findTokenMetaFromLpVaults(
               stakingTokenAddr,
               chainId,
-              vaultsOverride
+              vaultsOverride,
             ) ??
             findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
           : null) ?? null;
@@ -522,7 +598,7 @@ export function buildTransactions(
       const displayName = meta?.symbol ?? "Vault";
 
       const amtRaw = d?.stakingAmount ?? d?.amount ?? "0";
-      const DEC = 8;
+      const DEC = meta?.decimals ?? 18;
 
       const fromSrc = meta?.iconSrc ?? "/tokens/sblp-token.svg";
       const toSrc = meta?.iconSrc ?? "/tokens/blp-token.svg";
@@ -532,6 +608,7 @@ export function buildTransactions(
 
       txs.push({
         type: TransactionType.UNSTAKING,
+        key,
         hash,
         timestamp,
         from,
@@ -545,11 +622,11 @@ export function buildTransactions(
       const d = ev?.data ?? {};
       const hash: string = String(ev?.transactionHash ?? ev?.hash ?? "");
       const timestamp: string = String(
-        ev?.blockTimestamp ?? ev?.timestamp ?? "0"
+        ev?.blockTimestamp ?? ev?.timestamp ?? "0",
       );
 
       const rewardSymbol: string = String(
-        d?.rewardSymbol ?? d?.symbol ?? "REWARD"
+        d?.rewardSymbol ?? d?.symbol ?? "REWARD",
       );
       const amtRaw = d?.rewardAmount ?? d?.amount ?? "0";
       const DEC = d.rewardDecimals;
@@ -558,15 +635,142 @@ export function buildTransactions(
         rewardSymbol,
         `/tokens/${rewardSymbol}.svg`,
         amtRaw,
-        DEC
+        DEC,
       );
 
       txs.push({
         type: TransactionType.CLAIM ?? ("StakingClaim" as any),
+        key,
         hash,
         timestamp,
         token: to, // from 없음
       } as any);
+      continue;
+    }
+
+    // ---------- EASY_ENTER ----------
+    if (typeStr === "EasyEnter") {
+      const d = ev?.data ?? {};
+      const tokenInAddr = d?.tokenIn;
+      const tokenAmount = d?.tokenAmount ?? "0";
+      const stakingContract = d?.stakingContract;
+      const stakingTokenAddr =
+        d?.stakingTokenAddress ?? d?.stakingToken ?? stakingContract;
+      const sharesMinted = d?.sharesMinted ?? "0";
+
+      const fromRaw = makeTokenInfo(
+        tokenInAddr,
+        tokenAmount,
+        chainId,
+        chainLinkPriceMap,
+        false,
+        tokensOverride,
+        vaultsOverride,
+        externalTokensDefault
+      );
+      if (!fromRaw) continue;
+      const from = normalizeWethToEth(tokenInAddr, chainId, fromRaw);
+
+      const stakingMeta =
+        stakingTokenAddr
+          ? (findTokenMetaFromLpVaults(
+              stakingTokenAddr,
+              chainId,
+              vaultsOverride,
+            ) ??
+            findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
+          : null;
+      const aprMeta =
+        findLpVaultMetaFromAprStaking(
+          stakingContract ?? stakingTokenAddr,
+          chainId,
+          aprDataState,
+          vaultsOverride
+        ) ?? null;
+      const resolvedMeta = stakingMeta ?? aprMeta;
+
+      const toSymbol = resolvedMeta?.symbol ?? "Vault";
+      const toDecimals = resolvedMeta?.decimals ?? 18;
+      const to = makeStakeTokenInfo(
+        toSymbol,
+        "/tokens/sblp-token.svg",
+        sharesMinted,
+        toDecimals
+      );
+
+      txs.push({
+        type: TransactionType.EASY_ENTER,
+        key,
+        hash,
+        timestamp,
+        from,
+        to,
+      });
+      continue;
+    }
+
+    // ---------- EASY_PAY ----------
+    if (typeStr === "EasyPay") {
+      const d = ev?.data ?? {};
+      const stakingContract = d?.stakingContract;
+      const stakingTokenAddr =
+        d?.stakingTokenAddress ?? d?.stakingToken ?? stakingContract;
+      const blpTokenRedeemed = d?.blpTokenRedeemed ?? "0";
+      const beneficiary = String(d?.beneficiary ?? "");
+      const amountPaid = d?.amountPaid ?? "0";
+      const refundOut = d?.refundOut ?? "0";
+
+      const stakingMeta =
+        stakingTokenAddr
+          ? (findTokenMetaFromLpVaults(
+              stakingTokenAddr,
+              chainId,
+              vaultsOverride,
+            ) ??
+            findTokenMetaFromTokens(stakingTokenAddr, chainId, tokensOverride))
+          : null;
+      const aprMeta =
+        findLpVaultMetaFromAprStaking(
+          stakingContract ?? stakingTokenAddr,
+          chainId,
+          aprDataState,
+          vaultsOverride
+        ) ?? null;
+      const resolvedMeta = stakingMeta ?? aprMeta;
+
+      const redeemSymbol = resolvedMeta?.symbol ?? "Vault";
+      const redeemDecimals = resolvedMeta?.decimals ?? 18;
+      const redeem = makeStakeTokenInfo(
+        redeemSymbol,
+        "/tokens/sblp-token.svg",
+        blpTokenRedeemed,
+        redeemDecimals
+      );
+
+      const usdcMeta = getUsdcMeta(chainId);
+      const paid = makeStakeTokenInfo(
+        usdcMeta.symbol,
+        usdcMeta.iconSrc,
+        amountPaid,
+        usdcMeta.decimals
+      );
+      const refund = makeStakeTokenInfo(
+        usdcMeta.symbol,
+        usdcMeta.iconSrc,
+        refundOut,
+        usdcMeta.decimals
+      );
+
+      txs.push({
+        type: TransactionType.EASY_PAY,
+        key,
+        hash,
+        timestamp,
+        redeem,
+        beneficiary,
+        amountPaid: paid,
+        refund,
+      });
       continue;
     }
 
