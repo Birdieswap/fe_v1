@@ -49,7 +49,7 @@ export function NavbarLinkItem({
         "data-[active=true]:text-light-primary",
         "data-[active=true]:hover:text-light-primary-hover",
         "dark:data-[active=true]:text-dark-green-key",
-        "dark:data-[active=true]:hover:text-dark-primary-hover"
+        "dark:data-[active=true]:hover:text-dark-primary-hover",
       )}
       isActive={isActive}
     >
@@ -85,6 +85,14 @@ export function NavbarLink({ appOrigin }: { appOrigin?: string }) {
         appOrigin={appOrigin}
       >
         FARM
+      </NavbarLinkItem>
+
+      <NavbarLinkItem
+        currentPage={currentPage}
+        href="/easy"
+        appOrigin={appOrigin}
+      >
+        EASY
       </NavbarLinkItem>
 
       <NavbarLinkItem
@@ -153,7 +161,7 @@ export function MobileNavLink({
         "data-[active=true]:text-light-primary",
         "data-[active=true]:hover:text-light-primary-hover",
         "dark:data-[active=true]:text-dark-primary",
-        "dark:data-[active=true]:hover:text-dark-primary-hover"
+        "dark:data-[active=true]:hover:text-dark-primary-hover",
       )}
       isActive={isActive}
     >
@@ -163,7 +171,7 @@ export function MobileNavLink({
           //isActive
           //  ? "bg-primary-100 text-primary-600 font-medium"
           //  : "text-gray-700 hover:text-gray-900 hover:bg-gray-50",
-          className
+          className,
         )}
         href={href}
         target={target}

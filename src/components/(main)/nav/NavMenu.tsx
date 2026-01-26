@@ -24,7 +24,7 @@ function toAppHref(appOrigin: string, path: string) {
 }
 
 export default function NavMenu(
-  props: ReturnType<typeof useDisclosure> & { appOrigin?: string }
+  props: ReturnType<typeof useDisclosure> & { appOrigin?: string },
 ) {
   const { isOpen, onClose, appOrigin } = props;
 
@@ -73,6 +73,9 @@ export default function NavMenu(
 
               <MobileNavLink href={resolveHref("/farm")} onClick={onClose}>
                 <span>FARM</span>
+              </MobileNavLink>
+              <MobileNavLink href={resolveHref("/easy")} onClick={onClose}>
+                <span>EASY</span>
               </MobileNavLink>
 
               <MobileNavLink
