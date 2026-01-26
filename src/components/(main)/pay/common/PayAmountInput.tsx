@@ -42,7 +42,7 @@ function safeLower(s?: string) {
 function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
   if (!map) return undefined;
   const matchedKey = [...map.keys()].find(
-    (k) => String(k).toLowerCase() === keyLower
+    (k) => String(k).toLowerCase() === keyLower,
   );
   return matchedKey ? map.get(matchedKey) : undefined;
 }
@@ -129,7 +129,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
     if (!balMap || !enterTokenAddressLower) return null;
 
     const matchedKey = [...balMap.keys()].find(
-      (k) => k?.toLowerCase?.() === enterTokenAddressLower
+      (k) => k?.toLowerCase?.() === enterTokenAddressLower,
     );
     return matchedKey ? (balMap.get(matchedKey) ?? null) : null;
   }, [assets, enterTokenAddressLower, mode]);
@@ -145,7 +145,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
     const wantedKey = `LINK:${token.symbol}_USD`.toUpperCase();
     const matchedKey = [...clMap.keys()].find(
-      (k) => String(k).toUpperCase() === wantedKey
+      (k) => String(k).toUpperCase() === wantedKey,
     );
     if (!matchedKey) return null;
 
@@ -263,7 +263,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       appliedPoolFromUrlRef.current = safeLower(pool.address);
       pay.setSelectedPool(pool);
     },
-    [pay]
+    [pay],
   );
 
   useEffect(() => {
@@ -291,7 +291,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       const sym = (vault?.symbol ?? "").trim().toUpperCase();
       if (sym) {
         wanted = pools.find(
-          (p) => (p.symbol ?? "").trim().toUpperCase() === sym
+          (p) => (p.symbol ?? "").trim().toUpperCase() === sym,
         );
       }
     }
