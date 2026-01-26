@@ -135,7 +135,7 @@ export function PayResultNode(props: {
 
             <div className="text-right">
               <div className="font-semibold leading-none">
-                {fmtBd(props.stakedUsed, 6)}
+                {fmtBd(props.stakedUsed, 8)}
               </div>
               <div className="mt-0.5 text-[11px] leading-none text-default-800 dark:text-default-300">
                 {fmtUsdFromNumber(props.requiredUsdWithTol)}
@@ -358,7 +358,7 @@ export function EnterResultNode(props: {
           {props.stakedDelta && (
             <div className="mt-1 flex justify-end">
               <div className="text-base leading-none text-foreground">
-                +{fmtBd(props.stakedDelta, 6)}
+                +{fmtBd(props.stakedDelta, 8)}
               </div>
             </div>
           )}

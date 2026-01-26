@@ -80,7 +80,7 @@ function fmtUsd(v?: BigDecimal) {
 // vault decimals 찾기
 function findVaultDecimalsByPoolAddress(
   chainId: number,
-  poolAddrLower?: string
+  poolAddrLower?: string,
 ) {
   if (!poolAddrLower) return 18;
   const vaultList = Object.values(lpVaults) as any[];
@@ -112,7 +112,7 @@ function findTokenByAddress(chainId: number, address?: string) {
 // assets에서 token balance(BigDecimal) 꺼내기
 function getTokenBalanceFromAssets(
   assets: any,
-  tokenAddr?: string
+  tokenAddr?: string,
 ): BigDecimal | null {
   const addr = safeLower(tokenAddr);
   if (!assets?.balances?.tokenBalances?.balanceMap || !addr) return null;
@@ -128,7 +128,7 @@ function getTokenBalanceFromAssets(
 // assets에서 staked balance(BigDecimal) 꺼내기
 function getStakedBalanceFromAssetsByInputToken(
   assets: any,
-  inputTokenAddr?: string
+  inputTokenAddr?: string,
 ): BigDecimal | null {
   const addr = safeLower(inputTokenAddr);
   const m: Map<string, any> | undefined =
@@ -210,11 +210,11 @@ async function waitForAssetsBalanceChange(params: {
 function patchTxConfirmedInfo(
   setTx: (
     updater: (
-      prev: TransactionStatusProps | null
-    ) => TransactionStatusProps | null
+      prev: TransactionStatusProps | null,
+    ) => TransactionStatusProps | null,
   ) => void,
   nextNode: React.ReactNode,
-  typeGuard: TransactionType.PAY | TransactionType.ENTER
+  typeGuard: TransactionType.PAY | TransactionType.ENTER,
 ) {
   setTx((prev) => {
     if (!prev) return prev;
@@ -326,9 +326,9 @@ export default function usePay() {
 
     const entry =
       typeof pm.get === "function"
-        ? (checksumKey ? pm.get(checksumKey) : undefined) ??
-          getByLowerKey(pm, keyLower)
-        : pm[addr] ?? pm[keyLower];
+        ? ((checksumKey ? pm.get(checksumKey) : undefined) ??
+          getByLowerKey(pm, keyLower))
+        : (pm[addr] ?? pm[keyLower]);
     if (!entry) return null;
 
     // ✅ 1) 진짜 BigDecimal 인스턴스(또는 BigDecimal-like)면 그대로 반환
@@ -405,13 +405,12 @@ export default function usePay() {
     const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
       | Map<string, BigDecimal | null>
       | undefined;
-    const cgSymbolMap = (assets as any)?.assetValues?.coingeckoSymbolPriceMap as
-      | Map<string, BigDecimal | null>
-      | undefined;
+    const cgSymbolMap = (assets as any)?.assetValues
+      ?.coingeckoSymbolPriceMap as Map<string, BigDecimal | null> | undefined;
     if (cgMap && chainId) {
       const normalized = normalizeCoingeckoAddress(
         (WETH.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
-        chainId
+        chainId,
       );
       if (normalized) {
         const cgPrice = cgMap.get(normalized) ?? null;
@@ -456,9 +455,8 @@ export default function usePay() {
     const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
       | Map<string, BigDecimal | null>
       | undefined;
-    const cgSymbolMap = (assets as any)?.assetValues?.coingeckoSymbolPriceMap as
-      | Map<string, BigDecimal | null>
-      | undefined;
+    const cgSymbolMap = (assets as any)?.assetValues
+      ?.coingeckoSymbolPriceMap as Map<string, BigDecimal | null> | undefined;
     const hasChainlinkPrice = (symbol?: string) => {
       if (!symbol || !clMap) return false;
       const direct = clMap.get(`LINK:${symbol}_USD`)?.price as
@@ -486,7 +484,9 @@ export default function usePay() {
         const addr = getTokenAddress({ token: stakeToken.input, chainId });
         const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
         if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
-        const symbolKey = String(symbol ?? "").trim().toLowerCase();
+        const symbolKey = String(symbol ?? "")
+          .trim()
+          .toLowerCase();
         if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
       }
     } else if (isBirdieLPFarm(stakeToken)) {
@@ -496,23 +496,27 @@ export default function usePay() {
         const addr = getTokenAddress({ token: t0 as any, chainId });
         const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
         if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
-        const symbolKey = String(t0?.symbol ?? "").trim().toLowerCase();
+        const symbolKey = String(t0?.symbol ?? "")
+          .trim()
+          .toLowerCase();
         if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
       }
       if (!hasChainlinkPrice(t1?.symbol)) {
         const addr = getTokenAddress({ token: t1 as any, chainId });
         const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
         if (addr && normalized && !cgMap?.has(normalized)) addrs.push(addr);
-        const symbolKey = String(t1?.symbol ?? "").trim().toLowerCase();
+        const symbolKey = String(t1?.symbol ?? "")
+          .trim()
+          .toLowerCase();
         if (symbolKey && !cgSymbolMap?.has(symbolKey)) symbols.push(symbolKey);
       }
     }
 
     if (addrs.length > 0) refetchCg(addrs);
-    const refetchSymbol =
-      (assets as any)?.assetValues?.refetchCoingeckoSymbolPrices as
-        | ((symbols: Array<string | null | undefined>) => Promise<void>)
-        | undefined;
+    const refetchSymbol = (assets as any)?.assetValues
+      ?.refetchCoingeckoSymbolPrices as
+      | ((symbols: Array<string | null | undefined>) => Promise<void>)
+      | undefined;
     if (symbols.length > 0 && refetchSymbol) refetchSymbol(symbols);
   }, [assets, chainId, selectedPool?.address]);
 
@@ -794,7 +798,7 @@ export default function usePay() {
     // PayTxInfoBlocks는 number를 받는 형태라 변환
     try {
       return Number(
-        payRequiredUsd.roundToDecimals(2).toPrecisionString(true, true)
+        payRequiredUsd.roundToDecimals(2).toPrecisionString(true, true),
       );
     } catch {
       return undefined;
@@ -852,11 +856,11 @@ export default function usePay() {
       // BEFORE snapshot (assets-based)
       const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
         assetsRef.current,
-        poolInputTokenAddr
+        poolInputTokenAddr,
       );
       const usdcBeforeBd = getTokenBalanceFromAssets(
         assetsRef.current,
-        usdcAddr
+        usdcAddr,
       );
 
       const prevKey = makeBalancesSnapshotKey({
@@ -876,7 +880,7 @@ export default function usePay() {
 
       const sharesDecimals = findVaultDecimalsByPoolAddress(
         chainId,
-        safeLower(selectedPool.address)
+        safeLower(selectedPool.address),
       );
 
       // viem parseUnits 가능한 형태로
@@ -912,11 +916,11 @@ export default function usePay() {
 
           const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
             assetsRef.current,
-            poolInputTokenAddr
+            poolInputTokenAddr,
           );
           const usdcAfterBd = getTokenBalanceFromAssets(
             assetsRef.current,
-            usdcAddr
+            usdcAddr,
           );
 
           // ✅ PAY stakedDelta는 “after - (before - usedShares)”
@@ -933,7 +937,7 @@ export default function usePay() {
                   reEnterSharesBd
                     .multiply(poolPriceUsdPerToken)
                     .roundToDecimals(2)
-                    .toPrecisionString(true, true)
+                    .toPrecisionString(true, true),
                 )
               : undefined;
 
@@ -970,7 +974,7 @@ export default function usePay() {
           patchTxConfirmedInfo(
             tx.setTransactionProps as any,
             payResultNode,
-            TransactionType.PAY
+            TransactionType.PAY,
           );
           tx.onOpen();
         },
@@ -1094,7 +1098,7 @@ export default function usePay() {
       // BEFORE snapshot (assets-based)
       const stakedBeforeBd = getStakedBalanceFromAssetsByInputToken(
         assetsRef.current,
-        poolInputTokenAddr
+        poolInputTokenAddr,
       );
 
       const token0BeforeBd = token0Addr
@@ -1112,7 +1116,7 @@ export default function usePay() {
 
       const sharesDecimals = findVaultDecimalsByPoolAddress(
         chainId,
-        safeLower(selectedPool.address)
+        safeLower(selectedPool.address),
       );
 
       // viem parseUnits 가능한 형태로
@@ -1182,7 +1186,7 @@ export default function usePay() {
 
           const stakedAfterBd = getStakedBalanceFromAssetsByInputToken(
             assetsRef.current,
-            poolInputTokenAddr
+            poolInputTokenAddr,
           );
 
           const token0AfterBd = finalToken0
@@ -1211,7 +1215,7 @@ export default function usePay() {
               ? isWethAddr(finalToken0) && amountInBd
                 ? BigDecimal.max(
                     token0BeforeBd.subtract(amountInBd),
-                    new BigDecimal("0", WETH.decimals ?? 18)
+                    new BigDecimal("0", WETH.decimals ?? 18),
                   )
                 : token0BeforeBd
               : (token0BeforeBd ?? new BigDecimal("0", 18));
@@ -1221,7 +1225,7 @@ export default function usePay() {
               ? isWethAddr(finalToken1) && amountInBd
                 ? BigDecimal.max(
                     token1BeforeBd.subtract(amountInBd),
-                    new BigDecimal("0", WETH.decimals ?? 18)
+                    new BigDecimal("0", WETH.decimals ?? 18),
                   )
                 : token1BeforeBd
               : (token1BeforeBd ?? new BigDecimal("0", 18));
@@ -1302,7 +1306,7 @@ export default function usePay() {
           patchTxConfirmedInfo(
             tx.setTransactionProps as any,
             resultNode,
-            TransactionType.ENTER
+            TransactionType.ENTER,
           );
           tx.onOpen();
         },
