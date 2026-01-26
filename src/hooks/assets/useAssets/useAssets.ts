@@ -21,6 +21,8 @@ import useAccountPoints from "./useAccountPoints";
 import type { aprDataState as AprDataState } from "@/app/AssetsContextProvider";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
+import { findSymbolByAddress } from "@/utils/assets/getTokenSymbol";
+import { getUsdPriceWithFallback } from "@/utils/prices/getUsdPriceWithFallback";
 
 type FarmValuesRecord = Record<
   string,
@@ -507,6 +509,40 @@ export default function useAssets() {
       ) {
         const list = aprDataRef.current.apr as any[];
         const apyByComposite = new Map<string, number>();
+        const tokenPriceCache = new Map<string, BigDecimal | null>();
+
+        const safeApr = (value: unknown) => {
+          try {
+            if (
+              typeof value === "string" ||
+              typeof value === "number" ||
+              typeof value === "bigint" ||
+              typeof value === "boolean"
+            ) {
+              return BigInt(value);
+            }
+          } catch {}
+          return BigInt(0);
+        };
+
+        const getTokenUsdPrice = async (
+          address: `0x${string}` | null | undefined
+        ) => {
+          if (!address || !assetValues || !chainId) return null;
+          const key = address.toLowerCase();
+          if (tokenPriceCache.has(key)) {
+            return tokenPriceCache.get(key) ?? null;
+          }
+          const symbol = findSymbolByAddress(address, chainId);
+          const price = await getUsdPriceWithFallback({
+            assetValues,
+            chainId,
+            symbol,
+            address,
+          });
+          tokenPriceCache.set(key, price ?? null);
+          return price ?? null;
+        };
 
         for (const entry of list) {
           const rawCid = (entry?.chainId ?? "").toString().trim();
@@ -520,12 +556,40 @@ export default function useAssets() {
           const SUM_LIMIT = BigInt(4644420100000000000);
           const APY_CAP_PERCENT = 99.99999;
 
-          let sum = BigInt(0);
-          for (let i = 0; i < Math.min(3, vaults.length); i++) {
-            const s = vaults[i]?.apr7d ?? "0";
-            try {
-              sum += BigInt(s);
-            } catch {}
+          const apr0 = safeApr(vaults[0]?.apr7d);
+          const apr1 = safeApr(vaults[1]?.apr7d);
+          const apr2 = safeApr(vaults[2]?.apr7d);
+
+          let sum = apr0 + apr1 + apr2;
+          const underlying = nextUnderlying.get(addr as `0x${string}`);
+          const tvlBD = nextTvl.get(addr as `0x${string}`);
+          const tvlScaled = toScaled1e18FromDecimalString(tvlBD?.toString?.());
+
+          if (tvlScaled > BigInt(0)) {
+            let usd0Scaled = BigInt(0);
+            let usd1Scaled = BigInt(0);
+
+            if (underlying?.token0?.address && underlying?.token0?.balance) {
+              const price0 = await getTokenUsdPrice(underlying.token0.address);
+              if (price0) {
+                const usd0 = underlying.token0.balance.mul(price0);
+                usd0Scaled = toScaled1e18FromDecimalString(usd0.toString());
+              }
+            }
+
+            if (underlying?.token1?.address && underlying?.token1?.balance) {
+              const price1 = await getTokenUsdPrice(underlying.token1.address);
+              if (price1) {
+                const usd1 = underlying.token1.balance.mul(price1);
+                usd1Scaled = toScaled1e18FromDecimalString(usd1.toString());
+              }
+            }
+
+            if (usd0Scaled > BigInt(0) || usd1Scaled > BigInt(0)) {
+              const weighted =
+                (usd0Scaled * apr0 + usd1Scaled * apr1) / tvlScaled;
+              sum = weighted + apr2;
+            }
           }
 
           let extraScaledTotal = BigInt(0);

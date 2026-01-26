@@ -13,7 +13,7 @@ export default function PayPage() {
           "max-w-[464px] pb-4",
           "max-sm:max-w-full max-sm:px-4",
           "[@media(max-height:640px)]:pt-4",
-          "[@media(min-height:640px)]:pt-16"
+          "[@media(min-height:640px)]:pt-16",
         )}
       >
         <Suspense fallback={null}>

@@ -2,7 +2,13 @@
 "use client";
 
 import Icons from "@/assets/icons/icons";
-import { Button, Image, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
+import {
+  Button,
+  Image,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+} from "@heroui/react";
 import { useDisclosure } from "@heroui/react";
 import clsx from "clsx";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -26,7 +32,7 @@ interface Props {
 }
 
 /** 숫자 표시용 헬퍼 */
-function formatAmount(v?: BigDecimal, fractionDigits = 5): string {
+function formatAmount(v?: BigDecimal, fractionDigits = 8): string {
   if (!v) return "-";
   if (v.isZero()) return "0";
   return v.roundToDecimals(fractionDigits).toPrecisionString(true, true);
@@ -65,7 +71,7 @@ export default function PayPoolSelector({
         className={clsx(
           "flex h-11 items-center rounded-lg", // ← justify-between 제거
           "border border-default-300 dark:border-default-100 bg-background px-3 text-sm",
-          "hover:bg-default-100"
+          "hover:bg-default-100",
         )}
       >
         {hasSelection && selected ? (
@@ -91,7 +97,7 @@ export default function PayPoolSelector({
               {mode === "PAY" && (
                 <>
                   <span className="text-xs font-semibold">
-                    {formatAmount(selected.stakedBalance, 5)}
+                    {formatAmount(selected.stakedBalance, 8)}
                   </span>
                   <span className="text-[11px] text-default-500">
                     {formatUsd(selected.usdValue)}
@@ -166,7 +172,7 @@ export default function PayPoolSelector({
                         }}
                         className={clsx(
                           "flex w-full items-center gap-3 rounded-lg px-2 py-2",
-                          "hover:bg-default-100"
+                          "hover:bg-default-100",
                         )}
                       >
                         {/* 왼쪽: 아이콘 + 심볼/풀 이름 */}
@@ -191,7 +197,7 @@ export default function PayPoolSelector({
                           {mode === "PAY" && (
                             <>
                               <span className="text-xs font-semibold">
-                                {formatAmount(pool.stakedBalance, 5)}
+                                {formatAmount(pool.stakedBalance, 8)}
                               </span>
                               <span className="text-[11px] text-default-500">
                                 {formatUsd(pool.usdValue)}
