@@ -23,19 +23,21 @@ export default function useApprove(props: {
   refetch?: () => Promise<unknown>;
 }) {
   const chainId = useChainId();
-  const refetchWithRetry = useCallback(() => {
+  const refetchWithRetry = useCallback(async () => {
     if (!props.refetch) return;
-    const safeRefetch = () => {
+    const safeRefetch = async () => {
       try {
-        return props.refetch?.();
+        return await props.refetch?.();
       } catch {
         return undefined;
       }
     };
-    safeRefetch();
+    await safeRefetch();
     const delaysMs = [1500, 6000];
     delaysMs.forEach((ms) => {
-      setTimeout(() => safeRefetch(), ms);
+      setTimeout(() => {
+        void safeRefetch();
+      }, ms);
     });
   }, [props.refetch]);
   const approve = useCallback(
