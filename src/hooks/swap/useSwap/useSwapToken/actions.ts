@@ -51,20 +51,11 @@ export function approve(params: {
     transactionContext,
     transactionProps,
     refetch: async () => {
-      const safeRefetch = async () => {
-        try {
-          return await refetchAllowance?.();
-        } catch {
-          return undefined;
-        }
-      };
-      await safeRefetch();
-      const delaysMs = [1500, 6000];
-      delaysMs.forEach((ms) => {
-        setTimeout(() => {
-          void safeRefetch();
-        }, ms);
-      });
+      try {
+        await refetchAllowance?.();
+      } catch {
+        // ignore refetch errors to avoid blocking UX
+      }
     },
   });
 
