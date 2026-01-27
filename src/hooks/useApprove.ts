@@ -23,6 +23,21 @@ export default function useApprove(props: {
   refetch?: () => Promise<unknown>;
 }) {
   const chainId = useChainId();
+  const refetchWithRetry = useCallback(() => {
+    if (!props.refetch) return;
+    const safeRefetch = () => {
+      try {
+        return props.refetch?.();
+      } catch {
+        return undefined;
+      }
+    };
+    safeRefetch();
+    const delaysMs = [1500, 6000];
+    delaysMs.forEach((ms) => {
+      setTimeout(() => safeRefetch(), ms);
+    });
+  }, [props.refetch]);
   const approve = useCallback(
     (token: IToken) => {
       if (!token || !chainId) {
@@ -43,7 +58,7 @@ export default function useApprove(props: {
         client: props.client,
         transactionContext: props.transactionContext,
         transactionProps: transactionProps,
-        refetch: props.refetch,
+        refetch: refetchWithRetry,
       });
 
       // console.log(
@@ -71,7 +86,7 @@ export default function useApprove(props: {
         handler
       );
     },
-    [chainId, props]
+    [chainId, props, refetchWithRetry]
   );
 
   return approve;
