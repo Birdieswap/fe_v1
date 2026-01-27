@@ -135,8 +135,10 @@ export async function calcFarmOnce(
         address: token1Addr,
       });
 
-      if (liq0 && liq1 && price0 && price1) {
-        tvl = new BigDecimal(liq0.mul(price0).add(liq1.mul(price1)).toString());
+      if (poolBalance0 && poolBalance1 && price0 && price1) {
+        tvl = new BigDecimal(
+          poolBalance0.mul(price0).add(poolBalance1.mul(price1)).toString()
+        );
       }
     }
     // ─────────────────────────────────────────────
