@@ -213,6 +213,7 @@ export default function WalletContextProvider({
         else if (p?.isMetaMask) key = "metaMask";
         // 4) injected → metaMask로 보정
         else if (
+          account.connector.id === "metaMask" ||
           account.connector.id === "io.metamask" ||
           account.connector.id === "metamask" ||
           account.connector.id === "injected"
