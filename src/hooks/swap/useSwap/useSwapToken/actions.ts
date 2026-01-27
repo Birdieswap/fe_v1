@@ -50,18 +50,20 @@ export function approve(params: {
     client,
     transactionContext,
     transactionProps,
-    refetch: () => {
-      const safeRefetch = () => {
+    refetch: async () => {
+      const safeRefetch = async () => {
         try {
-          return refetchAllowance?.();
+          return await refetchAllowance?.();
         } catch {
           return undefined;
         }
       };
-      safeRefetch();
+      await safeRefetch();
       const delaysMs = [1500, 6000];
       delaysMs.forEach((ms) => {
-        setTimeout(() => safeRefetch(), ms);
+        setTimeout(() => {
+          void safeRefetch();
+        }, ms);
       });
     },
   });
