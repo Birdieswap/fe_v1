@@ -303,12 +303,15 @@ export default function usePay() {
   // PAY derived
   const tolPct = useMemo(() => toleranceToPercent(tolerance), [tolerance]);
 
-  const payRequiredUsd = useMemo(() => {
+  const payAmountUsdBd = useMemo(() => {
     const dec = USDC.decimals ?? 6;
-    const amt = new BigDecimal(payAmount || "0", dec);
+    return new BigDecimal(payAmount || "0", dec);
+  }, [payAmount, USDC.decimals]);
+
+  const payRequiredUsd = useMemo(() => {
     const factor = new BigDecimal(String(1 + tolPct / 100), 18);
-    return amt.multiply(factor);
-  }, [payAmount, tolPct, USDC.decimals]);
+    return payAmountUsdBd.multiply(factor);
+  }, [payAmountUsdBd, tolPct]);
 
   const poolPriceUsdPerToken = useMemo(() => {
     const pm: any = (assets as any)?.farmValues?.priceMap;
@@ -372,9 +375,15 @@ export default function usePay() {
 
   const stakingSharesBd = useMemo(() => {
     if (!poolPriceUsdPerToken) return null;
-    if (payRequiredUsd.isZero()) return null;
-    return payRequiredUsd.divide(poolPriceUsdPerToken);
-  }, [payRequiredUsd, poolPriceUsdPerToken]);
+    if (payAmountUsdBd.isZero()) return null;
+
+    // 1) base shares = payAmount / price
+    const baseShares = payAmountUsdBd.divide(poolPriceUsdPerToken);
+
+    // 2) apply tolerance on shares (avoid compounding rounding issues)
+    const factor = new BigDecimal(String(1 + tolPct / 100), 18);
+    return baseShares.multiply(factor);
+  }, [payAmountUsdBd, poolPriceUsdPerToken, tolPct]);
 
   const isPayInsufficientPoolBalance = useMemo(() => {
     if (!selectedPool?.stakedBalance) return false;
@@ -941,10 +950,25 @@ export default function usePay() {
                 )
               : undefined;
 
-          const refundBd =
-            usdcAfterBd && usdcBeforeBd
-              ? usdcAfterBd.subtract(usdcBeforeBd)
+          // refund = net USDC increase, but if receiver is self, subtract payAmount
+          const refundBd = (() => {
+            if (!usdcAfterBd || !usdcBeforeBd) return null;
+            let delta = usdcAfterBd.subtract(usdcBeforeBd);
+            if (
+              receiver?.trim() &&
+              userAddress &&
+              receiver.toLowerCase() === userAddress.toLowerCase()
+            ) {
+              const payAmountBd = new BigDecimal(
+                payAmount || "0",
+                USDC.decimals ?? 6,
+              );
+              delta = delta.subtract(payAmountBd);
+            }
+            return delta.gt(new BigDecimal("0", USDC.decimals ?? 6))
+              ? delta
               : null;
+          })();
 
           // console.log("[PAY][AFTER]", {
           //   stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
