@@ -25,7 +25,7 @@ export function PanelButtonPay({ selectedPanel, setSelectedPanel }: Props) {
           <Icons.PiggyBankStopOff className="absolute inset-0 block transition-opacity group-data-[selected=true]:opacity-0 dark:hidden" />
           <Icons.PiggyBankStopOffDark className="absolute inset-0 hidden transition-opacity group-data-[selected=true]:opacity-0 dark:block" />
         </div>
-        Pay
+        easy Pay
       </PanelButtonBase>
     </div>
   );
