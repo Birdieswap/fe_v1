@@ -19,7 +19,6 @@ export function StakeExecuteButtons({
   tokenStatuses,
   variant,
   showErrorMessages,
-  hasRewards,
 }: {
   isConnected: boolean;
   isExecutable: boolean;
@@ -34,9 +33,7 @@ export function StakeExecuteButtons({
 }) {
   // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
-    isConnected &&
-    hasRewards &&
-    tokenStatuses.some((v) => v.isApproved == false);
+    isConnected && tokenStatuses.some((v) => v.isApproved == false);
 
   const isApprovePending = isPending && isApproveVisible;
   const isExecutePending = isPending && !isApproveVisible;
