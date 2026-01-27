@@ -99,7 +99,7 @@ export default function StakePanel({
 
       <StakeExecuteButtons
         isConnected={state.isConnected}
-        isExecutable={state.isExecutable && hasRewards}
+        isExecutable={state.isExecutable}
         isPending={state.isPending}
         isWrongNetwork={state.isWrongNetwork}
         execute={state.execute}

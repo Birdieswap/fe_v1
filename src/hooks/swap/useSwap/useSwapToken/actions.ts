@@ -50,7 +50,20 @@ export function approve(params: {
     client,
     transactionContext,
     transactionProps,
-    refetch: refetchAllowance,
+    refetch: () => {
+      const safeRefetch = () => {
+        try {
+          return refetchAllowance?.();
+        } catch {
+          return undefined;
+        }
+      };
+      safeRefetch();
+      const delaysMs = [1500, 6000];
+      delaysMs.forEach((ms) => {
+        setTimeout(() => safeRefetch(), ms);
+      });
+    },
   });
 
   const spender =
