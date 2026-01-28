@@ -68,7 +68,14 @@ export function LandingNetworkProvider({
     const saved = window.localStorage.getItem(STORAGE_KEY);
     const parsed = saved ? Number(saved) : NaN;
 
-    if (Number.isFinite(parsed) && networks.some((n) => n.id === parsed)) {
+    // Force Base as default on landing (migrate old saved Sepolia)
+    if (parsed === sepolia.id) {
+      setSelectedChainIdState(DEFAULT_CHAIN_ID);
+      window.localStorage.setItem(STORAGE_KEY, String(DEFAULT_CHAIN_ID));
+    } else if (
+      Number.isFinite(parsed) &&
+      networks.some((n) => n.id === parsed)
+    ) {
       setSelectedChainIdState(parsed);
     } else {
       window.localStorage.setItem(STORAGE_KEY, String(selectedChainId));
