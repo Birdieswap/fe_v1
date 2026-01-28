@@ -106,10 +106,10 @@ export default function RewardInfoPanel({
           <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             There are no additional staking rewards available at the moment.
           </p>
-          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+          {/* <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             But you are still enjoying the double growth rate of
             Birdieswap!{" "}
-          </p>
+          </p> */}
         </div>
       </div>
     );
@@ -119,14 +119,14 @@ export default function RewardInfoPanel({
     <div
       className={clsx(
         "rounded-2xl min-h-[176px] bg-background p-4 text-sm",
-        className
+        className,
       )}
     >
       {/* Header (웹) */}
       <div
         className={clsx(
           "grid grid-cols-12 items-center select-none pb-4",
-          onOpenStakingModal ? "cursor-pointer" : "cursor-default"
+          onOpenStakingModal ? "cursor-pointer" : "cursor-default",
         )}
         onClick={openStakingModal}
       >
@@ -138,7 +138,7 @@ export default function RewardInfoPanel({
             className={clsx(
               "fill-default-500",
               "dark:fill-default-300",
-              "transition-[fill]"
+              "transition-[fill]",
             )}
             fillRule="evenodd"
           />
@@ -177,7 +177,7 @@ export default function RewardInfoPanel({
                 "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
                 "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
                 "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-                "data-[disabled=true]:pointer-events-none"
+                "data-[disabled=true]:pointer-events-none",
               )}
             >
               Point
@@ -293,6 +293,13 @@ function ExtraRewardClaimRow({
     totalSupply,
   ]);
 
+  // console.log("ExtraRewardClaimRow render:", {
+  //   reward,
+  //   aprPct,
+  //   amountNum,
+  //   dollar,
+  // });
+
   const { writeContract, data: txHash, isPending } = useWriteContract();
   const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -327,7 +334,7 @@ function ExtraRewardClaimRow({
         args: [BigInt(reward.indexNumber)],
         chainId,
       },
-      { onError: handlers.onError, onSuccess: handlers.onSuccess }
+      { onError: handlers.onError, onSuccess: handlers.onSuccess },
     );
   };
 
@@ -383,7 +390,7 @@ function ExtraRewardClaimRow({
             "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
             "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
             "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-            "data-[disabled=true]:pointer-events-none"
+            "data-[disabled=true]:pointer-events-none",
           )}
           isLoading={false}
           isDisabled={!canClaim || isPending || isWaiting}

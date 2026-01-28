@@ -75,7 +75,7 @@ type FarmRawLP = {
 type FarmRaw = FarmRawSingle | FarmRawLP;
 
 function normalizeBDMapFromMap(
-  m: Map<string, BigDecimal | null>
+  m: Map<string, BigDecimal | null>,
 ): Record<string, string | null> {
   const out: Record<string, string | null> = {};
   m.forEach((v, k) => {
@@ -85,7 +85,7 @@ function normalizeBDMapFromMap(
 }
 
 function normalizeUnderlyingMap(
-  m: Map<string, UnderlyingEntry>
+  m: Map<string, UnderlyingEntry>,
 ): Record<string, string> {
   const out: Record<string, string> = {};
   m.forEach((v, k) => {
@@ -100,7 +100,7 @@ function normalizeUnderlyingMap(
 
 function shallowEqualNormalized(
   a: Record<string, string | null>,
-  b: Record<string, string | null>
+  b: Record<string, string | null>,
 ) {
   const aKeys = Object.keys(a);
   const bKeys = Object.keys(b);
@@ -163,7 +163,7 @@ export default function useAssets() {
       return { farm, address };
     }).filter(
       (
-        x
+        x,
       ): x is { farm: NonNullable<typeof x.farm>; address: `0x${string}` } => {
         try {
           return (
@@ -174,16 +174,16 @@ export default function useAssets() {
         } catch {
           return false;
         }
-      }
+      },
     );
   }, [chainId]);
 
   const [apyMap, setApyMap] = useState<Map<string, BigDecimal>>(new Map());
   const [tvlMap, setTvlMap] = useState<Map<string, BigDecimal | null>>(
-    new Map()
+    new Map(),
   );
   const [priceMap, setPriceMap] = useState<Map<string, BigDecimal | null>>(
-    new Map()
+    new Map(),
   );
   const [underlyingMap, setUnderlyingMap] = useState<
     Map<string, UnderlyingEntry>
@@ -212,7 +212,7 @@ export default function useAssets() {
     const arr: string[] = [];
     assetValues.chainLinkPriceMap.forEach((v, k) => {
       arr.push(
-        `${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`
+        `${k}:${v.price?.toString?.() ?? "null"}:${v.roundId?.toString?.() ?? ""}`,
       );
     });
     return arr.sort().join("|");
@@ -222,7 +222,7 @@ export default function useAssets() {
     const arr: string[] = [];
     assetValues.uniswapPriceMap.forEach((v, k) => {
       arr.push(
-        `${k}:${v.baseBalance?.toString?.() ?? "0"}:${v.quoteBalance?.toString?.() ?? "0"}`
+        `${k}:${v.baseBalance?.toString?.() ?? "0"}:${v.quoteBalance?.toString?.() ?? "0"}`,
       );
     });
     return arr.sort().join("|");
@@ -281,7 +281,10 @@ export default function useAssets() {
     const data = assetValues?.chainLinkData?.data;
     if (!data) return false;
     return !assetValues?.chainLinkData?.isFetching;
-  }, [assetValues?.chainLinkData?.data, assetValues?.chainLinkData?.isFetching]);
+  }, [
+    assetValues?.chainLinkData?.data,
+    assetValues?.chainLinkData?.isFetching,
+  ]);
 
   const hasChainlinkPrice = useCallback(
     (symbol?: string) => {
@@ -299,7 +302,7 @@ export default function useAssets() {
       }
       return false;
     },
-    [assetValues.chainLinkPriceMap]
+    [assetValues.chainLinkPriceMap],
   );
 
   useEffect(() => {
@@ -320,7 +323,9 @@ export default function useAssets() {
           const addr = getTokenAddress({ token, chainId });
           const normalized = normalizeCoingeckoAddress(addr, chainId);
           if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
-          const symbolKey = String(token?.symbol ?? "").trim().toLowerCase();
+          const symbolKey = String(token?.symbol ?? "")
+            .trim()
+            .toLowerCase();
           if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
         }
         continue;
@@ -332,22 +337,25 @@ export default function useAssets() {
           const addr = getTokenAddress({ token: t0 as any, chainId });
           const normalized = normalizeCoingeckoAddress(addr, chainId);
           if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
-          const symbolKey = String(t0?.symbol ?? "").trim().toLowerCase();
+          const symbolKey = String(t0?.symbol ?? "")
+            .trim()
+            .toLowerCase();
           if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
         }
         if (!hasChainlinkPrice(t1?.symbol)) {
           const addr = getTokenAddress({ token: t1 as any, chainId });
           const normalized = normalizeCoingeckoAddress(addr, chainId);
           if (addr && normalized && !cgMap.has(normalized)) addrs.push(addr);
-          const symbolKey = String(t1?.symbol ?? "").trim().toLowerCase();
+          const symbolKey = String(t1?.symbol ?? "")
+            .trim()
+            .toLowerCase();
           if (symbolKey && !cgSymbolMap.has(symbolKey)) symbols.push(symbolKey);
         }
       }
     }
 
     if (addrs.length > 0) assetValues.refetchCoingeckoPrices(addrs);
-    if (symbols.length > 0)
-      assetValues.refetchCoingeckoSymbolPrices?.(symbols);
+    if (symbols.length > 0) assetValues.refetchCoingeckoSymbolPrices?.(symbols);
   }, [
     assetValues?.refetchCoingeckoPrices,
     assetValues?.refetchCoingeckoSymbolPrices,
@@ -375,7 +383,7 @@ export default function useAssets() {
   const waitForBalancesVersionChange = useCallback(
     async (
       prevVersion: string,
-      opts?: { timeoutMs?: number; intervalMs?: number }
+      opts?: { timeoutMs?: number; intervalMs?: number },
     ) => {
       const timeoutMs = opts?.timeoutMs ?? 10000;
       const intervalMs = opts?.intervalMs ?? 80;
@@ -387,7 +395,7 @@ export default function useAssets() {
       }
       return false;
     },
-    [balancesVersion]
+    [balancesVersion],
   );
 
   const forceRefresh = useCallback(async () => {
@@ -439,17 +447,8 @@ export default function useAssets() {
 
       for (const { farm, address } of farms) {
         try {
-          const {
-            apy,
-            tvl,
-            price,
-            underlying,
-            totalSupply,
-          }: FarmCalc = await calcFarmOnce(
-            client,
-            farm as any,
-            assetValues
-          );
+          const { apy, tvl, price, underlying, totalSupply }: FarmCalc =
+            await calcFarmOnce(client, farm as any, assetValues);
           nextApy.set(address, apy);
           nextTvl.set(address, tvl);
           nextPrice.set(address, price);
@@ -526,7 +525,7 @@ export default function useAssets() {
         };
 
         const getTokenUsdPrice = async (
-          address: `0x${string}` | null | undefined
+          address: `0x${string}` | null | undefined,
         ) => {
           if (!address || !assetValues || !chainId) return null;
           const key = address.toLowerCase();
@@ -555,6 +554,7 @@ export default function useAssets() {
 
           const SUM_LIMIT = BigInt(4644420100000000000);
           const APY_CAP_PERCENT = 99.99999;
+          const SCALE_1E18 = BigInt(10) ** BigInt(18);
 
           const apr0 = safeApr(vaults[0]?.apr7d);
           const apr1 = safeApr(vaults[1]?.apr7d);
@@ -600,29 +600,50 @@ export default function useAssets() {
           if (extraList.length > 0) {
             const pBD = nextPrice.get(addr as `0x${string}`);
             const priceScaled = toScaled1e18FromDecimalString(
-              pBD?.toString?.()
+              pBD?.toString?.(),
             );
 
             if (priceScaled > BigInt(0)) {
+              // console.log("[7d APY extra priceScaled]", {
+              //   chainId: cid,
+              //   address: addr,
+              //   priceScaled: priceScaled.toString(),
+              //   price: pBD?.toString?.(),
+              // });
               for (const er of extraList) {
-                const rawX18 =
-                  er?.dailyRewardPerTokenX18 ??
-                  er?.dailyRewardPerTokkenX18 ??
-                  "0";
+                const rawX18 = er?.dailyRewardPerTokenX18 ?? "0";
                 const decimals = Number(er?.decimals ?? 18);
                 let dailyX18 = BigInt(0);
                 try {
                   dailyX18 = BigInt(rawX18);
                 } catch {}
-
                 if (dailyX18 <= BigInt(0)) continue;
                 const denomPow = BigInt(10) ** BigInt(Math.max(0, decimals));
 
-                const numerator =
-                  dailyX18 * BigInt(365) * BigInt(10) ** BigInt(18);
-                const denominator = denomPow * priceScaled;
+                let rewardPriceScaled = toScaled1e18FromDecimalString(
+                  er?.priceUSD?.toString?.(),
+                );
+
+                if (rewardPriceScaled <= BigInt(0) && er?.contractAddress) {
+                  const fallbackPrice = await getTokenUsdPrice(
+                    er.contractAddress,
+                  );
+                  if (fallbackPrice) {
+                    rewardPriceScaled = toScaled1e18FromDecimalString(
+                      fallbackPrice.toString(),
+                    );
+                  }
+                }
+
+                if (rewardPriceScaled <= BigInt(0)) continue;
+
+                const numerator = dailyX18 * BigInt(365) * rewardPriceScaled;
+                const useTvl = tvlScaled > BigInt(0);
+                const denominator =
+                  denomPow * (useTvl ? tvlScaled : priceScaled);
                 if (denominator === BigInt(0)) continue;
 
+                // use TVL when available (RewardInfoPanel logic), fallback to price per share
                 const extraScaled = numerator / denominator;
                 if (extraScaled > BigInt(0)) extraScaledTotal += extraScaled;
               }
@@ -662,26 +683,26 @@ export default function useAssets() {
       const lastPriceNorm = normalizeBDMapFromMap(lastOut.priceMap as any);
       const nextPriceNorm = normalizeBDMapFromMap(nextPrice as any);
       const lastUnderlyingNorm = normalizeUnderlyingMap(
-        lastOut.underlyingMap as any
+        lastOut.underlyingMap as any,
       );
       const nextUnderlyingNorm = normalizeUnderlyingMap(nextUnderlying as any);
       const lastSupplyNorm = normalizeBDMapFromMap(
-        lastOut.totalSupplyMap as any
+        lastOut.totalSupplyMap as any,
       );
       const nextSupplyNorm = normalizeBDMapFromMap(nextTotalSupply as any);
 
       const apyChanged = !shallowEqualNormalized(lastApyNorm, nextApyNorm);
       const priceChanged = !shallowEqualNormalized(
         lastPriceNorm,
-        nextPriceNorm
+        nextPriceNorm,
       );
       const underlyingChanged = !shallowEqualNormalized(
         lastUnderlyingNorm,
-        nextUnderlyingNorm
+        nextUnderlyingNorm,
       );
       const totalSupplyChanged = !shallowEqualNormalized(
         lastSupplyNorm,
-        nextSupplyNorm
+        nextSupplyNorm,
       );
 
       if (apyChanged) setApyMap(nextApy);
@@ -754,7 +775,7 @@ export default function useAssets() {
           const { liquidity, totalSupply } = await withTimeout(
             prefetchFarmData(client, farm),
             12000,
-            `prefetch:${tag}`
+            `prefetch:${tag}`,
           );
 
           console.debug("[farmRaw] prefetch done", tag);
@@ -823,7 +844,7 @@ export default function useAssets() {
 
           console.debug("[farmRaw] build done", tag);
           return { address: address as string, ok: true };
-        })
+        }),
       );
 
       results.forEach((r, idx) => {
@@ -883,7 +904,7 @@ export default function useAssets() {
       balances.isFetching,
       pointsQ.data,
       pointsQ.isLoading,
-    ]
+    ],
   );
 
   console.log("useAssets assets", assets);
