@@ -12,7 +12,7 @@ export default function LandingPage() {
       <HeroSection />
       <FeatureCardsSection />
       <StartInOneClickSection />
-      <TrustSection />
+      {/* <TrustSection /> */}
       <FaqSection />
       <CommunitySection />
       {/* <NewsletterSection /> */}
