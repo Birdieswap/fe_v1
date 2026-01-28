@@ -51,6 +51,7 @@ export default function AmountInput({
   limitModeOn,
   normalMaxAmount,
   limitMaxAmount,
+  onMax,
 }: {
   amount: BigDecimal | null;
   balance: BigDecimal | null;
@@ -69,6 +70,7 @@ export default function AmountInput({
   limitModeOn?: boolean;
   normalMaxAmount?: BigDecimal;
   limitMaxAmount?: BigDecimal;
+  onMax?: () => void;
 }) {
   const { priceUsd } = useTokenUsdPrice(token as any);
   const [amountStr, setAmountStr] = useState<string | undefined>(undefined);
@@ -229,6 +231,10 @@ export default function AmountInput({
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {
+                  if (onMax) {
+                    onMax();
+                    return;
+                  }
                   // ✅ 2. limit on 모드일 때: 잔여 금액 기반 limitMaxAmount로 셋팅
                   if (limitModeOn && limitMaxAmount && limitMaxAmount.gt(0)) {
                     setAmount(limitMaxAmount);

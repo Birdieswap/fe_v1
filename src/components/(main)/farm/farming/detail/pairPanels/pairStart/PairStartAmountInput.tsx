@@ -12,6 +12,7 @@ export default function PairStartAmountInput({
   normalMaxAmount,
   limitMaxAmount,
   limitModeOn,
+  onMax,
 }: {
   state: UsePairStartPanelReturn;
   index: 0 | 1;
@@ -19,6 +20,7 @@ export default function PairStartAmountInput({
   normalMaxAmount: BigDecimal;
   limitMaxAmount: BigDecimal;
   limitModeOn: boolean;
+  onMax?: () => void;
 }) {
   // [MOD] 표시용 파생값 사용(ETH/WETH 토글 반영)
   const input = state.displayTokens[index];
@@ -89,6 +91,7 @@ export default function PairStartAmountInput({
         normalMaxAmount={normalMaxAmount}
         limitMaxAmount={limitMaxAmount}
         limitModeOn={limitModeOn}
+        onMax={onMax}
       />
     </>
   );
