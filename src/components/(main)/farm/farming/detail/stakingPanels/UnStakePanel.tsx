@@ -50,7 +50,7 @@ export default function UnStakePanel({
         isApproved: true,
         isActive: true,
       })),
-    [state.tokenStatuses]
+    [state.tokenStatuses],
   );
 
   const firstStatus = state.tokenStatuses?.[0];
@@ -62,7 +62,7 @@ export default function UnStakePanel({
     : NaN;
   const balanceText =
     isBalanceReady && Number.isFinite(balanceNumber)
-      ? format2(balanceNumber, 5)
+      ? format2(balanceNumber, 8)
       : "";
 
   const balanceKey = useMemo(() => {
@@ -93,7 +93,7 @@ export default function UnStakePanel({
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = new URLSearchParams(window.location.search).get(
-      "unstakeAmount"
+      "unstakeAmount",
     );
     if ((raw || "").toLowerCase() === "max") {
       appliedRef.current = false;

@@ -46,7 +46,7 @@ export default function StakePanel({
     : NaN;
   const balanceText =
     isBalanceReady && Number.isFinite(balanceNumber)
-      ? format2(balanceNumber, 5)
+      ? format2(balanceNumber, 8)
       : "";
   // 입력창 보여줄 토큰(예: 예치 토큰)
   const inputToken = state.token;
