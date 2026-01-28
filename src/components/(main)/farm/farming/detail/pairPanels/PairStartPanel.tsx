@@ -31,7 +31,7 @@ export function PairStartPanel({
   const state: UsePairStartPanelReturn = usePairStartPanel(
     item,
     tokenId,
-    poolAddress
+    poolAddress,
   );
   const price = state.price ?? BigDecimal.ZERO();
 
@@ -56,7 +56,7 @@ export function PairStartPanel({
   const LIMIT_DEPOSIT_MODE_ON =
     process.env.NEXT_PUBLIC_LIMIT_DEPOSIT_MODE?.toLowerCase() === "on";
 
-  const DEPOSIT_LIMIT_USD = new BigDecimal("1010"); // $1,000
+  const DEPOSIT_LIMIT_USD = new BigDecimal("11000"); // $1,000
 
   // ✅ 이미 예치된 USD (기존 로직 유지: totalBalance * price)
   const existingUsd =
@@ -69,9 +69,13 @@ export function PairStartPanel({
   const { priceUsd: token0Usd } = useTokenUsdPrice(token0 as any);
   const { priceUsd: token1Usd } = useTokenUsdPrice(token1 as any);
   const priceUsd0 =
-    token0Usd != null ? new BigDecimal(String(token0Usd), 8) : BigDecimal.ZERO();
+    token0Usd != null
+      ? new BigDecimal(String(token0Usd), 8)
+      : BigDecimal.ZERO();
   const priceUsd1 =
-    token1Usd != null ? new BigDecimal(String(token1Usd), 8) : BigDecimal.ZERO();
+    token1Usd != null
+      ? new BigDecimal(String(token1Usd), 8)
+      : BigDecimal.ZERO();
 
   const tokenUsdValues = state.tokenStatuses.map((tokenStatus, index) => {
     const amt = tokenStatus.amount ?? BigDecimal.ZERO();
@@ -83,7 +87,7 @@ export function PairStartPanel({
   // 총 입력 USD
   const inputUsd = tokenUsdValues.reduce(
     (acc, v) => acc.add(v),
-    BigDecimal.ZERO()
+    BigDecimal.ZERO(),
   );
 
   const nextTotalUsd = existingUsd.add(inputUsd);
@@ -191,7 +195,7 @@ export function PairStartPanel({
   // 버튼 텍스트용 (token0 기준)
   const prettyMaxToken0 = maxToken0.gt(0)
     ? maxToken0.toFixed(
-        token0?.decimals && token0.decimals < 6 ? token0.decimals : 6
+        token0?.decimals && token0.decimals < 6 ? token0.decimals : 6,
       )
     : "0";
 
