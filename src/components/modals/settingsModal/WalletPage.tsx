@@ -39,7 +39,7 @@ function TabSelector(props: {
     <Button
       className={cn(
         "group p-0 flex max-h-max min-h-min min-w-min max-w-max flex-row gap-3",
-        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70"
+        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70",
       )}
       data-selected={props.value === props.selected}
       radius="none"
@@ -49,7 +49,7 @@ function TabSelector(props: {
       <h2
         className={cn(
           "text-[14px] font-semibold leading-[17px]",
-          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
+          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400",
         )}
       >
         {props.name}
@@ -71,7 +71,7 @@ function SwapDisplay({
         "flex h-auto min-h-[86px] mt-4 mx-3 px-4 py-3 rounded-lg max-sm:min-h-[40px] border-1 border-[#FF0000] dark:border-[#FF3F3F]",
         "max-sm:w-full",
         "flex-col items-start justify-between",
-        "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start"
+        "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start",
       )}
     >
       <div className="pt-0 px-0 w-full">
@@ -129,7 +129,7 @@ function WalletDisplay({
     return `${wallet.address.slice(0, 6)}...${wallet.address.slice(-7)}`;
   }, [wallet]);
 
-  const ReferralLink = `https://birdieswap.vercel.app/?ref=${wallet?.address}`;
+  const ReferralLink = `https://birdieswap-dev.vercel.app/?ref=${wallet?.address}`;
 
   const { referralAddress } = useReferral();
   const isSelfReferral = wallet?.address === referralAddress;
@@ -146,7 +146,7 @@ function WalletDisplay({
       <div
         className={cn(
           "hidden sm:flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
-          "flex-col items-stretch gap-3"
+          "flex-col items-stretch gap-3",
         )}
       >
         <div className="grid w-full items-center gap-2 sm:grid-cols-[1fr_auto] grid-cols-1">
@@ -240,7 +240,7 @@ function WalletDisplay({
       <div
         className={cn(
           "sm:hidden flex h-auto w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
-          "flex-col items-stretch gap-0"
+          "flex-col items-stretch gap-0",
         )}
       >
         {/* 헤더 (모바일 전용 2행 그리드) */}
@@ -382,7 +382,7 @@ export default function WalletPage(props: {
       }
       setTab(value);
     },
-    [tab, walletData]
+    [tab, walletData],
   );
 
   console.log("[WalletPage]", { walletData });
