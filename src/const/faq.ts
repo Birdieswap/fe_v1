@@ -117,6 +117,6 @@ export const items = [
     topic: [FaqFilter.TROUBLESHOOTING],
     title: "My transaction failed or buttons are disabled.",
     content:
-      "This usually happens for the following reasons:\n\n1. Exceeded Slippage: The market price changed rapidly and exceeded your set range. Try increasing the slippage setting slightly.\n2. Insufficient Gas (ETH): Check if you have enough ETH in your wallet to pay for network fees.\n3. Approval Needed: You must approve the use of tokens in your wallet when using them for the first time.",
+      "This usually happens for the following reasons:\n\n 1. Exceeded Slippage: The market price changed rapidly and exceeded your set range. Try increasing the slippage setting slightly.\n 2. Insufficient Gas (ETH): Check if you have enough ETH in your wallet to pay for network fees.\n 3. Approval Needed: You must approve the use of tokens in your wallet when using them for the first time.",
   },
 ];

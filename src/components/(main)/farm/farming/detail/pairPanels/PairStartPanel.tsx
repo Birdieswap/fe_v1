@@ -192,6 +192,18 @@ export function PairStartPanel({
     }
   }
 
+  // ✅ limit max는 지갑 잔고를 초과하면 안 됨
+  if (walletBal0.gt(0)) {
+    maxToken0 = BigDecimal.min(maxToken0, walletBal0);
+  } else {
+    maxToken0 = BigDecimal.ZERO();
+  }
+  if (walletBal1.gt(0)) {
+    maxToken1 = BigDecimal.min(maxToken1, walletBal1);
+  } else {
+    maxToken1 = BigDecimal.ZERO();
+  }
+
   // 버튼 텍스트용 (token0 기준)
   const prettyMaxToken0 = maxToken0.gt(0)
     ? maxToken0.toFixed(

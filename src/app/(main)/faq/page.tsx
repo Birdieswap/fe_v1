@@ -122,7 +122,18 @@ export default function FaqPage() {
             indicator={<Icons.Dropdown />}
             title={<Title searchText={searchString || ""} text={item.title} />}
           >
-            <Markdown>{item.content}</Markdown>
+            <Markdown
+              components={{
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal pl-5" {...props} />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc pl-5" {...props} />
+                ),
+              }}
+            >
+              {item.content}
+            </Markdown>
           </AccordionItem>
         ))}
       </Accordion>
