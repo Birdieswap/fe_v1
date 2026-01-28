@@ -108,9 +108,9 @@ export default function FeatureCardsSection() {
               titleAccent="Swap Points"
               desc={
                 <>
-                  Earn 10% of swap fees!
+                  Swap and Earn
                   <br />
-                  Paid in Birdieswap Points for selected pairs
+                  Birdieswap Points for selected pairs
                 </>
               }
               bottomTop="Swap more, get points more"

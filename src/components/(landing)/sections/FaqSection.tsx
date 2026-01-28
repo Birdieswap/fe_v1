@@ -15,19 +15,18 @@ export default function FaqSection() {
   const faqs = useMemo<Faq[]>(
     () => [
       {
-        q: "Is Birdieswap a DEX?",
+        q: "What is Birdieswap?",
         a: (
           <>
-            Yes, Birdieswap is a decentralized exchange (DEX) — but it&apos;s
-            more than that. Birdieswap is built to simplify and optimize your
-            digital asset swaps by combining the best features of DEX technology
-            with a seamless, user-friendly interface.
+            Birdieswap is a decentralized interface software that helps users
+            seamlessly connect and utilize various DeFi protocols.
             <br />
             <br />
-            Unlike centralized exchanges (CEXs) that control your assets,
-            Birdieswap empowers you with full custody of your crypto. Every swap
-            happens directly from your wallet, ensuring privacy, transparency,
-            and total control over your funds.
+            We do not operate a bank or exchange ourselves. Instead, we provide
+            Router technology that connects verified external protocols (Yield
+            Vaults, DEXs, etc.), enabling users to enjoy the benefits of both
+            Deposit Yields and Trading Fees simultaneously without complex
+            processes.
           </>
         ),
       },
@@ -50,17 +49,8 @@ export default function FaqSection() {
           </>
         ),
       },
-      {
-        q: "How can I become a closed beta tester for Birdieswap?",
-        a: (
-          <>
-            Leave your email in “Stay in the Loop”. We’ll reach out to selected
-            testers.
-          </>
-        ),
-      },
     ],
-    []
+    [],
   );
 
   const [openIdx, setOpenIdx] = useState<number | null>(0);
