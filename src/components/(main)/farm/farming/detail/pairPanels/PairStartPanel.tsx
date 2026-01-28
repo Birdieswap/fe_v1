@@ -15,6 +15,7 @@ import PairStartSummary from "./pairStart/PairStartSummary";
 import { BigDecimal } from "@/types/BigDecimal";
 import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 import { useChainId } from "wagmi";
+import { useCallback } from "react";
 
 export function PairStartPanel({
   item,
@@ -147,6 +148,35 @@ export function PairStartPanel({
       ? minWalletUsd.div(priceUsd1)
       : BigDecimal.ZERO();
 
+  const handlePairMax = useCallback(() => {
+    const maxUsd = minWalletUsd;
+    if (!maxUsd || maxUsd.lte(0)) {
+      state.setAmount(BigDecimal.ZERO(), 0);
+      return;
+    }
+
+    let targetIndex: 0 | 1;
+    if (!state.isActive[0]) targetIndex = 1;
+    else if (!state.isActive[1]) targetIndex = 0;
+    else targetIndex = walletUsd0.lte(walletUsd1) ? 0 : 1;
+
+    const targetPrice = targetIndex === 0 ? priceUsd0 : priceUsd1;
+    if (!targetPrice || targetPrice.lte(0)) {
+      state.setAmount(BigDecimal.ZERO(), targetIndex);
+      return;
+    }
+
+    const targetAmount = maxUsd.div(targetPrice);
+    state.setAmount(targetAmount, targetIndex);
+  }, [
+    minWalletUsd,
+    priceUsd0,
+    priceUsd1,
+    walletUsd0,
+    walletUsd1,
+    state,
+  ]);
+
   // ─────────────────────────────────────────────
   // ✅ 2. limit on 모드용 maxToken0 / maxToken1 (잔여 한도 기반)
 
@@ -246,6 +276,7 @@ export function PairStartPanel({
           normalMaxAmount={normalMaxAmount0}
           limitMaxAmount={maxToken0}
           limitModeOn={LIMIT_DEPOSIT_MODE_ON}
+          onMax={handlePairMax}
         />
         <PairStartAmountInput
           index={1}
@@ -254,6 +285,7 @@ export function PairStartPanel({
           normalMaxAmount={normalMaxAmount1}
           limitMaxAmount={maxToken1}
           limitModeOn={LIMIT_DEPOSIT_MODE_ON}
+          onMax={handlePairMax}
         />
         {showSummary && <PairStartSummary item={item} state={state} />}
       </motion.div>
