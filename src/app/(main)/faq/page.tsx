@@ -42,7 +42,7 @@ export default function FaqPage() {
   };
 
   const [searchString, setSearchString] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const filteredItems = items.filter((item) => {
     const isFilter = !filter
@@ -80,13 +80,13 @@ export default function FaqPage() {
           >
             Farm
           </FilterButton>
-          {/* <FilterButton
+          <FilterButton
             selected={filter}
             setSelected={setFilter}
-            value={FaqFilter.CAGE}
+            value={FaqFilter.EASY}
           >
-            Cage
-          </FilterButton> */}
+            Easy
+          </FilterButton>
           <FilterButton
             selected={filter}
             setSelected={setFilter}
