@@ -1,8 +1,8 @@
 {
   "accountAssociation": {
-    "header": "",
-    "payload": "",
-    "signature": ""
+    "header": "eyJmaWQiOjE0NTg3NTksInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHg1NkVhYzJFNDI5QTgzMEU0MTNCMkU2ZkJEYzYxYkIwMTg3QjEwYmIyIn0",
+    "payload": "eyJkb21haW4iOiJiaXJkaWVzd2FwLWRldi52ZXJjZWwuYXBwIn0",
+    "signature": "3g0TXzez8IjOlXmaVnpl39QDERK7jSC8heIbx/q73CUqklf5Wb4llcTFHSCt0LoE6IrTZndyJmuc6KltWmX/hBs="
   },
   "frame": {
     "version": "1",
