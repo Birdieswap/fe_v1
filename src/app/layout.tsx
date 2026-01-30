@@ -24,17 +24,9 @@ export const metadata: Metadata = {
   description: "Birdieswap - Interest-bearing liquidity routing software",
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
+    "base:app_id": "697c60d477db5d481cffc815",
   },
 };
-
-// export const viewport: Viewport = {
-//   themeColor: [
-//     { media: "(prefers-color-scheme: light)", color: "#FFFFFF" },
-//     { media: "(prefers-color-scheme: dark)", color: "#14192A" },
-//   ],
-//   // 선택: 시스템 color-scheme 힌트도 같이 줄 수 있어요
-//   // colorScheme: "dark light",
-// };
 
 export default async function RootLayout({
   children,
