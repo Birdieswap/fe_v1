@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "frame": {
+    "version": "1",
+    "name": "Birdieswap",
+    "iconUrl": "https://birdieswap-dev.vercel.app/app_icon.png",
+    "homeUrl": "https://birdieswap-dev.vercel.app/",
+    "imageUrl": "https://birdieswap-dev.vercel.app/og-image.png",
+    "buttonTitle": "Open App",
+    "splashImageUrl": "https://birdieswap-dev.vercel.app/splash-logo.png",
+    "splashBackgroundColor": "#000000",
+    "webhookUrl": "https://birdieswap-dev.vercel.app/webhook"
+  }
+}
