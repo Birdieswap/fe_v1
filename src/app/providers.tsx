@@ -2,6 +2,7 @@
 
 import { HeroUIProvider } from "@heroui/react";
 import { PropsWithChildren, useEffect } from "react";
+import sdk from "@farcaster/frame-sdk";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ThemeProvider, useTheme } from "next-themes";
 import {
@@ -104,7 +105,7 @@ if (
   sepoliaUrls[0].includes("drpc")
 ) {
   console.warn(
-    "[RPC] Only DRPC (Sepolia) configured on Vercel. Add ALCHEMY/INFURA to reduce timeouts."
+    "[RPC] Only DRPC (Sepolia) configured on Vercel. Add ALCHEMY/INFURA to reduce timeouts.",
   );
 }
 if (
@@ -113,7 +114,7 @@ if (
   baseUrls[0].includes("mainnet.base.org")
 ) {
   console.warn(
-    "[RPC] Only mainnet.base.org configured for Base. Add ALCHEMY/INFURA for stability."
+    "[RPC] Only mainnet.base.org configured for Base. Add ALCHEMY/INFURA for stability.",
   );
 }
 
@@ -157,7 +158,7 @@ const httpMaybeLogged = (url?: string, opts?: Parameters<typeof http>[1]) =>
  */
 function makeRandomRpcTransport(
   urls: string[],
-  opts?: Parameters<typeof http>[1]
+  opts?: Parameters<typeof http>[1],
 ) {
   if (!urls.length) return http();
 
@@ -171,7 +172,7 @@ function makeRandomRpcTransport(
 
   return ((config: any) => {
     const primaryTransports = primaryUrls.map((url) =>
-      httpMaybeLogged(url, opts)(config)
+      httpMaybeLogged(url, opts)(config),
     );
     const lastTransport = httpMaybeLogged(lastFallbackUrl, opts)(config);
 
@@ -258,7 +259,7 @@ const connectors = connectorsForWallets(
       ],
     },
   ],
-  { appName, projectId }
+  { appName, projectId },
 );
 
 // wagmiConfig 생성
@@ -299,6 +300,21 @@ export default function Providers({
   children,
   nonce,
 }: PropsWithChildren<{ nonce?: string }>) {
+  //for mini app
+  useEffect(() => {
+    const load = async () => {
+      try {
+        // Base(Farcaster)에게 "앱 로딩 끝났어, 화면 보여줘"라고 신호 보냄
+        await sdk.actions.ready();
+      } catch (error) {
+        console.error("Frame SDK Load Error:", error);
+      }
+    };
+
+    // 컴포넌트 마운트 시 실행
+    load();
+  }, []);
+
   return (
     <ThemeProvider
       attribute="class"
