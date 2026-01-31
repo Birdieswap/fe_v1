@@ -13,6 +13,8 @@
     "buttonTitle": "Open App",
     "splashImageUrl": "https://birdieswap-dev.vercel.app/splash-logo.png",
     "splashBackgroundColor": "#14192A",
-    "webhookUrl": "https://birdieswap-dev.vercel.app/webhook"
+    "webhookUrl": "https://birdieswap-dev.vercel.app/webhook",
+    "primaryCategory": "finance",
+    "tags": ["DEX", "staking", "swap", "Yield", "Farm"]
   }
 }
