@@ -70,6 +70,7 @@ export function usePairStartPanel(
     assetsContext,
     stakeToken,
     stakeTokenAddress,
+    routerAddress,
   } = useFarmPanelCommon(item);
 
   const accountBalances = useAccountBalances();
@@ -100,6 +101,17 @@ export function usePairStartPanel(
     ADDRESS.ROUTER,
     chainId,
   );
+
+  const ROUTER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Router;
+  const WRAPPER_PROVIDER = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
+
+  const routerAddressResolved: `0x${string}` | null =
+    ROUTER_ADDRESS ??
+    ROUTER_PROVIDER?.addresses?.[chainId] ??
+    (routerAddress as `0x${string}` | null);
+
+  const wrapperAddressResolved: `0x${string}` | null =
+    WRAPPER_ADDRESS ?? WRAPPER_PROVIDER?.addresses?.[chainId] ?? null;
 
   const defaultIsETH: [boolean, boolean] = [
     inputToken0?.symbol === "ETH" ||
@@ -219,12 +231,30 @@ export function usePairStartPanel(
     ? (wethDisplayMeta as any)
     : (displayTokens[1] as any);
 
-  const spender0Provider = anyETH
-    ? (stakingProviders as any)?.BIRDIESWAP_Wrapper
-    : (stakingProviders as any)?.BIRDIESWAP_Router;
-  const spender1Provider = anyETH
-    ? (stakingProviders as any)?.BIRDIESWAP_Wrapper
-    : (stakingProviders as any)?.BIRDIESWAP_Router;
+  const resolvedRouterProvider = useMemo(
+    () => ({
+      ...(ROUTER_PROVIDER ?? { name: "Birdieswap Router", addresses: {} }),
+      addresses: {
+        ...(ROUTER_PROVIDER?.addresses ?? {}),
+        ...(routerAddressResolved ? { [chainId]: routerAddressResolved } : {}),
+      },
+    }),
+    [ROUTER_PROVIDER, routerAddressResolved, chainId],
+  );
+
+  const resolvedWrapperProvider = useMemo(
+    () => ({
+      ...(WRAPPER_PROVIDER ?? { name: "Birdieswap Wrapper", addresses: {} }),
+      addresses: {
+        ...(WRAPPER_PROVIDER?.addresses ?? {}),
+        ...(wrapperAddressResolved ? { [chainId]: wrapperAddressResolved } : {}),
+      },
+    }),
+    [WRAPPER_PROVIDER, wrapperAddressResolved, chainId],
+  );
+
+  const spender0Provider = anyETH ? resolvedWrapperProvider : resolvedRouterProvider;
+  const spender1Provider = anyETH ? resolvedWrapperProvider : resolvedRouterProvider;
 
   const { allowance: allowance0, query: allowanceQuery0 } = useAllowance({
     token: token0ForAllowance,
@@ -668,10 +698,10 @@ export function usePairStartPanel(
 
   const spender0Addr =
     (spender0Provider?.addresses?.[chainId] as `0x${string}` | undefined) ??
-    (stakeToken?.provider?.addresses?.[chainId] as `0x${string}` | undefined);
+    undefined;
   const spender1Addr =
     (spender1Provider?.addresses?.[chainId] as `0x${string}` | undefined) ??
-    (stakeToken?.provider?.addresses?.[chainId] as `0x${string}` | undefined);
+    undefined;
 
   const approve0 = useApprove({
     client,
