@@ -22,6 +22,9 @@ export default function useAllowance(props: {
       abi: erc20Abi,
       functionName: "allowance",
       args: [address as `0x${string}`, spenderAddress as `0x${string}`],
+      query: {
+        enabled: !!address && !!tokenAddress && !!spenderAddress,
+      },
     });
 
   const allowance = useMemo(() => {
