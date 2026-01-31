@@ -24,7 +24,7 @@ export type DualQuoteResult = {
   /** 디버그용 메타 정보 */
   meta: {
     isInternalPool: boolean;
-    benchmarkUsed: "external" | "fallback_internal_x_0_9975" | "none";
+    benchmarkUsed: "external" | "fallback_internal_x_1" | "none";
   };
 };
 
@@ -36,7 +36,7 @@ const DEBUG_QUOTE = true;
 // =========================
 // Constants
 // =========================
-const INTERFACE_FEE_FACTOR = new BigDecimal("0.9975"); // 1 - 0.0025
+const INTERFACE_FEE_FACTOR = new BigDecimal("1"); // 1 - 0.0025
 
 // =========================
 // Helpers
@@ -487,7 +487,7 @@ async function getOtherAmountInternal(
           benchmarkUsed = "external";
         } else {
           benchmarkOut = applyInterfaceFee(amountStr, toErc20.decimals ?? 18);
-          benchmarkUsed = "fallback_internal_x_0_9975";
+          benchmarkUsed = "fallback_internal_x_1";
         }
       } catch (e) {
         if (DEBUG_QUOTE) {
@@ -501,7 +501,7 @@ async function getOtherAmountInternal(
           console.warn(e);
         }
         benchmarkOut = applyInterfaceFee(amountStr, toErc20.decimals ?? 18);
-        benchmarkUsed = "fallback_internal_x_0_9975";
+        benchmarkUsed = "fallback_internal_x_1";
       }
 
       return {
@@ -596,7 +596,7 @@ async function getOtherAmountInternal(
       benchmarkOut,
       meta: {
         isInternalPool: true,
-        benchmarkUsed: "fallback_internal_x_0_9975",
+        benchmarkUsed: "fallback_internal_x_1",
       },
     };
   } catch (e) {
@@ -725,7 +725,7 @@ async function getOtherAmountExternal(
         benchmarkOut,
         meta: {
           isInternalPool: false,
-          benchmarkUsed: "fallback_internal_x_0_9975",
+          benchmarkUsed: "fallback_internal_x_1",
         },
       };
     }
@@ -780,7 +780,7 @@ async function getOtherAmountExternal(
       benchmarkOut,
       meta: {
         isInternalPool: false,
-        benchmarkUsed: "fallback_internal_x_0_9975",
+        benchmarkUsed: "fallback_internal_x_1",
       },
     };
   } catch (e) {

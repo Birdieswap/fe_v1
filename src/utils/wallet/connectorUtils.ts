@@ -2,6 +2,7 @@
 export const isInjectedLike = (connectorId?: string, provider?: any) => {
   return (
     connectorId === "injected" ||
+    connectorId === "metaMask" ||
     connectorId === "metamask" ||
     connectorId === "io.metamask" ||
     provider?.isMetaMask === true

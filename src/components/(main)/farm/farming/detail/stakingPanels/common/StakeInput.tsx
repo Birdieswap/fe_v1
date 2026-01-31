@@ -23,7 +23,7 @@ function StakeInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
       classNames={{
         inputWrapper: clsx(
           "h-11 min-h-11 bg-transparent p-1 shadow-none",
-          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent"
+          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
         ),
         input:
           "text-[30px] max-[376px]:text-[24px] font-bold max-[376px]:font-semibold leading-[36px] max-[376px]:leading-[30px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
@@ -84,7 +84,7 @@ export default function StakeInput({
     }
   }, [amount, amountStr, token?.decimals]);
 
-  const balanceStr = balance && suffixNumbers(balance, 100_000, 2, true, true);
+  const balanceStr = balance && suffixNumbers(balance, 100_000, 8, true, true);
 
   const dollarAmount =
     amount && price && suffixNumbers(amount.mul(price), 100_000, 2, true, true);
@@ -112,7 +112,7 @@ export default function StakeInput({
             "mb-6 flex max-h-32 w-full flex-col gap-4 rounded-2xl px-3 py-4",
             "bg-default-100 dark:bg-dark-swap-bg",
             "focus-within:bg-default-500/5 hover:bg-default-500/10 group-hover:bg-default-500/10 group-focus:bg-default-500/5 group-focus-visible:bg-default-500/5",
-            "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5"
+            "dark:focus-within:bg-default-500/5 dark:hover:bg-default-500/10 dark:group-hover:bg-default-500/10 dark:group-focus:bg-default-500/5 dark:group-focus-visible:bg-default-500/5",
           )}
           {...presenceTransition}
         >
@@ -185,7 +185,7 @@ export default function StakeInput({
                     {isSmall ? "BAL" : "Balance"}
                   </span>
                   <span className="max-[376px]:text-[10px] text-default-800 dark:text-default-300">
-                    {balanceStr ?? "..."}
+                    {balanceStr ?? "0"}
                   </span>
                 </div>
                 <p className="max-[376px]:text-[10px] self-end text-default-800 dark:text-default-300">
@@ -196,7 +196,7 @@ export default function StakeInput({
                 className={clsx(
                   "h-[30px] min-w-fit rounded-xl border-1 px-2.5 text-sm max-[376px]:rounded-lg max-[376px]:h-[24px] max-[376px]:px-1.5 max-[376px]:text-[10px]",
                   "border-default-600 bg-primary-200 font-semibold",
-                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background"
+                  "dark:border-dark-mid-mint-4 dark:bg-dark-mid-mint-4 dark:text-background",
                 )}
                 isDisabled={isDisabled}
                 onPress={() => {

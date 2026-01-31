@@ -88,6 +88,8 @@ export default function RewardInfoPanel({
   // console.log("RewardInfoPanel render:", extraList);
   const pointRate = dailyPointNum / price / (totalSupply || 1) / 1e18;
 
+  const showPointRow = dailyPointNum > 0 || hasUserStakePoint;
+
   // console.log("RewardInfoPanel debug:", {
   //   matched,
   //   price,
@@ -104,10 +106,10 @@ export default function RewardInfoPanel({
           <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             There are no additional staking rewards available at the moment.
           </p>
-          <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
+          {/* <p className="text-[14px] leading-[17px] text-default-700 max-sm:dark:text-default-600">
             But you are still enjoying the double growth rate of
             Birdieswap!{" "}
-          </p>
+          </p> */}
         </div>
       </div>
     );
@@ -117,14 +119,14 @@ export default function RewardInfoPanel({
     <div
       className={clsx(
         "rounded-2xl min-h-[176px] bg-background p-4 text-sm",
-        className
+        className,
       )}
     >
       {/* Header (웹) */}
       <div
         className={clsx(
           "grid grid-cols-12 items-center select-none pb-4",
-          onOpenStakingModal ? "cursor-pointer" : "cursor-default"
+          onOpenStakingModal ? "cursor-pointer" : "cursor-default",
         )}
         onClick={openStakingModal}
       >
@@ -136,7 +138,7 @@ export default function RewardInfoPanel({
             className={clsx(
               "fill-default-500",
               "dark:fill-default-300",
-              "transition-[fill]"
+              "transition-[fill]",
             )}
             fillRule="evenodd"
           />
@@ -148,39 +150,41 @@ export default function RewardInfoPanel({
       </div>
 
       {/* Point Row (웹 그대로) */}
-      <div className={ROW_BASE}>
-        <div className="col-span-1 justify-self-start relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
-          <Icons.PointIcon className="h-full w-full fill-primary text-background" />
-        </div>
-        <div className="col-span-3 min-w-0">
-          <p className="text-[15px] font-semibold">Birdieswap Point</p>
-        </div>
-        <span className={CELL_METRIC}>
-          {dailyPointNum
-            ? `${(dailyPointNum / (price || 1) / (totalSupply || 1) / 1e18).toFixed(4)} /$`
-            : "0.00/$"}
-        </span>
-        <div className={RIGHT_GROUP}>
-          <div className={AMOUNT_INNER}>
-            <p className="font-medium text-sans text-[14px]">
-              {Number(points).toFixed(2) ?? "0"}
-            </p>
+      {showPointRow && (
+        <div className={ROW_BASE}>
+          <div className="col-span-1 justify-self-start relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
+            <Icons.PointIcon className="h-full w-full fill-primary text-background" />
           </div>
-          <Button
-            size="sm"
-            isDisabled
-            className={clsx(
-              BTN_BASE,
-              "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
-              "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
-              "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-              "data-[disabled=true]:pointer-events-none"
-            )}
-          >
-            Point
-          </Button>
+          <div className="col-span-3 min-w-0">
+            <p className="text-[15px] font-semibold">Birdieswap Point</p>
+          </div>
+          <span className={CELL_METRIC}>
+            {dailyPointNum
+              ? `${(dailyPointNum / (price || 1) / (totalSupply || 1) / 1e18).toFixed(4)} /$`
+              : "0.00/$"}
+          </span>
+          <div className={RIGHT_GROUP}>
+            <div className={AMOUNT_INNER}>
+              <p className="font-medium text-sans text-[14px]">
+                {points != null ? Number(points).toFixed(2) : "0"}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              isDisabled
+              className={clsx(
+                BTN_BASE,
+                "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
+                "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
+                "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
+                "data-[disabled=true]:pointer-events-none",
+              )}
+            >
+              Point
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Extra Rewards */}
       <div className="mt-4 rounded-sm bg-background text-sm">
@@ -289,6 +293,13 @@ function ExtraRewardClaimRow({
     totalSupply,
   ]);
 
+  // console.log("ExtraRewardClaimRow render:", {
+  //   reward,
+  //   aprPct,
+  //   amountNum,
+  //   dollar,
+  // });
+
   const { writeContract, data: txHash, isPending } = useWriteContract();
   const { isLoading: isWaiting, isSuccess } = useWaitForTransactionReceipt({
     hash: txHash,
@@ -323,7 +334,7 @@ function ExtraRewardClaimRow({
         args: [BigInt(reward.indexNumber)],
         chainId,
       },
-      { onError: handlers.onError, onSuccess: handlers.onSuccess }
+      { onError: handlers.onError, onSuccess: handlers.onSuccess },
     );
   };
 
@@ -379,7 +390,7 @@ function ExtraRewardClaimRow({
             "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
             "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
             "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-            "data-[disabled=true]:pointer-events-none"
+            "data-[disabled=true]:pointer-events-none",
           )}
           isLoading={false}
           isDisabled={!canClaim || isPending || isWaiting}

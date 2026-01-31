@@ -1,16 +1,10 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-
 import { defaultTransition } from "@/const/presenceTransition";
 import { CommonDisabledButtons } from "@/components/(main)/swap/swapConfirmButton/SwapConfirmButton";
-import ThemedButton, {
-  ThemedButtonVariant,
-} from "@/components/atoms/ThemedButton";
-
-/**
- * @see SwapConfirmButton
- */
+import { ThemedButtonVariant } from "@/components/atoms/ThemedButton";
+import ButtonWithPresence from "@/components/common/ButtonWithPresence";
 
 export default function FarmConfirmButton({
   isConnected,
@@ -28,6 +22,8 @@ export default function FarmConfirmButton({
   variant?: ThemedButtonVariant;
   onPress: () => void;
   text: string;
+
+  // 추가: approve가 pending일 때 confirm은 pulse 없이 disable만
 }) {
   const isCommonDisabled = !isConnected || isWrongNetwork || isPending;
 
@@ -46,14 +42,16 @@ export default function FarmConfirmButton({
             excuteText={text}
           />
         ) : (
-          <ThemedButton
+          <ButtonWithPresence
+            fullWidth
             className="flex w-full items-center"
             isDisabled={isDisabled}
             variant={variant ?? "MINT"}
             onPress={onPress}
+            aria-busy={isPending ? true : undefined}
           >
             {text}
-          </ThemedButton>
+          </ButtonWithPresence>
         )}
       </AnimatePresence>
     </motion.div>

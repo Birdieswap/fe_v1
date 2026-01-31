@@ -6,9 +6,12 @@ import {
 import { BigDecimal } from "@/types/BigDecimal";
 
 import { useAssetValues } from "../../hooks/assets/useAssets/useAssetValues";
-
-import getBToken from "./getBToken";
 import getSwapPool from "./getSwapPool";
+
+// ✅ ETH -> WETH normalize 용 (프로젝트에 이미 쓰는 유틸/상수)
+import { ADDRESS } from "@/const/contracts/contractAddresses";
+import { getFromContracts, toLower } from "@/utils/farm/getAddressHelpers";
+import getTokenAddress from "../assets/getTokenAddress"; // 경로는 너희 프로젝트 기준에 맞게 조정
 
 export default function getLPPoolBalances<
   T extends ICurrency | IBirdieSingleFarm,
@@ -19,54 +22,53 @@ export default function getLPPoolBalances<
   assetValues: ReturnType<typeof useAssetValues>;
 }): [BigDecimal | null, BigDecimal | null] {
   const { fromToken, toToken, chainId, assetValues } = props;
-
   if (!fromToken || !toToken || !chainId || !assetValues) return [null, null];
 
-  // console.log("getLPPoolBalances", fromToken, toToken, chainId);
-  const fromBToken = isBirdieSingleFarm(fromToken)
-    ? fromToken
-    : getBToken({
-        token: fromToken,
-        chainId,
-      });
-  const toBToken = isBirdieSingleFarm(toToken)
-    ? toToken
-    : getBToken({
-        token: toToken,
-        chainId,
-      });
+  // ✅ 1) BirdieSingleFarm이면 underlying(Icurrency)로 언랩
+  const fromUnderlying: ICurrency = isBirdieSingleFarm(fromToken)
+    ? fromToken.input
+    : (fromToken as ICurrency);
 
-  // console.log("getLPPoolBalances 2", fromBToken, toBToken);
+  const toUnderlying: ICurrency = isBirdieSingleFarm(toToken)
+    ? toToken.input
+    : (toToken as ICurrency);
 
-  const fromBTokenAddress = fromBToken?.addresses[chainId];
-  const toBTokenAddress = toBToken?.addresses[chainId];
-
-  if (!fromBTokenAddress || !toBTokenAddress) return [null, null];
-  const pool = getSwapPool({
-    fromToken,
-    toToken,
-    chainId,
-  });
-
-  // console.log("getLPPoolBalances", pool)
-
+  // ✅ 2) pool 찾기 (기존 로직 유지)
+  const pool = getSwapPool({ fromToken, toToken, chainId });
   if (!pool) return [null, null];
+
+  // ✅ 3) underlying 기준으로 만들어진 poolData를 가져옴
   const poolData = assetValues.uniswapPriceMap.get(pool.symbol);
-
-  // console.log("getLPPoolBalances 4", poolData);
-
   if (!poolData) return [null, null];
-  const baseAddress = poolData.base.addresses[chainId];
-  const fromBalance =
-    baseAddress === fromBTokenAddress
-      ? poolData.baseBalance
-      : poolData.quoteBalance;
-  const toBalance =
-    baseAddress === toBTokenAddress
-      ? poolData.baseBalance
-      : poolData.quoteBalance;
 
-  // console.log("getLPPoolBalances 5", fromBalance, toBalance);
+  // ✅ 4) 주소 normalize (ETH는 WETH로 비교)
+  const WETH_ADDRESS = getFromContracts(ADDRESS.WETH, chainId);
+
+  const normalizeAddr = (token: ICurrency) => {
+    const raw = getTokenAddress({ token, chainId }); // token.addresses[chainId] 대신 이 유틸을 쓰면 ETH 처리도 더 안전
+    const addr =
+      token.symbol === "ETH" && WETH_ADDRESS
+        ? (WETH_ADDRESS as `0x${string}`)
+        : raw;
+    return addr ? toLower(addr as `0x${string}`) : "";
+  };
+
+  const baseAddr = toLower(poolData.base.addresses[chainId]);
+  const quoteAddr = toLower(poolData.quote.addresses[chainId]);
+
+  const fromAddr = normalizeAddr(fromUnderlying);
+  const toAddr = normalizeAddr(toUnderlying);
+
+  // ✅ 5) from/to가 base/quote 중 어디에 해당하는지 매핑
+  const pickBalance = (addr: string): BigDecimal | null => {
+    if (!addr) return null;
+    if (addr === baseAddr) return poolData.baseBalance;
+    if (addr === quoteAddr) return poolData.quoteBalance;
+    return null;
+  };
+
+  const fromBalance = pickBalance(fromAddr as string);
+  const toBalance = pickBalance(toAddr as string);
 
   return [fromBalance, toBalance];
 }

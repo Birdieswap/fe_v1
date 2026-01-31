@@ -11,6 +11,14 @@ type Props = {
   balance?: BigDecimal;
   lpBalance?: BigDecimal; //  추가
   stakedBalance?: BigDecimal;
+  underlying?: {
+    token0: { address: `0x${string}` | null; balance: BigDecimal | null };
+    token1:
+      | { address: `0x${string}` | null; balance: BigDecimal | null }
+      | null;
+  };
+  totalSupply?: BigDecimal | null;
+  showUnderlying?: boolean;
   gridCols: string;
   onRowClick: (fullName: string, address: `0x${string}`) => void;
   activeFullName: string | null;
@@ -40,6 +48,9 @@ export default function FarmListTableRow({
   balance,
   lpBalance,
   stakedBalance,
+  underlying,
+  totalSupply,
+  showUnderlying,
   gridCols,
   onRowClick,
   activeFullName,
@@ -135,6 +146,9 @@ export default function FarmListTableRow({
         balance={balance} // 총합
         lpBalance={lpBalance}
         stakedBalance={stakedBalance}
+        underlying={underlying}
+        totalSupply={totalSupply}
+        showUnderlying={showUnderlying}
       />
 
       <FarmDetail

@@ -12,6 +12,7 @@ import boostElectricPurpleLetter from "./booster_ElectricPurple_Letter.svg";
 import boostMediumSeaGreenLetter from "./booster_MediumSeaGreen_Letter.svg";
 import boostOriolesOrangeLetter from "./booster_OriolesOrange_Letter.svg";
 import boostShockingPinkLetter from "./booster_ShockingPink_Letter.svg";
+import BaseLogo from "./BaseLogo.svg";
 
 import Close from "./close.svg";
 import Dropdown from "./dropdown.svg";
@@ -39,6 +40,7 @@ import PiggyBankStopOn from "./piggybank-stop-on.svg";
 import PiggyBankStopOnDark from "./piggybank-stop-on-dark.svg";
 import PiggyBankStopOff from "./piggybank-stop-off.svg";
 import PiggyBankStopOffDark from "./piggybank-stop-off-dark.svg";
+import Power from "./power.svg";
 import Rocket from "./Rocket.svg";
 import ChangeArrow from "./change-arrow.svg";
 import Search from "./search.svg";
@@ -97,6 +99,7 @@ import WalletUnstake from "./wallet-unstake.svg";
 export const Icons = {
   Arrow,
   ArrowRL,
+  BaseLogo,
   BirdRate,
   Birdie56,
   boostBitterSweet,
@@ -136,6 +139,7 @@ export const Icons = {
   PiggyBankStopOnDark,
   PiggyBankStopOff,
   PiggyBankStopOffDark,
+  Power,
   Rocket,
   StakeOn,
   StakeOnDark,

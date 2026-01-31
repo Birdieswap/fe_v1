@@ -1,7 +1,14 @@
 "use client";
 
 import { ModalHeader, Button, ModalBody, cn, Divider } from "@heroui/react";
-import { Fragment, useContext, useMemo, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useContext,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
 import { Config, UseAccountReturnType, useChains, useConfig } from "wagmi";
 
@@ -20,6 +27,7 @@ import { isInjectedLike } from "@/utils/wallet/connectorUtils";
 import { isMetaMaskInAppEnv } from "@/utils/wallet/detectMetaMaskInApp";
 import { AnimatePresence, motion } from "framer-motion";
 import Arrow from "@/assets/icons/arrow.svg";
+import { copyToClipboard } from "@/utils/wallet/copyToClipboard";
 
 function TabSelector(props: {
   selected: "History" | "Assets";
@@ -31,7 +39,7 @@ function TabSelector(props: {
     <Button
       className={cn(
         "group p-0 flex max-h-max min-h-min min-w-min max-w-max flex-row gap-3",
-        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70"
+        "data-[hover=true]:bg-transparent data-[hover=true]:opacity-70",
       )}
       data-selected={props.value === props.selected}
       radius="none"
@@ -41,7 +49,7 @@ function TabSelector(props: {
       <h2
         className={cn(
           "text-[14px] font-semibold leading-[17px]",
-          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400"
+          "group-data-[selected=true]:text-foreground group-data-[selected=false]:text-default-600 dark:group-data-[selected=false]:text-default-400",
         )}
       >
         {props.name}
@@ -63,7 +71,7 @@ function SwapDisplay({
         "flex h-auto min-h-[86px] mt-4 mx-3 px-4 py-3 rounded-lg max-sm:min-h-[40px] border-1 border-[#FF0000] dark:border-[#FF3F3F]",
         "max-sm:w-full",
         "flex-col items-start justify-between",
-        "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start"
+        "max-sm:flex-col max-sm:gap-4 max-sm:py-2 max-sm:items-start",
       )}
     >
       <div className="pt-0 px-0 w-full">
@@ -121,10 +129,16 @@ function WalletDisplay({
     return `${wallet.address.slice(0, 6)}...${wallet.address.slice(-7)}`;
   }, [wallet]);
 
-  const ReferralLink = `https://birdieswap.vercel.app/?ref=${wallet?.address}`;
+  const ReferralLink = `https://birdieswap-dev.vercel.app/?ref=${wallet?.address}`;
 
   const { referralAddress } = useReferral();
   const isSelfReferral = wallet?.address === referralAddress;
+
+  const handleCopy = async (label: string, text: string) => {
+    console.log("[WalletPage] copy click", { label, text });
+    const ok = await copyToClipboard(text);
+    console.log("[WalletPage] copy result", { label, ok });
+  };
 
   return (
     <>
@@ -132,7 +146,7 @@ function WalletDisplay({
       <div
         className={cn(
           "hidden sm:flex h-auto min-h-[140px] w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
-          "flex-col items-stretch gap-3"
+          "flex-col items-stretch gap-3",
         )}
       >
         <div className="grid w-full items-center gap-2 sm:grid-cols-[1fr_auto] grid-cols-1">
@@ -152,8 +166,10 @@ function WalletDisplay({
                   className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
                   onPress={() =>
-                    navigator.clipboard.writeText(wallet?.address ?? "")
+                    handleCopy("address-desktop-click", wallet?.address ?? "")
                   }
+                  aria-label="Copy wallet address"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
                 </Button>
@@ -201,12 +217,13 @@ function WalletDisplay({
               <div className="shrink-0">
                 <Button
                   isIconOnly
-                  className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
+                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
                   variant="light"
                   onPress={() =>
-                    navigator.clipboard.writeText(ReferralLink ?? "")
+                    handleCopy("referral-desktop-click", ReferralLink ?? "")
                   }
                   aria-label="Copy referral link"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
                 </Button>
@@ -223,7 +240,7 @@ function WalletDisplay({
       <div
         className={cn(
           "sm:hidden flex h-auto w-full rounded-xl bg-primary/10 py-0 my-0 px-3 pt-3 dark:bg-dark-mid-mint",
-          "flex-col items-stretch gap-0"
+          "flex-col items-stretch gap-0",
         )}
       >
         {/* 헤더 (모바일 전용 2행 그리드) */}
@@ -239,19 +256,21 @@ function WalletDisplay({
                 <span className="text-[15px] font-semibold leading-[18px] truncate">
                   {address}
                 </span>
-                <Button
-                  isIconOnly
-                  className="size-[18px] min-w-[18px] max-w-[18px] rounded-[4px]"
-                  variant="light"
-                  onPress={() =>
-                    navigator.clipboard.writeText(wallet?.address ?? "")
+                <button
+                  type="button"
+                  className="inline-flex size-[18px] min-w-[18px] max-w-[18px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                  onClick={() =>
+                    handleCopy("address-mobile-click", wallet?.address ?? "")
                   }
+                  aria-label="Copy wallet address"
+                  style={{ WebkitTapHighlightColor: "transparent" }}
                 >
                   <Icons.WalletCopy className="fill-foreground" />
-                </Button>
+                </button>
               </div>
             </div>
           </div>
+
           {/* 우측: 토글 버튼 (row1 col2) */}
           <div className="row-start-1 col-start-2 justify-self-end">
             <button
@@ -313,17 +332,17 @@ function WalletDisplay({
                     {ReferralLink}
                   </div>
                   <div className="shrink-0">
-                    <Button
-                      isIconOnly
-                      className="size-[20px] min-w-[20px] max-w-[20px] rounded-[4px]"
-                      variant="light"
-                      onPress={() =>
-                        navigator.clipboard.writeText(ReferralLink ?? "")
+                    <button
+                      type="button"
+                      className="inline-flex size-[20px] min-w-[20px] max-w-[20px] items-center justify-center rounded-[4px] outline-none focus-visible:outline-none focus-visible:ring-0 hover:bg-black/5 dark:hover:bg-white/5"
+                      onClick={() =>
+                        handleCopy("referral-mobile-click", ReferralLink ?? "")
                       }
                       aria-label="Copy referral link"
+                      style={{ WebkitTapHighlightColor: "transparent" }}
                     >
                       <Icons.WalletCopy className="fill-foreground" />
-                    </Button>
+                    </button>
                   </div>
                 </div>
                 <div className="mt-3 text-[11px] font-regular text-light-primary dark:text-dark-green-key">
@@ -344,7 +363,6 @@ export default function WalletPage(props: {
 }) {
   const config = useConfig();
   const [tab, setTab] = useState<"History" | "Assets">("Assets");
-  // const { hideSmallBalances, hideUnknownTokens } = useContext(SettingsContext);
 
   const {
     selectedProvider,
@@ -354,9 +372,21 @@ export default function WalletPage(props: {
     walletData,
   } = useContext(WalletContext);
 
-  console.log("WalletPage walletData", account, walletData);
   const { referralAddress } = useReferral();
   const isSelfReferral = account?.address === referralAddress;
+
+  const handleTabChange = useCallback(
+    (value: "History" | "Assets") => {
+      if (value === "History" && tab !== "History") {
+        walletData?.refetchAll();
+      }
+      setTab(value);
+    },
+    [tab, walletData],
+  );
+
+  console.log("[WalletPage]", { walletData });
+
   return (
     <Fragment>
       <ModalHeader className="max-sm:px-6">
@@ -381,14 +411,12 @@ export default function WalletPage(props: {
                   ?.getProvider?.()
                   .catch(() => undefined);
 
-                // RainbowKit 최근 커넥터 캐시도 함께 지워 재연결 소스 제거
                 try {
                   localStorage.removeItem("rk-last-connector");
                   localStorage.removeItem("rainbowkit.connectedWallets");
                   localStorage.removeItem("rainbowkit:connectedWallets");
                 } catch {}
 
-                const doHardReload = isInjectedLike(connector?.id, provider);
                 await safeDisconnect({
                   config,
                   connector,
@@ -398,10 +426,8 @@ export default function WalletPage(props: {
                     isInjectedLike(connector?.id, provider),
                 });
 
-                // 아주 짧은 틱으로 펜딩 이벤트 정리
                 await new Promise((r) => setTimeout(r, 10));
               } finally {
-                // UI 정리
                 props.onClose();
                 setIsConnectModalOpen(false);
               }
@@ -418,6 +444,7 @@ export default function WalletPage(props: {
           </Button>
         </div>
       </ModalHeader>
+
       <ModalBody className="max-h-full overflow-hidden p-0">
         <div className="flex max-h-full w-full grow flex-col items-center overflow-auto max-sm:gap-0">
           <div className="flex w-full flex-col items-center px-4 max-sm:px-6">
@@ -433,13 +460,13 @@ export default function WalletPage(props: {
               <TabSelector
                 name="Assets"
                 selected={tab}
-                setTab={setTab}
+                setTab={handleTabChange}
                 value="Assets"
               />
               <TabSelector
                 name="History"
                 selected={tab}
-                setTab={setTab}
+                setTab={handleTabChange}
                 value="History"
               />
             </div>

@@ -17,6 +17,7 @@ import Components from "./listRowSummary/components";
 import suffixNumbers from "@/utils/suffixNumbers";
 import { forwardRef, useContext, useMemo } from "react";
 import { AssetsContext } from "@/app/AssetsContextProvider";
+import { findSymbolByAddress } from "@/utils/assets/getTokenSymbol";
 
 import { Spacer } from "@heroui/react";
 import DonutRatio from "./common/DonutRatio";
@@ -62,6 +63,15 @@ type Props = {
   balance?: BigDecimal;
   lpBalance?: BigDecimal;
   stakedBalance?: BigDecimal;
+  underlying?: {
+    token0: { address: `0x${string}` | null; balance: BigDecimal | null };
+    token1: {
+      address: `0x${string}` | null;
+      balance: BigDecimal | null;
+    } | null;
+  };
+  totalSupply?: BigDecimal | null;
+  showUnderlying?: boolean;
   gridCols: string;
   isActive: boolean;
   onClick: () => void;
@@ -76,6 +86,9 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
     balance,
     lpBalance,
     stakedBalance,
+    underlying,
+    totalSupply,
+    showUnderlying,
     gridCols,
     item,
     isActive,
@@ -94,6 +107,38 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
   const input = isBirdieLPFarm(stakeToken)
     ? stakeToken.swap.input.map((v) => v.input)
     : [stakeToken.input];
+
+  const underlyingLines = useMemo(() => {
+    if (!showUnderlying) return null;
+    if (!balance || !totalSupply || totalSupply.isZero()) return null;
+    if (!underlying?.token0?.balance) return null;
+
+    const buildLine = (
+      token?: {
+        address: `0x${string}` | null;
+        balance: BigDecimal | null;
+      } | null
+    ) => {
+      if (!token?.balance) return null;
+      const addr = token.address;
+      const rawSymbol = addr ? findSymbolByAddress(addr, chainId) : undefined;
+      const symbol =
+        rawSymbol && ["WETH", "WETH9"].includes(rawSymbol.toUpperCase())
+          ? "ETH"
+          : rawSymbol;
+      const amt = token.balance.mul(balance).div(totalSupply);
+      const text = `${amt
+        .roundToDecimals(6)
+        .toPrecisionString(true, true)}${symbol ? ` ${symbol}` : ""}`;
+      return { text };
+    };
+
+    const lines = [buildLine(underlying.token0), buildLine(underlying.token1)]
+      .filter(Boolean)
+      .map((v) => v!.text);
+
+    return lines.length > 0 ? lines : null;
+  }, [showUnderlying, balance, totalSupply, underlying, chainId]);
 
   const poolDescription = useMemo(() => {
     const targetAddr = stakeToken?.addresses?.[chainId];
@@ -269,33 +314,53 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
       </div>
 
       <div className="hidden md:flex flex-col items-end text-right gap-1 pr-1 md:[grid-column:4/5]">
-        <div className="text-sm font-semibold">
-          {!account.isConnected ? (
-            "Connect Wallet"
+        {showUnderlying ? (
+          !account.isConnected ? (
+            <div className="text-sm font-semibold">Connect Wallet</div>
           ) : !isBalanceAvailable ? (
             <LoadingPulse w="w-16" />
-          ) : (
-            balance.roundToDecimals(5).toPrecisionString(true, true)
-          )}
-        </div>
-        <div className="font-medium text-default-700 dark:text-default-300">
-          {!account.isConnected ? (
-            "Connect Wallet"
-          ) : !isBalanceAvailable ? (
-            <LoadingPulse w="w-20" />
-          ) : price ? (
-            "$" +
-            suffixNumbers(
-              balance.mul(price).roundToDecimals(2),
-              0,
-              2,
-              false,
-              false
-            )
+          ) : underlyingLines ? (
+            <div className="flex flex-col items-end gap-0.5">
+              {underlyingLines.map((line, idx) => (
+                <div key={idx} className="text-sm font-semibold">
+                  {line}
+                </div>
+              ))}
+            </div>
           ) : (
             <LoadingPulse w="w-20" />
-          )}
-        </div>
+          )
+        ) : (
+          <>
+            <div className="text-sm font-semibold">
+              {!account.isConnected ? (
+                "Connect Wallet"
+              ) : !isBalanceAvailable ? (
+                <LoadingPulse w="w-16" />
+              ) : (
+                balance.roundToDecimals(8).toPrecisionString(true, true)
+              )}
+            </div>
+            <div className="font-medium text-default-700 dark:text-default-300">
+              {!account.isConnected ? (
+                "Connect Wallet"
+              ) : !isBalanceAvailable ? (
+                <LoadingPulse w="w-20" />
+              ) : price ? (
+                "$" +
+                suffixNumbers(
+                  balance.mul(price).roundToDecimals(2),
+                  0,
+                  2,
+                  false,
+                  false
+                )
+              ) : (
+                <LoadingPulse w="w-20" />
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       <div className="hidden md:flex items-center justify-end gap-4 md:[grid-column:5/6]">
@@ -362,32 +427,61 @@ export default forwardRef<HTMLDivElement, Props>(function FarmListRowSummary(
               BAL
             </span>
             <div className="flex flex-col items-end leading-tight">
-              <span className="text-sm font-semibold max-md:font-medium">
-                {!account.isConnected
-                  ? "Connect Wallet"
-                  : !isBalanceAvailable
-                    ? "0"
-                    : // ( <LoadingPulse w="w-16" />)
-                      balance.roundToDecimals(5).toPrecisionString(true, true)}
-              </span>
-              <span className="text-[12px] text-default-700 dark:text-default-300">
-                {!account.isConnected ? (
-                  "Connect Wallet"
+              {showUnderlying ? (
+                !account.isConnected ? (
+                  <span className="text-sm font-semibold max-md:font-medium">
+                    Connect Wallet
+                  </span>
                 ) : !isBalanceAvailable ? (
-                  "0" //(<LoadingPulse w="w-20" />)
-                ) : price ? (
-                  "$" +
-                  suffixNumbers(
-                    balance.mul(price).roundToDecimals(2),
-                    0,
-                    2,
-                    false,
-                    false
-                  )
+                  <span className="text-sm font-semibold max-md:font-medium">
+                    0
+                  </span>
+                ) : underlyingLines ? (
+                  underlyingLines.map((line, idx) => (
+                    <span
+                      key={idx}
+                      className="text-sm font-semibold max-md:font-medium"
+                    >
+                      {line}
+                    </span>
+                  ))
                 ) : (
-                  <LoadingPulse w="w-20" />
-                )}
-              </span>
+                  <span className="text-sm font-semibold max-md:font-medium">
+                    0
+                  </span>
+                )
+              ) : (
+                <>
+                  <span className="text-sm font-semibold max-md:font-medium">
+                    {!account.isConnected
+                      ? "Connect Wallet"
+                      : !isBalanceAvailable
+                        ? "0"
+                        : // ( <LoadingPulse w="w-16" />)
+                          balance
+                            .roundToDecimals(8)
+                            .toPrecisionString(true, true)}
+                  </span>
+                  <span className="text-[12px] text-default-700 dark:text-default-300">
+                    {
+                      !account.isConnected
+                        ? "Connect Wallet"
+                        : !isBalanceAvailable
+                          ? "0" //(<LoadingPulse w="w-20" />)
+                          : price
+                            ? "$" +
+                              suffixNumbers(
+                                balance.mul(price).roundToDecimals(2),
+                                0,
+                                2,
+                                false,
+                                false
+                              )
+                            : "0" //<LoadingPulse w="w-20" />
+                    }
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>

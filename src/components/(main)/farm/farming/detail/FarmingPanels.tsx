@@ -55,11 +55,10 @@ export default function FarmingPanels({
             <PairStartPanel
               key="pair-start"
               item={item}
-              price={price}
               totalBalance={totalBalance}
             />
           ) : (
-            <PairStopPanel key="pair-stop" item={item} price={price} />
+            <PairStopPanel key="pair-stop" item={item} />
           ))}
 
         {item.type === FarmType.SINGLE &&

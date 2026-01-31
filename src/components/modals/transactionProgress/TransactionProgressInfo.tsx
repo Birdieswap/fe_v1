@@ -62,7 +62,7 @@ function AmountAndSymbol({
 }) {
   const amountString = amount
     ?.roundToDecimals(token?.decimals ?? 8)
-    .toPrecisionString(false, true);
+    .toPrecisionString(true, true);
 
   return (
     <Fragment>

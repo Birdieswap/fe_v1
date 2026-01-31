@@ -24,7 +24,7 @@ type OpenEvent = CustomEvent<OpenEventDetail>;
 
 const TERMS_URL = "https://docs.birdieswap.com/legal/terms-of-service";
 const PRIVACY_URL = "https://docs.birdieswap.com/legal/privacy-policy";
-const RISK_URL = "https://docs.birdieswap.com/security/general-risks";
+const RISK_URL = "https://docs.birdieswap.com/legal/risk-disclosures";
 
 function StaticConsentContent() {
   return (
@@ -77,8 +77,13 @@ function StaticConsentContent() {
         </div>
 
         <p className="font-regular text-[16px] leading-[18px] text-foreground">
-          Birdieswap is a decentralized protocol. By continuing, you acknowledge
-          usage at your own risk.
+          Birdieswap is an experimental, non-custodial software interface
+          provided for testing purposes only.
+        </p>
+        <p className="font-regular text-[16px] leading-[18px] text-foreground">
+          By continuing, you acknowledge and agree that you use Birdieswap at
+          your own risk, subject to the Terms of Service, Privacy Policy, and
+          Risk Disclosures.
         </p>
       </div>
     </div>
@@ -211,19 +216,19 @@ export default function RiskConsentModalHost() {
     return () => {
       window.removeEventListener(
         OPEN_RISK_CONSENT_EVENT,
-        open as EventListener
+        open as EventListener,
       );
       window.removeEventListener(
         CLOSE_RISK_CONSENT_EVENT,
-        close as EventListener
+        close as EventListener,
       );
       document.removeEventListener(
         OPEN_RISK_CONSENT_EVENT,
-        open as EventListener
+        open as EventListener,
       );
       document.removeEventListener(
         CLOSE_RISK_CONSENT_EVENT,
-        close as EventListener
+        close as EventListener,
       );
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,7 +342,7 @@ export function openRiskConsentModal(arg: {
   onConfirm?: OnConfirm;
 }): Promise<boolean>;
 export async function openRiskConsentModal(
-  arg: OnConfirm | { onConfirm?: OnConfirm }
+  arg: OnConfirm | { onConfirm?: OnConfirm },
 ): Promise<boolean> {
   const detail = typeof arg === "function" ? { onConfirm: arg } : (arg ?? {});
   dbg("riskHost:openFn:start"); // [DBG]

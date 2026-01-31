@@ -30,7 +30,7 @@ type UseV3UnderlyingResult = {
 };
 
 export function useV3UnderlyingFromTokenId(
-  params: UseV3UnderlyingParams
+  params: UseV3UnderlyingParams,
 ): UseV3UnderlyingResult {
   const { client, chainId, tokenId, uniswapPoolAddress, bToken0, bToken1 } =
     params;
@@ -41,14 +41,14 @@ export function useV3UnderlyingFromTokenId(
   const [v3Pool, setV3Pool] = useState<V3Pool | null>(null);
 
   useEffect(() => {
-    console.log("[V3] useV3UnderlyingFromTokenId effect deps", {
-      client: !!client,
-      chainId,
-      tokenId: tokenId?.toString(),
-      uniswapPoolAddress,
-      bToken0,
-      bToken1,
-    });
+    // console.log("[V3] useV3UnderlyingFromTokenId effect deps", {
+    //   client: !!client,
+    //   chainId,
+    //   tokenId: tokenId?.toString(),
+    //   uniswapPoolAddress,
+    //   bToken0,
+    //   bToken1,
+    // });
 
     // 기본 가드
     if (
@@ -58,12 +58,12 @@ export function useV3UnderlyingFromTokenId(
       tokenId === 0n ||
       !uniswapPoolAddress
     ) {
-      console.log("[V3] Guard failed, resetting state", {
-        hasClient: !!client,
-        chainId,
-        tokenId: tokenId?.toString(),
-        uniswapPoolAddress,
-      });
+      // console.log("[V3] Guard failed, resetting state", {
+      //   hasClient: !!client,
+      //   chainId,
+      //   tokenId: tokenId?.toString(),
+      //   uniswapPoolAddress,
+      // });
       setUnderlying0(null);
       setUnderlying1(null);
       setV3Position(null);
@@ -83,39 +83,46 @@ export function useV3UnderlyingFromTokenId(
       return;
     }
 
-    console.log("[V3] Start fetch with params", {
-      chainId,
-      tokenId: tokenId.toString(),
-      uniswapPoolAddress,
-      nfpmAddress,
-    });
+    // console.log("[V3] Start fetch with params", {
+    //   chainId,
+    //   tokenId: tokenId.toString(),
+    //   uniswapPoolAddress,
+    //   nfpmAddress,
+    // });
 
     let cancelled = false;
 
     (async () => {
       try {
         // 1. NFPM position
+        // console.log("[V3] fetchV3Position start", {
+        //   nfpmAddress,
+        //   tokenId: tokenId.toString(),
+        // });
         const pos = await fetchV3Position(
           client as PublicClient,
           nfpmAddress,
-          tokenId
+          tokenId,
         );
         if (cancelled) {
-          console.log("[V3] cancelled after fetchV3Position");
+          // console.log("[V3] cancelled after fetchV3Position");
           return;
         }
 
-        console.log("[V3] pos", {
-          tokenId: tokenId.toString(),
-          token0: pos.token0,
-          token1: pos.token1,
-          fee: pos.fee,
-          liquidity: pos.liquidity.toString(),
-          tickLower: pos.tickLower,
-          tickUpper: pos.tickUpper,
-        });
+        // console.log("[V3] pos", {
+        //   tokenId: tokenId.toString(),
+        //   token0: pos.token0,
+        //   token1: pos.token1,
+        //   fee: pos.fee,
+        //   liquidity: pos.liquidity.toString(),
+        //   tickLower: pos.tickLower,
+        //   tickUpper: pos.tickUpper,
+        // });
 
         // 2. Pool slot0/liquidity
+        // console.log("[V3] readContract slot0/liquidity start", {
+        //   uniswapPoolAddress,
+        // });
         const [slot0Raw, poolLiquidityRaw] = await Promise.all([
           readContract(client as PublicClient, {
             address: uniswapPoolAddress,
@@ -129,8 +136,8 @@ export function useV3UnderlyingFromTokenId(
           }),
         ]);
 
-        console.log("[V3] slot0Raw", slot0Raw);
-        console.log("[V3] poolLiquidityRaw", poolLiquidityRaw);
+        // console.log("[V3] slot0Raw", slot0Raw);
+        // console.log("[V3] poolLiquidityRaw", poolLiquidityRaw);
 
         let sqrtPriceX96: bigint;
         let tick: number;
@@ -144,11 +151,11 @@ export function useV3UnderlyingFromTokenId(
         }
         const poolLiquidity = BigInt(poolLiquidityRaw as bigint);
 
-        console.log("[V3] decoded slot0 / liquidity", {
-          sqrtPriceX96: sqrtPriceX96.toString(),
-          tick,
-          poolLiquidity: poolLiquidity.toString(),
-        });
+        // console.log("[V3] decoded slot0 / liquidity", {
+        //   sqrtPriceX96: sqrtPriceX96.toString(),
+        //   tick,
+        //   poolLiquidity: poolLiquidity.toString(),
+        // });
 
         // 3. NFPM token0/1 과 Birdieswap bToken 주소 매핑
         const posToken0 = pos.token0.toLowerCase();
@@ -160,12 +167,12 @@ export function useV3UnderlyingFromTokenId(
         let poolBToken1 = bToken1;
         let amount0IsForBToken0 = true;
 
-        console.log("[V3] token mapping check", {
-          posToken0,
-          posToken1,
-          b0Addr,
-          b1Addr,
-        });
+        // console.log("[V3] token mapping check", {
+        //   posToken0,
+        //   posToken1,
+        //   b0Addr,
+        //   b1Addr,
+        // });
 
         if (posToken0 === b0Addr && posToken1 === b1Addr) {
           amount0IsForBToken0 = true;
@@ -183,37 +190,37 @@ export function useV3UnderlyingFromTokenId(
           return;
         }
 
-        console.log("[V3] token mapping result", {
-          poolBToken0Symbol: poolBToken0.symbol,
-          poolBToken1Symbol: poolBToken1.symbol,
-          amount0IsForBToken0,
-        });
+        // console.log("[V3] token mapping result", {
+        //   poolBToken0Symbol: poolBToken0.symbol,
+        //   poolBToken1Symbol: poolBToken1.symbol,
+        //   amount0IsForBToken0,
+        // });
 
         // 4. SDK Pool 생성 (pool token = bToken 기준)
         const sdkToken0 = new Token(
           chainId,
           pos.token0 as `0x${string}`,
           poolBToken0.decimals,
-          poolBToken0.symbol
+          poolBToken0.symbol,
         );
         const sdkToken1 = new Token(
           chainId,
           pos.token1 as `0x${string}`,
           poolBToken1.decimals,
-          poolBToken1.symbol
+          poolBToken1.symbol,
         );
 
-        console.log("[V3] SDK Pool params", {
-          chainId,
-          token0: sdkToken0.address,
-          token1: sdkToken1.address,
-          decimals0: poolBToken0.decimals,
-          decimals1: poolBToken1.decimals,
-          fee: pos.fee,
-          sqrtPriceX96: sqrtPriceX96.toString(),
-          poolLiquidity: poolLiquidity.toString(),
-          tick,
-        });
+        // console.log("[V3] SDK Pool params", {
+        //   chainId,
+        //   token0: sdkToken0.address,
+        //   token1: sdkToken1.address,
+        //   decimals0: poolBToken0.decimals,
+        //   decimals1: poolBToken1.decimals,
+        //   fee: pos.fee,
+        //   sqrtPriceX96: sqrtPriceX96.toString(),
+        //   poolLiquidity: poolLiquidity.toString(),
+        //   tick,
+        // });
 
         const pool = new V3Pool(
           sdkToken0,
@@ -221,10 +228,10 @@ export function useV3UnderlyingFromTokenId(
           pos.fee,
           sqrtPriceX96.toString(),
           poolLiquidity.toString(), // 0일 수도 있음
-          tick
+          tick,
         );
         if (cancelled) {
-          console.log("[V3] cancelled after V3Pool creation");
+          // console.log("[V3] cancelled after V3Pool creation");
           return;
         }
         setV3Pool(pool);
@@ -232,7 +239,7 @@ export function useV3UnderlyingFromTokenId(
 
         // 🔴 유동성 0이면 underlying 은 항상 0 (포지션은 closed 상태)
         if (pos.liquidity === 0n || poolLiquidity === 0n) {
-          console.log("[V3] zero liquidity (position or pool). Underlying = 0");
+          // console.log("[V3] zero liquidity (position or pool). Underlying = 0");
           if (!cancelled) {
             setUnderlying0(BigDecimal.ZERO());
             setUnderlying1(BigDecimal.ZERO());
@@ -248,27 +255,27 @@ export function useV3UnderlyingFromTokenId(
           tickUpper: pos.tickUpper,
         });
 
-        console.log("[V3] sdkPos constructed", {
-          liquidity: pos.liquidity.toString(),
-          tickLower: pos.tickLower,
-          tickUpper: pos.tickUpper,
-        });
+        // console.log("[V3] sdkPos constructed", {
+        //   liquidity: pos.liquidity.toString(),
+        //   tickLower: pos.tickLower,
+        //   tickUpper: pos.tickUpper,
+        // });
 
         const amount0Raw = BigInt((sdkPos.amount0 as any).quotient.toString());
         const amount1Raw = BigInt((sdkPos.amount1 as any).quotient.toString());
 
-        console.log("[V3] raw amounts", {
-          amount0Raw: amount0Raw.toString(),
-          amount1Raw: amount1Raw.toString(),
-        });
+        // console.log("[V3] raw amounts", {
+        //   amount0Raw: amount0Raw.toString(),
+        //   amount1Raw: amount1Raw.toString(),
+        // });
 
         const amount0Human = formatUnits(
           amount0Raw,
-          poolBToken0.decimals ?? 18
+          poolBToken0.decimals ?? 18,
         );
         const amount1Human = formatUnits(
           amount1Raw,
-          poolBToken1.decimals ?? 18
+          poolBToken1.decimals ?? 18,
         );
 
         let bToken0AmountHuman: string;
@@ -281,41 +288,51 @@ export function useV3UnderlyingFromTokenId(
           bToken1AmountHuman = amount0Human;
         }
 
-        console.log("[V3] mapped bToken human amounts", {
-          amount0IsForBToken0,
-          bToken0Symbol: bToken0.symbol,
-          bToken1Symbol: bToken1.symbol,
-          bToken0AmountHuman,
-          bToken1AmountHuman,
-        });
+        // console.log("[V3] mapped bToken human amounts", {
+        //   amount0IsForBToken0,
+        //   bToken0Symbol: bToken0.symbol,
+        //   bToken1Symbol: bToken1.symbol,
+        //   bToken0AmountHuman,
+        //   bToken1AmountHuman,
+        // });
 
         // 6. previewRedeem → underlying 수량
         const b0AmountBD = new BigDecimal(bToken0AmountHuman);
         const b1AmountBD = new BigDecimal(bToken1AmountHuman);
 
-        console.log("[V3] previewRedeem input", {
-          bToken0: bToken0.symbol,
-          bToken1: bToken1.symbol,
-          b0AmountBD: b0AmountBD.toString?.() ?? b0AmountBD,
-          b1AmountBD: b1AmountBD.toString?.() ?? b1AmountBD,
-        });
+        // console.log("[V3] previewRedeem input", {
+        //   bToken0: bToken0.symbol,
+        //   bToken1: bToken1.symbol,
+        //   b0AmountBD: b0AmountBD.toString?.() ?? b0AmountBD,
+        //   b1AmountBD: b1AmountBD.toString?.() ?? b1AmountBD,
+        // });
 
         const [under0, under1] = await Promise.all([
           previewRedeem(client as PublicClient, bToken0, b0AmountBD),
           previewRedeem(client as PublicClient, bToken1, b1AmountBD),
         ]);
 
-        console.log("[V3] previewRedeem output", {
-          under0: under0?.toString?.() ?? under0,
-          under1: under1?.toString?.() ?? under1,
-        });
+        // console.log("[V3] previewRedeem output", {
+        //   under0: under0?.toString?.() ?? under0,
+        //   under1: under1?.toString?.() ?? under1,
+        // });
 
         if (!cancelled) {
           setUnderlying0(under0 ?? BigDecimal.ZERO());
           setUnderlying1(under1 ?? BigDecimal.ZERO());
         }
       } catch (e) {
-        console.error("[V3] useV3UnderlyingFromTokenId failed", e);
+        console.error("[V3] useV3UnderlyingFromTokenId failed", {
+          error: e,
+          chainId,
+          tokenId: tokenId?.toString?.(),
+          uniswapPoolAddress,
+          nfpmAddress:
+            miscContracts.UniswapNonfungiblePositionManager.addresses[
+              chainId as number
+            ],
+          hasClient: !!client,
+        });
         if (!cancelled) {
           setV3Position(null);
           setV3Pool(null);
@@ -326,7 +343,7 @@ export function useV3UnderlyingFromTokenId(
     })();
 
     return () => {
-      console.log("[V3] cleanup, set cancelled = true");
+      // console.log("[V3] cleanup, set cancelled = true");
       cancelled = true;
     };
   }, [client, chainId, tokenId, uniswapPoolAddress, bToken0, bToken1]);

@@ -10,11 +10,6 @@ export const birdieswap_staking_abi = [
         internalType: "address",
       },
       {
-        name: "storageAddress_",
-        type: "address",
-        internalType: "address",
-      },
-      {
         name: "stakingTokenAddress_",
         type: "address",
         internalType: "address",
@@ -25,12 +20,17 @@ export const birdieswap_staking_abi = [
         internalType: "address",
       },
       {
-        name: "eventRelayerAddress_",
+        name: "zapAddress_",
         type: "address",
         internalType: "address",
       },
       {
-        name: "zapAddress_",
+        name: "underlying0_",
+        type: "address",
+        internalType: "address",
+      },
+      {
+        name: "underlying1_",
         type: "address",
         internalType: "address",
       },
@@ -258,6 +258,11 @@ export const birdieswap_staking_abi = [
         internalType: "uint256",
       },
       {
+        name: "_minStakeAmount",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
         name: "_beneficiary",
         type: "address",
         internalType: "address",
@@ -265,7 +270,17 @@ export const birdieswap_staking_abi = [
     ],
     outputs: [
       {
-        name: "sharesMinted",
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "",
+        type: "uint256",
+        internalType: "uint256",
+      },
+      {
+        name: "",
         type: "uint256",
         internalType: "uint256",
       },
@@ -274,10 +289,23 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "function",
+    name: "easyEnterPaused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "easyPay",
     inputs: [
       {
-        name: "_stakingShares",
+        name: "_stakedAmount",
         type: "uint256",
         internalType: "uint256",
       },
@@ -310,6 +338,19 @@ export const birdieswap_staking_abi = [
       },
     ],
     stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "easyPayPaused",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "bool",
+        internalType: "bool",
+      },
+    ],
+    stateMutability: "view",
   },
   {
     type: "function",
@@ -380,6 +421,25 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "function",
+    name: "getRemainingEmission",
+    inputs: [
+      {
+        name: "_rewardIndex",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    outputs: [
+      {
+        name: "remaining",
+        type: "uint256",
+        internalType: "uint256",
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
     name: "getRewardCount",
     inputs: [],
     outputs: [
@@ -413,12 +473,12 @@ export const birdieswap_staking_abi = [
         internalType: "uint256",
       },
       {
-        name: "lastUpdate",
+        name: "lastUpdateTimestamp",
         type: "uint256",
         internalType: "uint256",
       },
       {
-        name: "rewardSpeed",
+        name: "rewardRate",
         type: "uint256",
         internalType: "uint256",
       },
@@ -458,25 +518,6 @@ export const birdieswap_staking_abi = [
         name: "",
         type: "address",
         internalType: "address",
-      },
-    ],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "getTotalOutstanding",
-    inputs: [
-      {
-        name: "_rewardIndex",
-        type: "uint256",
-        internalType: "uint256",
-      },
-    ],
-    outputs: [
-      {
-        name: "remaining",
-        type: "uint256",
-        internalType: "uint256",
       },
     ],
     stateMutability: "view",
@@ -549,6 +590,20 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "function",
+    name: "pauseEasyEnter",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "pauseEasyPay",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
     name: "pauseWithdrawals",
     inputs: [],
     outputs: [],
@@ -600,6 +655,20 @@ export const birdieswap_staking_abi = [
   {
     type: "function",
     name: "unpauseDeposits",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unpauseEasyEnter",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unpauseEasyPay",
     inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
@@ -751,12 +820,42 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__DuplicatedClaimIndex",
+    name: "BirdieswapStakingV1__DuplicatedRewardIndex",
     inputs: [],
   },
   {
     type: "error",
     name: "BirdieswapStakingV1__DuplicatedRewardToken",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterAlreadyPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterBalanceInvariantViolated",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterMinStakeNotMet",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterNoSharesMinted",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterNotPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyEnterPaused",
     inputs: [],
   },
   {
@@ -771,22 +870,47 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__EasyEnterZeroShares",
+    name: "BirdieswapStakingV1__EasyPayAlreadyPaused",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__EasyPayInsufficientOut",
+    name: "BirdieswapStakingV1__EasyPayBalanceInvariantViolated",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__EasyPayZeroAddress",
+    name: "BirdieswapStakingV1__EasyPayInsufficientOutput",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__EasyPayZeroAmount",
+    name: "BirdieswapStakingV1__EasyPayInvalidAddress",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayInvalidAmount",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayInvalidBeneficiary",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayNotPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayPaused",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__EasyPayUnderlyingBalanceWentDown",
     inputs: [],
   },
   {
@@ -806,17 +930,32 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__InsufficientBalance",
+    name: "BirdieswapStakingV1__InsufficientRewardBalance",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__InsufficientContractBalance",
+    name: "BirdieswapStakingV1__InsufficientStakedBalance",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidAddress",
     inputs: [],
   },
   {
     type: "error",
     name: "BirdieswapStakingV1__InvalidAmount",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidConfiguration",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__InvalidContractAddress",
     inputs: [],
   },
   {
@@ -831,17 +970,12 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__NonStandardToken",
+    name: "BirdieswapStakingV1__InvariantFailure",
     inputs: [],
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__NotValidContract",
-    inputs: [],
-  },
-  {
-    type: "error",
-    name: "BirdieswapStakingV1__PrecisionZero",
+    name: "BirdieswapStakingV1__NonStandardERC20",
     inputs: [],
   },
   {
@@ -851,7 +985,17 @@ export const birdieswap_staking_abi = [
   },
   {
     type: "error",
-    name: "BirdieswapStakingV1__RewardSpeedTooHigh",
+    name: "BirdieswapStakingV1__RewardFundingOverflow",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__RewardPrecisionZero",
+    inputs: [],
+  },
+  {
+    type: "error",
+    name: "BirdieswapStakingV1__RewardRateInvalid",
     inputs: [],
   },
   {
@@ -882,11 +1026,6 @@ export const birdieswap_staking_abi = [
   {
     type: "error",
     name: "BirdieswapStakingV1__WithdrawalsPaused",
-    inputs: [],
-  },
-  {
-    type: "error",
-    name: "BirdieswapStakingV1__ZeroAddressNotAllowed",
     inputs: [],
   },
   {

@@ -144,40 +144,41 @@ export default function RewardInfoPanelMobile({
           </p>
         </div>
       </div>
-
       {/* ================= Point Row (아이콘+심볼 / Amount+버튼) ================= */}
-      <div className={clsx(ROW_BASE, "gap-2 py-2 rounded-md")}>
-        {/* 2~7: 아이콘 + 심볼 (한 셀, flex gap-2) */}
-        <div className={LEFT_GROUP}>
-          <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
-            <Icons.PointIcon className="h-full w-full fill-primary text-background" />
+      {hasUserStakePoint && (
+        <div className={clsx(ROW_BASE, "gap-2 py-2 rounded-md")}>
+          {/* 2~7: 아이콘 + 심볼 (한 셀, flex gap-2) */}
+          <div className={LEFT_GROUP}>
+            <div className="relative h-6 w-6 shrink-0 overflow-hidden rounded-full">
+              <Icons.PointIcon className="h-full w-full fill-primary text-background" />
+            </div>
+            <p className="text-[14px] font-semibold truncate">Point</p>
           </div>
-          <p className="text-[14px] font-semibold truncate">Point</p>
-        </div>
 
-        {/* 8~12: Amount + 버튼 */}
-        <div className={RIGHT_GROUP}>
-          <div className="justify-self-end text-right tabular-nums">
-            {/* 필요시 포인트 보유량 표기 (현재 0 고정) */}
-            <span className="text-[13px] font-medium">
-              {Number(points).toFixed(2) ?? "0"}
-            </span>
+          {/* 8~12: Amount + 버튼 */}
+          <div className={RIGHT_GROUP}>
+            <div className="justify-self-end text-right tabular-nums">
+              {/* 필요시 포인트 보유량 표기 (현재 0 고정) */}
+              <span className="text-[13px] font-medium">
+                {Number(points).toFixed(2) ?? "0"}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              isDisabled
+              className={clsx(
+                BTN_BASE,
+                "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
+                "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
+                "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
+                "data-[disabled=true]:pointer-events-none"
+              )}
+            >
+              Point
+            </Button>
           </div>
-          <Button
-            size="sm"
-            isDisabled
-            className={clsx(
-              BTN_BASE,
-              "data-[disabled=true]:!bg-default-300 data-[disabled=true]:!text-default-600",
-              "dark:data-[disabled=true]:!bg-dark-popup-bg dark:data-[disabled=true]:!text-default-400",
-              "data-[disabled=true]:!opacity-100 data-[disabled=true]:!shadow-none data-[disabled=true]:!ring-0",
-              "data-[disabled=true]:pointer-events-none"
-            )}
-          >
-            Point
-          </Button>
         </div>
-      </div>
+      )}
 
       {/* ================= Extra Rewards (아이콘+심볼 / Amount+버튼) ================= */}
       <div className="mt-3 flex flex-col gap-2">

@@ -12,15 +12,16 @@ import {
 } from "@rainbow-me/rainbowkit";
 
 import {
-  metaMaskWallet,
   trustWallet,
   walletConnectWallet,
   coinbaseWallet,
   uniswapWallet,
   braveWallet,
   phantomWallet,
+  rabbyWallet,
 } from "@rainbow-me/rainbowkit/wallets";
-import { createConfig, WagmiProvider } from "wagmi";
+import { createConfig, WagmiProvider, createConnector } from "wagmi";
+import { injected } from "wagmi/connectors";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import {
@@ -83,7 +84,6 @@ function ThemeColorMetaSync() {
 const sepoliaUrls = [
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
-  process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_QUICKNODE,
   process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK,
   "https://sepolia.drpc.org",
 ].filter(Boolean) as string[];
@@ -207,9 +207,9 @@ function makeRandomRpcTransport(
 }
 
 const chains = [
+  base_custom,
   sepolia,
   arbitrum,
-  base_custom,
   optimism_custom,
   bsc,
   polygon,
@@ -244,18 +244,76 @@ const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id";
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap";
 
+const coinbaseWalletAll = Object.assign(coinbaseWallet, {
+  preference: { options: "all" },
+});
+
+const metaMaskInjectedWallet = () => {
+  const isMetaMaskInjected =
+    typeof window !== "undefined" &&
+    !!(
+      (window as any)?.ethereum?.isMetaMask ||
+      (window as any)?.ethereum?.providers?.some(
+        (p: any) => p?.isMetaMask
+      )
+    );
+  const metaMaskProvider =
+    typeof window !== "undefined"
+      ? (window as any)?.ethereum?.providers?.find((p: any) => p?.isMetaMask) ??
+        (window as any)?.ethereum
+      : undefined;
+  return {
+    id: "metaMask",
+    name: "MetaMask",
+    rdns: "io.metamask",
+    iconUrl: async () => "/wallets/metaMask.svg",
+    iconAccent: "#f6851a",
+    iconBackground: "#fff",
+    installed: isMetaMaskInjected ? true : undefined,
+    downloadUrls: {
+      android: "https://play.google.com/store/apps/details?id=io.metamask",
+      ios: "https://apps.apple.com/us/app/metamask/id1438144202",
+      mobile: "https://metamask.io/download",
+      qrCode: "https://metamask.io/download",
+      chrome:
+        "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
+      edge:
+        "https://microsoftedge.microsoft.com/addons/detail/metamask/ejbalbakoplchlghecdalmeeeajnimhm",
+      firefox: "https://addons.mozilla.org/firefox/addon/ether-metamask",
+      opera: "https://addons.opera.com/extensions/details/metamask-10",
+      browserExtension: "https://metamask.io/download",
+    },
+    createConnector: (walletDetails: any) => {
+      const injectedConfig = metaMaskProvider
+        ? {
+            target: () => ({
+              id: walletDetails.rkDetails.id,
+              name: walletDetails.rkDetails.name,
+              provider: metaMaskProvider,
+            }),
+          }
+        : {};
+      return createConnector((config) => ({
+        ...injected(injectedConfig)(config),
+        ...walletDetails,
+      }));
+    },
+  };
+};
+
 const connectors = connectorsForWallets(
   [
     {
       groupName: "Popular",
       wallets: [
-        metaMaskWallet,
+        metaMaskInjectedWallet,
         walletConnectWallet,
         uniswapWallet,
-        coinbaseWallet,
+        coinbaseWalletAll,
         trustWallet,
         braveWallet,
         phantomWallet,
+        rabbyWallet,
       ],
     },
   ],
@@ -323,11 +381,11 @@ export default function Providers({
       nonce={nonce}
     >
       <ThemeColorMetaSync />
-      <WagmiProvider config={wagmiConfig} reconnectOnMount={false}>
+      <WagmiProvider config={wagmiConfig} reconnectOnMount={true}>
         <QueryClientProvider client={queryClient}>
           <AssetsContextProvider>
             <RainbowKitProvider
-              initialChain={sepolia}
+              initialChain={base_custom}
               locale="en"
               showRecentTransactions={true}
               theme={theme}

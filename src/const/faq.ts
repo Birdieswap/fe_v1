@@ -2,128 +2,121 @@ export enum FaqFilter {
   GENERAL = "GENERAL",
   SWAP = "SWAP",
   FARM = "FARM",
-  CAGE = "CAGE",
+  EASY = "EASY",
   TROUBLESHOOTING = "TROUBLESHOOTING",
 }
 
 export const items = [
+  // 1. General
   {
     key: "what-is-birdieswap",
     topic: [FaqFilter.GENERAL],
     title: "What is Birdieswap?",
     content:
-      "Birdieswap is a decentralized, non-custodial software platform that allows users to simultaneously earn trading fee rewards from a decentralized exchange (DEX) and interest from lending. By supplying liquidity through Birdieswap, you can benefit from two distinct sources of income, and you retain the flexibility to withdraw your liquidity at any time.",
+      "Birdieswap is a decentralized interface software that helps users seamlessly connect and utilize various DeFi protocols. We do not operate a bank or exchange ourselves. Instead, we provide Router technology that connects verified external protocols (Yield Vaults, DEXs, etc.), enabling users to enjoy the benefits of both Deposit Yields and Trading Fees simultaneously without complex processes.",
   },
   {
-    key: "need-wallet",
+    key: "is-birdieswap-a-dex",
+    topic: [FaqFilter.GENERAL, FaqFilter.SWAP],
+    title: "Is Birdieswap a DEX (AMM) itself?",
+    content:
+      "No, Birdieswap does not operate its own AMM. Users perform swaps or liquidity provision just like on a standard DEX, but the actual trade execution and liquidity reside in the connected external DEXs. The Birdieswap Router automates the complex steps in between, such as Deposit → Wrap → Swap → Redeem.",
+  },
+  {
+    key: "do-i-need-a-wallet",
     topic: [FaqFilter.GENERAL],
-    title: "Do I need a wallet to interact with Birdieswap?",
+    title: "Do I need a wallet to use the service?",
     content:
-      "Yes. Because Birdieswap is deployed on a blockchain network, you must have a wallet compatible with that network in order to use Birdieswap. Common options include mobile wallets, browser wallets, and WalletConnect. When you connect your wallet to Birdieswap, you will sign messages and transactions within your wallet to confirm any actions taken on Birdieswap.",
+      "Yes. Since Birdieswap is a non-custodial service, no sign-up is required. You can instantly access all features by connecting a personal cryptocurrency wallet (like MetaMask) that supports the networks Birdieswap operates on.",
   },
   {
-    key: "cost-of-using-birdieswap",
+    key: "are-my-assets-safe",
+    topic: [FaqFilter.GENERAL, FaqFilter.SWAP, FaqFilter.FARM],
+    title: "Are my assets safe?",
+    content:
+      "Birdieswap never holds or controls your funds directly. Your assets only move between external protocols and your wallet via smart contracts. However, as Birdieswap is a software tool, it is subject to the risks of connected external protocols (hacks, policy changes) and market volatility. Please consider these risks carefully before using the service.",
+  },
+
+  // 2. Features & Concepts
+  {
+    key: "how-is-dual-yield-possible",
+    topic: [FaqFilter.GENERAL, FaqFilter.FARM],
+    title: "How is Dual Yield possible?",
+    content:
+      "It works by utilizing capital efficiently. The Birdieswap Router deposits your assets into (1) external protocols to generate Basic Rewards (interest) and (2) simultaneously supplies them as liquidity to a DEX to generate Trading Fees. The software automatically connects these two processes.",
+  },
+  {
+    key: "what-are-btokens",
+    topic: [FaqFilter.GENERAL, FaqFilter.SWAP, FaqFilter.FARM],
+    title: "What are bTokens?",
+    content:
+      "bTokens are standardized versions of deposit proof tokens (receipt tokens) from various external protocols, created by Birdieswap. When users supply assets, the Router converts them into bTokens to ensure smooth trading across different protocols.",
+  },
+  {
+    key: "how-does-auto-compounding-work",
+    topic: [FaqFilter.GENERAL, FaqFilter.FARM],
+    title: "How does Auto-Compounding work?",
+    content:
+      "All earnings (Deposit Yield + Trading Fees) are automatically harvested and compounded into the principal by the system. This allows users to enjoy compound interest effects without manually harvesting rewards.",
+  },
+
+  // 3. Easy Mode
+  {
+    key: "what-is-easyenter",
+    topic: [FaqFilter.EASY],
+    title: "What is EasyEnter?",
+    content:
+      "EasyEnter is a feature that allows you to complete liquidity provision and staking with a single click using only ETH in your wallet, without complex ratio calculations or swaps. The Router automatically distributes assets and handles the necessary steps.",
+  },
+  {
+    key: "what-is-easypay",
+    topic: [FaqFilter.EASY],
+    title: "What is EasyPay?",
+    content:
+      "EasyPay is a feature that allows you to automatically convert only the necessary amount into USDC and send it without unwinding your entire staked position. You can utilize your investment assets flexibly, just like a checking account.",
+  },
+  {
+    key: "why-set-tolerance",
+    topic: [FaqFilter.EASY, FaqFilter.TROUBLESHOOTING],
+    title: "Why do I need to set Tolerance?",
+    content:
+      "Tolerance is a safety buffer to prevent falling short of the target amount due to minor price fluctuations when converting tokens in Easy Mode. The system calculates with a margin based on the set value (default 5%), and 100% of the remaining balance is immediately refunded after the transfer.",
+  },
+
+  // 4. Fees & Policy
+  {
+    key: "fee-for-using-birdieswap",
     topic: [FaqFilter.GENERAL],
-    title: "What is the cost of interacting with Birdieswap?",
+    title: "What is the fee for using Birdieswap software?",
     content:
-      "Generally, users may encounter three main costs when using Birdieswap:\n\n1. Gas fees on the blockchain network\n2. Usage fees imposed by the underlying protocol\n3. Birdieswap software fees\n\nThe first two costs are common to most DeFi (Decentralized Finance) protocols and are not directly related to Birdieswap. The Birdieswap software fee is a fixed amount charged only when accumulated trading fees are automatically harvested. These collected fees are used to cover expenses such as the gas required for automated harvesting, as well as other operational costs of the software. Importantly, this fee is not charged on an individual basis. Rather, it is allocated proportionally among all participants supplying liquidity to a given pool, based on their respective shares. Consequently, the effective fee borne by any single user is typically significantly lower than the nominal fixed fee.",
+      "During the current Beta period, Birdieswap does not charge separate service fees (e.g., in ETH) directly to users. Instead, we operate a Reserve Rate policy.",
   },
   {
-    key: "risks",
-    topic: [FaqFilter.GENERAL],
-    title: "What are the risks involved in using Birdieswap?",
+    key: "what-is-reserve-rate",
+    topic: [FaqFilter.GENERAL, FaqFilter.FARM],
+    title: "What is the Reserve Rate?",
     content:
-      "No protocol is entirely without risk, but Birdieswap has taken various measures to mitigate potential issues. Birdieswap's code is publicly available and has undergone multiple audits. Below are the main categories of risk:\n\n- Smart Contract Risk: There may be bugs or vulnerabilities in Birdieswap's smart contracts.\n- Oracle Risk: Because Birdieswap relies on external data providers (e.g., for price feeds), any failure or compromise of an oracle may result in incorrect asset valuations.\n- Underlying Protocol Risk: Birdieswap uses other DeFi protocols—such as DEXs, lending platforms, and yield farming—to generate returns. If these protocols carry inherent risks, you would be exposed to those risks as well.",
+      "Reserve Rate is a policy where, when the system automatically harvests rewards (such as swap fees), 50% is reinvested into the user's principal, and the remaining 50% is accumulated in a Reserve Vault. These funds are not used for the project team's operating expenses but are reserved for the future community and ecosystem.",
   },
   {
-    key: "risk-mitigation",
-    topic: [FaqFilter.GENERAL],
-    title: "What steps are taken to mitigate risks?",
+    key: "are-gas-fees-higher",
+    topic: [
+      FaqFilter.GENERAL,
+      FaqFilter.EASY,
+      FaqFilter.FARM,
+      FaqFilter.TROUBLESHOOTING,
+    ],
+    title: "Are gas fees higher than standard transfers?",
     content:
-      "- Smart Contract Security: Birdieswap's code is publicly available and has been audited by multiple reputable institutions.\n- Oracle Protection: We employ various methods to ensure stable and tamper-resistant price feeds.\n- Underlying Protocol Selection: We carefully choose protocols that have demonstrated stability and reliability to minimize risk.",
+      "Technically, yes—because multiple steps like Deposit → Wrap → Supply → Stake are executed simultaneously in a single click, requiring more gas units than a simple transfer.\n\nHowever, since Birdieswap operates on Layer 2 networks (e.g., Base) where gas fees are extremely low, the actual cost difference is typically negligible. You can enjoy the convenience of automated complex processes with almost no noticeable increase in fees.",
   },
+
+  // 5. Troubleshooting
   {
-    key: "how-to-supply",
-    topic: [FaqFilter.FARM],
-    title: "How do I supply?",
+    key: "tx-failed-or-buttons-disabled",
+    topic: [FaqFilter.TROUBLESHOOTING],
+    title: "My transaction failed or buttons are disabled.",
     content:
-      '1. Click on the "Farm" menu at the top of the page.\n2. Select a pool from the Pool List and click on it to reveal the details.\n3. Enter the amount you wish to supply and click "Start Farming."\n4. Approve the transaction within your connected wallet.\n\nOnce the transaction is confirmed, your supply is successfully registered and begins to earn yield. Be sure you have sufficient tokens in your wallet for the selected pool, as well as a small amount of ETH to cover gas fees.',
-  },
-  {
-    key: "how-much-earn",
-    topic: [FaqFilter.FARM],
-    title: "How much can I earn?",
-    content:
-      "As a liquidity provider, you will earn a continuous return that varies based on market conditions. The Annual Percentage Yield (APY) shown on the page is derived from historical data and may not perfectly reflect actual returns.\n\n- Interest Income: You share in the interest paid by borrowers, calculated by multiplying the token's average lending rate by the utilization rate in the underlying protocol. Higher utilization generally translates to higher returns for liquidity providers.\n- Trading Fee Income: Whenever trades occur in your chosen pool via the Birdieswap swap interface, you receive a share of the trading fees according to the fee distribution model for that pool.",
-  },
-  {
-    key: "supply-limitations",
-    topic: [FaqFilter.FARM],
-    title: "Are there limitations to supply?",
-    content:
-      "Birdieswap itself does not impose specific limitations on supply. However, if the underlying protocol enforces its own supply constraints, those will apply.",
-  },
-  {
-    key: "how-to-withdraw",
-    topic: [FaqFilter.FARM],
-    title: "How do I withdraw?",
-    content:
-      '1. Locate the pool you wish to withdraw from under the "Farm" menu.\n2. Click on it to reveal the details.\n3. Enter the amount you want to withdraw and click "Stop Farming."\n4. Approve the transaction in your connected wallet.\n\nOnce the transaction is confirmed, your withdrawal is processed and the tokens will be returned to your wallet.',
-  },
-  {
-    key: "how-to-earn-profit",
-    topic: [FaqFilter.FARM],
-    title: "What do I have to do to earn profits?",
-    content:
-      "Essentially nothing beyond supplying your tokens. Birdieswap automates all tasks related to generating returns. You only need to provide liquidity in one of Birdieswap's pools.",
-  },
-  {
-    key: "underlying-protocol",
-    topic: [FaqFilter.GENERAL],
-    title: "What is an Underlying Protocol?",
-    content:
-      "An underlying protocol refers to any DeFi protocol that Birdieswap utilizes to generate returns—commonly DEXs, lending platforms, or yield farming protocols.",
-  },
-  {
-    key: "choose-underlying-protocol",
-    topic: [FaqFilter.GENERAL],
-    title: "Can I choose which Underlying Protocol to use?",
-    content:
-      "Not directly. When Birdieswap launches a new pool, the underlying protocol is predetermined to maintain stability and prevent liquidity fragmentation. However, you can review which underlying protocol each pool uses and select the pool (and thus the protocol) that best aligns with your preferences.",
-  },
-  {
-    key: "principal-guarantee",
-    topic: [FaqFilter.GENERAL],
-    title: "Does Birdieswap guarantee my principal?",
-    content:
-      "Birdieswap is merely a software tool designed to help users easily engage with DeFi protocols of their choosing, and does not itself produce any direct gain or loss to a user's principal. Any profit or loss arising from the liquidity you provide is determined by the performance of the underlying protocol used by the chosen pool, and is therefore independent of Birdieswap.",
-  },
-  {
-    key: "birdieswap-rewards",
-    topic: [FaqFilter.GENERAL],
-    title: "How can I earn Birdieswap Rewards?",
-    content:
-      "Birdieswap Rewards are awarded whenever you execute a token swap using Birdieswap's own swap interface, irrespective of the transaction amount. For further information on how rewards are earned, please consult our documentation.",
-  },
-  {
-    key: "how-to-swap",
-    topic: [FaqFilter.SWAP],
-    title: "How do I swap?",
-    content:
-      '1. Select the "Swap" menu at the top of the page.\n2. In the swap interface, choose the tokens you wish to exchange.\n3. Confirm the transaction in your connected wallet.\n\nOur interface is designed to be intuitive, similar to other widely used DEXs. However, please note that you can only swap tokens that are listed as part of Birdieswap Farm\'s token pairs.',
-  },
-  {
-    key: "price-impact",
-    topic: [FaqFilter.SWAP],
-    title: "What is Price Impact?",
-    content:
-      "Price Impact measures the extent to which your trade affects the token price in a particular liquidity pool. It is the difference between the current market price and the price following the execution of your trade. In a pool with substantial liquidity, the price impact is typically lower, whereas in a pool with less liquidity, the effect may be more pronounced. A higher price impact can lead to greater losses, and this rate fluctuates continuously due to supply and demand within the pool.",
-  },
-  {
-    key: "birdieswap-fee",
-    topic: [FaqFilter.GENERAL],
-    title: "How much is the Birdieswap software fee?",
-    content:
-      "The Birdieswap software fee is charged when the returns generated by the underlying protocol are harvested and reinvested. Executing the harvest process requires a transaction, which incurs gas fees. To cover these gas costs and other operational expenses, Birdieswap imposes a fixed fee whenever a harvest takes place. This fixed fee is not applied to any single individual; rather, it is shared proportionally among all participants in the pool according to their respective liquidity shares. Consequently, the amount each user actually pays is substantially lower than the nominal fixed fee.\n\nMoreover, in order to avoid charging fees on minimal returns, Birdieswap sets a minimum profit threshold tied to the fixed fee. Harvesting occurs only if the pool's accumulated returns exceed this threshold. For instance, if the fixed fee for one harvest is set at 0.001 ETH, Birdieswap might establish a minimum profit threshold of 0.01 ETH. Under this arrangement, harvesting would proceed only if the pool's yield prior to harvest is greater than 0.01 ETH. Even when a harvest is triggered, the 0.001 ETH fee is distributed among all liquidity providers based on their contribution ratios, thereby ensuring that the actual fee borne by each individual is significantly less than 0.001 ETH.",
+      "This usually happens for the following reasons:\n\n 1. Exceeded Slippage: The market price changed rapidly and exceeded your set range. Try increasing the slippage setting slightly.\n 2. Insufficient Gas (ETH): Check if you have enough ETH in your wallet to pay for network fees.\n 3. Approval Needed: You must approve the use of tokens in your wallet when using them for the first time.",
   },
 ];

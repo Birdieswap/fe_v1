@@ -21,8 +21,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "Birdieswap",
-  description:
-    "Birdieswap - Dual staking DeFi service with Uniswap LP and staking solutions",
+  description: "Birdieswap - Interest-bearing liquidity routing software",
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     "base:app_id": "697c60d477db5d481cffc815",
