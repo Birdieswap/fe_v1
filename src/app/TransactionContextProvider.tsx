@@ -1,12 +1,22 @@
 "use client";
 
-import { createContext, ReactNode, useState, Fragment } from "react";
+import {
+  createContext,
+  ReactNode,
+  useState,
+  Fragment,
+  useMemo,
+  useEffect,
+  useRef,
+  useContext,
+} from "react";
 
 import TransactionProgressModal from "@/components/modals/TransactionProgressModal";
 import TransactionStatus from "@/types/TransactionStatus";
 import { TransactionType } from "@/types/TransactionTypes";
 import { BigDecimal } from "@/types/BigDecimal";
 import { IToken } from "@/const/contracts/types/tokenTypes";
+import { AssetsContext } from "@/app/AssetsContextProvider";
 
 type TransactionTokenDisplayProps = {
   token?: IToken;
@@ -67,6 +77,30 @@ export type signTransactionProps = {
   transactionType: TransactionType.SIGN;
 };
 
+export type PayTransactionProps = {
+  chainId: number;
+  transactionType: TransactionType.PAY;
+  address?: `0x${string}`; // 연결 지갑(계산/표시용)
+  // PAY에서는 input=staked pool, output=USDC로 보면 일관성이 좋아서 아래처럼 둠
+  input: TransactionTokenDisplayProps; // staked token (pool token)
+  output: TransactionTokenDisplayProps; // USDC (exactOut)
+  receiver?: `0x${string}`; // beneficiary 표시용
+};
+
+export type EnterTransactionProps = {
+  chainId: number;
+  transactionType: TransactionType.ENTER;
+  address?: `0x${string}`; // 연결 지갑(beneficiary/dustReceiver)
+  input: TransactionTokenDisplayProps; // ETH/WETH amount
+  // ENTER는 타겟 풀이 핵심이라 pool을 별도로 둠
+  pool?: {
+    address: `0x${string}`; // staking pool address
+    symbol?: string;
+    fullName?: string;
+    iconSrc?: string;
+  };
+};
+
 export type TransactionStatusProps = {
   chainId?: number;
   transactionStatus?: TransactionStatus;
@@ -91,6 +125,8 @@ export type TransactionStatusProps = {
   | stakeTransactionProps
   | claimTransactionProps
   | signTransactionProps
+  | PayTransactionProps
+  | EnterTransactionProps
 );
 
 export type TransactionContextType = {
@@ -101,6 +137,7 @@ export type TransactionContextType = {
   isOpen: boolean;
   onClose: () => void;
   onOpen: () => void;
+  isBusy: boolean;
 };
 
 export const TransactionContext = createContext<TransactionContextType>({
@@ -109,11 +146,13 @@ export const TransactionContext = createContext<TransactionContextType>({
   isOpen: false,
   onClose: () => {},
   onOpen: () => {},
+  isBusy: false,
 });
 
 export default function TransactionContextProvider(props: {
   children: ReactNode;
 }) {
+  const assetsContext = useContext(AssetsContext);
   const [isOpen, setIsOpen] = useState(false);
   const [transactionProps, setTransactionProps] =
     useState<TransactionStatusProps | null>(null);
@@ -125,6 +164,30 @@ export default function TransactionContextProvider(props: {
     setIsOpen(true);
   };
 
+  const isBusy = useMemo(() => {
+    const st = transactionProps?.transactionStatus;
+    return (
+      st === TransactionStatus.CONFIRM_NEEDED ||
+      st === TransactionStatus.PENDING
+    );
+  }, [transactionProps?.transactionStatus]);
+
+  const lastRefreshedTxRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (transactionProps?.transactionStatus !== TransactionStatus.SUCCESS)
+      return;
+    const txid = transactionProps?.txid ?? null;
+    if (!txid || lastRefreshedTxRef.current === txid) return;
+    lastRefreshedTxRef.current = txid;
+    (async () => {
+      try {
+        await assetsContext.forceRefresh?.();
+      } catch (e) {
+        console.error("forceRefresh failed", e);
+      }
+    })();
+  }, [transactionProps?.transactionStatus, transactionProps?.txid, assetsContext]);
+
   return (
     <Fragment>
       <TransactionContext.Provider
@@ -134,6 +197,7 @@ export default function TransactionContextProvider(props: {
           onOpen,
           transactionProps,
           setTransactionProps,
+          isBusy,
         }}
       >
         {props.children}

@@ -6,5 +6,7 @@ export enum TransactionType {
   STAKING = "STAKING",
   UNSTAKING = "UNSTAKING",
   CLAIM = "CLAIM",
-  SIGN ="SIGN"
+  SIGN = "SIGN",
+  PAY = "PAY",
+  ENTER = "ENTER",
 }

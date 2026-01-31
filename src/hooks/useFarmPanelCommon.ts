@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { useAccount, useChainId, useClient, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useWriteContract } from "wagmi";
 
 import { TransactionContext } from "@/app/TransactionContextProvider";
 import { AssetsContext } from "@/app/AssetsContextProvider";
@@ -7,9 +7,10 @@ import { Farm } from "@/types/FarmListTableRowProps";
 
 import useTokenAddress from "./useTokenAddress";
 import useProviderAddress from "./useProviderAddress";
+import useIsWrongNetwork from "./useIsWrongNetwork";
 
 export default function useFarmPanelCommon<T extends Farm>(item: T) {
-  const client = useClient();
+  const client = usePublicClient();
   const transactionContext = useContext(TransactionContext);
   const assetsContext = useContext(AssetsContext);
   const { writeContract, isPending: isPendingWriteContract } =
@@ -18,11 +19,11 @@ export default function useFarmPanelCommon<T extends Farm>(item: T) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
 
-  const isWrongNetwork = chainId !== 11155111 && chainId !== 9998453; // TODO: allow mainnet and other networks
+  const isWrongNetwork = useIsWrongNetwork(chainId); // TODO: allow mainnet and other networks
   //sepolia chainId = 11155111, BaseFork = 9998453
   const stakeToken = item.wip_stakeToken;
   const stakeTokenAddress = useTokenAddress(stakeToken);
-  const routerAddress = useProviderAddress(stakeToken.provider)
+  const routerAddress = useProviderAddress(stakeToken.provider);
 
   return {
     client,

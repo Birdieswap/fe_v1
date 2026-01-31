@@ -53,6 +53,7 @@ export function useAccountWalletData(
   const [earliestBlock, setEarliestBlock] = useState<number | undefined>(
     undefined
   );
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   // 누적 트랜잭션(원본)과 dedupe 세트
   const [accTxs, setAccTxs] = useState<
@@ -79,6 +80,7 @@ export function useAccountWalletData(
     );
     setEndReached(false);
     setEarliestBlock(undefined);
+    setRefreshNonce(0);
 
     boostCountRef.current = 0;
     preFetchLenRef.current = 0;
@@ -94,7 +96,7 @@ export function useAccountWalletData(
   ];
 
   const txQ = useQuery({
-    queryKey: [...baseKey, "txs", cursor ?? "latest"],
+    queryKey: [...baseKey, "txs", cursor ?? "latest", refreshNonce],
     queryFn: () => {
       const raw =
         cursor ??
@@ -128,6 +130,26 @@ export function useAccountWalletData(
     }
   }, [txQ.isFetching, accTxs.length]);
 
+  const txKey = useCallback((t: (typeof accTxs)[number]) => {
+    const block = String(t.blockNumber ?? "");
+    const txIndex = String(t.transactionIndex ?? "0").padStart(4, "0");
+    const logIndex = String(t.logIndex ?? "0").padStart(4, "0");
+    return `${block}${txIndex}${logIndex}`;
+  }, []);
+
+  const txKeyNum = useCallback(
+    (t: (typeof accTxs)[number]) => {
+      const key = txKey(t).replace(/[^\d]/g, "");
+      if (!key) return 0n;
+      try {
+        return BigInt(key);
+      } catch {
+        return 0n;
+      }
+    },
+    [txKey]
+  );
+
   // === 트랜잭션 페이지 병합 & 종료 조건 계산 ===
   useEffect(() => {
     if (!txQ.data) return;
@@ -143,16 +165,21 @@ export function useAccountWalletData(
     const pageEarliest = Number(page.EarliestBlock);
     if (!Number.isNaN(pageEarliest)) setEarliestBlock(pageEarliest);
 
-    // 병합(dedupe by transactionHash) + blockNumber 내림차순 정렬 유지
+    // 병합: blockNumber+transactionIndex+logIndex 조합으로 dedupe 후 정렬
     if (list.length > 0) {
       setAccTxs((prev) => {
         const map = new Map<string, (typeof prev)[number]>();
-        for (const t of prev) map.set(t.transactionHash, t);
-        for (const t of list)
-          if (!map.has(t.transactionHash)) map.set(t.transactionHash, t);
-        const next = Array.from(map.values()).sort(
-          (a, b) => Number(b.blockNumber) - Number(a.blockNumber)
-        );
+        for (const t of prev) map.set(txKey(t), t);
+        for (const t of list) {
+          const key = txKey(t);
+          if (!map.has(key)) map.set(key, t);
+        }
+        const next = Array.from(map.values()).sort((a, b) => {
+          const aKey = txKeyNum(a);
+          const bKey = txKeyNum(b);
+          if (aKey === bKey) return 0;
+          return aKey > bKey ? -1 : 1;
+        });
         // console.log("[useAWD] merged len", next.length);
         return next;
       });
@@ -220,7 +247,23 @@ export function useAccountWalletData(
   const isError = txQ.isError;
   const isFetchingNextPage = !isLoading && txQ.isFetching;
 
-  const refetchAll = () => txQ.refetch();
+  const refetchAll = useCallback(() => {
+    setAccTxs([]);
+    const initial =
+      typeof blockHeight === "number"
+        ? blockHeight
+        : typeof blockHeight === "string"
+          ? parseInt(blockHeight, 10)
+          : undefined;
+    setCursor(
+      Number.isFinite(initial as number) ? (initial as number) : undefined
+    );
+    setEndReached(false);
+    setEarliestBlock(undefined);
+    boostCountRef.current = 0;
+    preFetchLenRef.current = 0;
+    setRefreshNonce((n) => n + 1);
+  }, [blockHeight]);
 
   return useMemo(
     () => ({

@@ -13,17 +13,15 @@ import { ExecuteButtons } from "../../common/ExecuteButtons";
 import PairStartAmountInput from "./pairStart/PairStartAmountInput";
 import PairStartSummary from "./pairStart/PairStartSummary";
 import { BigDecimal } from "@/types/BigDecimal";
-import { useContext } from "react";
-import { AssetsContext } from "@/app/AssetsContextProvider";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 import { useChainId } from "wagmi";
+import { useCallback } from "react";
 
 export function PairStartPanel({
   item,
-  price,
   totalBalance,
 }: {
   item: FarmPair;
-  price: BigDecimal | null;
   totalBalance?: BigDecimal;
 }) {
   // 기존 훅: 지난 패치에서 ETH/WETH 파생값을 반환하도록 확장됨
@@ -34,9 +32,9 @@ export function PairStartPanel({
   const state: UsePairStartPanelReturn = usePairStartPanel(
     item,
     tokenId,
-    poolAddress
+    poolAddress,
   );
-  const { assetValues } = useContext(AssetsContext);
+  const price = state.price ?? BigDecimal.ZERO();
 
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
 
@@ -59,34 +57,38 @@ export function PairStartPanel({
   const LIMIT_DEPOSIT_MODE_ON =
     process.env.NEXT_PUBLIC_LIMIT_DEPOSIT_MODE?.toLowerCase() === "on";
 
-  const DEPOSIT_LIMIT_USD = new BigDecimal("1010"); // $1,000
+  const DEPOSIT_LIMIT_USD = new BigDecimal("11000"); // $1,000
 
   // ✅ 이미 예치된 USD (기존 로직 유지: totalBalance * price)
   const existingUsd =
     price && totalBalance ? totalBalance.mul(price) : BigDecimal.ZERO();
 
   // ✅ 토큰별 Chainlink 가격으로 입력금액 USD 계산 (배열로 분리)
-  const tokenUsdValues = state.tokenStatuses.map((tokenStatus) => {
+  const token0 = state.tokenStatuses[0]?.input;
+  const token1 = state.tokenStatuses[1]?.input;
+  const symbol0 = token0?.symbol;
+  const { priceUsd: token0Usd } = useTokenUsdPrice(token0 as any);
+  const { priceUsd: token1Usd } = useTokenUsdPrice(token1 as any);
+  const priceUsd0 =
+    token0Usd != null
+      ? new BigDecimal(String(token0Usd), 8)
+      : BigDecimal.ZERO();
+  const priceUsd1 =
+    token1Usd != null
+      ? new BigDecimal(String(token1Usd), 8)
+      : BigDecimal.ZERO();
+
+  const tokenUsdValues = state.tokenStatuses.map((tokenStatus, index) => {
     const amt = tokenStatus.amount ?? BigDecimal.ZERO();
     if (amt.lte(0)) return BigDecimal.ZERO();
-
-    const token = tokenStatus.input;
-    const symbol = token?.symbol;
-    if (!symbol) return BigDecimal.ZERO();
-
-    const priceEntry = assetValues?.chainLinkPriceMap?.get(
-      `LINK:${symbol}_USD`
-    );
-    const tokenPriceUsd =
-      (priceEntry?.price as BigDecimal | undefined) ?? BigDecimal.ZERO();
-
-    return amt.mul(tokenPriceUsd);
+    const tokenPriceUsd = index === 0 ? priceUsd0 : priceUsd1;
+    return tokenPriceUsd.gt(0) ? amt.mul(tokenPriceUsd) : BigDecimal.ZERO();
   });
 
   // 총 입력 USD
   const inputUsd = tokenUsdValues.reduce(
     (acc, v) => acc.add(v),
-    BigDecimal.ZERO()
+    BigDecimal.ZERO(),
   );
 
   const nextTotalUsd = existingUsd.add(inputUsd);
@@ -122,26 +124,6 @@ export function PairStartPanel({
   const walletBal0 = ts0?.balance ?? BigDecimal.ZERO();
   const walletBal1 = ts1?.balance ?? BigDecimal.ZERO();
 
-  const token0 = ts0?.input;
-  const token1 = ts1?.input;
-
-  const symbol0 = token0?.symbol;
-  const symbol1 = token1?.symbol;
-
-  const priceEntry0 = symbol0
-    ? assetValues?.chainLinkPriceMap?.get(`LINK:${symbol0}_USD`)
-    : null;
-  const priceEntry1 = symbol1
-    ? assetValues?.chainLinkPriceMap?.get(`LINK:${symbol1}_USD`)
-    : null;
-
-  const priceUsd0 = priceEntry0?.price
-    ? new BigDecimal(priceEntry0.price.toString())
-    : BigDecimal.ZERO();
-  const priceUsd1 = priceEntry1?.price
-    ? new BigDecimal(priceEntry1.price.toString())
-    : BigDecimal.ZERO();
-
   // ─────────────────────────────────────────────
   // ✅ 1. 일반 모드용 normalMaxAmount (두 토큰 중 달러 환산 balance 작은 쪽 기준)
 
@@ -165,6 +147,35 @@ export function PairStartPanel({
     priceUsd1.gt(0) && minWalletUsd.gt(0)
       ? minWalletUsd.div(priceUsd1)
       : BigDecimal.ZERO();
+
+  const handlePairMax = useCallback(() => {
+    const maxUsd = minWalletUsd;
+    if (!maxUsd || maxUsd.lte(0)) {
+      state.setAmount(BigDecimal.ZERO(), 0);
+      return;
+    }
+
+    let targetIndex: 0 | 1;
+    if (!state.isActive[0]) targetIndex = 1;
+    else if (!state.isActive[1]) targetIndex = 0;
+    else targetIndex = walletUsd0.lte(walletUsd1) ? 0 : 1;
+
+    const targetPrice = targetIndex === 0 ? priceUsd0 : priceUsd1;
+    if (!targetPrice || targetPrice.lte(0)) {
+      state.setAmount(BigDecimal.ZERO(), targetIndex);
+      return;
+    }
+
+    const targetAmount = maxUsd.div(targetPrice);
+    state.setAmount(targetAmount, targetIndex);
+  }, [
+    minWalletUsd,
+    priceUsd0,
+    priceUsd1,
+    walletUsd0,
+    walletUsd1,
+    state,
+  ]);
 
   // ─────────────────────────────────────────────
   // ✅ 2. limit on 모드용 maxToken0 / maxToken1 (잔여 한도 기반)
@@ -211,10 +222,22 @@ export function PairStartPanel({
     }
   }
 
+  // ✅ limit max는 지갑 잔고를 초과하면 안 됨
+  if (walletBal0.gt(0)) {
+    maxToken0 = BigDecimal.min(maxToken0, walletBal0);
+  } else {
+    maxToken0 = BigDecimal.ZERO();
+  }
+  if (walletBal1.gt(0)) {
+    maxToken1 = BigDecimal.min(maxToken1, walletBal1);
+  } else {
+    maxToken1 = BigDecimal.ZERO();
+  }
+
   // 버튼 텍스트용 (token0 기준)
   const prettyMaxToken0 = maxToken0.gt(0)
     ? maxToken0.toFixed(
-        token0?.decimals && token0.decimals < 6 ? token0.decimals : 6
+        token0?.decimals && token0.decimals < 6 ? token0.decimals : 6,
       )
     : "0";
 
@@ -253,6 +276,7 @@ export function PairStartPanel({
           normalMaxAmount={normalMaxAmount0}
           limitMaxAmount={maxToken0}
           limitModeOn={LIMIT_DEPOSIT_MODE_ON}
+          onMax={handlePairMax}
         />
         <PairStartAmountInput
           index={1}
@@ -261,6 +285,7 @@ export function PairStartPanel({
           normalMaxAmount={normalMaxAmount1}
           limitMaxAmount={maxToken1}
           limitModeOn={LIMIT_DEPOSIT_MODE_ON}
+          onMax={handlePairMax}
         />
         {showSummary && <PairStartSummary item={item} state={state} />}
       </motion.div>

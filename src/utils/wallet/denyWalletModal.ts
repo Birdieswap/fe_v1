@@ -1,8 +1,37 @@
-export { OPEN_DENY_WALLET_EVENT, CLOSE_DENY_WALLET_EVENT } from "@/components/modals/DeniedWalletModalHost";
+export type DenyWalletModalSupportLink = {
+  label: string;
+  href: string;
+};
 
-export function openDenyWalletModal(address?: string) {
+export type DenyWalletModalOptions = {
+  title?: string;
+  body?: string[];
+
+  supportEmail?: string;
+  supportLink?: DenyWalletModalSupportLink;
+
+  // ✅ null이면 CTA 숨김
+  cta?: { label: string; href: string } | null;
+};
+
+export function openDenyWalletModal(
+  address?: string,
+  opts?: DenyWalletModalOptions
+) {
   if (typeof window === "undefined") return;
-  window.dispatchEvent(new CustomEvent("app/denyWalletModal/open", { detail: { address } }));
+
+  window.dispatchEvent(
+    new CustomEvent("app/denyWalletModal/open", {
+      detail: {
+        address,
+        title: opts?.title,
+        body: opts?.body,
+        supportEmail: opts?.supportEmail,
+        supportLink: opts?.supportLink,
+        cta: opts?.cta, // null 전달 가능
+      },
+    })
+  );
 }
 
 export function closeDenyWalletModal() {

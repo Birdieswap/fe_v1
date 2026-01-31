@@ -42,7 +42,7 @@ export default function FaqPage() {
   };
 
   const [searchString, setSearchString] = useState<string | undefined>(
-    undefined
+    undefined,
   );
   const filteredItems = items.filter((item) => {
     const isFilter = !filter
@@ -56,7 +56,7 @@ export default function FaqPage() {
   });
 
   return (
-    <div className="container flex h-full grow flex-col items-center px-3 py-2 sm:py-8">
+    <div className="container flex h-full grow flex-col items-center px-5 py-2 sm:py-8 sm:px-5">
       <div className="flex w-full flex-row items-center max-lg:flex-wrap-reverse pb-5 max-md:gap-2 max-md:px-1 max-md:py-2 md:gap-4">
         <div className="flex grow flex-row items-center max-md:gap-2 max-md:overflow-x-scroll max-md:py-0.5 md:gap-4">
           <FilterButton
@@ -80,13 +80,13 @@ export default function FaqPage() {
           >
             Farm
           </FilterButton>
-          {/* <FilterButton
+          <FilterButton
             selected={filter}
             setSelected={setFilter}
-            value={FaqFilter.CAGE}
+            value={FaqFilter.EASY}
           >
-            Cage
-          </FilterButton> */}
+            Easy
+          </FilterButton>
           <FilterButton
             selected={filter}
             setSelected={setFilter}
@@ -122,7 +122,18 @@ export default function FaqPage() {
             indicator={<Icons.Dropdown />}
             title={<Title searchText={searchString || ""} text={item.title} />}
           >
-            <Markdown>{item.content}</Markdown>
+            <Markdown
+              components={{
+                ol: ({ node, ...props }) => (
+                  <ol className="list-decimal pl-5" {...props} />
+                ),
+                ul: ({ node, ...props }) => (
+                  <ul className="list-disc pl-5" {...props} />
+                ),
+              }}
+            >
+              {item.content}
+            </Markdown>
           </AccordionItem>
         ))}
       </Accordion>

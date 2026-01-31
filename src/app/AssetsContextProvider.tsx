@@ -12,6 +12,16 @@ export type FarmValues = {
   apyMap: Map<string, BigDecimal>;
   priceMap: Map<string, BigDecimal | null>;
   tvlMap: Map<string, BigDecimal | null>;
+  underlyingMap: Map<
+    string,
+    {
+      token0: { address: `0x${string}` | null; balance: BigDecimal | null };
+      token1:
+        | { address: `0x${string}` | null; balance: BigDecimal | null }
+        | null;
+    }
+  >;
+  totalSupplyMap: Map<string, BigDecimal | null>;
 };
 
 // 추가: SwapPointsDistributionSpeed 타입

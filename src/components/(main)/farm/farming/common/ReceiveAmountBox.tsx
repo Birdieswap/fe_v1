@@ -2,14 +2,14 @@
 
 import { Button, Image } from "@heroui/react";
 import { motion } from "framer-motion";
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 
 import { BigDecimal } from "@/types/BigDecimal";
 import { presenceTransition } from "@/const/presenceTransition";
 import { IBirdieSingleFarm } from "@/const/contracts/types/tokenTypes";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import suffixNumbers from "@/utils/suffixNumbers";
 import Icons from "@/assets/icons/icons";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 export default function ReceiveAmountBox({
   amount,
@@ -20,16 +20,11 @@ export default function ReceiveAmountBox({
   bToken: IBirdieSingleFarm;
   nativeToggle?: { value: "ETH" | "WETH"; onToggle: () => void };
 }) {
-  const { assetValues } = useContext(AssetsContext);
-  const activePrice = useMemo(() => {
-    if (bToken?.input.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(
-        `LINK:${bToken?.input.symbol}_USD`
-      )?.price;
-    }
-
-    return undefined;
-  }, [bToken?.input.symbol, assetValues?.chainLinkPriceMap]);
+  const { priceUsd } = useTokenUsdPrice(bToken?.input as any);
+  const activePrice = useMemo(
+    () => (priceUsd != null ? new BigDecimal(String(priceUsd), 8) : undefined),
+    [priceUsd]
+  );
 
   // 표시용 소수 자릿수 (displayDecimals > decimals > fallback)
   const tokenDecimals =
@@ -40,7 +35,7 @@ export default function ReceiveAmountBox({
 
   // 토큰 수량 표기 (예: 123.45K / 1.23M ...)
   const formattedAmount = useMemo(
-    () => suffixNumbers(amount, 100_000, 2, true, true),
+    () => suffixNumbers(amount, 100_000, 4, true, true),
     [amount, tokenDecimals]
   );
 
@@ -79,13 +74,13 @@ export default function ReceiveAmountBox({
             aria-label={`Switch to ${nativeToggle.value === "ETH" ? "WETH" : "ETH"}`}
             title="Change ETH/WETH"
             className="
-        min-w-0 size-8 p-0
-        bg-transparent shadow-none
-        data-[hover=true]:bg-transparent
-        data-[pressed=true]:bg-transparent
-        data-[disabled=true]:bg-transparent
-        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
-      "
+              min-w-0 size-8 p-0
+              bg-transparent shadow-none
+              data-[hover=true]:bg-transparent
+              data-[pressed=true]:bg-transparent
+              data-[disabled=true]:bg-transparent
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40
+            "
           >
             <Icons.Change />
           </Button>

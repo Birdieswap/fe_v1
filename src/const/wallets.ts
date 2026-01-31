@@ -40,6 +40,11 @@ export const brave: WalletProviderInfo = {
   name: "Brave Wallet",
   iconSrc: "/wallets/brave.svg",
 };
+export const rabbyWallet: WalletProviderInfo = {
+  key: "rabby",
+  name: "Rabby Wallet",
+  iconSrc: "/wallets/rabby.svg",
+};
 
 export const walletProviders: WalletProviderInfo[] = [
   metaMask,
@@ -50,6 +55,7 @@ export const walletProviders: WalletProviderInfo[] = [
   // keplr,
   trust,
   brave,
+  rabbyWallet,
 ];
 
 const wallets = {
@@ -61,6 +67,7 @@ const wallets = {
   // keplr,
   trust,
   brave,
+  rabbyWallet,
 };
 
 export default wallets;

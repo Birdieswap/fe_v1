@@ -162,6 +162,7 @@ export default function useUnStakePanel(item: any): UnstakePanelState {
           assetsContext?.refetchAll?.(),    // 자산 전반 새로고침
         ]);
       },
+      afterReceipt: assetsContext?.forceRefresh,
     });
 
     const parsed = parseUnits(
@@ -182,14 +183,6 @@ export default function useUnStakePanel(item: any): UnstakePanelState {
         onSuccess: async (v) => {
           handlers.onSuccess(v);
           setAmount(BigDecimal.ZERO());
-          try {
-            await Promise.all([
-              refetchStakedBalance(),
-              assetsContext?.forceRefresh?.(),
-            ]);
-          } catch (e) {
-            console.error("forceRefresh failed", e);
-          }
         },
       }
     );

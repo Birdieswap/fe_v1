@@ -19,7 +19,6 @@ export function StakeExecuteButtons({
   tokenStatuses,
   variant,
   showErrorMessages,
-  hasRewards,
 }: {
   isConnected: boolean;
   isExecutable: boolean;
@@ -34,9 +33,10 @@ export function StakeExecuteButtons({
 }) {
   // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
-    isConnected &&
-    hasRewards &&
-    tokenStatuses.some((v) => v.isApproved == false);
+    isConnected && tokenStatuses.some((v) => v.isApproved == false);
+
+  const isApprovePending = isPending && isApproveVisible;
+  const isExecutePending = isPending && !isApproveVisible;
 
   return (
     <motion.div layout {...defaultTransition} className="flex w-full flex-col">
@@ -49,7 +49,7 @@ export function StakeExecuteButtons({
                 key={v.input?.symbol}
                 isActive={v.isActive}
                 isApproved={v.isApproved as boolean}
-                isPending={isPending}
+                isPending={isApprovePending}
                 token={v.input}
                 onClick={() => {
                   if (v.input) v.approve?.();
@@ -60,7 +60,7 @@ export function StakeExecuteButtons({
       <StakeConfirmButton
         isConnected={isConnected}
         isDisabled={!isExecutable}
-        isPending={isPending}
+        isPending={isExecutePending}
         isWrongNetwork={isWrongNetwork}
         text={executeText}
         variant={variant}

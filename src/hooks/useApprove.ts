@@ -23,6 +23,14 @@ export default function useApprove(props: {
   refetch?: () => Promise<unknown>;
 }) {
   const chainId = useChainId();
+  const refetchWithRetry = useCallback(async () => {
+    if (!props.refetch) return;
+    try {
+      await props.refetch?.();
+    } catch {
+      // ignore refetch errors to avoid blocking UX
+    }
+  }, [props.refetch]);
   const approve = useCallback(
     (token: IToken) => {
       if (!token || !chainId) {
@@ -43,7 +51,7 @@ export default function useApprove(props: {
         client: props.client,
         transactionContext: props.transactionContext,
         transactionProps: transactionProps,
-        refetch: props.refetch,
+        refetch: refetchWithRetry,
       });
 
       // console.log(
@@ -71,7 +79,7 @@ export default function useApprove(props: {
         handler
       );
     },
-    [chainId, props]
+    [chainId, props, refetchWithRetry]
   );
 
   return approve;

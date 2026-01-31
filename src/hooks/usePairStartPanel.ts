@@ -24,12 +24,10 @@ import getInsolvencyAmount from "@/utils/assets/getImpermanentInsolvency";
 import useApprove from "./useApprove";
 import { FarmStartTokenStatus } from "./FarmTokenStatus";
 import useFarmPanelCommon from "./useFarmPanelCommon";
-import useFarmLPBalances from "./useFarmLPBalances";
 import useBalance from "./useBalance";
 import useAllowance from "./useAllowance";
 import { birdieswap_router_abi } from "@/const/contracts/abis/birdieswap_router_abi";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
-import getTokenAddress from "@/utils/assets/getTokenAddress";
 
 import { ADDRESS } from "@/const/contracts/contractAddresses";
 import useAccountBalances from "./assets/useAssets/useAccountBalances";
@@ -41,10 +39,11 @@ import {
 import tokens from "@/const/contracts/tokens/tokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
-import { useV3UnderlyingFromTokenId } from "./farm/useV3UnderlyingFromTokenId";
+import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
 
 import previewFullDeposit from "@/utils/farm/previewFullDeposit";
 import previewRedeem from "@/utils/farm/previewRedeem";
+import { useV3UnderlyingFromTokenId } from "@/utils/farm/useV3UnderlyingFromTokenId";
 
 type NativeMode = "ETH" | "WETH" | null;
 
@@ -57,7 +56,7 @@ export enum InvalidStatuses {
 export function usePairStartPanel(
   item: FarmPair,
   tokenId?: bigint,
-  uniswapPoolAddress?: `0x${string}`
+  uniswapPoolAddress?: `0x${string}`,
 ) {
   const {
     client,
@@ -91,25 +90,16 @@ export function usePairStartPanel(
     getFromContracts(ADDRESS.ETH, chainId) ?? ZERO_ADDRESS;
   const WETH_ADDRESS: `0x${string}` | null = getFromContracts(
     ADDRESS.WETH,
-    chainId
+    chainId,
   );
   const WRAPPER_ADDRESS: `0x${string}` | null = getFromContracts(
     ADDRESS.WRAPPER,
-    chainId
+    chainId,
   );
   const ROUTER_ADDRESS: `0x${string}` | null = getFromContracts(
     ADDRESS.ROUTER,
-    chainId
+    chainId,
   );
-
-  const inputToken0Address = getTokenAddress({
-    token: inputToken0,
-    chainId,
-  });
-  const inputToken1Address = getTokenAddress({
-    token: inputToken1,
-    chainId,
-  });
 
   const defaultIsETH: [boolean, boolean] = [
     inputToken0?.symbol === "ETH" ||
@@ -208,6 +198,7 @@ export function usePairStartPanel(
       balanceMap.get(lower) ?? balanceMap.get(addr as `0x${string}`) ?? null
     );
   };
+
   const displayBalances: [any, any] = [
     defaultIsETH[0]
       ? isWETH0
@@ -249,10 +240,23 @@ export function usePairStartPanel(
   >([null, null]);
 
   const { assetValues } = useContext(AssetsContext);
-  const { poolBalance0, poolBalance1 } = useFarmLPBalances(item, assetValues);
+
+  // ✅ 최신 방식: poolBalance/price는 useFarmCalcOnce로
+  const farmCalc = useFarmCalcOnce(
+    client as PublicClient | undefined,
+    item.wip_stakeToken,
+    assetValues,
+  );
+
+  const poolBalance0 = farmCalc?.poolBalance0 ?? BigDecimal.ZERO();
+  const poolBalance1 = farmCalc?.poolBalance1 ?? BigDecimal.ZERO();
+
+  const rawPrice = farmCalc?.price ?? null; // BigDecimal | null
+  const price = rawPrice ?? BigDecimal.ZERO(); // UI용 안전한 값
 
   const [isActive, _setIsActive] = useState<[boolean, boolean]>([true, true]);
 
+  // ✅ V3 slot0 기반 fallback을 위한 훅
   const {
     underlying0: underlyingBalance0,
     underlying1: underlyingBalance1,
@@ -266,6 +270,16 @@ export function usePairStartPanel(
     bToken0,
     bToken1,
   });
+
+  // console.log("[V3] usePairStartPanel V3 inputs", {
+  //   chainId,
+  //   tokenId: tokenId?.toString?.(),
+  //   uniswapPoolAddress,
+  //   bToken0: bToken0?.symbol,
+  //   bToken1: bToken1?.symbol,
+  //   bToken0Address: bToken0?.addresses?.[chainId as number],
+  //   bToken1Address: bToken1?.addresses?.[chainId as number],
+  // });
 
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
@@ -289,7 +303,7 @@ export function usePairStartPanel(
         });
       }
     },
-    []
+    [],
   );
 
   const isApproved = useMemo<[boolean, boolean]>(() => {
@@ -302,7 +316,7 @@ export function usePairStartPanel(
 
   const displayApproved: [boolean, boolean] = useMemo(
     () => isApproved,
-    [isApproved]
+    [isApproved],
   );
 
   const isInsufficientBalance: [boolean, boolean] = useMemo(() => {
@@ -321,21 +335,38 @@ export function usePairStartPanel(
     ];
   }, [insolvency0, amounts, insolvency1]);
 
+  /**
+   * ✅ getOtherAmount:
+   * 1) poolBalance 비율(정상 케이스)
+   * 2) poolBalance가 0이면 v3 underlying 비율(있으면)
+   * 3) 그것도 없으면 slot0 기반 v3수학 + Birdie previewFullDeposit/previewRedeem
+   */
   const getOtherAmount = useCallback(
     async (value: BigDecimal, index: 0 | 1): Promise<BigDecimal> => {
       const baseUnderlying = index === 0 ? inputToken0 : inputToken1;
       const otherUnderlyingToken = index === 0 ? inputToken1 : inputToken0;
+
       const baseBToken = index === 0 ? bToken0 : bToken1;
       const otherBToken = index === 0 ? bToken1 : bToken0;
 
-      console.log("getOtherAmount called:", {
-        value,
-        index,
-        baseUnderlying,
-        otherUnderlyingToken,
-        baseBToken,
-        otherBToken,
-      });
+      // 메타 없으면 계산 불가
+      if (!baseUnderlying || !otherUnderlyingToken) return BigDecimal.ZERO();
+
+      // 음수/0 방어
+      if (!value || value.lte(0)) return BigDecimal.ZERO();
+
+      // 1) ✅ poolBalance 비율로 계산 (기존/정상 로직)
+      const thisPool = index === 0 ? poolBalance0 : poolBalance1;
+      const otherPool = index === 0 ? poolBalance1 : poolBalance0;
+
+      if (thisPool && otherPool && !thisPool.eq(0) && !otherPool.eq(0)) {
+        return value
+          .mul(otherPool)
+          .div(thisPool)
+          .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
+      }
+
+      // 2) ✅ v3Position에서 뽑은 underlying 비율이 있으면 그걸로
       const thisUnderlying =
         (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
         BigDecimal.ZERO();
@@ -343,7 +374,6 @@ export function usePairStartPanel(
         (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
         BigDecimal.ZERO();
 
-      // 1) 기존 포지션 underlying 비율이 있으면 단순 비례로 계산
       if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
         return value
           .mul(otherUnderlying)
@@ -351,50 +381,91 @@ export function usePairStartPanel(
           .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
       }
 
-      // 2) fallback: Uniswap V3 수학 + Birdieswap previewFullDeposit/previewRedeem
+      // 3) ✅ fallback: Uniswap V3 수학 + Birdieswap preview (slot0 기반 v3Pool/v3Position 사용)
       if (!client || !chainId || !v3Pool || !v3Position) {
+        // console.log("[V3] getOtherAmount fallback skipped: missing deps", {
+        //   hasClient: !!client,
+        //   chainId,
+        //   hasV3Pool: !!v3Pool,
+        //   hasV3Position: !!v3Position,
+        // });
         return BigDecimal.ZERO();
       }
 
       try {
-        // 🔥 baseBToken 의 provider 가 Wrapper 인지 체크
-        const baseProvider = (baseBToken as any).provider;
+        // console.log("[V3] getOtherAmount fallback start", {
+        //   chainId,
+        //   baseIndex: index,
+        //   baseUnderlying: baseUnderlying?.symbol,
+        //   otherUnderlying: otherUnderlyingToken?.symbol,
+        //   baseBToken: baseBToken?.symbol,
+        //   otherBToken: otherBToken?.symbol,
+        //   baseAddress: baseBToken?.addresses?.[chainId],
+        //   otherAddress: otherBToken?.addresses?.[chainId],
+        //   poolToken0: v3Pool?.token0?.address,
+        //   poolToken1: v3Pool?.token1?.address,
+        //   tickLower: v3Position?.tickLower,
+        //   tickUpper: v3Position?.tickUpper,
+        //   inputValue: value?.toString?.(),
+        // });
+        const baseProvider = (baseBToken as any)?.provider;
+        const wrapperProvider = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
+        const routerProvider = (stakingProviders as any)?.BIRDIESWAP_Router;
 
-        const isWrapperProvider =
-          baseProvider === (stakingProviders as any).BIRDIESWAP_Wrapper;
+        const isWrapperProvider = baseProvider === wrapperProvider;
 
-        // 🔥 Wrapper 이면 Router 로 override 해서 previewFullDeposit 호출
-        const providerOverride = isWrapperProvider
-          ? {
-              address: stakingProviders.BIRDIESWAP_Router.addresses?.[
-                chainId
-              ] as `0x${string}`,
-              abi: stakingProviders.BIRDIESWAP_Router.abi as any, // 실제 타입은 Abi
-            }
-          : undefined;
+        const providerOverride =
+          isWrapperProvider && routerProvider?.addresses?.[chainId]
+            ? {
+                address: routerProvider.addresses?.[chainId] as `0x${string}`,
+                abi: routerProvider.abi as any,
+              }
+            : undefined;
 
-        // 2-1) underlying 입력값 → base bToken 수량으로 변환
+        // 3-1) underlying 입력값 -> base bToken 수량으로 변환
         const bBase = await previewFullDeposit(
           client as PublicClient,
           baseBToken,
           value,
-          providerOverride
+          providerOverride,
         );
-
         if (!bBase || bBase.eq(0)) {
+          // console.log("[V3] previewFullDeposit empty", {
+          //   bBase: bBase?.toString?.(),
+          //   baseBToken: baseBToken?.symbol,
+          //   baseAddress: baseBToken?.addresses?.[chainId],
+          // });
           return BigDecimal.ZERO();
         }
 
         const baseBDecimals = baseBToken.decimals ?? 18;
         const rawBase = parseUnits(
           bBase.roundToDecimals(baseBDecimals).toString(),
-          baseBDecimals
+          baseBDecimals,
         );
 
-        // 2-2) Uniswap V3 SDK 로 other bToken amount 계산
+        // ✅ 여기부터가 핵심: index가 아니라 "pool token0/1 매칭"으로 분기
+        const baseAddr = (
+          baseBToken.addresses?.[chainId] as string | undefined
+        )?.toLowerCase?.();
+        const poolToken0Addr = (v3Pool.token0.address as string).toLowerCase();
+        const poolToken1Addr = (v3Pool.token1.address as string).toLowerCase();
+
+        const baseIsToken0 = !!baseAddr && baseAddr === poolToken0Addr;
+        const baseIsToken1 = !!baseAddr && baseAddr === poolToken1Addr;
+
+        if (!baseIsToken0 && !baseIsToken1) {
+          console.error("[V3] base token not in pool tokens", {
+            baseAddr,
+            poolToken0Addr,
+            poolToken1Addr,
+          });
+          return BigDecimal.ZERO();
+        }
+
         let simulatedPos: UniV3Position;
-        if (index === 0) {
-          // base = token0 (bToken0), other = token1 (bToken1) 라고 가정
+
+        if (baseIsToken0) {
           simulatedPos = UniV3Position.fromAmount0({
             pool: v3Pool as any,
             tickLower: v3Position.tickLower,
@@ -403,7 +474,6 @@ export function usePairStartPanel(
             useFullPrecision: true,
           });
         } else {
-          // base = token1 (bToken1)
           simulatedPos = UniV3Position.fromAmount1({
             pool: v3Pool as any,
             tickLower: v3Position.tickLower,
@@ -413,36 +483,46 @@ export function usePairStartPanel(
         }
 
         const amount0Raw = BigInt(
-          (simulatedPos.amount0 as any).quotient.toString()
+          (simulatedPos.amount0 as any).quotient.toString(),
         );
         const amount1Raw = BigInt(
-          (simulatedPos.amount1 as any).quotient.toString()
+          (simulatedPos.amount1 as any).quotient.toString(),
         );
 
-        const otherIsToken1 = index === 0;
-        const otherRaw = otherIsToken1 ? amount1Raw : amount0Raw;
+        // ✅ otherRaw도 baseIsToken0 기준으로 선택해야 함 (index 기준이면 틀림)
+        const otherRaw = baseIsToken0 ? amount1Raw : amount0Raw;
 
         const otherBDecimals = otherBToken.decimals ?? 18;
         const otherBHuman = formatUnits(otherRaw, otherBDecimals);
         const otherBAmountBD = new BigDecimal(otherBHuman);
 
-        // 2-3) other bToken 수량 → underlying 수량으로 변환
         const otherUnderlyingBD = await previewRedeem(
           client as PublicClient,
           otherBToken,
-          otherBAmountBD
+          otherBAmountBD,
         );
-
         if (!otherUnderlyingBD) {
+          // console.log("[V3] previewRedeem empty", {
+          //   otherBAmount: otherBAmountBD?.toString?.(),
+          //   otherBToken: otherBToken?.symbol,
+          //   otherAddress: otherBToken?.addresses?.[chainId],
+          // });
           return BigDecimal.ZERO();
         }
 
-        // UI 표시용으로 상대 underlying 토큰 decimals 기준으로 라운딩
+        // console.log("[V3] getOtherAmount fallback result", {
+        //   baseIsToken0,
+        //   amount0Raw: amount0Raw.toString(),
+        //   amount1Raw: amount1Raw.toString(),
+        //   otherRaw: otherRaw.toString(),
+        //   otherUnderlying: otherUnderlyingBD?.toString?.(),
+        // });
+
         return otherUnderlyingBD.roundToDecimals(
-          otherUnderlyingToken.decimals ?? 18
+          otherUnderlyingToken.decimals ?? 18,
         );
       } catch (e) {
-        console.error("[V3] getOtherAmount V3+Birdie fallback failed", e);
+        console.error("[V3] getOtherAmount fallback failed", e);
         return BigDecimal.ZERO();
       }
     },
@@ -453,24 +533,23 @@ export function usePairStartPanel(
       inputToken1,
       bToken0,
       bToken1,
+      poolBalance0,
+      poolBalance1,
       underlyingBalance0,
       underlyingBalance1,
       v3Pool,
       v3Position,
-    ]
+    ],
   );
 
-  /**
-   * setMaxAmount: 비동기 getOtherAmount 사용하도록 변경
-   */
   const setMaxAmount = useCallback(() => {
     (async () => {
       const maxAmount0 = BigDecimal.min(balance0, insolvency0);
       const maxAmount1 = BigDecimal.min(balance1, insolvency1);
 
       const [maxSwapped0, maxSwapped1] = await Promise.all([
-        getOtherAmount(maxAmount1, 1), // base = 1 → other = 0
-        getOtherAmount(maxAmount0, 0), // base = 0 → other = 1
+        getOtherAmount(maxAmount1, 1),
+        getOtherAmount(maxAmount0, 0),
       ]);
 
       let result: [BigDecimal | null, BigDecimal | null];
@@ -489,22 +568,16 @@ export function usePairStartPanel(
     })();
   }, [balance0, insolvency0, balance1, insolvency1, getOtherAmount, isActive]);
 
-  /**
-   * isActive 토글은 amount 재계산 없이 on/off + clear 정도만 처리 (단순화)
-   */
   const setIsActive = useCallback(
     (state: [boolean, boolean]) => {
       _setIsActive(state);
       setAmounts((prev) => {
-        if (!state[0]) {
-          return [null, prev[1]];
-        } else if (!state[1]) {
-          return [prev[0], null];
-        }
+        if (!state[0]) return [null, prev[1]];
+        if (!state[1]) return [prev[0], null];
         return prev;
       });
     },
-    [_setIsActive]
+    [_setIsActive],
   );
 
   const setAmountBase = useCallback(
@@ -512,12 +585,11 @@ export function usePairStartPanel(
       setAmounts((prev) => {
         if (isActive.every(Boolean)) {
           return [index === 0 ? value : prev[0], index === 1 ? value : prev[1]];
-        } else {
-          return [index === 0 ? value : null, index === 1 ? value : null];
         }
+        return [index === 0 ? value : null, index === 1 ? value : null];
       });
     },
-    [isActive]
+    [isActive],
   );
 
   const isZeroish = (v: any) => {
@@ -533,9 +605,11 @@ export function usePairStartPanel(
 
   const amountsRef = useRef(amounts);
   const displayTokensRef = useRef(displayTokens);
+
   useEffect(() => {
     amountsRef.current = amounts;
   }, [amounts]);
+
   useEffect(() => {
     displayTokensRef.current = displayTokens;
   }, [displayTokens]);
@@ -544,9 +618,6 @@ export function usePairStartPanel(
   const lastTypedIndexRef = useRef<0 | 1 | null>(null);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /**
-   * setAmount: 디바운스 후 비동기 getOtherAmount 호출
-   */
   const setAmount = (value: BigDecimal | null, index: 0 | 1) => {
     setAmountBase(value as BigDecimal, index);
     lastTypedIndexRef.current = index;
@@ -672,24 +743,20 @@ export function usePairStartPanel(
       approve0,
       approve1,
       isApprovePending,
-    ]
+    ],
   );
 
   const startFarming = useCallback(() => {
     if (!address) return;
+
     const transactionProps: TransactionStatusProps &
       StartFarmingTransactionProps = {
       chainId,
       transactionType: TransactionType.START_FARMING,
       input: tokenStatuses
-        .map((v) => ({
-          token: v.input,
-          amount: v.amount ?? undefined,
-        }))
+        .map((v) => ({ token: v.input, amount: v.amount ?? undefined }))
         .filter((v) => !!v.token),
-      output: {
-        token: stakeToken,
-      },
+      output: { token: stakeToken },
       address,
     };
 
@@ -704,12 +771,13 @@ export function usePairStartPanel(
           assetsContext.refetchAll(),
         ]);
       },
+      afterReceipt: assetsContext.forceRefresh,
     });
 
     const anyETHLocal = isETH0 || isETH1;
     if (isETH0 && isETH1) {
       console.error(
-        "[startFarming] both sides are ETH — unsupported combination"
+        "[startFarming] both sides are ETH — unsupported combination",
       );
       return;
     }
@@ -718,7 +786,7 @@ export function usePairStartPanel(
       if (!WRAPPER_ADDRESS) {
         console.error(
           "[startFarming] Missing WRAPPER_ADDRESS for chain:",
-          chainId
+          chainId,
         );
         return;
       }
@@ -763,7 +831,7 @@ export function usePairStartPanel(
               console.error("forceRefresh failed", e);
             }
           },
-        }
+        },
       );
       return;
     }
@@ -771,10 +839,11 @@ export function usePairStartPanel(
     if (!ROUTER_ADDRESS) {
       console.error(
         "[startFarming] Missing ROUTER_ADDRESS for chain:",
-        chainId
+        chainId,
       );
       return;
     }
+
     const addr0 = displayTokens[0].addresses[chainId] as `0x${string}`;
     const addr1 = displayTokens[1].addresses[chainId] as `0x${string}`;
 
@@ -788,12 +857,12 @@ export function usePairStartPanel(
           addr0,
           parseUnits(
             tokenStatuses[0].amount?.toString() || "0",
-            tokenStatuses[0].input.decimals
+            tokenStatuses[0].input.decimals,
           ),
           addr1,
           parseUnits(
             tokenStatuses[1].amount?.toString() || "0",
-            tokenStatuses[1].input.decimals
+            tokenStatuses[1].input.decimals,
           ),
         ],
       },
@@ -808,19 +877,16 @@ export function usePairStartPanel(
             console.error("forceRefresh failed", e);
           }
         },
-      }
+      },
     );
   }, [
     chainId,
     tokenStatuses,
-    defaultIsETH,
-    nativeMode,
     stakeToken,
     address,
     client,
     transactionContext,
     writeContract,
-    stakeTokenAddress,
     allowanceQuery0,
     allowanceQuery1,
     assetsContext,
@@ -834,6 +900,7 @@ export function usePairStartPanel(
     isETH1,
     isWETH0,
     isWETH1,
+    ETH_ZERO_ADDRESS,
   ]);
 
   const isStartable = useMemo(
@@ -846,9 +913,9 @@ export function usePairStartPanel(
             !v.isImpermanentInsolvency &&
             !v.isInsufficientBalance &&
             !!v.amount &&
-            v.amount.gt(0)
+            v.amount.gt(0),
         ),
-    [tokenStatuses]
+    [tokenStatuses],
   );
 
   const isPending =
@@ -882,6 +949,7 @@ export function usePairStartPanel(
     displayTokens,
     displayBalances,
     displayApproved,
+    price,
   };
 }
 

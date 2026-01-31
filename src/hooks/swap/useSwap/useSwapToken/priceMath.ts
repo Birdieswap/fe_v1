@@ -1,9 +1,11 @@
-
 import { Fraction } from "@uniswap/sdk-core";
 import { BigDecimal } from "@/types/BigDecimal";
 import mathUtils from "@/utils/mathUtils";
 
-export function computeSqrtPriceLimitX96(sqrtPriceX96: Fraction | null, zeroForOne: boolean): bigint {
+export function computeSqrtPriceLimitX96(
+  sqrtPriceX96: Fraction | null,
+  zeroForOne: boolean
+): bigint {
   if (!sqrtPriceX96) return BigInt(0);
 
   const Tolerance: number = 0.05; // 기존 하드 코딩과 동일
@@ -14,19 +16,22 @@ export function computeSqrtPriceLimitX96(sqrtPriceX96: Fraction | null, zeroForO
   const fSqrtPriceLimit = sqrtPriceX96.multiply(
     new Fraction(
       multiplier.roundToDecimals(18).value.toString(10),
-      BigInt(1e18).toString(10),
-    ),
+      BigInt(1e18).toString(10)
+    )
   );
 
   const sqrtPriceLimit = mathUtils.fractionToQ6496(
     fSqrtPriceLimit.numerator,
-    fSqrtPriceLimit.denominator,
+    fSqrtPriceLimit.denominator
   );
 
   return BigInt(sqrtPriceLimit.toString());
 }
 
-export function receiveWithSlippage(quoteReceive: bigint | null, maxSlippage?: number | null): bigint {
+export function receiveWithSlippage(
+  quoteReceive: bigint | null,
+  maxSlippage?: number | null
+): bigint {
   if (!quoteReceive) return BigInt(1);
   if (maxSlippage == null) return BigInt(1);
 

@@ -2,7 +2,7 @@
 
 import "./WalletTransactions.css";
 
-import { cn, Link } from "@heroui/react";
+import { cn, Divider, Link } from "@heroui/react";
 import Image from "next/image";
 import {
   useCallback,
@@ -29,6 +29,8 @@ export enum TransactionType {
   STAKING = "StakingDeposit",
   UNSTAKING = "StakingWithdraw",
   CLAIM = "StakingClaim",
+  EASY_ENTER = "EasyEnter",
+  EASY_PAY = "EasyPay",
 }
 
 export type TransactionTokenInfo = {
@@ -72,7 +74,23 @@ export type TransactionProps = {
       from: TransactionTokenInfo;
       to: TransactionTokenInfo;
     }
+  | {
+      type: TransactionType.EASY_ENTER;
+      from: TransactionTokenInfo;
+      to: TransactionTokenInfo;
+    }
+  | {
+      type: TransactionType.EASY_PAY;
+      redeem: TransactionTokenInfo;
+      beneficiary: string;
+      amountPaid: TransactionTokenInfo;
+      refund: TransactionTokenInfo;
+    }
 );
+
+type TransactionWithKey = TransactionProps & {
+  key: string;
+};
 
 function TransactionTokenDisplay(props: { token: TransactionTokenInfo }) {
   return (
@@ -150,6 +168,10 @@ function BaseTransactionItem(props: TransactionProps) {
         return "Unstaking";
       case TransactionType.CLAIM:
         return "Reward Claim";
+      case TransactionType.EASY_ENTER:
+        return "EasyEnter";
+      case TransactionType.EASY_PAY:
+        return "EasyPay";
     }
   }, [props.type]);
 
@@ -162,8 +184,8 @@ function BaseTransactionItem(props: TransactionProps) {
         setSliceLength(30); // iPhone mini 이하
       else if (width < 440)
         setSliceLength(36); //iphone x 이하
-      // else if (width >= 641) setSliceLength(45); // sm 이상 (tablet, desktop)
-      else setSliceLength(45); // 일반
+      // else if (width >= 641) setSliceLength(42); // sm 이상 (tablet, desktop)
+      else setSliceLength(42); // 일반
     };
 
     updateSliceLength();
@@ -184,7 +206,7 @@ function BaseTransactionItem(props: TransactionProps) {
       <div
         className={cn(
           "group flex flex-col px-1 py-4 max-sm:px-2 gap-3 w-full",
-          "hover:bg-default-200 dark:hover:bg-default-100 transition-background"
+          "hover:bg-default-200 dark:hover:bg-default-100 transition-background",
         )}
       >
         <div className={cn("flex flex-row items-center gap-1.5 w-full")}>
@@ -209,6 +231,15 @@ function BaseTransactionItem(props: TransactionProps) {
                 <Icons.WalletUnstake className="fill-foreground" />
               )}
               {props.type === TransactionType.CLAIM && <PiHandWithdraw />}
+              {props.type === TransactionType.EASY_ENTER && (
+                <Icons.WalletTitleStartFarm
+                  className="fill-foreground"
+                  fillRule="evenodd"
+                />
+              )}
+              {props.type === TransactionType.EASY_PAY && (
+                <Icons.WalletTitleStopFarm className="fill-foreground stroke-foreground stroke-[0.3px]" />
+              )}
               {title}
             </h2>
             <span className="truncate text-[12px] leading-[15px] text-default-800 dark:text-default-700">
@@ -238,6 +269,10 @@ function BaseTransactionItem(props: TransactionProps) {
           <UnStakingItem {...props} />
         )}
         {props.type === TransactionType.CLAIM && <ClaimItem {...props} />}
+        {props.type === TransactionType.EASY_ENTER && (
+          <EasyEnterItem {...props} />
+        )}
+        {props.type === TransactionType.EASY_PAY && <EasyPayItem {...props} />}
       </div>
     </Link>
   );
@@ -251,7 +286,7 @@ function SwapItem(props: TransactionProps & { type: TransactionType.SWAP }) {
   );
 }
 function StartFarmItem(
-  props: TransactionProps & { type: TransactionType.START_FARM }
+  props: TransactionProps & { type: TransactionType.START_FARM },
 ) {
   const listLength = props.from.length;
   const isSingleToken = listLength === 1;
@@ -270,7 +305,7 @@ function StartFarmItem(
   );
 }
 function StopFarmItem(
-  props: TransactionProps & { type: TransactionType.STOP_FARM }
+  props: TransactionProps & { type: TransactionType.STOP_FARM },
 ) {
   const listLength = props.to.length;
   const isSingleToken = listLength === 1;
@@ -291,7 +326,7 @@ function StopFarmItem(
   );
 }
 function StakingItem(
-  props: TransactionProps & { type: TransactionType.STAKING }
+  props: TransactionProps & { type: TransactionType.STAKING },
 ) {
   return (
     <div className="wallet-tx-details-container">
@@ -300,7 +335,7 @@ function StakingItem(
   );
 }
 function UnStakingItem(
-  props: TransactionProps & { type: TransactionType.UNSTAKING }
+  props: TransactionProps & { type: TransactionType.UNSTAKING },
 ) {
   return (
     <div className="wallet-tx-details-container">
@@ -317,9 +352,45 @@ function ClaimItem(props: TransactionProps & { type: TransactionType.CLAIM }) {
   );
 }
 
+function EasyEnterItem(
+  props: TransactionProps & { type: TransactionType.EASY_ENTER },
+) {
+  return (
+    <div className="wallet-tx-details-container">
+      <SwapDisplay from={props.from} to={props.to} />
+    </div>
+  );
+}
+
+function EasyPayItem(
+  props: TransactionProps & { type: TransactionType.EASY_PAY },
+) {
+  return (
+    <div className="wallet-tx-details-container">
+      <div className="text-[12px] font-medium leading-[15px] text-foreground">
+        To:{" "}
+        <span className="font-normal text-default-800 dark:text-default-700">
+          {props.beneficiary}
+        </span>
+      </div>
+      <div className="flex justify-between items-center gap-5 pr-5 pb-1">
+        <TransactionTokenDisplay token={props.redeem} />
+        <Icons.WalletSwapArrowSmall className="fill-foreground" />
+        <TransactionTokenDisplay token={props.amountPaid} />
+      </div>
+      <div className="flex flex-row items-center pt-1 pr-3 gap-1">
+        <TransactionTokenDisplay token={props.refund} />
+        <span className="text-[12px] font-medium leading-[15px] text-foreground">
+          Refunded to my wallet
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function WalletTransactions() {
   const chainId = useChainId();
-  const { assetValues } = useContext(AssetsContext);
+  const { assetValues, aprDataState } = useContext(AssetsContext);
   const { walletData } = useContext(WalletContext);
   const TransactionInfo = walletData?.transactions;
   const loadMore = walletData?.loadMore;
@@ -333,14 +404,21 @@ export default function WalletTransactions() {
 
       // priceMap 없어도 내부에서 가격만 빠지고 나머지는 만들 수 있다면 그대로 호출
       const priceMap = assetValues?.chainLinkPriceMap;
-      const built = buildTransactions(TransactionInfo, chainId, priceMap);
+      const built = buildTransactions(
+        TransactionInfo,
+        chainId,
+        priceMap,
+        undefined,
+        undefined,
+        aprDataState,
+      );
 
       return Array.isArray(built) ? built : [];
     } catch (e) {
       console.error("[WalletTransactions] buildTransactions failed:", e);
       return [];
     }
-  }, [chainId, TransactionInfo, assetValues?.chainLinkPriceMap]);
+  }, [chainId, TransactionInfo, assetValues?.chainLinkPriceMap, aprDataState]);
 
   const showEmpty = useMemo(() => {
     // 체인 정보가 없거나, 원본 데이터가 아직 도착 안 했거나, 결과가 비었으면 빈 상태
@@ -360,7 +438,7 @@ export default function WalletTransactions() {
       if (isFetchingNextPage) return;
       loadMore?.();
     },
-    [loadMore, endReached, isFetchingNextPage]
+    [loadMore, endReached, isFetchingNextPage],
   );
 
   useEffect(() => {
@@ -385,8 +463,8 @@ export default function WalletTransactions() {
       ) : (
         <>
           <div className="w-full rounded-lg divide-y divide-default-100 px-6 sm:px-3">
-            {transactions.map((tx) => (
-              <BaseTransactionItem key={tx.hash} {...tx} />
+            {transactions.map(({ key, ...rest }) => (
+              <BaseTransactionItem key={key} {...(rest as TransactionProps)} />
             ))}
           </div>
           {/* sentinel: 화면에 보이면 loadMore 호출 */}

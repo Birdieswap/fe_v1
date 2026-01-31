@@ -70,8 +70,8 @@ export default function PointsPanel({
         </div>
 
         {/* 청록 카피 */}
-        <p className="font-sans text-[16px] font-regular  text-primary dark:text-dark-green-key">
-          {/* Supply,*/} swap, and invite friends to get points.
+        <p className="font-sans text-[16px] font-regular text-center text-primary dark:text-dark-green-key">
+          {/* Supply,*/} Swap, and invite friends to get points.
         </p>
 
         {/* 구분선 */}

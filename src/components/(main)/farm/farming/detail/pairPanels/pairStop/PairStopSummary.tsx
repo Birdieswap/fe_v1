@@ -1,12 +1,12 @@
 import { AnimatePresence } from "framer-motion";
-import { useContext, useMemo } from "react";
+import { useMemo } from "react";
 
 import { setPrecisionString } from "@/utils/setPrecision";
 import { BigDecimal } from "@/types/BigDecimal";
-import { AssetsContext } from "@/app/AssetsContextProvider";
 import usePriceImpact from "@/hooks/swap/usePriceImpact";
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { UsePairStopPanelReturn } from "@/hooks/usePairStopPanel";
+import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
 
 import { SwapSummaryComponents as Components } from "../../../common/SwapSummaryComponents";
 
@@ -17,8 +17,6 @@ export default function PairStopSummary({
   item: FarmPair;
   state: UsePairStopPanelReturn;
 }) {
-  const { assetValues } = useContext(AssetsContext);
-
   const activeIndex: 0 | 1 = state.isActive[0] ? 0 : 1;
   const otherIndex: 0 | 1 = activeIndex === 0 ? 1 : 0;
 
@@ -29,25 +27,26 @@ export default function PairStopSummary({
     ? undefined
     : item.wip_stakeToken.swap.input[otherIndex];
 
-  const activePrice = useMemo(() => {
-    if (activeToken?.input.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(
-        `LINK:${activeToken.input.symbol}_USD`
-      )?.price;
-    }
-
-    return undefined;
-  }, [activeToken.input.symbol, assetValues?.chainLinkPriceMap]);
-
-  const otherPrice = useMemo(() => {
-    if (otherToken?.input.symbol && assetValues?.chainLinkPriceMap) {
-      return assetValues.chainLinkPriceMap.get(
-        `LINK:${otherToken.input.symbol}_USD`
-      )?.price;
-    }
-
-    return undefined;
-  }, [otherToken?.input.symbol, assetValues?.chainLinkPriceMap]);
+  const { priceUsd: activePriceUsd } = useTokenUsdPrice(
+    activeToken?.input as any
+  );
+  const { priceUsd: otherPriceUsd } = useTokenUsdPrice(
+    otherToken?.input as any
+  );
+  const activePrice = useMemo(
+    () =>
+      activePriceUsd != null
+        ? new BigDecimal(String(activePriceUsd), 8)
+        : undefined,
+    [activePriceUsd]
+  );
+  const otherPrice = useMemo(
+    () =>
+      otherPriceUsd != null
+        ? new BigDecimal(String(otherPriceUsd), 8)
+        : undefined,
+    [otherPriceUsd]
+  );
 
   const chainId = state.chainId;
   const sellPoolBalance = useMemo(() => {

@@ -72,18 +72,18 @@ export function derivePoolInfo(
   });
 
   if (!in0Addr || !in1Addr) {
-    if (DEBUG_DERIVE_POOL_INFO) {
-      console.log("[derivePoolInfo] missing input addr", {
-        pool: swapPool?.symbol,
-        chainId,
-        in0Addr,
-        in1Addr,
-        raw0Symbol: raw0?.symbol,
-        raw1Symbol: raw1?.symbol,
-        raw0Addr: raw0?.addresses?.[chainId],
-        raw1Addr: raw1?.addresses?.[chainId],
-      });
-    }
+    // if (DEBUG_DERIVE_POOL_INFO) {
+    //   console.log("[derivePoolInfo] missing input addr", {
+    //     pool: swapPool?.symbol,
+    //     chainId,
+    //     in0Addr,
+    //     in1Addr,
+    //     raw0Symbol: raw0?.symbol,
+    //     raw1Symbol: raw1?.symbol,
+    //     raw0Addr: raw0?.addresses?.[chainId],
+    //     raw1Addr: raw1?.addresses?.[chainId],
+    //   });
+    // }
     return { ...empty, poolAddress };
   }
 
@@ -143,26 +143,26 @@ export function derivePoolInfo(
     outBpool = zeroForOne ? t1Entry : t0Entry;
   }
 
-  if (DEBUG_DERIVE_POOL_INFO) {
-    console.log("[derivePoolInfo] result", {
-      pool: swapPool?.symbol,
-      isInternal: !!swapPool?.isInternal,
-      chainId,
-      poolAddress,
-      token0Address,
-      token1Address,
-      token0Decimals,
-      token1Decimals,
-      underlying0,
-      underlying1,
-      fromTokenAddress,
-      fromNorm,
-      fromIsToken0,
-      zeroForOne,
-      outBToken,
-      outBpoolSymbol: outBpool?.symbol,
-    });
-  }
+  // if (DEBUG_DERIVE_POOL_INFO) {
+  //   console.log("[derivePoolInfo] result", {
+  //     pool: swapPool?.symbol,
+  //     isInternal: !!swapPool?.isInternal,
+  //     chainId,
+  //     poolAddress,
+  //     token0Address,
+  //     token1Address,
+  //     token0Decimals,
+  //     token1Decimals,
+  //     underlying0,
+  //     underlying1,
+  //     fromTokenAddress,
+  //     fromNorm,
+  //     fromIsToken0,
+  //     zeroForOne,
+  //     outBToken,
+  //     outBpoolSymbol: outBpool?.symbol,
+  //   });
+  // }
 
   return {
     poolAddress,

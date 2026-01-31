@@ -9,6 +9,7 @@ import ModalBase from "@/components/atoms/ModalBase";
 import { WalletContext } from "@/app/WalletContextProvider";
 
 import { NetworkIcon, SelectNetworkListBox } from "./SelectNetworkMenu";
+import clsx from "clsx";
 
 export default function SelectNetworkModal() {
   const {
@@ -35,6 +36,7 @@ export default function SelectNetworkModal() {
   }, [isNetworkModalOpen, setIsNetworkModalOpen]);
 
   const isOpen = isNetworkModalOpen;
+  const isBase = selectedNetwork?.name?.toLowerCase() === "base";
   // useMemo(() => {
   //   return isNetworkModalOpen && (modalRef.current?.checkVisibility() ?? false);
   // }, [isNetworkModalOpen, modalRef]);
@@ -44,14 +46,25 @@ export default function SelectNetworkModal() {
       <Button
         ref={modalRef}
         isIconOnly
-        className="sm:hidden h-8 w-8 min-w-8 rounded-full p-0"
-        radius="full"
+        // ✅ base면 radius none, 아니면 full
+        radius={isBase ? "none" : "full"}
+        // ✅ base면 rounded-full 제거 (또는 rounded-none으로 명시)
+        className={clsx(
+          "h-8 w-8 min-w-8 p-0",
+          isBase ? "rounded-none" : "rounded-full"
+        )}
         size="sm"
         variant="light"
         onPress={() => setIsNetworkModalOpen(true)}
       >
         {selectedNetwork ? (
-          <div className="flex items-center justify-center h-6 w-6 rounded-full p-0 border-1 bg-white border-default-300 dark:border-default-700">
+          <div
+            className={clsx(
+              "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
+              // 아이콘 컨테이너도 같이 각지게 하려면 이것도 조건 처리
+              isBase ? "rounded-none" : "rounded-full"
+            )}
+          >
             <NetworkIcon network={selectedNetwork} />
           </div>
         ) : (

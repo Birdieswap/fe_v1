@@ -109,11 +109,13 @@ export function getWriteTransactionHandlers({
   transactionContext,
   transactionProps,
   refetch,
+  afterReceipt,
 }: {
   client?: Client;
   transactionContext: TransactionContextType;
   transactionProps: TransactionStatusProps;
   refetch?: () => Promise<unknown>;
+  afterReceipt?: () => Promise<unknown> | void;
 }) {
   transactionContext.setTransactionProps({
     ...transactionProps,
@@ -166,11 +168,24 @@ export function getWriteTransactionHandlers({
 
       const chainId = chainIdNum;
 
+      const runAfterReceipt = () => {
+        Promise.resolve(afterReceipt?.()).catch((e) => {
+          console.error("[handleWriteTransaction] afterReceipt failed", e);
+        });
+        refetch?.();
+      };
+
+      const scheduleFallback = () => {
+        setTimeout(() => {
+          runAfterReceipt();
+        }, 8000);
+      };
+
       if (client)
         waitForTransactionReceipt(client, { hash: tx })
           .then((receipt) => {
             if (receipt.status === "success") {
-              refetch?.();
+              runAfterReceipt();
 
               if (
                 transactionProps.transactionType ===
@@ -281,9 +296,11 @@ export function getWriteTransactionHandlers({
               transactionStatus: TransactionStatus.FAILED,
             });
             transactionContext.onOpen();
+            scheduleFallback();
             // console.log("onError");
             // console.log("e", error);
           });
+      else scheduleFallback();
 
       // console.log("onSettled");
       // console.log("tx", tx);
