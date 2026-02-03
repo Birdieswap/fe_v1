@@ -4,7 +4,7 @@
     "payload": "eyJkb21haW4iOiJiaXJkaWVzd2FwLWRldi52ZXJjZWwuYXBwIn0",
     "signature": "3g0TXzez8IjOlXmaVnpl39QDERK7jSC8heIbx/q73CUqklf5Wb4llcTFHSCt0LoE6IrTZndyJmuc6KltWmX/hBs="
   },
-  "frame": {
+  "miniapp": {
     "version": "1",
     "name": "Birdieswap",
     "iconUrl": "https://birdieswap-dev.vercel.app/app_icon.png",

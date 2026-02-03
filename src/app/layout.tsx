@@ -26,7 +26,7 @@ const frameMetadata = JSON.stringify({
   button: {
     title: "Launch App", // 버튼에 적힐 글자
     action: {
-      type: "launch_frame", // ★ 중요: 앱을 실행하라는 명령
+      type: "launch_miniapp", // ★ 중요: 앱을 실행하라는 명령
       name: "Birdieswap",
       url: appUrl,
       splashImageUrl: `${appUrl}/splash-logo.png`,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     "base:app_id": "697c60d477db5d481cffc815",
-    "fc:frame": frameMetadata,
+    "fc:miniapp": frameMetadata,
   },
 };
 
