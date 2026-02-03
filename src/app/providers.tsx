@@ -2,7 +2,7 @@
 
 import { HeroUIProvider } from "@heroui/react";
 import { PropsWithChildren, useEffect } from "react";
-import sdk from "@farcaster/frame-sdk";
+import sdk from "@farcaster/miniapp-sdk";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ThemeProvider, useTheme } from "next-themes";
 import {
@@ -253,14 +253,13 @@ const metaMaskInjectedWallet = () => {
     typeof window !== "undefined" &&
     !!(
       (window as any)?.ethereum?.isMetaMask ||
-      (window as any)?.ethereum?.providers?.some(
-        (p: any) => p?.isMetaMask
-      )
+      (window as any)?.ethereum?.providers?.some((p: any) => p?.isMetaMask)
     );
   const metaMaskProvider =
     typeof window !== "undefined"
-      ? (window as any)?.ethereum?.providers?.find((p: any) => p?.isMetaMask) ??
-        (window as any)?.ethereum
+      ? ((window as any)?.ethereum?.providers?.find(
+          (p: any) => p?.isMetaMask,
+        ) ?? (window as any)?.ethereum)
       : undefined;
   return {
     id: "metaMask",
@@ -277,8 +276,7 @@ const metaMaskInjectedWallet = () => {
       qrCode: "https://metamask.io/download",
       chrome:
         "https://chrome.google.com/webstore/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn",
-      edge:
-        "https://microsoftedge.microsoft.com/addons/detail/metamask/ejbalbakoplchlghecdalmeeeajnimhm",
+      edge: "https://microsoftedge.microsoft.com/addons/detail/metamask/ejbalbakoplchlghecdalmeeeajnimhm",
       firefox: "https://addons.mozilla.org/firefox/addon/ether-metamask",
       opera: "https://addons.opera.com/extensions/details/metamask-10",
       browserExtension: "https://metamask.io/download",
@@ -362,15 +360,22 @@ export default function Providers({
   useEffect(() => {
     const load = async () => {
       try {
-        // Base(Farcaster)에게 "앱 로딩 끝났어, 화면 보여줘"라고 신호 보냄
+        // Base App에게 준비 완료 신호 전송
         await sdk.actions.ready();
+
+        // (옵션) 혹시 모를 타이밍 이슈 방지용 안전 장치 (유지해도 좋습니다)
+        setTimeout(() => {
+          sdk.actions.ready();
+        }, 500);
       } catch (error) {
-        console.error("Frame SDK Load Error:", error);
+        console.error("MiniApp SDK Load Error:", error);
       }
     };
 
-    // 컴포넌트 마운트 시 실행
-    load();
+    // window 객체가 있을 때만 실행 (Next.js SSR 에러 방지)
+    if (typeof window !== "undefined") {
+      load();
+    }
   }, []);
 
   return (
