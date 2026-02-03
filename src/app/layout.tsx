@@ -19,13 +19,30 @@ const inter = Inter({
   preload: false,
 });
 
+const appUrl = "https://birdieswap-dev.vercel.app";
+const frameMetadata = JSON.stringify({
+  version: "next",
+  imageUrl: `${appUrl}/og-image.png`, // 피드에 보일 이미지 (1.91:1 비율 추천)
+  button: {
+    title: "Launch App", // 버튼에 적힐 글자
+    action: {
+      type: "launch_frame", // ★ 중요: 앱을 실행하라는 명령
+      name: "Birdieswap",
+      url: appUrl,
+      splashImageUrl: `${appUrl}/splash-logo.png`,
+      splashBackgroundColor: "#14192A",
+    },
+  },
+});
+
 export const metadata: Metadata = {
   title: "Birdieswap",
   description: "Birdieswap - Interest-bearing liquidity routing software",
+  manifest: "/manifest.json",
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     "base:app_id": "697c60d477db5d481cffc815",
-    manifest: "/manifest.json",
+    "fc:frame": frameMetadata,
   },
 };
 
