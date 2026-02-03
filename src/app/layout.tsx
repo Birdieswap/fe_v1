@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     "base:app_id": "697c60d477db5d481cffc815",
+    manifest: "/manifest.json",
   },
 };
 
