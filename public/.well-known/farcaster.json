@@ -18,5 +18,20 @@
     "tags": ["DEX", "staking", "swap", "Yield", "Farm"],
     "subtitle": "by Birdieswap",
     "description": "DEX on Base"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Birdieswap",
+    "iconUrl": "https://birdieswap-dev.vercel.app/app_icon.png",
+    "homeUrl": "https://birdieswap-dev.vercel.app/",
+    "imageUrl": "https://birdieswap-dev.vercel.app/og-image.png",
+    "buttonTitle": "Open App",
+    "splashImageUrl": "https://birdieswap-dev.vercel.app/splash-logo.png",
+    "splashBackgroundColor": "#14192A",
+    "webhookUrl": "https://birdieswap-dev.vercel.app/webhook",
+    "primaryCategory": "finance",
+    "tags": ["DEX", "staking", "swap", "Yield", "Farm"],
+    "subtitle": "by Birdieswap",
+    "description": "DEX on Base"
   }
 }
