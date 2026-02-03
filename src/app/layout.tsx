@@ -41,7 +41,7 @@ const miniappMetadata = JSON.stringify({
   button: {
     title: "Launch App", // 버튼에 적힐 글자
     action: {
-      type: "launch_frame", // ★ 중요: 앱을 실행하라는 명령
+      type: "launch_miniapp", // ★ 중요: 앱을 실행하라는 명령
       name: "Birdieswap",
       url: appUrl,
       splashImageUrl: `${appUrl}/splash-logo.png`,
