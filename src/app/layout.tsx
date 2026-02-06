@@ -40,9 +40,9 @@ export const metadata: Metadata = {
   description: "Birdieswap - Interest-bearing liquidity routing software",
   manifest: "/manifest.json",
   other: {
+    "fc:miniapp": miniappMetadata,
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     //"base:app_id": "697c60d477db5d481cffc815",
-    "fc:miniapp": miniappMetadata,
   },
 };
 
