@@ -20,17 +20,16 @@ const inter = Inter({
   preload: false,
 });
 
-const appUrl = "https://birdieswap-dev.vercel.app";
-const frameMetadata = JSON.stringify({
+const miniappMetadata = JSON.stringify({
   version: "next",
-  imageUrl: `${appUrl}/og-image.png`, // 피드에 보일 이미지 (1.91:1 비율 추천)
+  imageUrl: "https://birdieswap-dev.vercel.app/og-image.png",
   button: {
-    title: "Launch App", // 버튼에 적힐 글자
+    title: "Launch App",
     action: {
-      type: "launch_miniapp", // ★ 중요: 앱을 실행하라는 명령
+      type: "launch_miniapp", // ★ 중요: launch_frame (X) -> launch_miniapp (O)
       name: "Birdieswap",
-      url: appUrl,
-      splashImageUrl: `${appUrl}/splash-logo.png`,
+      url: "https://birdieswap-dev.vercel.app",
+      splashImageUrl: "https://birdieswap-dev.vercel.app/splash-logo.png",
       splashBackgroundColor: "#14192A",
     },
   },
@@ -42,8 +41,8 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   other: {
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
-    "base:app_id": "697c60d477db5d481cffc815",
-    "fc:miniapp": frameMetadata,
+    //"base:app_id": "697c60d477db5d481cffc815",
+    "fc:miniapp": miniappMetadata,
   },
 };
 
