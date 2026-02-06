@@ -20,6 +20,7 @@ const nextConfig = {
   reactStrictMode: true,
   compress: true,
   trailingSlash: false,
+  productionBrowserSourceMaps: false,
 
   experimental: {
     // CSS 관련 사전 최적화 (기본 켜져 있음, 명시해 둠)
