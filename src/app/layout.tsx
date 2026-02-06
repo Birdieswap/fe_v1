@@ -20,13 +20,13 @@ const inter = Inter({
   preload: false,
 });
 
-const miniappMetadata = JSON.stringify({
+const frameMetadata = JSON.stringify({
   version: "next",
   imageUrl: "https://birdieswap-dev.vercel.app/og-image.png",
   button: {
     title: "Launch App",
     action: {
-      type: "launch_miniapp", // ★ 중요: launch_frame (X) -> launch_miniapp (O)
+      type: "launch_frame", // ★ 중요: launch_frame (X) -> launch_miniapp (O)
       name: "Birdieswap",
       url: "https://birdieswap-dev.vercel.app/",
       splashImageUrl: "https://birdieswap-dev.vercel.app/splash-logo.png",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   description: "Birdieswap - Interest-bearing liquidity routing software",
   manifest: "/manifest.json",
   other: {
-    "fc:miniapp": miniappMetadata,
+    "fc:frame": frameMetadata,
     "theme-color": "#FFFFFF", // 초기값: 라이트 기준 하나만!
     //"base:app_id": "697c60d477db5d481cffc815",
   },
