@@ -15,8 +15,14 @@
     "splashBackgroundColor": "#14192A",
     "webhookUrl": "https://birdieswap-dev.vercel.app/webhook",
     "primaryCategory": "finance",
-    "tags": ["DEX", "staking", "swap", "Yield", "Farm"],
+    "tags": ["dex", "staking", "swap", "yield", "stablecoin"],
     "subtitle": "by Birdieswap",
-    "description": "DEX on Base"
+    "description": "DEX on Base",
+    "tagline": "DEX on Base",
+    "heroImageUrl": "https://birdieswap-dev.vercel.app/og-image.png",
+
+    "ogTitle": "Birdieswap",
+    "ogDescription": "DEX on Base",
+    "ogImageUrl": "https://birdieswap-dev.vercel.app/og-image.png"
   }
 }
