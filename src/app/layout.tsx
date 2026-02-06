@@ -22,7 +22,7 @@ const inter = Inter({
 
 const frameMetadata = JSON.stringify({
   version: "next",
-  imageUrl: "https://birdieswap-dev.vercel.app/og-image.png",
+  imageUrl: "https://birdieswap-dev.vercel.app/base-preview.png",
   button: {
     title: "Launch App",
     action: {
