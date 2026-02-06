@@ -66,15 +66,15 @@ export default function AddMiniAppFab() {
       {/* 1. 우측 하단 플로팅 버튼 (FAB) */}
       <button
         onClick={() => setIsModalOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#0052FF] text-white shadow-lg transition-transform hover:scale-110 active:scale-95 animate-bounce-slow"
+        className="fixed bottom-4 right-4 z-40 flex h-8 w-8 items-center justify-center rounded-full bg-light-primary dark:bg-dark-green-key text-white shadow-lg transition-transform hover:scale-110 active:scale-95 animate-bounce-slow"
         aria-label="Add App"
       >
         {/* Plus Icon */}
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="28"
-          height="28"
-          viewBox="0 0 24 24"
+          width="24"
+          height="24"
+          viewBox="0 0 20 20"
           fill="none"
           stroke="currentColor"
           strokeWidth="2.5"
