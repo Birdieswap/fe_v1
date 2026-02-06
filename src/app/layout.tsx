@@ -28,7 +28,7 @@ const frameMetadata = JSON.stringify({
     action: {
       type: "launch_frame", // ★ 중요: launch_frame (X) -> launch_miniapp (O)
       name: "Birdieswap",
-      url: "https://birdieswap-dev.vercel.app/",
+      url: "https://birdieswap-dev.vercel.app",
       splashImageUrl: "https://birdieswap-dev.vercel.app/splash-logo.png",
       splashBackgroundColor: "#14192A",
     },
