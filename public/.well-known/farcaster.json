@@ -20,6 +20,11 @@
     "description": "DEX on Base",
     "tagline": "DEX on Base",
     "heroImageUrl": "https://birdieswap-dev.vercel.app/og-image.png",
+    "screenshotUrls": [
+      "https://birdieswap-dev.vercel.app/ss1.png",
+      "https://birdieswap-dev.vercel.app/ss2.png",
+      "https://birdieswap-dev.vercel.app/ss3.png"
+    ],
 
     "ogTitle": "Birdieswap",
     "ogDescription": "DEX on Base",
