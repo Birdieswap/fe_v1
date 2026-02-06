@@ -9,6 +9,7 @@ import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
 import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
 import ClientHUD from "./ClientHUD";
 import { headers } from "next/headers";
+import AddMiniAppFab from "@/components/atoms/AddMiniAppFab";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +73,7 @@ export default async function RootLayout({
         </Providers>
         <DeniedWalletModalHost />
         <RiskConsentModalHost />
+        <AddMiniAppFab />
         <ClientHUD />
       </body>
     </html>
