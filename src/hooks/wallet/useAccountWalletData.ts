@@ -2,6 +2,7 @@
 
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePublicClient } from "wagmi";
 
 import { getMyTransactionData } from "@/utils/wallet/getMyTransactionData";
 import { isAddress } from "viem";
@@ -39,6 +40,9 @@ export function useAccountWalletData(
     .toLowerCase();
   const DEV = MODE ? MODE === "dev" : process.env.NODE_ENV !== "production";
   const hasChainId = typeof chainId === "number" && !Number.isNaN(chainId);
+  const publicClient = usePublicClient({
+    chainId: hasChainId ? chainId : undefined,
+  });
 
   // dev에선 address만 있어도 활성화, prod/stage는 chainId 필요
   const enabledTx = DEV
@@ -49,6 +53,7 @@ export function useAccountWalletData(
 
   // ===== 인피니티 스크롤 내부 상태 =====
   const [cursor, setCursor] = useState<number | undefined>(undefined); // 다음 페이지 커서(blockHeight)
+  const [nextCursor, setNextCursor] = useState<number | undefined>(undefined); // 다음 loadMore에서 사용할 커서
   const [endReached, setEndReached] = useState(false);
   const [earliestBlock, setEarliestBlock] = useState<number | undefined>(
     undefined
@@ -62,20 +67,25 @@ export function useAccountWalletData(
 
   // ===== 균일 페이스용 보강(autoboost) 파라미터 =====
   const PAGE_TARGET = 30;
+  const BLOCK_WINDOW = 50_400;
   const preFetchLenRef = useRef(0); // fetch 시작 직전의 길이
   const boostCountRef = useRef(0); // 연속 보강 횟수 (무한 루프 방지)
   const MAX_BOOST = 3;
 
+  const parseStartBlock = useCallback((v?: string | number) => {
+    const n =
+      typeof v === "number" ? v : typeof v === "string" ? parseInt(v, 10) : NaN;
+    return Number.isFinite(n) ? n : undefined;
+  }, []);
+
   // 주소/체인/초기 blockHeight 바뀌면 전체 리셋
   useEffect(() => {
     setAccTxs([]);
-    const initial =
-      typeof blockHeight === "number"
-        ? blockHeight
-        : typeof blockHeight === "string"
-          ? parseInt(blockHeight, 10)
-          : undefined;
+    const initial = parseStartBlock(blockHeight);
     setCursor(
+      Number.isFinite(initial as number) ? (initial as number) : undefined
+    );
+    setNextCursor(
       Number.isFinite(initial as number) ? (initial as number) : undefined
     );
     setEndReached(false);
@@ -86,7 +96,34 @@ export function useAccountWalletData(
     preFetchLenRef.current = 0;
 
     // console.log("[useAWD] reset", { address, chainId, initialCursor: initial });
-  }, [address, chainId, blockHeight]);
+  }, [address, chainId, blockHeight, parseStartBlock]);
+
+  // blockHeight를 명시하지 않은 경우 latest block으로 시작 커서 부트스트랩
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!enabledTx) return;
+    if (Number.isFinite(cursor as number)) return;
+
+    (async () => {
+      try {
+        const latest = await publicClient?.getBlockNumber();
+        if (cancelled || latest == null) return;
+
+        const latestNum = Number(latest);
+        if (!Number.isFinite(latestNum)) return;
+
+        setCursor(latestNum);
+        setNextCursor(latestNum);
+      } catch (e) {
+        console.warn("[useAWD] latest block bootstrap failed", e);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [enabledTx, cursor, publicClient]);
 
   const baseKey = [
     "wallet",
@@ -98,13 +135,7 @@ export function useAccountWalletData(
   const txQ = useQuery({
     queryKey: [...baseKey, "txs", cursor ?? "latest", refreshNonce],
     queryFn: () => {
-      const raw =
-        cursor ??
-        (typeof blockHeight === "number"
-          ? blockHeight
-          : typeof blockHeight === "string"
-            ? parseInt(blockHeight, 10)
-            : undefined);
+      const raw = cursor ?? parseStartBlock(blockHeight);
       const safeBlockHeight =
         typeof raw === "number" && Number.isFinite(raw) ? raw : undefined;
       return getMyTransactionData(address as Address, {
@@ -112,7 +143,7 @@ export function useAccountWalletData(
         chainId,
       });
     },
-    enabled: enabledTx,
+    enabled: enabledTx && Number.isFinite(cursor as number),
     staleTime: 60_000,
     refetchOnWindowFocus: false,
     retry: 5,
@@ -185,32 +216,57 @@ export function useAccountWalletData(
       });
     }
 
-    // 종료 조건: 빈 페이지거나, 이번 페이지의 최소 blockNumber가 EarliestBlock 이하
-    if (list.length === 0) {
-      setEndReached(true);
-      // console.log("[useAWD] endReached by empty page");
-    } else {
-      const minInPage = Math.min(...list.map((t) => Number(t.blockNumber)));
-      if (
-        !Number.isNaN(minInPage) &&
-        !Number.isNaN(pageEarliest) &&
-        minInPage <= pageEarliest
-      ) {
-        setEndReached(true);
-        // console.log("[useAWD] endReached by earliest");
-      }
-    }
-  }, [txQ.data]);
+    // 다음 요청 커서 계산:
+    // 1) 첫 호출(latest) 이후: "현재 페이지 기준 최신 block - 50,401"
+    // 2) 그 다음부터는: "이전 요청 cursor - 50,400" 고정 간격
+    const maxInPage =
+      list.length > 0
+        ? Math.max(...list.map((t) => Number(t.blockNumber)))
+        : Number.NaN;
+    const hasMaxInPage = Number.isFinite(maxInPage);
+    const hasCursor = Number.isFinite(cursor as number);
 
-  // loadMore: 현재까지 누적된 최소 blockNumber - 1 로 커서 갱신
+    let computedNextCursor: number | undefined = undefined;
+    if (!hasCursor && hasMaxInPage) {
+      computedNextCursor = Math.max(maxInPage - (BLOCK_WINDOW + 1), 0);
+    } else if (hasCursor) {
+      computedNextCursor = Math.max((cursor as number) - BLOCK_WINDOW, 0);
+    }
+
+    if (Number.isFinite(computedNextCursor as number)) {
+      setNextCursor(computedNextCursor as number);
+    }
+
+    // 종료 조건: 다음 커서가 EarliestBlock보다 작아지면 종료
+    if (
+      Number.isFinite(pageEarliest) &&
+      Number.isFinite(computedNextCursor as number) &&
+      (computedNextCursor as number) < pageEarliest
+    ) {
+      setEndReached(true);
+      return;
+    }
+
+    // 안전장치: 초기 페이지부터 비어있고 다음 커서도 계산 불가하면 종료
+    if (list.length === 0 && !Number.isFinite(computedNextCursor as number)) {
+      setEndReached(true);
+    }
+  }, [txQ.data, cursor, txKey, txKeyNum]);
+
+  // loadMore: nextCursor를 사용해 고정 window 간격으로 이동
   const loadMore = useCallback(() => {
     if (endReached) return;
+
+    if (Number.isFinite(nextCursor as number)) {
+      setCursor(nextCursor as number);
+      return;
+    }
+
     if (!accTxs.length) return;
-    const minBlock = Math.min(...accTxs.map((t) => Number(t.blockNumber)));
-    if (Number.isNaN(minBlock)) return;
-    // console.log("[useAWD] loadMore → cursor", minBlock - 1);
-    setCursor(minBlock - 1);
-  }, [accTxs, endReached]);
+    const maxBlock = Math.max(...accTxs.map((t) => Number(t.blockNumber)));
+    if (Number.isNaN(maxBlock)) return;
+    setCursor(Math.max(maxBlock - (BLOCK_WINDOW + 1), 0));
+  }, [accTxs, endReached, nextCursor]);
 
   // ===== 자동 보강(autoboost): fetch가 끝난 뒤 추가된 개수가 30 미만이면 자동으로 더 가져오기 =====
   useEffect(() => {
@@ -249,13 +305,11 @@ export function useAccountWalletData(
 
   const refetchAll = useCallback(() => {
     setAccTxs([]);
-    const initial =
-      typeof blockHeight === "number"
-        ? blockHeight
-        : typeof blockHeight === "string"
-          ? parseInt(blockHeight, 10)
-          : undefined;
+    const initial = parseStartBlock(blockHeight);
     setCursor(
+      Number.isFinite(initial as number) ? (initial as number) : undefined
+    );
+    setNextCursor(
       Number.isFinite(initial as number) ? (initial as number) : undefined
     );
     setEndReached(false);
@@ -263,7 +317,7 @@ export function useAccountWalletData(
     boostCountRef.current = 0;
     preFetchLenRef.current = 0;
     setRefreshNonce((n) => n + 1);
-  }, [blockHeight]);
+  }, [blockHeight, parseStartBlock]);
 
   return useMemo(
     () => ({

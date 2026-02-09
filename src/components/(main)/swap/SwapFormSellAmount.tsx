@@ -28,6 +28,7 @@ import BalanceDisplay from "./swapFormAmount/BalanceDisplay";
 import { useSwapContext } from "./SwapProvider";
 import { useChainId } from "wagmi";
 import getAvailableTokens from "@/utils/assets/getAvailableTokens";
+import { getAdaptiveAmountFontVars } from "@/utils/ui/getAdaptiveAmountFontVars";
 
 export default function SwapFormAmount({
   type,
@@ -123,9 +124,10 @@ export default function SwapFormAmount({
         <div className="mb-2 flex w-full flex-row items-center justify-between">
           <SwapFormNumberInput
             ref={inputRef}
+            style={getAdaptiveAmountFontVars(amount)}
             classNames={{
               input:
-                "text-[30px] max-[375px]:text-[22px] font-bold leading-[36px] max-[375px]:leading-[28px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+                "[font-size:var(--amount-font-desktop-size)] max-[375px]:[font-size:var(--amount-font-mobile-size)] font-bold leading-[36px] max-[375px]:leading-[28px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
               inputWrapper:
                 "h-11 min-h-11 bg-transparent p-1 shadow-none data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
             }}

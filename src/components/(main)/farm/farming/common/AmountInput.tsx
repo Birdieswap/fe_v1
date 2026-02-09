@@ -14,8 +14,13 @@ import { onAmountValueChange } from "@/utils/onAmountValueChange";
 import { IToken } from "@/const/contracts/types/tokenTypes";
 import suffixNumbers from "@/utils/suffixNumbers";
 import useTokenUsdPrice from "@/hooks/useTokenUsdPrice";
+import { getAdaptiveAmountFontVars } from "@/utils/ui/getAdaptiveAmountFontVars";
 
-function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
+function AmountInputBase({
+  className,
+  classNames,
+  ...props
+}: Parameters<typeof Input>[0]) {
   return (
     <Input
       {...props}
@@ -23,10 +28,13 @@ function AmountInputBase({ className, ...props }: Parameters<typeof Input>[0]) {
       classNames={{
         inputWrapper: clsx(
           "h-11 min-h-11 bg-transparent p-1 shadow-none",
-          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent"
+          "data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
+          (classNames as any)?.inputWrapper,
         ),
-        input:
-          "text-[30px] max-[376px]:text-[24px] font-bold max-[376px]:font-semibold leading-[36px] max-[376px]:leading-[30px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+        input: clsx(
+          "[font-size:var(--amount-font-desktop-size)] max-[376px]:[font-size:var(--amount-font-mobile-size)] font-bold max-[376px]:font-semibold leading-[36px] max-[376px]:leading-[30px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+          (classNames as any)?.input,
+        ),
       }}
       min={0}
       step="0.000000000000000001"
@@ -94,7 +102,9 @@ export default function AmountInput({
     }
   }, [amount, amountStr, token?.decimals]);
 
-  const balanceStr = balance && suffixNumbers(balance, 100_000, 2, true, true);
+  const balanceStr =
+    balance &&
+    suffixNumbers(balance, isSmall ? 999 : 100_000, isSmall ? 2 : 2, true, true);
 
   const tokenPrice =
     tokenPriceProp ??
@@ -127,10 +137,11 @@ export default function AmountInput({
           <div className="flex grow flex-row gap-1">
             <div className="flex grow flex-row">
               <AmountInputBase
+                style={getAdaptiveAmountFontVars(amountStr)}
                 isDisabled={isDisabled}
                 classNames={{
                   input:
-                    "text-[30px] max-[376px]:text-[20px] font-bold leading-[36px] max-[376px]:leading-[24px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
+                    "[font-size:var(--amount-font-desktop-size)] max-[376px]:[font-size:var(--amount-font-mobile-size)] font-bold leading-[36px] max-[376px]:leading-[24px] placeholder:text-default-500 bg-transparent textfield focus:outline-none dark:caret-white",
                   inputWrapper:
                     "h-11 min-h-11 bg-transparent p-1 shadow-none data-[hover=true]:bg-transparent group-data-[focus-visible=true]:bg-transparent group-data-[focus=true]:bg-transparent",
                 }}

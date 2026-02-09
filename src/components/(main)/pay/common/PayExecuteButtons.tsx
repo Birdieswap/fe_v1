@@ -93,7 +93,9 @@ export default function PayExecuteButtons({ mode }: { mode: "PAY" | "ENTER" }) {
                   pay.executeApproveWeth?.();
                 }}
               >
-                {isApprovePending ? "Approve WETH" : "Approve WETH"}
+                {isApprovePending
+                  ? `Approve ${pay.enterToken.symbol}`
+                  : `Approve ${pay.enterToken.symbol}`}
               </ThemedButton>
             </ButtonWithPulse>
           </motion.div>
