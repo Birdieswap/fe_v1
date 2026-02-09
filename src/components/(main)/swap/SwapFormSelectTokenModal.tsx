@@ -36,11 +36,13 @@ const Header = ({ children }: PropsWithChildren<{}>) => (
 const TokenDisplay = ({
   token,
   balanceValue,
+  showBalance,
   setToken,
   isSelected,
 }: {
   token: IToken;
-  balanceValue: BigDecimal;
+  balanceValue?: BigDecimal;
+  showBalance?: boolean;
   setToken: () => void;
   isSelected: boolean;
 }) => {
@@ -67,7 +69,7 @@ const TokenDisplay = ({
           {token?.symbol}
         </span>
       </div>
-      {!!balanceValue && (
+      {showBalance !== false && !!balanceValue && (
         <span className="text-right font-semibold text-foreground">
           {balanceValue
             .roundToDecimals(token?.displayDecimals ?? token?.decimals ?? 8)
@@ -87,6 +89,8 @@ export default function SwapFormSelectTokenModal(props: {
   tokens: ICurrency[];
   selectedToken?: ICurrency;
   setToken: (token: ICurrency) => void;
+  showBalance?: boolean;
+  withBalanceTitle?: string;
 }) {
   const { balances } = useContext(AssetsContext);
   const chainId = useChainId();
@@ -204,12 +208,13 @@ export default function SwapFormSelectTokenModal(props: {
               {hasAnyResult ? (
                 <Container>
                   {/* 1) 잔고 있는 토큰: Your Tokens */}
-                  <Header>Your Tokens</Header>
+                  <Header>{props.withBalanceTitle ?? "Your Tokens"}</Header>
                   <ListContainer>
                     {withBalance.map((v, idx) => (
                       <TokenDisplay
                         key={v.address ?? v.token.symbol ?? String(idx)}
                         balanceValue={v.balance}
+                        showBalance={props.showBalance}
                         isSelected={
                           !!v.token?.symbol && !!props.selectedToken?.symbol
                             ? v.token.symbol === props.selectedToken.symbol
@@ -234,6 +239,7 @@ export default function SwapFormSelectTokenModal(props: {
                           <TokenDisplay
                             key={v.address ?? v.token.symbol ?? String(idx)}
                             balanceValue={v.balance}
+                            showBalance={props.showBalance}
                             isSelected={
                               !!v.token?.symbol && !!props.selectedToken?.symbol
                                 ? v.token.symbol === props.selectedToken.symbol
@@ -260,6 +266,7 @@ export default function SwapFormSelectTokenModal(props: {
                           <TokenDisplay
                             key={v.address ?? v.token.symbol ?? String(idx)}
                             balanceValue={v.balance}
+                            showBalance={props.showBalance}
                             isSelected={
                               !!v.token?.symbol && !!props.selectedToken?.symbol
                                 ? v.token.symbol === props.selectedToken.symbol
