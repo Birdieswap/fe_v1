@@ -41,7 +41,7 @@ export function getAdaptiveAmountFontVars(
     startLength: 8,
     endLength: 18,
     maxSize: 22,
-    minSize: 12,
+    minSize: 10,
   });
 
   return {
