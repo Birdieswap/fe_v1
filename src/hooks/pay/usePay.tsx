@@ -38,6 +38,7 @@ import {
 } from "@/const/contracts/types/tokenTypes";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
+import { getPayTolerancePercent } from "@/components/(main)/pay/common/PayToleranceSection";
 
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
@@ -59,12 +60,6 @@ type EnterTokenSymbol = "ETH" | "USDC" | "WETH";
 const isEmptyAmount = (s?: string) => !s || !s.trim() || Number(s) <= 0;
 const safeLower = (s?: string) =>
   typeof s === "string" ? s.toLowerCase() : "";
-
-function toleranceToPercent(v: "auto" | number) {
-  if (v === "auto") return 5;
-  const n = Number(v);
-  return Number.isFinite(n) ? n : 5;
-}
 
 function fmtBd(v?: BigDecimal, decimals = 6) {
   if (!v) return "-";
@@ -306,12 +301,34 @@ export default function usePay() {
   }, [assets, selectedPool?.address]);
 
   // PAY derived
-  const tolPct = useMemo(() => toleranceToPercent(tolerance), [tolerance]);
+  const tolPct = useMemo(() => getPayTolerancePercent(tolerance), [tolerance]);
 
-  const payAmountUsdBd = useMemo(() => {
+  const payTokenUsdPriceBd = useMemo(() => {
+    const map: Map<string, any> | undefined = (assets as any)?.assetValues
+      ?.chainLinkPriceMap;
+    if (!map) return null;
+
+    const wantedKey = `LINK:${USDC.symbol}_USD`.toUpperCase();
+    const matchedKey = [...map.keys()].find(
+      (k) => String(k).toUpperCase() === wantedKey,
+    );
+    if (!matchedKey) return null;
+
+    const v = map.get(matchedKey);
+    const priceBd = v?.price as BigDecimal | undefined;
+    return priceBd ?? null;
+  }, [assets, USDC.symbol]);
+
+  const payAmountTokenBd = useMemo(() => {
     const dec = USDC.decimals ?? 6;
     return new BigDecimal(payAmount || "0", dec);
   }, [payAmount, USDC.decimals]);
+
+  const payAmountUsdBd = useMemo(() => {
+    // 입력 수량을 선택 토큰(현재 PAY=USDC) 기준으로 USD 환산
+    if (!payTokenUsdPriceBd) return payAmountTokenBd;
+    return payAmountTokenBd.multiply(payTokenUsdPriceBd);
+  }, [payAmountTokenBd, payTokenUsdPriceBd]);
 
   const payRequiredUsd = useMemo(() => {
     const factor = new BigDecimal(String(1 + tolPct / 100), 18);

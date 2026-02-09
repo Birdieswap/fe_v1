@@ -19,6 +19,7 @@ import Icons from "@/assets/icons/icons";
 import { BigDecimal } from "@/types/BigDecimal";
 
 import PayToleranceSection from "./PayToleranceSection";
+import { getPayTolerancePercent } from "./PayToleranceSection";
 import PayPoolSelector, { PoolLike } from "./PayPoolSelector";
 import { ENTER_INPUT_TOKENS, PAY_INPUT_TOKENS } from "./payInputTokens";
 import { AssetsContext } from "@/app/AssetsContextProvider";
@@ -319,9 +320,14 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       // 사용자가 직접 선택하면 이후 URL pool로 덮어쓰기 방지
       userPickedPoolRef.current = true;
       appliedPoolFromUrlRef.current = safeLower(pool.address);
+      const prevPoolAddr = safeLower(pay.selectedPool?.address);
+      const nextPoolAddr = safeLower(pool.address);
       pay.setSelectedPool(pool);
+      if (mode === "PAY" && !!prevPoolAddr && prevPoolAddr !== nextPoolAddr) {
+        pay.setPayAmount("");
+      }
     },
-    [pay],
+    [pay, mode],
   );
 
   useEffect(() => {
@@ -382,8 +388,13 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
   const handleSelectToken = useCallback(
     (nextToken: ICurrency) => {
       if (mode === "ENTER") {
+        setAmount("");
         if (nextToken.symbol === "ETH") pay.setNativeSymbol("ETH");
         if (nextToken.symbol === "USDC") pay.setNativeSymbol("USDC");
+        return;
+      }
+      if (mode === "PAY") {
+        pay.setPayAmount("");
       }
     },
     [mode, pay],
@@ -401,12 +412,34 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
     }
 
     if (!pay.selectedPool?.usdValue) return;
+    if (!payTokenPriceUsd || payTokenPriceUsd.isZero()) return;
+
+    const tolPct = getPayTolerancePercent(pay.tolerance);
+    const toleranceFactor = new BigDecimal(String(1 + tolPct / 100), 18);
+
+    const tokenAmountFromPoolUsd = pay.selectedPool.usdValue.divide(payTokenPriceUsd);
+    const tokenAmountWithTolerance =
+      tokenAmountFromPoolUsd.divide(toleranceFactor);
+    const oneToken = new BigDecimal("1", token.decimals ?? 6);
+    const inputAmount = tokenAmountWithTolerance.subtract(oneToken);
+
     setAmount(
-      pay.selectedPool.usdValue
+      (inputAmount.gt(new BigDecimal("0", token.decimals ?? 6))
+        ? inputAmount
+        : new BigDecimal("0", token.decimals ?? 6)
+      )
         .roundToDecimals(token.decimals ?? 6)
         .toPrecisionString(true, false),
     );
-  }, [mode, enterWalletBalanceBd, setAmount, pay.selectedPool, token.decimals]);
+  }, [
+    mode,
+    enterWalletBalanceBd,
+    setAmount,
+    pay.selectedPool,
+    payTokenPriceUsd,
+    pay.tolerance,
+    token.decimals,
+  ]);
 
   const isMaxDisabled =
     mode === "PAY" ? !pay.selectedPool?.usdValue : !enterWalletBalanceBd;
@@ -548,6 +581,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         selectedToken={token}
         setToken={handleSelectToken}
         tokens={selectableTokens}
+        showBalance={mode !== "PAY"}
+        withBalanceTitle={mode === "PAY" ? "Pay Tokens" : "Your Tokens"}
         onClose={tokenDisclosure.onClose}
       />
     </div>
