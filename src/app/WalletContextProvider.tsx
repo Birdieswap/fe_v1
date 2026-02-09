@@ -142,7 +142,7 @@ export default function WalletContextProvider({
   const walletData = useAccountWalletData(
     (account?.address as `0x${string}`) || undefined,
     undefined,
-    chainId
+    chainId,
   );
 
   // console.log(
@@ -291,10 +291,10 @@ export default function WalletContextProvider({
     if (typeof window === "undefined") return false;
     try {
       const v = new URLSearchParams(window.location.search)
-        .get("v")
+        .get("miniapp")
         ?.trim()
         .toLowerCase();
-      return v === "bassminiapp" || v === "baseminiapp";
+      return v === "base";
     } catch {
       return false;
     }
@@ -383,7 +383,7 @@ export default function WalletContextProvider({
             provider,
             hardReloadOnInjected: isMetaMaskInAppEnv(
               account.connector,
-              provider
+              provider,
             )
               ? true
               : false, // 자동 경로: 리로드 금지 (레이스/루프 차단)
@@ -429,7 +429,7 @@ export default function WalletContextProvider({
     config,
   ]);
 
-  // 특정 진입 파라미터(v=bassminiapp/baseminiapp)에서 접속 시, 1회 강제 consent 체크
+  // 특정 진입 파라미터(v=baseminiapp/miniapp)에서 접속 시, 1회 강제 consent 체크
   useEffect(() => {
     if (!account.isConnected || !account.address || !chainId) return;
     if (forcedEntryConsentCheckedRef.current) return;
@@ -653,7 +653,7 @@ export default function WalletContextProvider({
 
         const waitUntilWagmiSees = async (
           nextLower: string,
-          timeoutMs = 2000
+          timeoutMs = 2000,
         ) => {
           const start = Date.now();
           while (Date.now() - start < timeoutMs) {
@@ -726,7 +726,7 @@ export default function WalletContextProvider({
                 provider,
                 hardReloadOnInjected: isMetaMaskInAppEnv(
                   account.connector,
-                  provider
+                  provider,
                 )
                   ? true
                   : false, // 인앱(메타마스크)에서는 true가 될 것
@@ -744,7 +744,7 @@ export default function WalletContextProvider({
               provider,
               hardReloadOnInjected: isMetaMaskInAppEnv(
                 account.connector,
-                provider
+                provider,
               )
                 ? true
                 : false,
@@ -863,7 +863,7 @@ export default function WalletContextProvider({
             provider,
             hardReloadOnInjected: isMetaMaskInAppEnv(
               account.connector,
-              provider
+              provider,
             )
               ? true
               : false,
@@ -894,20 +894,20 @@ export default function WalletContextProvider({
 
     window.addEventListener(
       "app/riskConsentModal/close",
-      handler as EventListener
+      handler as EventListener,
     );
     document.addEventListener(
       "app/riskConsentModal/close",
-      handler as EventListener
+      handler as EventListener,
     );
     return () => {
       window.removeEventListener(
         "app/riskConsentModal/close",
-        handler as EventListener
+        handler as EventListener,
       );
       document.removeEventListener(
         "app/riskConsentModal/close",
-        handler as EventListener
+        handler as EventListener,
       );
     };
   }, [account?.connector, config]);
@@ -935,7 +935,7 @@ export default function WalletContextProvider({
       chainId,
       selectedNetwork,
       walletData,
-    ]
+    ],
   );
 
   return (
