@@ -285,6 +285,20 @@ export default function WalletContextProvider({
   // ===== 최소 자동 가드 =====
   const prevKeyRef = useRef<string | null>(null);
   const verifyingRef = useRef(false);
+  const forcedEntryConsentCheckedRef = useRef(false);
+
+  function shouldForceConsentByEntryParam() {
+    if (typeof window === "undefined") return false;
+    try {
+      const v = new URLSearchParams(window.location.search)
+        .get("v")
+        ?.trim()
+        .toLowerCase();
+      return v === "bassminiapp" || v === "baseminiapp";
+    } catch {
+      return false;
+    }
+  }
 
   // 기준키 베이스라인(처음 연결 시 1회 세팅)
   useEffect(() => {
@@ -407,6 +421,108 @@ export default function WalletContextProvider({
         dbg("wcp:changeGuard:leave"); // [DBG]
       }
     })();
+  }, [
+    account.isConnected,
+    account.address,
+    account.connector,
+    chainId,
+    config,
+  ]);
+
+  // 특정 진입 파라미터(v=bassminiapp/baseminiapp)에서 접속 시, 1회 강제 consent 체크
+  useEffect(() => {
+    if (!account.isConnected || !account.address || !chainId) return;
+    if (forcedEntryConsentCheckedRef.current) return;
+    if (!shouldForceConsentByEntryParam()) return;
+
+    const busy =
+      typeof window !== "undefined" &&
+      (window as any).__CONSENT_INTERACTIVE_ACTIVE__;
+    if (busy || initializingRef.current || verifyingRef.current) return;
+
+    let cancelled = false;
+
+    (async () => {
+      forcedEntryConsentCheckedRef.current = true;
+      const addr = account.address as `0x${string}` | undefined;
+      if (!addr) return;
+      const currentKey = `${addr.toLowerCase()}@${chainId}`;
+      const w = typeof window !== "undefined" ? (window as any) : undefined;
+      if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = true;
+
+      try {
+        const silent = await verifyConsentFlow({
+          config,
+          address: addr,
+          chainId,
+          mode: "silent",
+        });
+
+        if (cancelled) return;
+
+        if (silent === "already-consented") {
+          addConsentDoneKey(currentKey);
+          prevKeyRef.current = currentKey;
+          clearSoftBlock();
+          dbg("wcp:entryParam:doneSilentOK", { currentKey });
+          return;
+        }
+
+        await waitForRiskHost();
+        const interactive = await verifyConsentFlow({
+          config,
+          address: addr,
+          chainId,
+          mode: "interactive",
+        });
+
+        if (cancelled) return;
+
+        const ok =
+          interactive === "already-consented" || interactive === "verified-now";
+        if (ok) {
+          addConsentDoneKey(currentKey);
+          prevKeyRef.current = currentKey;
+          clearSoftBlock();
+          dbg("wcp:entryParam:doneInterOK", { currentKey });
+          return;
+        }
+
+        const provider = await account.connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        setSoftBlock();
+        await safeDisconnect({
+          config,
+          connector: account.connector,
+          provider,
+          hardReloadOnInjected: false,
+        });
+        clearRKRecent();
+        prevKeyRef.current = null;
+        dbg("wcp:entryParam:disconnected-no-consent");
+      } catch (e) {
+        const provider = await account.connector
+          ?.getProvider?.()
+          .catch(() => undefined);
+        setSoftBlock();
+        await safeDisconnect({
+          config,
+          connector: account.connector,
+          provider,
+          hardReloadOnInjected: false,
+        });
+        clearRKRecent();
+        prevKeyRef.current = null;
+        dbg("wcp:entryParam:error-disconnected", { err: String(e) });
+      } finally {
+        if (w) w.__CONSENT_INTERACTIVE_ACTIVE__ = false;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     account.isConnected,
     account.address,

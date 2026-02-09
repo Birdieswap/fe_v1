@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useMemo, useRef } from "react";
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Button, Image, Input, useDisclosure } from "@heroui/react";
 import { useChainId } from "wagmi";
 import { useSearchParams } from "next/navigation";
@@ -17,6 +24,8 @@ import { ENTER_INPUT_TOKENS, PAY_INPUT_TOKENS } from "./payInputTokens";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import { usePayContext } from "@/components/(main)/pay/PayProvider";
 import SwapFormSelectTokenModal from "@/components/(main)/swap/SwapFormSelectTokenModal";
+import { getAdaptiveAmountFontVars } from "@/utils/ui/getAdaptiveAmountFontVars";
+import suffixNumbers from "@/utils/suffixNumbers";
 
 export type PayMode = "PAY" | "ENTER";
 type LpVault = (typeof lpVaults)[keyof typeof lpVaults];
@@ -36,6 +45,12 @@ function fmtUsd(v?: BigDecimal) {
   if (!v) return "0";
   if (v.isZero()) return "$0.00";
   return "$" + v.roundToDecimals(2).toPrecisionString(true, true);
+}
+
+function fmtUsdCompact(v?: BigDecimal) {
+  if (!v) return "$0.00";
+  if (v.isZero()) return "$0.00";
+  return `$${suffixNumbers(v, 100_000, 2, true, true)}`;
 }
 
 function safeLower(s?: string) {
@@ -98,8 +113,16 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
   const assets = useContext(AssetsContext);
   const searchParams = useSearchParams();
   const tokenDisclosure = useDisclosure();
+  const [isSmall, setIsSmall] = useState(false);
 
   const chainId = wagmiChainId ?? DEFAULT_CHAIN_ID;
+
+  useEffect(() => {
+    const checkWidth = () => setIsSmall(window.innerWidth < 440);
+    checkWidth();
+    window.addEventListener("resize", checkWidth);
+    return () => window.removeEventListener("resize", checkWidth);
+  }, []);
 
   const amount = mode === "PAY" ? pay.payAmount : pay.enterAmount;
   const setAmount = mode === "PAY" ? pay.setPayAmount : pay.setEnterAmount;
@@ -338,7 +361,22 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
   }, [mode, poolParamLower, pools, pay, chainId, vaultList]);
 
   const handleAmountChange = (v: string) => {
-    if (v === "" || /^(\d+(\.\d*)?)?$/.test(v)) setAmount(v);
+    if (v === "") {
+      setAmount(v);
+      return;
+    }
+    if (!/^\d*\.?\d*$/.test(v)) return;
+
+    const [integerPart = "", decimalPart = ""] = v.split(".");
+    if (integerPart.length > 18) return;
+    if (decimalPart.length > (token.decimals ?? 18)) return;
+
+    if (v.startsWith(".")) {
+      setAmount(`0${v}`);
+      return;
+    }
+
+    setAmount(v);
   };
 
   const handleSelectToken = useCallback(
@@ -388,6 +426,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
       <div className="flex items-center justify-between gap-3">
         <Input
+          style={getAdaptiveAmountFontVars(amount)}
           type="number"
           step="any"
           min="0"
@@ -396,9 +435,9 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
           className="flex-1 bg-transparent"
           classNames={{
             inputWrapper:
-              "h-auto min-h-0 border-none bg-transparent px-0 py-0 shadow-none",
+              "h-11 min-h-11 border-none bg-transparent px-0 py-0 shadow-none",
             input:
-              "textfield text-[40px] leading-[44px] font-semibold text-foreground placeholder:text-default-400 focus:outline-none",
+              "textfield [font-size:var(--amount-font-desktop-size)] max-[375px]:[font-size:var(--amount-font-mobile-size)] leading-[44px] font-semibold text-foreground placeholder:text-default-400 focus:outline-none",
           }}
           inputMode="decimal"
           placeholder="0"
@@ -444,13 +483,23 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       {mode === "ENTER" && (
         <div className="mt-[-6px] flex items-center justify-between text-[13px]">
           <div className="min-h-[18px] text-default-500">
-            {fmtUsd(enterAmountUsd ?? undefined)}
+            {fmtUsdCompact(enterAmountUsd ?? undefined)}
           </div>
           <div className="flex items-center gap-2">
             <div className="min-h-[18px] text-default-500">
-              Balance&nbsp;
+              <span className="max-[439px]:hidden">Balance</span>
+              <span className="hidden max-[439px]:inline">BAL</span>
+              &nbsp;
               <span className="font-medium text-default-600">
-                {fmtBd(enterWalletBalanceBd ?? undefined, 8)}
+                {isSmall
+                  ? suffixNumbers(
+                      enterWalletBalanceBd ?? new BigDecimal("0"),
+                      999,
+                      2,
+                      true,
+                      true,
+                    )
+                  : fmtBd(enterWalletBalanceBd ?? undefined, 2)}
               </span>
             </div>
             <Button
@@ -468,7 +517,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       {mode === "PAY" && (
         <div className="mt-[-6px] flex items-center justify-between text-[13px]">
           <div className="min-h-[18px] text-default-500">
-            {fmtUsd(payAmountUsd ?? undefined)}
+            {fmtUsdCompact(payAmountUsd ?? undefined)}
           </div>
           <Button
             className="h-[30px] min-w-fit rounded-xl border-1 border-default-600 bg-primary-200 text-sm font-sans font-semibold dark:border-dark-mid-mint dark:bg-dark-mid-mint dark:text-background"
