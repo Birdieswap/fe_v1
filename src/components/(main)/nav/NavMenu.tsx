@@ -102,7 +102,7 @@ export default function NavMenu(
                   target="_blank"
                   onClick={onClose}
                 >
-                  Terms of Service
+                  Terms
                 </Link>
                 <Link
                   className="text-sm text-foreground transition-colors hover:text-default-800"
@@ -110,7 +110,15 @@ export default function NavMenu(
                   target="_blank"
                   onClick={onClose}
                 >
-                  Privacy Policy
+                  Privacy
+                </Link>
+                <Link
+                  className="text-sm text-foreground transition-colors hover:text-default-800"
+                  href="https://docs.birdieswap.com/legal/risk-disclosures"
+                  target="_blank"
+                  onClick={onClose}
+                >
+                  Risk
                 </Link>
               </div>
 

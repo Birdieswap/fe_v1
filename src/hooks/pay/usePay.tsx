@@ -42,7 +42,7 @@ import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
 
-import { approveWethForEnter, enter, pay as payAction } from "./actions";
+import { approveErc20ForEnter, enter, pay as payAction } from "./actions";
 
 // Blocks UI
 import {
@@ -54,7 +54,7 @@ import {
 
 // -------- helpers --------
 type PayMode = "PAY" | "ENTER";
-type NativeSymbol = "ETH" | "WETH";
+type EnterTokenSymbol = "ETH" | "USDC" | "WETH";
 
 const isEmptyAmount = (s?: string) => !s || !s.trim() || Number(s) <= 0;
 const safeLower = (s?: string) =>
@@ -250,10 +250,10 @@ export default function usePay() {
 
   const [receiver, setReceiver] = useState("");
   const [payAmount, setPayAmount] = useState(""); // USDC
-  const [enterAmount, setEnterAmount] = useState(""); // ETH/WETH
+  const [enterAmount, setEnterAmount] = useState("");
   const [tolerance, setTolerance] = useState<"auto" | number>("auto");
   const [selectedPool, setSelectedPool] = useState<PoolLike | undefined>();
-  const [nativeSymbol, setNativeSymbol] = useState<NativeSymbol>("ETH");
+  const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("ETH");
 
   // ✨ PAY 폼 리셋
   const resetPayPanel = useCallback(() => {
@@ -273,7 +273,12 @@ export default function usePay() {
   const USDC = tokens.USDC;
   const ETH = tokens.ETH;
   const WETH = tokens.WETH;
-  const enterToken = nativeSymbol === "ETH" ? ETH : WETH;
+  const enterToken =
+    nativeSymbol === "ETH"
+      ? ETH
+      : nativeSymbol === "USDC"
+        ? USDC
+        : WETH;
 
   // -------- network --------
   const isWrongNetwork = useMemo(() => {
@@ -393,17 +398,16 @@ export default function usePay() {
 
   // -------- ENTER: 체인링크 가격 기반 계산 --------
 
-  // 1) 네이티브 토큰(ETH/WETH)의 USD 가격 (BigDecimal)
+  // 1) 입력 토큰의 USD 가격 (BigDecimal)
   const enterTokenUsdPriceBd = useMemo(() => {
     const map: Map<string, any> | undefined = (assets as any)?.assetValues
       ?.chainLinkPriceMap;
     if (!map) return null;
 
-    // ETH / WETH 둘 다 1:1 이라, 심볼에 따라 우선순위만 바꿔줌
-    const keys =
-      nativeSymbol === "ETH"
-        ? ["LINK:ETH_USD", "LINK:WETH_USD"]
-        : ["LINK:WETH_USD", "LINK:ETH_USD"];
+    const symbol = enterToken.symbol.toUpperCase();
+    const keys = [`LINK:${symbol}_USD`];
+    if (symbol === "ETH") keys.push("LINK:WETH_USD");
+    if (symbol === "WETH") keys.push("LINK:ETH_USD");
 
     for (const key of keys) {
       const entry = map.get(key);
@@ -418,7 +422,7 @@ export default function usePay() {
       ?.coingeckoSymbolPriceMap as Map<string, BigDecimal | null> | undefined;
     if (cgMap && chainId) {
       const normalized = normalizeCoingeckoAddress(
-        (WETH.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
+        (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
         chainId,
       );
       if (normalized) {
@@ -427,14 +431,14 @@ export default function usePay() {
       }
     }
     if (cgSymbolMap) {
-      const primary = nativeSymbol.toLowerCase();
-      const fallback = primary === "eth" ? "weth" : "eth";
-      const price =
-        cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
+      const primary = enterToken.symbol.toLowerCase();
+      const fallback =
+        primary === "eth" ? "weth" : primary === "weth" ? "eth" : "";
+      const price = cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
       if (price && !price.isZero()) return price;
     }
     return null;
-  }, [assets, nativeSymbol, chainId, WETH.addresses]);
+  }, [assets, chainId, enterToken]);
 
   useEffect(() => {
     if (!chainId) return;
@@ -529,14 +533,14 @@ export default function usePay() {
     if (symbols.length > 0 && refetchSymbol) refetchSymbol(symbols);
   }, [assets, chainId, selectedPool?.address]);
 
-  // 2) 입력한 ETH/WETH 의 USD 가치
+  // 2) 입력한 토큰의 USD 가치
   const enterAmountUsdBd = useMemo(() => {
     if (isEmptyAmount(enterAmount)) return null;
     if (!enterTokenUsdPriceBd) return null;
 
-    const dec = enterToken.decimals ?? 18; // ETH/WETH 둘 다 18
+    const dec = enterToken.decimals ?? 18;
     const amtToken = new BigDecimal(enterAmount || "0", dec);
-    return amtToken.multiply(enterTokenUsdPriceBd); // USD 가치
+    return amtToken.multiply(enterTokenUsdPriceBd);
   }, [enterAmount, enterToken.decimals, enterTokenUsdPriceBd]);
 
   // 3) 이론상 발행 BLP 수량 = (입력 USD) / (pool token USD 가격)
@@ -570,9 +574,9 @@ export default function usePay() {
     if (!chainId) return undefined;
     if (nativeSymbol === "ETH") return undefined;
     return (
-      (WETH.addresses?.[chainId] as `0x${string}` | undefined) ?? undefined
+      (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ?? undefined
     );
-  }, [chainId, nativeSymbol, WETH.addresses]);
+  }, [chainId, nativeSymbol, enterToken.addresses]);
 
   const enterBalQuery = useBalance({
     address: userAddress,
@@ -599,22 +603,29 @@ export default function usePay() {
     return amt.gt(enterWalletBalanceBd);
   }, [enterAmount, enterWalletBalanceBd, enterToken.decimals]);
 
-  // ===== WETH allowance (ENTER, WETH, + pool selected + staking addr ready) =====
-  const wethAddr = useMemo(() => {
+  // ===== ERC20 allowance (ENTER, non-ETH, + pool selected + staking addr ready) =====
+  const enterErc20Addr = useMemo(() => {
     if (!chainId) return undefined;
-    return WETH.addresses?.[chainId] as `0x${string}` | undefined;
-  }, [chainId, WETH.addresses]);
+    if (nativeSymbol === "ETH") return undefined;
+    return enterToken.addresses?.[chainId] as `0x${string}` | undefined;
+  }, [chainId, nativeSymbol, enterToken.addresses]);
 
-  // ✅ ENTER 패널 여부는 여기서 보지 말고, "WETH + 필요한 주소들 다 있음"만 체크
+  // ✅ ENTER 패널 여부는 여기서 보지 말고, "ERC20 + 필요한 주소들 다 있음"만 체크
   const shouldCheckAllowance = useMemo(() => {
     return (
-      nativeSymbol === "WETH" &&
+      nativeSymbol !== "ETH" &&
       !!selectedPool &&
       !!stakingPoolAddress &&
       !!userAddress &&
-      !!wethAddr
+      !!enterErc20Addr
     );
-  }, [nativeSymbol, selectedPool, stakingPoolAddress, userAddress, wethAddr]);
+  }, [
+    nativeSymbol,
+    selectedPool,
+    stakingPoolAddress,
+    userAddress,
+    enterErc20Addr,
+  ]);
 
   const allowanceArgs = useMemo(() => {
     if (!userAddress || !stakingPoolAddress) return null;
@@ -626,7 +637,7 @@ export default function usePay() {
     isLoading: isAllowanceLoading,
     refetch: refetchAllowanceWeth,
   } = useReadContract({
-    address: wethAddr,
+    address: enterErc20Addr,
     abi: erc20Abi,
     functionName: "allowance",
     args: allowanceArgs ?? undefined,
@@ -636,12 +647,12 @@ export default function usePay() {
   // ✅ allowanceWeth가 아직 없으면 "모름"으로 두고,
   //    showApproveUI에서 로딩 중 숨기기 여부는 선택 가능
   const needsWethApprove = useMemo(() => {
-    if (nativeSymbol !== "WETH") return false;
+    if (nativeSymbol === "ETH") return false;
     if (!shouldCheckAllowance) return false;
     if (allowanceWeth == null) return false; // 아직 모름(=로딩/미수신)
 
     try {
-      const decimals = WETH.decimals ?? 18;
+      const decimals = enterToken.decimals ?? 18;
       const needed = parseUnits(enterAmount || "0", decimals);
       return allowanceWeth < needed;
     } catch {
@@ -652,7 +663,7 @@ export default function usePay() {
     shouldCheckAllowance,
     allowanceWeth,
     enterAmount,
-    WETH.decimals,
+    enterToken.decimals,
   ]);
 
   // ✅ UI에서 Approve 버튼 노출 여부
@@ -1032,13 +1043,13 @@ export default function usePay() {
     resetPayPanel,
   ]);
 
-  // ===== approve WETH (ENTER) =====
+  // ===== approve ERC20 (ENTER) =====
   const executeApproveWeth = useCallback(async () => {
     if (!chainId || !publicClient) return;
     if (!isConnected || isWrongNetwork) return;
     if (!userAddress) return;
     if (!stakingPoolAddress) return;
-    if (!wethAddr) return;
+    if (!enterErc20Addr) return;
 
     // console.log("[APPROVE][START]", {
     //   chainId,
@@ -1048,10 +1059,11 @@ export default function usePay() {
     //   enterAmount,
     // });
 
-    await approveWethForEnter({
+    await approveErc20ForEnter({
       chainId,
       userAddress: userAddress as `0x${string}`,
       stakingPoolAddress,
+      tokenAddress: enterErc20Addr,
       writeContract,
       publicClient, // ✅ 추가
       client,
@@ -1069,7 +1081,7 @@ export default function usePay() {
     isWrongNetwork,
     userAddress,
     stakingPoolAddress,
-    wethAddr,
+    enterErc20Addr,
     writeContract,
     client,
     tx,
@@ -1090,8 +1102,8 @@ export default function usePay() {
       if (isEmptyAmount(enterAmount)) return;
       if (isEnterInsufficientBalance) return;
 
-      // WETH 선택 + approve 필요하면 enter 막기
-      if (nativeSymbol === "WETH" && showApproveUI) return;
+      // ERC20 선택 + approve 필요하면 enter 막기
+      if (nativeSymbol !== "ETH" && showApproveUI) return;
 
       const poolInputTokenAddr = selectedPool.address;
 
@@ -1171,7 +1183,11 @@ export default function usePay() {
         userAddress: userAddress as `0x${string}`,
         stakingPoolAddress,
         wrapperAddress: WRAPPER_ADDRESS as `0x${string}`,
-        nativeSymbol,
+        inputTokenSymbol: enterToken.symbol,
+        inputTokenAddress:
+          (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ??
+          undefined,
+        inputTokenDecimals: enterToken.decimals ?? 18,
         amount: enterAmount,
         enterMinStakeAmountStr: stakeAmountStr,
         sharesDecimals,
@@ -1220,13 +1236,16 @@ export default function usePay() {
             ? getTokenBalanceFromAssets(assetsRef.current, finalToken1)
             : null;
 
-          const isWethAddr = (addr?: `0x${string}`) =>
-            !!addr && safeLower(addr) === safeLower(wethAddr);
+          const inputTokenAddr =
+            (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ??
+            undefined;
+          const isInputTokenAddr = (addr?: `0x${string}`) =>
+            !!addr && !!inputTokenAddr && safeLower(addr) === safeLower(inputTokenAddr);
 
-          // WETH로 enter할 때만 의미 있음 (ETH enter면 이 보정 로직 필요 없음)
+          // ERC20 enter 시, 입력 토큰 amountIn 만큼 balance baseline 보정
           const amountInBd =
-            nativeSymbol === "WETH"
-              ? new BigDecimal(enterAmount || "0", WETH.decimals ?? 18)
+            nativeSymbol !== "ETH"
+              ? new BigDecimal(enterAmount || "0", enterToken.decimals ?? 18)
               : null;
 
           const stakedDeltaBd =
@@ -1236,20 +1255,20 @@ export default function usePay() {
 
           const token0BeforeAdj =
             finalToken0 && token0BeforeBd
-              ? isWethAddr(finalToken0) && amountInBd
+              ? isInputTokenAddr(finalToken0) && amountInBd
                 ? BigDecimal.max(
                     token0BeforeBd.subtract(amountInBd),
-                    new BigDecimal("0", WETH.decimals ?? 18),
+                    new BigDecimal("0", enterToken.decimals ?? 18),
                   )
                 : token0BeforeBd
               : (token0BeforeBd ?? new BigDecimal("0", 18));
 
           const token1BeforeAdj =
             finalToken1 && token1BeforeBd
-              ? isWethAddr(finalToken1) && amountInBd
+              ? isInputTokenAddr(finalToken1) && amountInBd
                 ? BigDecimal.max(
                     token1BeforeBd.subtract(amountInBd),
-                    new BigDecimal("0", WETH.decimals ?? 18),
+                    new BigDecimal("0", enterToken.decimals ?? 18),
                   )
                 : token1BeforeBd
               : (token1BeforeBd ?? new BigDecimal("0", 18));
@@ -1361,7 +1380,7 @@ export default function usePay() {
     tx,
     enterToken.iconSrc,
     enterToken.symbol,
-    wethAddr,
+    enterToken.addresses,
     resetEnterPanel,
   ]);
 
