@@ -27,7 +27,14 @@ interface Props {
 }
 
 // Auto 기본값: 5%
-const DEFAULT_AUTO_STR = "5";
+const DEFAULT_AUTO_STR = "3";
+
+export function getPayTolerancePercent(value: "auto" | number): number {
+  if (value === "auto") return Number(DEFAULT_AUTO_STR);
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return Number(DEFAULT_AUTO_STR);
+  return Math.min(n, 99.99);
+}
 
 export default function PayToleranceSection({ mode, value, onChange }: Props) {
   const [custom, setCustom] = useState<string>(DEFAULT_AUTO_STR);
@@ -85,7 +92,7 @@ export default function PayToleranceSection({ mode, value, onChange }: Props) {
         "rounded-full",
         "flex items-center justify-center",
         "data-[hover=true]:bg-background data-[hover=true]:opacity-100",
-        className
+        className,
       )}
       variant="light"
     >
@@ -93,7 +100,7 @@ export default function PayToleranceSection({ mode, value, onChange }: Props) {
         className={clsx(
           "fill-default-500 group-hover:fill-default-700",
           "dark:fill-default-500 dark:group-hover:fill-default-700",
-          "transition-[fill]"
+          "transition-[fill]",
         )}
         fillRule="evenodd"
       />
@@ -106,7 +113,7 @@ export default function PayToleranceSection({ mode, value, onChange }: Props) {
       <div
         className={clsx(
           "flex w-full flex-col gap-2", // 모바일: 위아래
-          "sm:flex-row sm:items-start sm:gap-3" // 데스크탑: 좌우
+          "sm:flex-row sm:items-start sm:gap-3", // 데스크탑: 좌우
         )}
       >
         {/* ---- 왼쪽 라벨 영역 ---- */}
@@ -140,7 +147,7 @@ export default function PayToleranceSection({ mode, value, onChange }: Props) {
               "flex w-full items-center justify-between gap-2",
               "rounded-xl border border-default-300 dark:border-default-100 bg-background",
               "px-2 py-1.5",
-              "sm:w-auto sm:max-w-[240px]"
+              "sm:w-auto sm:max-w-[240px]",
             )}
           >
             {/* Auto / Custom 토글 */}
