@@ -12,14 +12,21 @@ export default function Footer() {
           href="https://docs.birdieswap.com/legal/terms-of-service"
           target="_blank"
         >
-          Terms of Service
+          Terms
         </Link>
         <Link
           className="text-sm text-foreground"
           href="https://docs.birdieswap.com/legal/privacy-policy"
           target="_blank"
         >
-          Privacy Policy
+          Privacy
+        </Link>
+        <Link
+          className="text-sm text-foreground"
+          href="https://docs.birdieswap.com/legal/risk-disclosures"
+          target="_blank"
+        >
+          Risk
         </Link>
         <div className="grow" />
         <div className="flex flex-row items-center justify-end gap-4">
