@@ -16,7 +16,7 @@
     "webhookUrl": "https://birdieswap-dev.vercel.app/webhook",
     "primaryCategory": "finance",
     "tags": ["dex", "liquidity", "swap", "yield", "stablecoin"],
-    "subtitle": "by Birdieswap",
+    "subtitle": "Your stablecoin liquidity buddy",
     "description": "Your stablecoin liquidity buddy",
     "tagline": "Your stablecoin liquidity buddy",
     "heroImageUrl": "https://birdieswap-dev.vercel.app/og-image.png",
