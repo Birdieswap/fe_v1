@@ -206,10 +206,11 @@ export async function pay(params: {
 // =====================
 // ENTER: approve (WETH)
 // =====================
-export async function approveWethForEnter(params: {
+export async function approveErc20ForEnter(params: {
   chainId: number;
   userAddress: `0x${string}`;
   stakingPoolAddress: `0x${string}`;
+  tokenAddress: `0x${string}`;
 
   writeContract: WriteContractMutate<Config, unknown>;
   publicClient: any; // ✅ approve도 receipt까지 기다리려면 필요
@@ -221,6 +222,7 @@ export async function approveWethForEnter(params: {
     chainId,
     userAddress,
     stakingPoolAddress,
+    tokenAddress,
     writeContract,
     publicClient,
     client,
@@ -228,15 +230,16 @@ export async function approveWethForEnter(params: {
     onAllowanceRefetch,
   } = params;
 
-  const WETH = tokens.WETH;
-  const wethAddr = WETH.addresses?.[chainId] as `0x${string}` | undefined;
-  if (!wethAddr) throw new Error("WETH address not found for chain");
+  const tokenMeta =
+    Object.values(tokens).find(
+      (t) => t.addresses?.[chainId]?.toLowerCase() === tokenAddress.toLowerCase()
+    ) ?? tokens.WETH;
 
   const transactionProps: TransactionStatusProps = {
     transactionType: TransactionType.APPROVE,
     chainId,
     address: userAddress,
-    input: WETH,
+    input: tokenMeta,
     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
   } as TransactionStatusProps;
 
@@ -249,7 +252,7 @@ export async function approveWethForEnter(params: {
 
   // approve tx
   const hash = await writeWithHandlers(writeContract, handlers, {
-    address: wethAddr,
+    address: tokenAddress,
     abi: erc20Abi,
     functionName: "approve",
     args: [stakingPoolAddress, MAX_UINT256],
@@ -272,7 +275,7 @@ export async function approveWethForEnter(params: {
     await onAllowanceRefetch?.();
   } catch (e) {
     // refetch 실패는 치명적이지 않아서 그냥 로그만
-    console.warn("[approveWethForEnter] allowance refetch failed", e);
+    console.warn("[approveErc20ForEnter] allowance refetch failed", e);
   }
 }
 
@@ -285,7 +288,9 @@ export async function enter(params: {
   stakingPoolAddress: `0x${string}`;
   wrapperAddress: `0x${string}`;
 
-  nativeSymbol: "ETH" | "WETH";
+  inputTokenSymbol: string;
+  inputTokenAddress?: `0x${string}`;
+  inputTokenDecimals: number;
   amount: string;
   enterMinStakeAmountStr: string;
   sharesDecimals: number;
@@ -307,7 +312,9 @@ export async function enter(params: {
     userAddress,
     stakingPoolAddress,
     wrapperAddress,
-    nativeSymbol,
+    inputTokenSymbol,
+    inputTokenAddress,
+    inputTokenDecimals,
     amount,
     enterMinStakeAmountStr,
     sharesDecimals,
@@ -318,10 +325,6 @@ export async function enter(params: {
     transactionContext,
     onMinedSuccess,
   } = params;
-
-  const WETH = tokens.WETH;
-  const wethAddr = WETH.addresses?.[chainId] as `0x${string}` | undefined;
-  if (!wethAddr) throw new Error("WETH address not found for chain");
 
   const minStakeAmount = parseUnits(
     sanitizeDecimalInput(enterMinStakeAmountStr || "0") || "0",
@@ -356,7 +359,10 @@ export async function enter(params: {
     address: userAddress,
     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
     input: {
-      token: nativeSymbol === "ETH" ? tokens.ETH : tokens.WETH,
+      token:
+        Object.values(tokens).find(
+          (t) => t.symbol.toUpperCase() === inputTokenSymbol.toUpperCase()
+        ) ?? tokens.ETH,
       amount: undefined,
     },
     onSubmittedInfo: enterSummaryNode,
@@ -375,7 +381,7 @@ export async function enter(params: {
 
   let hash: `0x${string}`;
 
-  if (nativeSymbol === "ETH") {
+  if (inputTokenSymbol.toUpperCase() === "ETH") {
     const value = parseUnits(sanitizeDecimalInput(amount || "0") || "0", 18);
 
     hash = await writeWithHandlers(writeContract, handlers, {
@@ -386,13 +392,17 @@ export async function enter(params: {
       value,
     });
   } else {
-    const amountIn = parseUnits(sanitizeDecimalInput(amount || "0") || "0", 18);
+    if (!inputTokenAddress) throw new Error("Input token address not found");
+    const amountIn = parseUnits(
+      sanitizeDecimalInput(amount || "0") || "0",
+      inputTokenDecimals
+    );
 
     hash = await writeWithHandlers(writeContract, handlers, {
       address: stakingPoolAddress,
       abi: birdieswap_staking_abi,
       functionName: "easyEnter",
-      args: [wethAddr, amountIn, minStakeAmount, userAddress],
+      args: [inputTokenAddress, amountIn, minStakeAmount, userAddress],
     });
   }
 

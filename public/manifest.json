@@ -1,7 +1,7 @@
 {
   "name": "Birdieswap",
   "short_name": "Birdieswap",
-  "description": "DEX Protocol",
+  "description": "Your stablecoin liquidity buddy",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

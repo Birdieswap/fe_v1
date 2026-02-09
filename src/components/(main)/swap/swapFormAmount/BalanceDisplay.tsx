@@ -26,7 +26,13 @@ export default function BalanceDisplay({
       <span className="font-semibold max-[375px]:text-[11px] text-default-900 dark:text-default-200">
         {isSmall ? "BAL" : "Balance"}
       </span>
-      {suffixNumbers(balance, 100_000, displayDecimals, true, true)}
+      {suffixNumbers(
+        balance,
+        isSmall ? 999 : 100_000,
+        isSmall ? 2 : displayDecimals,
+        true,
+        true,
+      )}
     </span>
   );
 }
