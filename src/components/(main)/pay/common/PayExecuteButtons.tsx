@@ -9,6 +9,8 @@ import {
   presenceTransition,
 } from "@/const/presenceTransition";
 import ThemedButton from "@/components/atoms/ThemedButton";
+import Icons from "@/assets/icons/icons";
+import SwapError from "@/components/(main)/swap/SwapError";
 import { WalletContext } from "@/app/WalletContextProvider";
 import { usePayContext } from "@/components/(main)/pay/PayProvider";
 import { TransactionContext } from "@/app/TransactionContextProvider";
@@ -72,6 +74,19 @@ export default function PayExecuteButtons({ mode }: { mode: "PAY" | "ENTER" }) {
     !pay.showApproveUI ||
     !pay.executeApproveWeth;
 
+  const impact = mode === "PAY" ? pay.payPriceImpact : pay.enterPriceImpact;
+  const isInsufficient =
+    mode === "PAY"
+      ? pay.isPayInsufficientPoolBalance
+      : pay.isEnterInsufficientBalance;
+  const isHighImpact =
+    !isInsufficient &&
+    (mode === "PAY" ? pay.isPayHighPriceImpact : pay.isEnterHighPriceImpact);
+  const isOverTolerance =
+    mode === "PAY"
+      ? pay.isPayPriceImpactOverTolerance
+      : pay.isEnterPriceImpactOverTolerance;
+
   return (
     <motion.div layout className="flex w-full flex-col" {...defaultTransition}>
       <AnimatePresence initial={false}>
@@ -119,6 +134,28 @@ export default function PayExecuteButtons({ mode }: { mode: "PAY" | "ENTER" }) {
             </ThemedButton>
           </ButtonWithPulse>
         </motion.div>
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isHighImpact && (
+          <div className="mt-4">
+            <SwapError>
+              <Icons.Error className="dark:fill-[#ff3f3f]" />
+              <span>
+                High price impact! More than{" "}
+                {impact?.abs().mul(100).toFixed(2) ?? "-"}% drop!
+                {isOverTolerance && (
+                  <>
+                    <br />
+                    <span className="text-[12px]">
+                      Please enter a smaller amount or increase tolerance.
+                    </span>
+                  </>
+                )}
+              </span>
+            </SwapError>
+          </div>
+        )}
       </AnimatePresence>
     </motion.div>
   );
