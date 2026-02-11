@@ -78,6 +78,7 @@ export interface QuoteCtx {
   assetValues?: useAssetValuesReturnType;
   publicClient?: PublicClient | null;
   maxSlippage?: number | null;
+  disableBenchmarkQuote?: boolean;
   fromToken?: ICurrency;
   toToken?: ICurrency;
   // state setters (동일 동작 유지)

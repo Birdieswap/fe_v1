@@ -69,6 +69,7 @@ type LpUnderlyingSnapshot = {
   poolBalance1: BigDecimal;
   totalSupply: BigDecimal;
 };
+const PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL: keyof typeof tokens = "ETH";
 
 const isEmptyAmount = (s?: string) => !s || !s.trim() || Number(s) <= 0;
 const safeLower = (s?: string) =>
@@ -301,11 +302,10 @@ export default function usePay() {
   const ETH = tokens.ETH;
   const WETH = tokens.WETH;
   const enterToken =
-    nativeSymbol === "ETH"
-      ? ETH
-      : nativeSymbol === "USDC"
-        ? USDC
-        : WETH;
+    nativeSymbol === "ETH" ? ETH : nativeSymbol === "USDC" ? USDC : WETH;
+  const priceImpactHubToken = tokens[
+    PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL
+  ] as ICurrency;
 
   const getUsdPriceForToken = useCallback(
     (token?: ICurrency): BigDecimal | null => {
@@ -348,7 +348,8 @@ export default function usePay() {
         const primary = token.symbol.toLowerCase();
         const fallback =
           primary === "eth" ? "weth" : primary === "weth" ? "eth" : "";
-        const price = cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
+        const price =
+          cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
         if (price && !price.isZero()) return price;
       }
       return null;
@@ -378,7 +379,7 @@ export default function usePay() {
     });
   }, [chainId, selectedPool?.address]);
 
-  const quoteSwapOutAmount = useCallback(
+  const quoteSwapOutAmountDirect = useCallback(
     async (params: {
       fromToken: ICurrency;
       toToken: ICurrency;
@@ -386,11 +387,13 @@ export default function usePay() {
     }): Promise<BigDecimal | null> => {
       const { fromToken, toToken, amount } = params;
       if (!chainId || !publicClient) return null;
-      if (!amount || amount.lte(0)) return new BigDecimal("0", toToken.decimals);
+      if (!amount || amount.lte(0))
+        return new BigDecimal("0", toToken.decimals);
 
       const fromAddr =
-        (getTokenAddress({ token: fromToken, chainId }) as `0x${string}` | null) ??
-        null;
+        (getTokenAddress({ token: fromToken, chainId }) as
+          | `0x${string}`
+          | null) ?? null;
 
       const fromCmp = getComparableTokenAddress(fromToken);
       const toCmp = getComparableTokenAddress(toToken);
@@ -419,9 +422,10 @@ export default function usePay() {
           chainId,
           swapPool,
           poolInfo,
-          assetValues: (assets as any)?.assetValues,
+          assetValues: (assetsRef.current as any)?.assetValues,
           publicClient: publicClient as any,
           maxSlippage: null,
+          disableBenchmarkQuote: true,
           fromToken,
           toToken,
           setMidPoolPrice: () => {},
@@ -436,10 +440,76 @@ export default function usePay() {
         toToken,
       );
 
-      if (!result?.amount) return null;
+      if (!result?.amount) {
+        console.warn("[PI][quote] empty-result", {
+          fromToken: fromToken.symbol,
+          toToken: toToken.symbol,
+          amountIn: amountStr,
+          disableBenchmarkQuote: true,
+          meta: result?.meta,
+        });
+        return null;
+      }
       return new BigDecimal(result.amount, toToken.decimals ?? 18);
     },
-    [assets, chainId, getComparableTokenAddress, publicClient],
+    [chainId, getComparableTokenAddress, publicClient],
+  );
+
+  const quoteSwapOutAmount = useCallback(
+    async (params: {
+      fromToken: ICurrency;
+      toToken: ICurrency;
+      amount: BigDecimal;
+    }): Promise<BigDecimal | null> => {
+      const { fromToken, toToken, amount } = params;
+      const fromCmp = getComparableTokenAddress(fromToken);
+      const toCmp = getComparableTokenAddress(toToken);
+      const hubCmp = getComparableTokenAddress(priceImpactHubToken);
+
+      const direct = await quoteSwapOutAmountDirect({
+        fromToken,
+        toToken,
+        amount,
+      });
+      if (direct) return direct;
+
+      if (!fromCmp || !toCmp || !hubCmp) return null;
+      if (fromCmp === toCmp)
+        return amount.roundToDecimals(toToken.decimals ?? 18);
+      if (fromCmp === hubCmp || toCmp === hubCmp) return null;
+
+      console.log("[PI][route] fallback-to-hub", {
+        hubToken: priceImpactHubToken.symbol,
+        fromToken: fromToken.symbol,
+        toToken: toToken.symbol,
+        amountIn: amount.toPrecisionString(true, false),
+      });
+
+      const viaHub = await quoteSwapOutAmountDirect({
+        fromToken,
+        toToken: priceImpactHubToken,
+        amount,
+      });
+      if (!viaHub) return null;
+
+      const out = await quoteSwapOutAmountDirect({
+        fromToken: priceImpactHubToken,
+        toToken,
+        amount: viaHub,
+      });
+      if (!out) return null;
+
+      console.log("[PI][route] fallback-result", {
+        hubToken: priceImpactHubToken.symbol,
+        leg1: `${fromToken.symbol}->${priceImpactHubToken.symbol}`,
+        leg1OutAmount: viaHub.toPrecisionString(true, false),
+        leg2: `${priceImpactHubToken.symbol}->${toToken.symbol}`,
+        leg2OutAmount: out.toPrecisionString(true, false),
+      });
+
+      return out;
+    },
+    [getComparableTokenAddress, priceImpactHubToken, quoteSwapOutAmountDirect],
   );
 
   // -------- network --------
@@ -745,8 +815,12 @@ export default function usePay() {
           return;
         }
 
-        const token0 = stakeToken.swap?.input?.[0]?.input as ICurrency | undefined;
-        const token1 = stakeToken.swap?.input?.[1]?.input as ICurrency | undefined;
+        const token0 = stakeToken.swap?.input?.[0]?.input as
+          | ICurrency
+          | undefined;
+        const token1 = stakeToken.swap?.input?.[1]?.input as
+          | ICurrency
+          | undefined;
         if (!token0 || !token1) {
           if (!cancelled) setEnterPriceImpact(undefined);
           return;
@@ -760,7 +834,10 @@ export default function usePay() {
           return;
         }
 
-        const amountIn = new BigDecimal(enterAmount || "0", enterToken.decimals ?? 18);
+        const amountIn = new BigDecimal(
+          enterAmount || "0",
+          enterToken.decimals ?? 18,
+        );
         if (amountIn.isZero()) {
           if (!cancelled) setEnterPriceImpact(undefined);
           return;
@@ -854,8 +931,16 @@ export default function usePay() {
             },
           });
           const [swapped0, swapped1] = await Promise.all([
-            quoteSwapOutAmount({ fromToken: enterToken, toToken: token0, amount: half }),
-            quoteSwapOutAmount({ fromToken: enterToken, toToken: token1, amount: half }),
+            quoteSwapOutAmount({
+              fromToken: enterToken,
+              toToken: token0,
+              amount: half,
+            }),
+            quoteSwapOutAmount({
+              fromToken: enterToken,
+              toToken: token1,
+              amount: half,
+            }),
           ]);
           if (isStale()) return;
           if (!swapped0 || !swapped1) {
@@ -868,7 +953,9 @@ export default function usePay() {
             swapBTo: token1.symbol,
             swapBOutAmount: swapped1.toPrecisionString(true, false),
           });
-          expectedUsd = swapped0.multiply(price0).add(swapped1.multiply(price1));
+          expectedUsd = swapped0
+            .multiply(price0)
+            .add(swapped1.multiply(price1));
         }
 
         const impact = expectedUsd
@@ -938,15 +1025,25 @@ export default function usePay() {
         const cacheKey = `${chainId}:${safeLower(selectedPool.address)}`;
         let snapshot = lpUnderlyingSnapshotRef.current.get(cacheKey);
         if (!snapshot) {
-          const token0 = stakeToken.swap?.input?.[0]?.input as ICurrency | undefined;
-          const token1 = stakeToken.swap?.input?.[1]?.input as ICurrency | undefined;
+          const token0 = stakeToken.swap?.input?.[0]?.input as
+            | ICurrency
+            | undefined;
+          const token1 = stakeToken.swap?.input?.[1]?.input as
+            | ICurrency
+            | undefined;
           if (!token0 || !token1) {
             if (!cancelled) setPayPriceImpact(undefined);
             return;
           }
 
-          const totalSupply = await getTotalSupply(publicClient as any, stakeToken);
-          const dual = await totalDualUnderlyingTokens(publicClient as any, stakeToken);
+          const totalSupply = await getTotalSupply(
+            publicClient as any,
+            stakeToken,
+          );
+          const dual = await totalDualUnderlyingTokens(
+            publicClient as any,
+            stakeToken,
+          );
           if (isStale()) return;
           if (!totalSupply || totalSupply.lte(0) || !dual) {
             if (!cancelled) setPayPriceImpact(undefined);
@@ -1139,7 +1236,8 @@ export default function usePay() {
     if (!chainId) return undefined;
     if (nativeSymbol === "ETH") return undefined;
     return (
-      (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ?? undefined
+      (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ??
+      undefined
     );
   }, [chainId, nativeSymbol, enterToken.addresses]);
 
@@ -1847,7 +1945,9 @@ export default function usePay() {
             (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ??
             undefined;
           const isInputTokenAddr = (addr?: `0x${string}`) =>
-            !!addr && !!inputTokenAddr && safeLower(addr) === safeLower(inputTokenAddr);
+            !!addr &&
+            !!inputTokenAddr &&
+            safeLower(addr) === safeLower(inputTokenAddr);
 
           // ERC20 enter 시, 입력 토큰 amountIn 만큼 balance baseline 보정
           const amountInBd =
