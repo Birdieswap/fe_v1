@@ -33,12 +33,18 @@ import { ADDRESS } from "@/const/contracts/contractAddresses";
 import { getFromContracts } from "@/utils/farm/getAddressHelpers";
 import { FarmList } from "@/const/farmInfo";
 import {
+  ICurrency,
   isBirdieLPFarm,
   isBirdieSingleFarm,
 } from "@/const/contracts/types/tokenTypes";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
 import { getPayTolerancePercent } from "@/components/(main)/pay/common/PayToleranceSection";
+import getSwapPool from "@/utils/assets/getSwapPool";
+import { derivePoolInfo } from "@/hooks/swap/useSwap/useSwapToken/derivePoolInfo";
+import { getOtherAmount } from "@/hooks/swap/useSwap/useSwapToken/quoteService";
+import getTotalSupply from "@/utils/farm/getTotalSupply";
+import totalDualUnderlyingTokens from "@/utils/farm/totalDualUnderlyingTokens";
 
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
@@ -56,10 +62,25 @@ import {
 // -------- helpers --------
 type PayMode = "PAY" | "ENTER";
 type EnterTokenSymbol = "ETH" | "USDC" | "WETH";
+type LpUnderlyingSnapshot = {
+  token0: ICurrency;
+  token1: ICurrency;
+  poolBalance0: BigDecimal;
+  poolBalance1: BigDecimal;
+  totalSupply: BigDecimal;
+};
 
 const isEmptyAmount = (s?: string) => !s || !s.trim() || Number(s) <= 0;
 const safeLower = (s?: string) =>
   typeof s === "string" ? s.toLowerCase() : "";
+const ZERO_ADDR = "0x0000000000000000000000000000000000000000";
+const ETH_LIKE = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+
+function isEthLikeAddress(addr?: string) {
+  if (!addr) return false;
+  const low = safeLower(addr);
+  return low === ETH_LIKE || low === ZERO_ADDR;
+}
 
 function fmtBd(v?: BigDecimal, decimals = 6) {
   if (!v) return "-";
@@ -236,6 +257,11 @@ export default function usePay() {
 
   // ✅ 최신 assets 참조용 ref
   const assetsRef = useRef<any>(assets);
+  const lpUnderlyingSnapshotRef = useRef<Map<string, LpUnderlyingSnapshot>>(
+    new Map(),
+  );
+  const enterPiRequestIdRef = useRef(0);
+  const payPiRequestIdRef = useRef(0);
   useEffect(() => {
     assetsRef.current = assets;
   }, [assets]);
@@ -249,6 +275,12 @@ export default function usePay() {
   const [tolerance, setTolerance] = useState<"auto" | number>("auto");
   const [selectedPool, setSelectedPool] = useState<PoolLike | undefined>();
   const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("ETH");
+  const [enterPriceImpact, setEnterPriceImpact] = useState<
+    BigDecimal | undefined
+  >(undefined);
+  const [payPriceImpact, setPayPriceImpact] = useState<BigDecimal | undefined>(
+    undefined,
+  );
 
   // ✨ PAY 폼 리셋
   const resetPayPanel = useCallback(() => {
@@ -274,6 +306,141 @@ export default function usePay() {
       : nativeSymbol === "USDC"
         ? USDC
         : WETH;
+
+  const getUsdPriceForToken = useCallback(
+    (token?: ICurrency): BigDecimal | null => {
+      if (!token) return null;
+
+      const clMap: Map<string, any> | undefined = (assets as any)?.assetValues
+        ?.chainLinkPriceMap;
+      const symbol = token.symbol.toUpperCase();
+
+      if (clMap) {
+        const keys = [`LINK:${symbol}_USD`];
+        if (symbol === "ETH") keys.push("LINK:WETH_USD");
+        if (symbol === "WETH") keys.push("LINK:ETH_USD");
+
+        for (const key of keys) {
+          const entry = clMap.get(key);
+          const price = entry?.price as BigDecimal | undefined;
+          if (price && !price.isZero()) return price;
+        }
+      }
+
+      const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
+        | Map<string, BigDecimal | null>
+        | undefined;
+      const cgSymbolMap = (assets as any)?.assetValues
+        ?.coingeckoSymbolPriceMap as Map<string, BigDecimal | null> | undefined;
+
+      if (cgMap && chainId) {
+        const normalized = normalizeCoingeckoAddress(
+          (token.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
+          chainId,
+        );
+        if (normalized) {
+          const cgPrice = cgMap.get(normalized) ?? null;
+          if (cgPrice && !cgPrice.isZero()) return cgPrice;
+        }
+      }
+
+      if (cgSymbolMap) {
+        const primary = token.symbol.toLowerCase();
+        const fallback =
+          primary === "eth" ? "weth" : primary === "weth" ? "eth" : "";
+        const price = cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
+        if (price && !price.isZero()) return price;
+      }
+      return null;
+    },
+    [assets, chainId],
+  );
+
+  const getComparableTokenAddress = useCallback(
+    (token?: ICurrency): string => {
+      if (!token || !chainId) return "";
+      const addr = getTokenAddress({ token, chainId }) ?? "";
+      const wethAddr = (tokens.WETH.addresses?.[chainId] ?? "") as string;
+      if (token.symbol.toUpperCase() === "ETH") return safeLower(wethAddr);
+      if (isEthLikeAddress(addr)) return safeLower(wethAddr);
+      return safeLower(addr);
+    },
+    [chainId],
+  );
+
+  const selectedLpVault = useMemo(() => {
+    if (!chainId || !selectedPool?.address) return undefined;
+    const poolAddr = safeLower(selectedPool.address);
+    const list = Object.values(lpVaults) as any[];
+    return list.find((vault) => {
+      const addr = vault?.addresses?.[chainId];
+      return !!addr && safeLower(addr) === poolAddr;
+    });
+  }, [chainId, selectedPool?.address]);
+
+  const quoteSwapOutAmount = useCallback(
+    async (params: {
+      fromToken: ICurrency;
+      toToken: ICurrency;
+      amount: BigDecimal;
+    }): Promise<BigDecimal | null> => {
+      const { fromToken, toToken, amount } = params;
+      if (!chainId || !publicClient) return null;
+      if (!amount || amount.lte(0)) return new BigDecimal("0", toToken.decimals);
+
+      const fromAddr =
+        (getTokenAddress({ token: fromToken, chainId }) as `0x${string}` | null) ??
+        null;
+
+      const fromCmp = getComparableTokenAddress(fromToken);
+      const toCmp = getComparableTokenAddress(toToken);
+      if (!fromCmp || !toCmp) return null;
+
+      if (fromCmp === toCmp) {
+        return amount.roundToDecimals(toToken.decimals ?? 18);
+      }
+
+      const swapPool = getSwapPool({
+        fromToken,
+        toToken,
+        chainId,
+      });
+      if (!swapPool) return null;
+
+      const poolInfo = derivePoolInfo(swapPool, chainId, fromAddr);
+      const poolAddrLC = safeLower(swapPool?.addresses?.[chainId as any] ?? "");
+      const pairKey = `${fromCmp}_${toCmp}_${poolAddrLC}`;
+      const amountStr = amount
+        .roundToDecimals(fromToken.decimals ?? 18)
+        .toPrecisionString(true, false);
+
+      const result = await getOtherAmount(
+        {
+          chainId,
+          swapPool,
+          poolInfo,
+          assetValues: (assets as any)?.assetValues,
+          publicClient: publicClient as any,
+          maxSlippage: null,
+          fromToken,
+          toToken,
+          setMidPoolPrice: () => {},
+          setSqrtPriceX96: () => {},
+          setQuoteReceive: () => {},
+          pairKey,
+          addrLower: (t?: ICurrency) => getComparableTokenAddress(t),
+        } as any,
+        amountStr,
+        "in",
+        fromToken,
+        toToken,
+      );
+
+      if (!result?.amount) return null;
+      return new BigDecimal(result.amount, toToken.decimals ?? 18);
+    },
+    [assets, chainId, getComparableTokenAddress, publicClient],
+  );
 
   // -------- network --------
   const isWrongNetwork = useMemo(() => {
@@ -304,20 +471,8 @@ export default function usePay() {
   const tolPct = useMemo(() => getPayTolerancePercent(tolerance), [tolerance]);
 
   const payTokenUsdPriceBd = useMemo(() => {
-    const map: Map<string, any> | undefined = (assets as any)?.assetValues
-      ?.chainLinkPriceMap;
-    if (!map) return null;
-
-    const wantedKey = `LINK:${USDC.symbol}_USD`.toUpperCase();
-    const matchedKey = [...map.keys()].find(
-      (k) => String(k).toUpperCase() === wantedKey,
-    );
-    if (!matchedKey) return null;
-
-    const v = map.get(matchedKey);
-    const priceBd = v?.price as BigDecimal | undefined;
-    return priceBd ?? null;
-  }, [assets, USDC.symbol]);
+    return getUsdPriceForToken(USDC);
+  }, [USDC, getUsdPriceForToken]);
 
   const payAmountTokenBd = useMemo(() => {
     const dec = USDC.decimals ?? 6;
@@ -416,46 +571,10 @@ export default function usePay() {
   // -------- ENTER: 체인링크 가격 기반 계산 --------
 
   // 1) 입력 토큰의 USD 가격 (BigDecimal)
-  const enterTokenUsdPriceBd = useMemo(() => {
-    const map: Map<string, any> | undefined = (assets as any)?.assetValues
-      ?.chainLinkPriceMap;
-    if (!map) return null;
-
-    const symbol = enterToken.symbol.toUpperCase();
-    const keys = [`LINK:${symbol}_USD`];
-    if (symbol === "ETH") keys.push("LINK:WETH_USD");
-    if (symbol === "WETH") keys.push("LINK:ETH_USD");
-
-    for (const key of keys) {
-      const entry = map.get(key);
-      const price = entry?.price as BigDecimal | undefined;
-      if (price) return price;
-    }
-
-    const cgMap = (assets as any)?.assetValues?.coingeckoPriceMap as
-      | Map<string, BigDecimal | null>
-      | undefined;
-    const cgSymbolMap = (assets as any)?.assetValues
-      ?.coingeckoSymbolPriceMap as Map<string, BigDecimal | null> | undefined;
-    if (cgMap && chainId) {
-      const normalized = normalizeCoingeckoAddress(
-        (enterToken.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
-        chainId,
-      );
-      if (normalized) {
-        const cgPrice = cgMap.get(normalized) ?? null;
-        if (cgPrice && !cgPrice.isZero()) return cgPrice;
-      }
-    }
-    if (cgSymbolMap) {
-      const primary = enterToken.symbol.toLowerCase();
-      const fallback =
-        primary === "eth" ? "weth" : primary === "weth" ? "eth" : "";
-      const price = cgSymbolMap.get(primary) ?? cgSymbolMap.get(fallback) ?? null;
-      if (price && !price.isZero()) return price;
-    }
-    return null;
-  }, [assets, chainId, enterToken]);
+  const enterTokenUsdPriceBd = useMemo(
+    () => getUsdPriceForToken(enterToken),
+    [enterToken, getUsdPriceForToken],
+  );
 
   useEffect(() => {
     if (!chainId) return;
@@ -577,6 +696,435 @@ export default function usePay() {
     const factor = new BigDecimal(String(1 - tolPct / 100), 18);
     return enterIdealStakeAmountBd.multiply(factor);
   }, [enterIdealStakeAmountBd, tolPct]);
+
+  const enterPiInsufficientBalance = useMemo(() => {
+    if (!chainId || isEmptyAmount(enterAmount)) return false;
+    const amountBd = new BigDecimal(enterAmount, enterToken.decimals ?? 18);
+
+    const tokenAddr =
+      nativeSymbol === "ETH"
+        ? ((tokens.ETH.addresses?.[chainId] as string | undefined) ?? ZERO_ADDR)
+        : (enterToken.addresses?.[chainId] as string | undefined);
+
+    const balanceBd = getTokenBalanceFromAssets(assets, tokenAddr);
+    if (!balanceBd) return false;
+    return amountBd.gt(balanceBd);
+  }, [
+    assets,
+    chainId,
+    enterAmount,
+    enterToken.addresses,
+    enterToken.decimals,
+    nativeSymbol,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const requestId = ++enterPiRequestIdRef.current;
+    const isStale = () =>
+      cancelled || enterPiRequestIdRef.current !== requestId;
+    const timer = setTimeout(async () => {
+      try {
+        if (isStale()) return;
+        if (
+          !chainId ||
+          !selectedPool ||
+          !selectedLpVault ||
+          enterPiInsufficientBalance ||
+          isEmptyAmount(enterAmount) ||
+          !enterTokenUsdPriceBd
+        ) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const stakeToken = selectedLpVault as any;
+        if (!isBirdieLPFarm(stakeToken as any)) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+
+        const token0 = stakeToken.swap?.input?.[0]?.input as ICurrency | undefined;
+        const token1 = stakeToken.swap?.input?.[1]?.input as ICurrency | undefined;
+        if (!token0 || !token1) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const price0 = getUsdPriceForToken(token0);
+        const price1 = getUsdPriceForToken(token1);
+        if (!price0 || !price1) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+
+        const amountIn = new BigDecimal(enterAmount || "0", enterToken.decimals ?? 18);
+        if (amountIn.isZero()) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+        const inputUsd = amountIn.multiply(enterTokenUsdPriceBd);
+        if (inputUsd.isZero()) {
+          if (!cancelled) setEnterPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const half = amountIn.divide(new BigDecimal("2", 0));
+        const inputAddr = getComparableTokenAddress(enterToken);
+        const token0Addr = getComparableTokenAddress(token0);
+        const token1Addr = getComparableTokenAddress(token1);
+
+        console.log("[ENTER][PI] input", {
+          pool: selectedPool.symbol,
+          inputAmount: amountIn.toPrecisionString(true, false),
+          inputToken: enterToken.symbol,
+          inputUsd: inputUsd.toPrecisionString(true, true),
+          token0: token0.symbol,
+          token1: token1.symbol,
+          halfAmount: half.toPrecisionString(true, false),
+        });
+
+        let expectedUsd: BigDecimal | null = null;
+
+        if (inputAddr && inputAddr === token0Addr) {
+          console.log("[ENTER][PI] swap-plan", {
+            keepToken: token0.symbol,
+            keepAmount: half.toPrecisionString(true, false),
+            swapFromToken: enterToken.symbol,
+            swapAmount: half.toPrecisionString(true, false),
+            swapToToken: token1.symbol,
+          });
+          const swapped1 = await quoteSwapOutAmount({
+            fromToken: enterToken,
+            toToken: token1,
+            amount: half,
+          });
+          if (isStale()) return;
+          if (!swapped1) {
+            if (!cancelled) setEnterPriceImpact(undefined);
+            return;
+          }
+          console.log("[ENTER][PI] swap-result", {
+            swapFromToken: enterToken.symbol,
+            swapToToken: token1.symbol,
+            swapInAmount: half.toPrecisionString(true, false),
+            swapOutAmount: swapped1.toPrecisionString(true, false),
+          });
+          expectedUsd = half.multiply(price0).add(swapped1.multiply(price1));
+        } else if (inputAddr && inputAddr === token1Addr) {
+          console.log("[ENTER][PI] swap-plan", {
+            keepToken: token1.symbol,
+            keepAmount: half.toPrecisionString(true, false),
+            swapFromToken: enterToken.symbol,
+            swapAmount: half.toPrecisionString(true, false),
+            swapToToken: token0.symbol,
+          });
+          const swapped0 = await quoteSwapOutAmount({
+            fromToken: enterToken,
+            toToken: token0,
+            amount: half,
+          });
+          if (isStale()) return;
+          if (!swapped0) {
+            if (!cancelled) setEnterPriceImpact(undefined);
+            return;
+          }
+          console.log("[ENTER][PI] swap-result", {
+            swapFromToken: enterToken.symbol,
+            swapToToken: token0.symbol,
+            swapInAmount: half.toPrecisionString(true, false),
+            swapOutAmount: swapped0.toPrecisionString(true, false),
+          });
+          expectedUsd = half.multiply(price1).add(swapped0.multiply(price0));
+        } else {
+          console.log("[ENTER][PI] swap-plan", {
+            splitSwap: true,
+            swapA: {
+              from: enterToken.symbol,
+              amount: half.toPrecisionString(true, false),
+              to: token0.symbol,
+            },
+            swapB: {
+              from: enterToken.symbol,
+              amount: half.toPrecisionString(true, false),
+              to: token1.symbol,
+            },
+          });
+          const [swapped0, swapped1] = await Promise.all([
+            quoteSwapOutAmount({ fromToken: enterToken, toToken: token0, amount: half }),
+            quoteSwapOutAmount({ fromToken: enterToken, toToken: token1, amount: half }),
+          ]);
+          if (isStale()) return;
+          if (!swapped0 || !swapped1) {
+            if (!cancelled) setEnterPriceImpact(undefined);
+            return;
+          }
+          console.log("[ENTER][PI] swap-result", {
+            swapATo: token0.symbol,
+            swapAOutAmount: swapped0.toPrecisionString(true, false),
+            swapBTo: token1.symbol,
+            swapBOutAmount: swapped1.toPrecisionString(true, false),
+          });
+          expectedUsd = swapped0.multiply(price0).add(swapped1.multiply(price1));
+        }
+
+        const impact = expectedUsd
+          .subtract(inputUsd)
+          .divide(inputUsd)
+          .roundToDecimals(18);
+        if (isStale()) return;
+        console.log("[ENTER][PI] result", {
+          expectedUsdAfterSwap: expectedUsd.toPrecisionString(true, true),
+          priceImpact: impact.toPrecisionString(true, false),
+          priceImpactPercent: impact.mul(100).toFixed(4),
+        });
+        if (!cancelled) setEnterPriceImpact(impact);
+      } catch (e) {
+        console.warn("[ENTER][price-impact] failed", e);
+        if (!cancelled) setEnterPriceImpact(undefined);
+      }
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    chainId,
+    enterAmount,
+    enterToken,
+    enterTokenUsdPriceBd,
+    getComparableTokenAddress,
+    getUsdPriceForToken,
+    quoteSwapOutAmount,
+    selectedLpVault,
+    selectedPool,
+    enterPiInsufficientBalance,
+  ]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const requestId = ++payPiRequestIdRef.current;
+    const isStale = () => cancelled || payPiRequestIdRef.current !== requestId;
+    const timer = setTimeout(async () => {
+      try {
+        if (isStale()) return;
+        if (
+          !chainId ||
+          !publicClient ||
+          !selectedPool?.address ||
+          !selectedLpVault ||
+          isPayInsufficientPoolBalance ||
+          !stakingSharesBd ||
+          !poolPriceUsdPerToken ||
+          !payTokenUsdPriceBd ||
+          stakingSharesBd.lte(0)
+        ) {
+          if (!cancelled) setPayPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const stakeToken = selectedLpVault as any;
+        if (!isBirdieLPFarm(stakeToken)) {
+          if (!cancelled) setPayPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const cacheKey = `${chainId}:${safeLower(selectedPool.address)}`;
+        let snapshot = lpUnderlyingSnapshotRef.current.get(cacheKey);
+        if (!snapshot) {
+          const token0 = stakeToken.swap?.input?.[0]?.input as ICurrency | undefined;
+          const token1 = stakeToken.swap?.input?.[1]?.input as ICurrency | undefined;
+          if (!token0 || !token1) {
+            if (!cancelled) setPayPriceImpact(undefined);
+            return;
+          }
+
+          const totalSupply = await getTotalSupply(publicClient as any, stakeToken);
+          const dual = await totalDualUnderlyingTokens(publicClient as any, stakeToken);
+          if (isStale()) return;
+          if (!totalSupply || totalSupply.lte(0) || !dual) {
+            if (!cancelled) setPayPriceImpact(undefined);
+            return;
+          }
+
+          snapshot = {
+            token0,
+            token1,
+            poolBalance0: dual[1] as BigDecimal,
+            poolBalance1: dual[3] as BigDecimal,
+            totalSupply,
+          };
+          lpUnderlyingSnapshotRef.current.set(cacheKey, snapshot);
+        }
+
+        const lpUsdValue = stakingSharesBd.multiply(poolPriceUsdPerToken);
+        if (lpUsdValue.isZero()) {
+          if (!cancelled) setPayPriceImpact(undefined);
+          return;
+        }
+        if (isStale()) return;
+
+        const token0Amount = snapshot.poolBalance0
+          .multiply(stakingSharesBd)
+          .divide(snapshot.totalSupply);
+        const token1Amount = snapshot.poolBalance1
+          .multiply(stakingSharesBd)
+          .divide(snapshot.totalSupply);
+
+        console.log("[PAY][PI] input", {
+          pool: selectedPool.symbol,
+          inputAmount: payAmount,
+          inputToken: "USDC",
+          tolerancePercent: tolPct,
+          lpUsedAmount: stakingSharesBd.toPrecisionString(true, false),
+          lpUsedUsd: lpUsdValue.toPrecisionString(true, true),
+          underlying0Token: snapshot.token0.symbol,
+          underlying0Amount: token0Amount.toPrecisionString(true, false),
+          underlying1Token: snapshot.token1.symbol,
+          underlying1Amount: token1Amount.toPrecisionString(true, false),
+        });
+
+        const selectedToken = USDC;
+        const selectedTokenAddr = getComparableTokenAddress(selectedToken);
+        const token0Addr = getComparableTokenAddress(snapshot.token0);
+        const token1Addr = getComparableTokenAddress(snapshot.token1);
+
+        let expectedOutToken: BigDecimal | null = null;
+
+        if (selectedTokenAddr && selectedTokenAddr === token0Addr) {
+          console.log("[PAY][PI] swap-plan", {
+            keepToken: snapshot.token0.symbol,
+            keepAmount: token0Amount.toPrecisionString(true, false),
+            swapFromToken: snapshot.token1.symbol,
+            swapAmount: token1Amount.toPrecisionString(true, false),
+            swapToToken: selectedToken.symbol,
+          });
+          const swapped = await quoteSwapOutAmount({
+            fromToken: snapshot.token1,
+            toToken: selectedToken,
+            amount: token1Amount,
+          });
+          if (isStale()) return;
+          if (!swapped) {
+            if (!cancelled) setPayPriceImpact(undefined);
+            return;
+          }
+          console.log("[PAY][PI] swap-result", {
+            swapFromToken: snapshot.token1.symbol,
+            swapToToken: selectedToken.symbol,
+            swapInAmount: token1Amount.toPrecisionString(true, false),
+            swapOutAmount: swapped.toPrecisionString(true, false),
+          });
+          expectedOutToken = token0Amount.add(swapped);
+        } else if (selectedTokenAddr && selectedTokenAddr === token1Addr) {
+          console.log("[PAY][PI] swap-plan", {
+            keepToken: snapshot.token1.symbol,
+            keepAmount: token1Amount.toPrecisionString(true, false),
+            swapFromToken: snapshot.token0.symbol,
+            swapAmount: token0Amount.toPrecisionString(true, false),
+            swapToToken: selectedToken.symbol,
+          });
+          const swapped = await quoteSwapOutAmount({
+            fromToken: snapshot.token0,
+            toToken: selectedToken,
+            amount: token0Amount,
+          });
+          if (isStale()) return;
+          if (!swapped) {
+            if (!cancelled) setPayPriceImpact(undefined);
+            return;
+          }
+          console.log("[PAY][PI] swap-result", {
+            swapFromToken: snapshot.token0.symbol,
+            swapToToken: selectedToken.symbol,
+            swapInAmount: token0Amount.toPrecisionString(true, false),
+            swapOutAmount: swapped.toPrecisionString(true, false),
+          });
+          expectedOutToken = token1Amount.add(swapped);
+        } else {
+          console.log("[PAY][PI] swap-plan", {
+            splitSwap: true,
+            swapA: {
+              from: snapshot.token0.symbol,
+              amount: token0Amount.toPrecisionString(true, false),
+              to: selectedToken.symbol,
+            },
+            swapB: {
+              from: snapshot.token1.symbol,
+              amount: token1Amount.toPrecisionString(true, false),
+              to: selectedToken.symbol,
+            },
+          });
+          const [swapped0, swapped1] = await Promise.all([
+            quoteSwapOutAmount({
+              fromToken: snapshot.token0,
+              toToken: selectedToken,
+              amount: token0Amount,
+            }),
+            quoteSwapOutAmount({
+              fromToken: snapshot.token1,
+              toToken: selectedToken,
+              amount: token1Amount,
+            }),
+          ]);
+          if (isStale()) return;
+          if (!swapped0 || !swapped1) {
+            if (!cancelled) setPayPriceImpact(undefined);
+            return;
+          }
+          console.log("[PAY][PI] swap-result", {
+            swapAFromToken: snapshot.token0.symbol,
+            swapAOutAmount: swapped0.toPrecisionString(true, false),
+            swapBFromToken: snapshot.token1.symbol,
+            swapBOutAmount: swapped1.toPrecisionString(true, false),
+          });
+          expectedOutToken = swapped0.add(swapped1);
+        }
+
+        const expectedUsd = expectedOutToken.multiply(payTokenUsdPriceBd);
+        const impact = expectedUsd
+          .subtract(lpUsdValue)
+          .divide(lpUsdValue)
+          .roundToDecimals(18);
+        if (isStale()) return;
+        console.log("[PAY][PI] result", {
+          expectedOutToken: expectedOutToken.toPrecisionString(true, false),
+          expectedUsdAfterSwap: expectedUsd.toPrecisionString(true, true),
+          priceImpact: impact.toPrecisionString(true, false),
+          priceImpactPercent: impact.mul(100).toFixed(4),
+        });
+        if (!cancelled) setPayPriceImpact(impact);
+      } catch (e) {
+        console.warn("[PAY][price-impact] failed", e);
+        if (!cancelled) setPayPriceImpact(undefined);
+      }
+    }, 450);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [
+    chainId,
+    getComparableTokenAddress,
+    payTokenUsdPriceBd,
+    poolPriceUsdPerToken,
+    publicClient,
+    quoteSwapOutAmount,
+    selectedLpVault,
+    selectedPool?.address,
+    stakingSharesBd,
+    tolPct,
+    payAmount,
+    USDC,
+    isPayInsufficientPoolBalance,
+  ]);
 
   // console.log("[ENTER CALC]", {
   //   enterTokenUsdPriceBd,
@@ -725,6 +1273,29 @@ export default function usePay() {
   // ]);
 
   // -------- Buttons --------
+  const toleranceBd = useMemo(
+    () => new BigDecimal(String(tolPct / 100), 18),
+    [tolPct],
+  );
+
+  const isEnterHighPriceImpact = useMemo(() => {
+    return !!enterPriceImpact && enterPriceImpact.negate().gt(0.01);
+  }, [enterPriceImpact]);
+
+  const isPayHighPriceImpact = useMemo(() => {
+    return !!payPriceImpact && payPriceImpact.negate().gt(0.01);
+  }, [payPriceImpact]);
+
+  const isEnterPriceImpactOverTolerance = useMemo(() => {
+    if (!enterPriceImpact) return false;
+    return enterPriceImpact.negate().gt(toleranceBd);
+  }, [enterPriceImpact, toleranceBd]);
+
+  const isPayPriceImpactOverTolerance = useMemo(() => {
+    if (!payPriceImpact) return false;
+    return payPriceImpact.negate().gt(toleranceBd);
+  }, [payPriceImpact, toleranceBd]);
+
   const payButton = useMemo(() => {
     if (!isConnected)
       return {
@@ -764,6 +1335,13 @@ export default function usePay() {
         variant: "MINT" as const,
       };
 
+    if (isPayPriceImpactOverTolerance)
+      return {
+        text: "Pay",
+        disabled: true,
+        variant: "MINT" as const,
+      };
+
     return { text: "Pay", disabled: false, variant: "MINT" as const };
   }, [
     isConnected,
@@ -772,6 +1350,7 @@ export default function usePay() {
     payAmount,
     selectedPool,
     isPayInsufficientPoolBalance,
+    isPayPriceImpactOverTolerance,
   ]);
 
   const enterButton = useMemo(() => {
@@ -814,6 +1393,13 @@ export default function usePay() {
         variant: "MINT" as const,
       };
 
+    if (isEnterPriceImpactOverTolerance)
+      return {
+        text: "Enter",
+        disabled: true,
+        variant: "MINT" as const,
+      };
+
     return {
       text: "Enter",
       disabled: false,
@@ -827,6 +1413,7 @@ export default function usePay() {
     enterToken.symbol,
     selectedPool,
     showApproveUI,
+    isEnterPriceImpactOverTolerance,
   ]);
 
   // ===== Blocks (Summary/Result) =====
@@ -886,6 +1473,7 @@ export default function usePay() {
       if (!receiver?.trim()) return;
       if (isEmptyAmount(payAmount)) return;
       if (isPayInsufficientPoolBalance) return;
+      if (isPayPriceImpactOverTolerance) return;
 
       const usdcAddr = USDC.addresses?.[chainId] as string | undefined;
       const poolInputTokenAddr = selectedPool.address;
@@ -1050,6 +1638,7 @@ export default function usePay() {
     receiver,
     payAmount,
     isPayInsufficientPoolBalance,
+    isPayPriceImpactOverTolerance,
     stakingSharesBd,
     poolPriceUsdPerToken,
     PaySummaryNode,
@@ -1118,6 +1707,7 @@ export default function usePay() {
 
       if (isEmptyAmount(enterAmount)) return;
       if (isEnterInsufficientBalance) return;
+      if (isEnterPriceImpactOverTolerance) return;
 
       // ERC20 선택 + approve 필요하면 enter 막기
       if (nativeSymbol !== "ETH" && showApproveUI) return;
@@ -1390,6 +1980,7 @@ export default function usePay() {
     nativeSymbol,
     enterAmount,
     isEnterInsufficientBalance,
+    isEnterPriceImpactOverTolerance,
     showApproveUI,
     EnterSummaryNode,
     writeContract,
@@ -1431,11 +2022,19 @@ export default function usePay() {
     payRequiredUsd,
     stakingSharesBd,
     enterWalletBalanceBd,
+    isEnterInsufficientBalance,
+    isPayInsufficientPoolBalance,
 
     // approve flags
     shouldCheckAllowance,
     needsWethApprove,
     showApproveUI,
+    enterPriceImpact,
+    payPriceImpact,
+    isEnterHighPriceImpact,
+    isPayHighPriceImpact,
+    isEnterPriceImpactOverTolerance,
+    isPayPriceImpactOverTolerance,
 
     // button states
     payButton,
