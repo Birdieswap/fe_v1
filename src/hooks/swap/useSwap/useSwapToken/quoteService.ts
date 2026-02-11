@@ -457,51 +457,53 @@ async function getOtherAmountInternal(
 
       const amountStr = finalUnderlyingOut.toPrecisionString(true, false);
 
-      // ✅ benchmarkOut: external quote가 가능하면 그걸, 실패하면 internal*0.9975
+      // ✅ benchmarkOut: 필요 없는 호출(Enter/Pay PI 등)에서는 생략 가능
       let benchmarkOut: string | null = null;
       let benchmarkUsed: DualQuoteResult["meta"]["benchmarkUsed"] = "none";
 
-      try {
-        const bench = await quoteExactInputSingle(
-          publicClient as PublicClient,
-          inputAddrUnderlying,
-          outputAddrUnderlying,
-          parsedUnderlyingIn.value,
-          feeTier,
-          0n,
-          {
-            tag: "benchmarkExactInput",
-            tokenIn: inputAddrUnderlying,
-            tokenOut: outputAddrUnderlying,
-            fee: feeTier,
-            amountIn: parsedUnderlyingIn.value,
-          }
-        );
-
-        if (bench?.amountOut && bench.amountOut > 0n) {
-          const benchOutBD = new BigDecimal(
-            bench.amountOut,
-            toErc20.decimals ?? 18
+      if (!ctx.disableBenchmarkQuote) {
+        try {
+          const bench = await quoteExactInputSingle(
+            publicClient as PublicClient,
+            inputAddrUnderlying,
+            outputAddrUnderlying,
+            parsedUnderlyingIn.value,
+            feeTier,
+            0n,
+            {
+              tag: "benchmarkExactInput",
+              tokenIn: inputAddrUnderlying,
+              tokenOut: outputAddrUnderlying,
+              fee: feeTier,
+              amountIn: parsedUnderlyingIn.value,
+            }
           );
-          benchmarkOut = benchOutBD.toPrecisionString(true, false);
-          benchmarkUsed = "external";
-        } else {
+
+          if (bench?.amountOut && bench.amountOut > 0n) {
+            const benchOutBD = new BigDecimal(
+              bench.amountOut,
+              toErc20.decimals ?? 18
+            );
+            benchmarkOut = benchOutBD.toPrecisionString(true, false);
+            benchmarkUsed = "external";
+          } else {
+            benchmarkOut = applyInterfaceFee(amountStr, toErc20.decimals ?? 18);
+            benchmarkUsed = "fallback_internal_x_1";
+          }
+        } catch (e) {
+          if (DEBUG_QUOTE) {
+            console.warn("[internal benchmark quote reverted]", {
+              chainId,
+              pool: (swapPool as any)?.symbol,
+              inputAddrUnderlying,
+              outputAddrUnderlying,
+              feeTier,
+            });
+            console.warn(e);
+          }
           benchmarkOut = applyInterfaceFee(amountStr, toErc20.decimals ?? 18);
           benchmarkUsed = "fallback_internal_x_1";
         }
-      } catch (e) {
-        if (DEBUG_QUOTE) {
-          console.warn("[internal benchmark quote reverted]", {
-            chainId,
-            pool: (swapPool as any)?.symbol,
-            inputAddrUnderlying,
-            outputAddrUnderlying,
-            feeTier,
-          });
-          console.warn(e);
-        }
-        benchmarkOut = applyInterfaceFee(amountStr, toErc20.decimals ?? 18);
-        benchmarkUsed = "fallback_internal_x_1";
       }
 
       return {
