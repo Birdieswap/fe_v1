@@ -117,22 +117,24 @@ const bHarvestAutopilotFARM = BirdieSingleFarmGuard({
   iconSrc: "/tokens/b-token.svg",
 } as const);
 
-// const bHarvestAutopilotEURC = BirdieSingleFarmGuard({
-//   type: EContractType.BIRDIE_SINGLE,
-//   symbol: "bEURC",
-//   fullName: "Birdieswap EURC",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia.EURC_VAULT as `0x${string}`,
-//     [networks.base.id]: contractAddresses.base.EURC_VAULT as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_VAULT as `0x${string}`,
-//   },
-//   abi: erc20_abi,
-//   provider: stakingProviders.BIRDIE,
-//   input: tokens.EURC,
-//   decimals: 6,
-//   displayDecimals: 4,
-//   iconSrc: "/tokens/b-token.svg",
-// } as const);
+const bHarvestAutopilotEURC = BirdieSingleFarmGuard({
+  type: EContractType.BIRDIE_SINGLE,
+  symbol: "bEURC",
+  fullName: "Birdieswap EURC",
+  addresses: {
+    // [networks.sepolia.id]: contractAddresses.sepolia
+    //   .EURC_VAULT as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.EURC_VAULT as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .EURC_VAULT as `0x${string}`,
+  },
+  abi: erc20_abi,
+  provider: stakingProviders.BIRDIESWAP_Router,
+  input: tokens.EURC,
+  decimals: 6,
+  displayDecimals: 4,
+  iconSrc: "/tokens/b-token.svg",
+} as const);
 
 const singleVaults = {
   bHarvestAutopilotETH,
@@ -140,7 +142,7 @@ const singleVaults = {
   // bHarvestAutopilotCBBTC,
   bHarvestAutopilotWBTC,
   bHarvestAutopilotUSDC,
-  // bHarvestAutopilotEURC,
+  bHarvestAutopilotEURC,
   bHarvestAutopilotFARM,
 };
 

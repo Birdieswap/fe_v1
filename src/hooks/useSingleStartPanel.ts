@@ -244,8 +244,9 @@ export function useSingleStartPanel(item: FarmSingle) {
       isApproved,
       insolvency,
       isConnected,
-      approve,
       isETHDisplay,
+      isApprovePending,
+      approveWithPending,
     ]
   );
 

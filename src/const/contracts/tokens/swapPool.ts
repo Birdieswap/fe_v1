@@ -19,7 +19,7 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia
       .USDC_WETH_POOL as `0x${string}`,
-    [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .USDC_WETH_POOL as `0x${string}`,
   },
@@ -38,9 +38,9 @@ const blpUniswapHarvestAutopilotWETHUSDC = SwapPoolGuard({
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
       | string
       | number,
-    [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
-      | string
-      | number,
+    // [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
+    //   | string
+    //   | number,
   },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
@@ -51,7 +51,7 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia
       .USDC_WETH_POOL as `0x${string}`,
-    [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.USDC_WETH_POOL as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .USDC_WETH_POOL as `0x${string}`,
   },
@@ -70,9 +70,9 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
     [networks.sepolia.id]: pool_tokenIds.sepolia.USDC_WETH_TOKEN_ID as
       | string
       | number,
-    [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
-      | string
-      | number,
+    // [networks.base.id]: pool_tokenIds.base.USDC_WETH_TOKEN_ID as
+    //   | string
+    //   | number,
   },
 } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
@@ -139,26 +139,34 @@ const blpUniswapHarvestAutopilotETHUSDC = SwapPoolGuard({
 //   ],
 // } as const satisfies ISwapPool<IBirdieSingleFarm>);
 
-// const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
-//   type: EContractType.SWAP,
-//   symbol: "bEURCUSDC",
-//   fullName: "Birdieswap EURC 500 USDC",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia.EURC_USDC_POOL as `0x${string}`,
-//     [networks.base.id]: contractAddresses.base.EURC_USDC_POOL as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_USDC_POOL as `0x${string}`,
-//   },
-//   decimals: 8,
-//   fee_tier : 500,
-//   abi: erc20Abi,
-//   provider: stakingProviders.UNISWAP,
-//   protocol: "Uniswap V3",
-//   isInternal: true,
-//   input: [
-//     singleVaults.bHarvestAutopilotEURC,
-//     singleVaults.bHarvestAutopilotUSDC,
-//   ],
-// } as const satisfies ISwapPool<IBirdieSingleFarm>);
+const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
+  type: EContractType.SWAP,
+  symbol: "bEURCUSDC",
+  fullName: "Birdieswap EURC 100 USDC",
+  addresses: {
+    // [networks.sepolia.id]: contractAddresses.sepolia
+    //   .EURC_USDC_POOL as `0x${string}`,
+    [networks.base.id]: contractAddresses.base.EURC_USDC_POOL as `0x${string}`,
+    [networks.arbitrum.id]: contractAddresses.arbitrum
+      .EURC_USDC_POOL as `0x${string}`,
+  },
+  decimals: 8,
+  fee_tier: 500,
+  abi: erc20Abi,
+  provider: stakingProviders.UNISWAP,
+  protocol: "Uniswap V3",
+  isInternal: true,
+  input: [
+    singleVaults.bHarvestAutopilotEURC,
+    singleVaults.bHarvestAutopilotUSDC,
+  ],
+  lpVaultKey: "blpHarvestAutopilotEURCUSDC",
+  tokenId: {
+    [networks.base.id]: pool_tokenIds.base.EURC_USDC_TOKEN_ID as
+      | string
+      | number,
+  },
+} as const satisfies ISwapPool<IBirdieSingleFarm>);
 const blpUniswapHarvestAutopilotUSDCWBTC = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "bUSDCWBTC",
@@ -313,7 +321,7 @@ const swapPools = {
   // blpUniswapHarvestAutopilotCBBTCUSDC,
   // blpUniswapHarvestAutopilotCBBTCWETH,
   // blpUniswapHarvestAutopilotCBBTCETH,
-  // blpUniswapHarvestAutopilotEURCUSDC,
+  blpUniswapHarvestAutopilotEURCUSDC,
   // blpUniswapHarvestAutopilotUSDCWBTC,
   // blpUniswapHarvestAutopilotWBTCWETH,
   // blpUniswapHarvestAutopilotWBTCETH,

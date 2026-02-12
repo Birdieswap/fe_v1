@@ -207,9 +207,35 @@ export default function useSwapTokens({
 
   const [midPoolPrice, setMidPoolPrice] = useState<BigDecimal | null>(null);
   const benchmarkOutRef = useRef<string | null>(null);
+  const lastInputRef = useRef<{
+    amount: string;
+    side: "in" | "out";
+    withToToken?: ICurrency;
+    withFromToken?: ICurrency;
+  } | null>(null);
+  const curFromTokenRef = useRef<ICurrency | undefined>(fromToken);
+  const curToTokenRef = useRef<ICurrency | undefined>(toToken);
+  const curFromAmountRef = useRef<string>(fromAmount);
+  const curToAmountRef = useRef<string>(toAmount);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevTypingRef = useRef(false);
+
+  useEffect(() => {
+    curFromTokenRef.current = fromToken;
+  }, [fromToken]);
+
+  useEffect(() => {
+    curToTokenRef.current = toToken;
+  }, [toToken]);
+
+  useEffect(() => {
+    curFromAmountRef.current = fromAmount;
+  }, [fromAmount]);
+
+  useEffect(() => {
+    curToAmountRef.current = toAmount;
+  }, [toAmount]);
 
   useEffect(() => {
     const prev = prevTypingRef.current;
@@ -305,6 +331,13 @@ export default function useSwapTokens({
       withToToken?: ICurrency,
       withFromToken?: ICurrency
     ) => {
+      lastInputRef.current = {
+        amount: String(newAmount ?? ""),
+        side,
+        withToToken,
+        withFromToken,
+      };
+
       const aFrom = withFromToken ?? fromToken;
       const aTo = withToToken ?? toToken;
 
@@ -624,6 +657,14 @@ export default function useSwapTokens({
         swapPool: activeSwapPool,
         sqrtPriceLimitX96,
         receiveAtLeast,
+        addrLower,
+        lastInputRef,
+        curFromTokenRef,
+        curToTokenRef,
+        curFromAmountRef,
+        curToAmountRef,
+        updateAmountCommon,
+        setToAmount,
         balances,
 
         // ✅ 비교용 정보 전달
@@ -655,6 +696,9 @@ export default function useSwapTokens({
     activeSwapPool,
     sqrtPriceLimitX96,
     receiveAtLeast,
+    addrLower,
+    updateAmountCommon,
+    setToAmount,
     balances,
     setPriceImpact,
     toTokenUsd,

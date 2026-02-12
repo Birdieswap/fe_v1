@@ -114,7 +114,7 @@ const tokens = {
   USDC,
   WBTC,
   CBBTC,
-  // EURC,
+  EURC,
   FARM,
 };
 
