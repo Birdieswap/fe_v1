@@ -2,6 +2,7 @@ import { Client } from "viem";
 import { useCallback } from "react";
 import { WriteContractMutate } from "wagmi/query";
 import { Config, useChainId } from "wagmi";
+import { waitForTransactionReceipt } from "viem/actions";
 
 import {
   ApproveTransactionProps,
@@ -32,9 +33,9 @@ export default function useApprove(props: {
     }
   }, [props.refetch]);
   const approve = useCallback(
-    (token: IToken) => {
+    (token: IToken): Promise<void> => {
       if (!token || !chainId) {
-        return;
+        return Promise.resolve();
       }
       const tokenAddress = getTokenAddress({
         token: token,
@@ -64,22 +65,57 @@ export default function useApprove(props: {
       //   }
       // );
 
-      props.writeContract(
-        {
-          address: tokenAddress as `0x${string}`,
-          abi: token.abi,
-          functionName: "approve",
-          args: [
-            props.routerAddress as `0x${string}`,
-            BigInt(
-              "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-            ),
-          ],
-        },
-        handler
-      );
+      return new Promise<void>((resolve, reject) => {
+        props.writeContract(
+          {
+            address: tokenAddress as `0x${string}`,
+            abi: token.abi,
+            functionName: "approve",
+            args: [
+              props.routerAddress as `0x${string}`,
+              BigInt(
+                "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+              ),
+            ],
+          },
+          {
+            onError: (e: unknown) => {
+              try {
+                handler.onError?.(e);
+              } finally {
+                reject(e);
+              }
+            },
+            onSuccess: async (tx: `0x${string}`) => {
+              try {
+                handler.onSuccess?.(tx);
+                if (props.client) {
+                  try {
+                    await waitForTransactionReceipt(props.client, {
+                      hash: tx,
+                    });
+                  } catch {
+                    // no-op: handler가 이미 상태 업데이트/실패 처리
+                  }
+                }
+                await refetchWithRetry();
+                resolve();
+              } catch (e) {
+                reject(e);
+              }
+            },
+          }
+        );
+      });
     },
-    [chainId, props, refetchWithRetry]
+    [
+      chainId,
+      props.client,
+      props.routerAddress,
+      props.transactionContext,
+      props.writeContract,
+      refetchWithRetry,
+    ]
   );
 
   return approve;

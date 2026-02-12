@@ -108,7 +108,15 @@ export function useSingleStopPanel(item: FarmSingle) {
         isConnected && !allowance.gte(amount || 0) && !isApprovePending,
       approve: () => approveWithPending(stakeToken),
     }),
-    [stakeToken, balance, amount, allowance, isConnected, approve]
+    [
+      stakeToken,
+      balance,
+      amount,
+      allowance,
+      isConnected,
+      isApprovePending,
+      approveWithPending,
+    ]
   );
 
   // 실행: 경로 결정만 여기서 → 공통 performStop 호출

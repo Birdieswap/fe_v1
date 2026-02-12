@@ -249,30 +249,30 @@ const ETH_USDC_harvest_autopilot: Farm = {
 //   point: 0,
 // };
 
-// const EURC_USDC_harvest_autopilot: Farm = {
-//   type: FarmType.PAIR,
-//   tags: [FarmTag.LP, FarmTag.STABLE],
-//   name: "EURC-USDC",
-//   wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotEURCUSDC,
-//   details: {
-//     vaults: [
-//       VaultInfo.BUSDC_harvest_autopilot_V1,
-//       VaultInfo.BCBBTC_harvest_autopilot_V1,
-//       VaultInfo.BLP_autopilot_USDC_CBBTC_V1,
-//       VaultInfo.REWARD_BIRDIE,
-//     ],
-//     rewards: [
-//       // {
-//       //   token: TokenInfo.BIRDIE,
-//       // },
-//     ],
-//   },
-//   apy: 0,
-//   tvl: 0,
-//   MyBalance: 0,
-//   feeTier: 0.05,
-//   point: 0,
-// };
+const EURC_USDC_harvest_autopilot: Farm = {
+  type: FarmType.PAIR,
+  tags: [FarmTag.LP, FarmTag.STABLE],
+  name: "EURC-USDC",
+  wip_stakeToken: const_contracts.lpVaults.blpHarvestAutopilotEURCUSDC,
+  details: {
+    vaults: [
+      VaultInfo.BUSDC_harvest_autopilot_V1,
+      VaultInfo.BCBBTC_harvest_autopilot_V1,
+      VaultInfo.BLP_autopilot_USDC_CBBTC_V1,
+      VaultInfo.REWARD_BIRDIE,
+    ],
+    rewards: [
+      // {
+      //   token: TokenInfo.BIRDIE,
+      // },
+    ],
+  },
+  apy: 0,
+  tvl: 0,
+  MyBalance: 0,
+  feeTier: 0.05,
+  point: 0,
+};
 
 // const USDC_WBTC_harvest_autopilot: Farm = {
 //   type: FarmType.PAIR,
@@ -412,7 +412,7 @@ export const FarmList = [
   // CBBTC_USDC_harvest_autopilot,
   // CBBTC_WETH_harvest_autopilot,
   // CBBTC_ETH_harvest_autopilot,
-  // EURC_USDC_harvest_autopilot,
+  EURC_USDC_harvest_autopilot,
 ];
 export const FarmInfo = {
   // CBBTC_harvest_autopilot,
@@ -429,6 +429,6 @@ export const FarmInfo = {
   // CBBTC_USDC_harvest_autopilot,
   // CBBTC_WETH_harvest_autopilot,
   // CBBTC_ETH_harvest_autopilot,
-  // EURC_USDC_harvest_autopilot,
+  EURC_USDC_harvest_autopilot,
 };
 export default FarmInfo;

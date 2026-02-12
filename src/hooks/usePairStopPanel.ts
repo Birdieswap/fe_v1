@@ -147,7 +147,15 @@ export function usePairStopPanel(item: FarmPair) {
         isConnected && !allowance.gte(amount || 0) && !isApprovePending,
       approve: () => approveWithPending(stakeToken),
     }),
-    [stakeToken, balance, amount, allowance, isConnected, approve]
+    [
+      stakeToken,
+      balance,
+      amount,
+      allowance,
+      isConnected,
+      isApprovePending,
+      approveWithPending,
+    ]
   );
 
   const unlockAmounts = useMemo(() => {
