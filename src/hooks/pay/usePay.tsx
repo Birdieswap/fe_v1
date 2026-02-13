@@ -61,7 +61,8 @@ import {
 
 // -------- helpers --------
 type PayMode = "PAY" | "ENTER";
-type EnterTokenSymbol = "ETH" | "USDC" | "WETH";
+type EnterTokenSymbol = "ETH" | "USDC" | "EURC";
+type PayTokenSymbol = "USDC" | "EURC";
 type LpUnderlyingSnapshot = {
   token0: ICurrency;
   token1: ICurrency;
@@ -69,7 +70,7 @@ type LpUnderlyingSnapshot = {
   poolBalance1: BigDecimal;
   totalSupply: BigDecimal;
 };
-const PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL: keyof typeof tokens = "ETH";
+const PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL: keyof typeof tokens = "USDC";
 
 const isEmptyAmount = (s?: string) => !s || !s.trim() || Number(s) <= 0;
 const safeLower = (s?: string) =>
@@ -271,11 +272,12 @@ export default function usePay() {
   const [selectedPanel, setSelectedPanel] = useState<PayMode>("PAY");
 
   const [receiver, setReceiver] = useState("");
-  const [payAmount, setPayAmount] = useState(""); // USDC
+  const [payAmount, setPayAmount] = useState(""); // selected payout token
+  const [paySymbol, setPaySymbol] = useState<PayTokenSymbol>("USDC");
   const [enterAmount, setEnterAmount] = useState("");
   const [tolerance, setTolerance] = useState<"auto" | number>("auto");
   const [selectedPool, setSelectedPool] = useState<PoolLike | undefined>();
-  const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("ETH");
+  const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("USDC");
   const [enterPriceImpact, setEnterPriceImpact] = useState<
     BigDecimal | undefined
   >(undefined);
@@ -287,6 +289,7 @@ export default function usePay() {
   const resetPayPanel = useCallback(() => {
     setReceiver("");
     setPayAmount("");
+    setPaySymbol("USDC");
     setTolerance("auto");
     setSelectedPool(undefined);
   }, []);
@@ -294,15 +297,17 @@ export default function usePay() {
   // ✨ ENTER 폼 리셋
   const resetEnterPanel = useCallback(() => {
     setEnterAmount("");
-    setNativeSymbol("ETH");
+    setNativeSymbol("USDC");
     setSelectedPool(undefined);
   }, []);
 
   const USDC = tokens.USDC;
+  const PAY_EURC = tokens.EURC;
   const ETH = tokens.ETH;
-  const WETH = tokens.WETH;
+  const EURC = tokens.EURC;
+  const payToken = paySymbol === "EURC" ? PAY_EURC : USDC;
   const enterToken =
-    nativeSymbol === "ETH" ? ETH : nativeSymbol === "USDC" ? USDC : WETH;
+    nativeSymbol === "ETH" ? ETH : nativeSymbol === "EURC" ? EURC : USDC;
   const priceImpactHubToken = tokens[
     PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL
   ] as ICurrency;
@@ -541,13 +546,13 @@ export default function usePay() {
   const tolPct = useMemo(() => getPayTolerancePercent(tolerance), [tolerance]);
 
   const payTokenUsdPriceBd = useMemo(() => {
-    return getUsdPriceForToken(USDC);
-  }, [USDC, getUsdPriceForToken]);
+    return getUsdPriceForToken(payToken);
+  }, [payToken, getUsdPriceForToken]);
 
   const payAmountTokenBd = useMemo(() => {
-    const dec = USDC.decimals ?? 6;
+    const dec = payToken.decimals ?? 6;
     return new BigDecimal(payAmount || "0", dec);
-  }, [payAmount, USDC.decimals]);
+  }, [payAmount, payToken.decimals]);
 
   const payAmountUsdBd = useMemo(() => {
     // 입력 수량을 선택 토큰(현재 PAY=USDC) 기준으로 USD 환산
@@ -1077,7 +1082,7 @@ export default function usePay() {
         console.log("[PAY][PI] input", {
           pool: selectedPool.symbol,
           inputAmount: payAmount,
-          inputToken: "USDC",
+          inputToken: payToken.symbol,
           tolerancePercent: tolPct,
           lpUsedAmount: stakingSharesBd.toPrecisionString(true, false),
           lpUsedUsd: lpUsdValue.toPrecisionString(true, true),
@@ -1087,7 +1092,7 @@ export default function usePay() {
           underlying1Amount: token1Amount.toPrecisionString(true, false),
         });
 
-        const selectedToken = USDC;
+        const selectedToken = payToken;
         const selectedTokenAddr = getComparableTokenAddress(selectedToken);
         const token0Addr = getComparableTokenAddress(snapshot.token0);
         const token1Addr = getComparableTokenAddress(snapshot.token1);
@@ -1219,7 +1224,7 @@ export default function usePay() {
     stakingSharesBd,
     tolPct,
     payAmount,
-    USDC,
+    payToken,
     isPayInsufficientPoolBalance,
   ]);
 
@@ -1416,7 +1421,7 @@ export default function usePay() {
       };
     if (isEmptyAmount(payAmount))
       return {
-        text: "Enter USDC amount",
+        text: `Enter ${payToken.symbol} amount`,
         disabled: true,
         variant: "MINT" as const,
       };
@@ -1446,6 +1451,7 @@ export default function usePay() {
     isWrongNetwork,
     receiver,
     payAmount,
+    payToken.symbol,
     selectedPool,
     isPayInsufficientPoolBalance,
     isPayPriceImpactOverTolerance,
@@ -1536,7 +1542,9 @@ export default function usePay() {
         receiver={receiver}
         stakedUsed={stakingSharesBd ?? undefined}
         requiredUsdWithTol={requiredUsdWithTolNum}
-        payAmountUsdc={payAmount}
+        payAmount={payAmount}
+        payTokenIcon={payToken.iconSrc}
+        payTokenSymbol={payToken.symbol}
       />
     );
   }, [
@@ -1545,6 +1553,8 @@ export default function usePay() {
     stakingSharesBd,
     requiredUsdWithTolNum,
     payAmount,
+    payToken.iconSrc,
+    payToken.symbol,
   ]);
 
   const EnterSummaryNode = useMemo(() => {
@@ -1573,7 +1583,8 @@ export default function usePay() {
       if (isPayInsufficientPoolBalance) return;
       if (isPayPriceImpactOverTolerance) return;
 
-      const usdcAddr = USDC.addresses?.[chainId] as string | undefined;
+      const payTokenAddr = payToken.addresses?.[chainId] as string | undefined;
+      if (!payTokenAddr) return;
       const poolInputTokenAddr = selectedPool.address;
 
       // BEFORE snapshot (assets-based)
@@ -1581,14 +1592,14 @@ export default function usePay() {
         assetsRef.current,
         poolInputTokenAddr,
       );
-      const usdcBeforeBd = getTokenBalanceFromAssets(
+      const payTokenBeforeBd = getTokenBalanceFromAssets(
         assetsRef.current,
-        usdcAddr,
+        payTokenAddr,
       );
 
       const prevKey = makeBalancesSnapshotKey({
         assets: assetsRef.current,
-        watchTokenAddrs: [usdcAddr ?? ""],
+        watchTokenAddrs: [payTokenAddr ?? ""],
         watchStakedInputTokenAddrs: [poolInputTokenAddr],
       });
 
@@ -1619,6 +1630,9 @@ export default function usePay() {
         stakingPoolAddress,
         receiver: receiver as `0x${string}`,
         payAmount,
+        payTokenSymbol: paySymbol,
+        payTokenAddress: payTokenAddr as `0x${string}`,
+        payTokenDecimals: payToken.decimals ?? 6,
         stakingSharesStr: sharesStr,
         sharesDecimals,
         paySummaryNode: PaySummaryNode,
@@ -1633,7 +1647,7 @@ export default function usePay() {
           await waitForAssetsBalanceChange({
             assetsRef,
             prevKey,
-            watchTokenAddrs: [usdcAddr ?? ""],
+            watchTokenAddrs: [payTokenAddr ?? ""],
             watchStakedInputTokenAddrs: [poolInputTokenAddr],
           });
 
@@ -1641,9 +1655,9 @@ export default function usePay() {
             assetsRef.current,
             poolInputTokenAddr,
           );
-          const usdcAfterBd = getTokenBalanceFromAssets(
+          const payTokenAfterBd = getTokenBalanceFromAssets(
             assetsRef.current,
-            usdcAddr,
+            payTokenAddr,
           );
 
           // ✅ PAY stakedDelta는 “after - (before - usedShares)”
@@ -1664,10 +1678,10 @@ export default function usePay() {
                 )
               : undefined;
 
-          // refund = net USDC increase, but if receiver is self, subtract payAmount
+          // refund = net payout-token increase, but if receiver is self, subtract payAmount
           const refundBd = (() => {
-            if (!usdcAfterBd || !usdcBeforeBd) return null;
-            let delta = usdcAfterBd.subtract(usdcBeforeBd);
+            if (!payTokenAfterBd || !payTokenBeforeBd) return null;
+            let delta = payTokenAfterBd.subtract(payTokenBeforeBd);
             if (
               receiver?.trim() &&
               userAddress &&
@@ -1675,11 +1689,11 @@ export default function usePay() {
             ) {
               const payAmountBd = new BigDecimal(
                 payAmount || "0",
-                USDC.decimals ?? 6,
+                payToken.decimals ?? 6,
               );
               delta = delta.subtract(payAmountBd);
             }
-            return delta.gt(new BigDecimal("0", USDC.decimals ?? 6))
+            return delta.gt(new BigDecimal("0", payToken.decimals ?? 6))
               ? delta
               : null;
           })();
@@ -1702,10 +1716,14 @@ export default function usePay() {
               receiver={receiver}
               stakedUsed={stakingSharesBd ?? undefined}
               requiredUsdWithTol={requiredUsdWithTolNum}
-              payAmountUsdc={payAmount}
+              payAmount={payAmount}
+              payTokenIcon={payToken.iconSrc}
+              payTokenSymbol={payToken.symbol}
               reEnter={reEnterSharesBd ?? undefined}
               reEnterUsd={reEnterUsdNum}
-              refundUsdc={refundBd ?? undefined}
+              refund={refundBd ?? undefined}
+              refundTokenIcon={payToken.iconSrc}
+              refundTokenSymbol={payToken.symbol}
             />
           );
 
@@ -1735,6 +1753,8 @@ export default function usePay() {
     stakingPoolAddress,
     receiver,
     payAmount,
+    paySymbol,
+    payToken,
     isPayInsufficientPoolBalance,
     isPayPriceImpactOverTolerance,
     stakingSharesBd,
@@ -1742,7 +1762,7 @@ export default function usePay() {
     PaySummaryNode,
     writeContract,
     tx,
-    USDC.addresses,
+    payToken.addresses,
     requiredUsdWithTolNum,
     resetPayPanel,
   ]);
@@ -2102,6 +2122,8 @@ export default function usePay() {
     setReceiver,
     payAmount,
     setPayAmount,
+    paySymbol,
+    setPaySymbol,
     enterAmount,
     setEnterAmount,
     tolerance,
@@ -2119,6 +2141,7 @@ export default function usePay() {
     WRAPPER_ADDRESS,
     stakingPoolAddress,
     enterToken,
+    payToken,
     payRequiredUsd,
     stakingSharesBd,
     enterWalletBalanceBd,

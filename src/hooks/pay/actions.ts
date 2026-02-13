@@ -111,7 +111,10 @@ export async function pay(params: {
   stakingPoolAddress: `0x${string}`;
   receiver: `0x${string}`;
 
-  payAmount: string; // USDC units string (ex: "12.34")
+  payAmount: string; // payout token units string (ex: "12.34")
+  payTokenSymbol: "USDC" | "EURC";
+  payTokenAddress: `0x${string}`;
+  payTokenDecimals: number;
   stakingSharesStr: string; // shares units string (ex: "0.12345678")
   sharesDecimals: number;
 
@@ -130,6 +133,9 @@ export async function pay(params: {
     stakingPoolAddress,
     receiver,
     payAmount,
+    payTokenSymbol,
+    payTokenAddress,
+    payTokenDecimals,
     stakingSharesStr,
     sharesDecimals,
     paySummaryNode,
@@ -140,13 +146,14 @@ export async function pay(params: {
     onMinedSuccess,
   } = params;
 
-  const USDC = tokens.USDC;
-  const usdcAddr = USDC.addresses?.[chainId] as `0x${string}` | undefined;
-  if (!usdcAddr) throw new Error("USDC address not found for chain");
+  const payToken =
+    Object.values(tokens).find(
+      (t) => t.symbol?.toUpperCase() === payTokenSymbol.toUpperCase()
+    ) ?? tokens.USDC;
 
   const exactOut = parseUnits(
     sanitizeDecimalInput(payAmount || "0") || "0",
-    USDC.decimals ?? 6
+    payTokenDecimals
   );
 
   const stakingShares = parseUnits(
@@ -160,9 +167,9 @@ export async function pay(params: {
     chainId,
     address: userAddress,
     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
-    // PAY에서는 input=pool(staked), output=USDC(exactOut)로 보면 일관성 있음
+    // PAY에서는 input=pool(staked), output=selected payout token(exactOut)
     input: { token: undefined, amount: undefined }, // usePay에서 채워도 되고, 안 쓰면 undefined로 둬도 됨
-    output: { token: USDC, amount: undefined },
+    output: { token: payToken, amount: undefined },
     receiver,
     onSubmittedInfo: paySummaryNode,
     onConfirmedInfo: paySummaryNode,
@@ -180,7 +187,7 @@ export async function pay(params: {
     address: stakingPoolAddress,
     abi: birdieswap_staking_abi,
     functionName: "easyPay",
-    args: [stakingShares, usdcAddr, exactOut, receiver],
+    args: [stakingShares, payTokenAddress, exactOut, receiver],
   });
 
   // handlers.onSuccess가 내부에서 txid 세팅 + status PENDING으로 바꾸는 구조를 기대
