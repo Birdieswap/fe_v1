@@ -91,6 +91,7 @@ export default function SwapFormSelectTokenModal(props: {
   setToken: (token: ICurrency) => void;
   showBalance?: boolean;
   withBalanceTitle?: string;
+  flatList?: boolean;
 }) {
   const { balances } = useContext(AssetsContext);
   const chainId = useChainId();
@@ -177,6 +178,7 @@ export default function SwapFormSelectTokenModal(props: {
 
   const hasAnyResult =
     withBalance.length > 0 || innerTokens.length > 0 || otherTokens.length > 0;
+  const flatTokens = balanceData;
 
   return (
     <ModalBase
@@ -207,35 +209,11 @@ export default function SwapFormSelectTokenModal(props: {
             <div className="flex-1 overflow-y-auto">
               {hasAnyResult ? (
                 <Container>
-                  {/* 1) 잔고 있는 토큰: Your Tokens */}
-                  <Header>{props.withBalanceTitle ?? "Your Tokens"}</Header>
-                  <ListContainer>
-                    {withBalance.map((v, idx) => (
-                      <TokenDisplay
-                        key={v.address ?? v.token.symbol ?? String(idx)}
-                        balanceValue={v.balance}
-                        showBalance={props.showBalance}
-                        isSelected={
-                          !!v.token?.symbol && !!props.selectedToken?.symbol
-                            ? v.token.symbol === props.selectedToken.symbol
-                            : false
-                        }
-                        setToken={() => {
-                          props.setToken(v.token);
-                          props.onClose();
-                        }}
-                        token={v.token as IToken}
-                      />
-                    ))}
-                  </ListContainer>
-
-                  {/* 2) 잔고 없는 내부 토큰: Inner Tokens */}
-                  {innerTokens.length > 0 && (
+                  {props.flatList ? (
                     <>
-                      <Divider className="my-2" />
-                      <Header>Inner Tokens</Header>
+                      <Header>{props.withBalanceTitle ?? "Your Tokens"}</Header>
                       <ListContainer>
-                        {innerTokens.map((v, idx) => (
+                        {flatTokens.map((v, idx) => (
                           <TokenDisplay
                             key={v.address ?? v.token.symbol ?? String(idx)}
                             balanceValue={v.balance}
@@ -254,15 +232,12 @@ export default function SwapFormSelectTokenModal(props: {
                         ))}
                       </ListContainer>
                     </>
-                  )}
-
-                  {/* 3) 잔고 없는 외부 토큰: Other Tokens */}
-                  {otherTokens.length > 0 && (
+                  ) : (
                     <>
-                      <Divider className="my-2" />
-                      <Header>Other Tokens</Header>
+                      {/* 1) 잔고 있는 토큰: Your Tokens */}
+                      <Header>{props.withBalanceTitle ?? "Your Tokens"}</Header>
                       <ListContainer>
-                        {otherTokens.map((v, idx) => (
+                        {withBalance.map((v, idx) => (
                           <TokenDisplay
                             key={v.address ?? v.token.symbol ?? String(idx)}
                             balanceValue={v.balance}
@@ -280,6 +255,60 @@ export default function SwapFormSelectTokenModal(props: {
                           />
                         ))}
                       </ListContainer>
+
+                      {/* 2) 잔고 없는 내부 토큰: Inner Tokens */}
+                      {innerTokens.length > 0 && (
+                        <>
+                          <Divider className="my-2" />
+                          <Header>Inner Tokens</Header>
+                          <ListContainer>
+                            {innerTokens.map((v, idx) => (
+                              <TokenDisplay
+                                key={v.address ?? v.token.symbol ?? String(idx)}
+                                balanceValue={v.balance}
+                                showBalance={props.showBalance}
+                                isSelected={
+                                  !!v.token?.symbol && !!props.selectedToken?.symbol
+                                    ? v.token.symbol === props.selectedToken.symbol
+                                    : false
+                                }
+                                setToken={() => {
+                                  props.setToken(v.token);
+                                  props.onClose();
+                                }}
+                                token={v.token as IToken}
+                              />
+                            ))}
+                          </ListContainer>
+                        </>
+                      )}
+
+                      {/* 3) 잔고 없는 외부 토큰: Other Tokens */}
+                      {otherTokens.length > 0 && (
+                        <>
+                          <Divider className="my-2" />
+                          <Header>Other Tokens</Header>
+                          <ListContainer>
+                            {otherTokens.map((v, idx) => (
+                              <TokenDisplay
+                                key={v.address ?? v.token.symbol ?? String(idx)}
+                                balanceValue={v.balance}
+                                showBalance={props.showBalance}
+                                isSelected={
+                                  !!v.token?.symbol && !!props.selectedToken?.symbol
+                                    ? v.token.symbol === props.selectedToken.symbol
+                                    : false
+                                }
+                                setToken={() => {
+                                  props.setToken(v.token);
+                                  props.onClose();
+                                }}
+                                token={v.token as IToken}
+                              />
+                            ))}
+                          </ListContainer>
+                        </>
+                      )}
                     </>
                   )}
                 </Container>
