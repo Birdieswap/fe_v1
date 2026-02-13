@@ -150,8 +150,8 @@ const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
     [networks.arbitrum.id]: contractAddresses.arbitrum
       .EURC_USDC_POOL as `0x${string}`,
   },
-  decimals: 8,
-  fee_tier: 500,
+  decimals: 18,
+  fee_tier: 100,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
