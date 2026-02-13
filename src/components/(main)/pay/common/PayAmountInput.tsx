@@ -586,6 +586,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         selectedToken={token}
         setToken={handleSelectToken}
         tokens={selectableTokens}
+        flatList={mode === "PAY"}
         showBalance={mode !== "PAY"}
         withBalanceTitle={mode === "PAY" ? "Pay Tokens" : "Your Tokens"}
         onClose={tokenDisclosure.onClose}
