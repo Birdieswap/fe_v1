@@ -27,6 +27,7 @@ export function PayProvider({ children }: { children: React.ReactNode }) {
   const resetPayForm = useCallback(() => {
     pay.setReceiver("");
     pay.setPayAmount("");
+    pay.setPaySymbol("USDC");
 
     // selectedPool이 undefined 기반이면 아래처럼
     // (null 기반이면 null로 변경)
@@ -40,7 +41,7 @@ export function PayProvider({ children }: { children: React.ReactNode }) {
     (pay.setSelectedPool as any)?.(undefined);
 
     // ENTER 토글도 초기화 원하면
-    pay.setNativeSymbol("ETH");
+    pay.setNativeSymbol("USDC");
   }, [pay]);
 
   const value = useMemo<PayContextValueType>(
