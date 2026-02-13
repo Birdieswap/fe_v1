@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import tokens from "@/const/contracts/tokens/tokens";
 import { BigDecimal } from "@/types/BigDecimal";
 
 function fmtBd(bd?: BigDecimal, dp = 6) {
@@ -27,10 +26,10 @@ export function PaySummaryNode(props: {
   receiver: string;
   stakedUsed?: BigDecimal;
   requiredUsdWithTol?: number;
-  payAmountUsdc: string;
+  payAmount: string;
+  payTokenIcon?: string;
+  payTokenSymbol: string;
 }) {
-  const USDC = tokens.USDC;
-
   return (
     <div className="w-full rounded-2xl bg-default-100 dark:bg-dark-swap-bg p-4 text-left">
       <div className="space-y-2 text-[13px] text-default-700 dark:text-default-300">
@@ -77,18 +76,18 @@ export function PaySummaryNode(props: {
 
             <div className="mt-3 flex items-center text-foreground justify-between gap-3">
               <div className="flex min-w-0 items-center gap-2">
-                {USDC.iconSrc && (
+                {props.payTokenIcon && (
                   <img
-                    src={USDC.iconSrc}
-                    alt="USDC"
+                    src={props.payTokenIcon}
+                    alt={props.payTokenSymbol}
                     className="h-5 w-5 object-contain"
                   />
                 )}
-                <span className="font-semibold">USDC</span>
+                <span className="font-semibold">{props.payTokenSymbol}</span>
               </div>
 
               <div className="text-right">
-                <span className="font-semibold">{props.payAmountUsdc}</span>
+                <span className="font-semibold">{props.payAmount}</span>
               </div>
             </div>
           </div>
@@ -104,14 +103,16 @@ export function PayResultNode(props: {
   receiver: string;
   stakedUsed?: BigDecimal;
   requiredUsdWithTol?: number;
-  payAmountUsdc: string;
+  payAmount: string;
+  payTokenIcon?: string;
+  payTokenSymbol: string;
 
   reEnter?: BigDecimal;
   reEnterUsd?: number;
-  refundUsdc?: BigDecimal;
+  refund?: BigDecimal;
+  refundTokenIcon?: string;
+  refundTokenSymbol?: string;
 }) {
-  const USDC = tokens.USDC;
-
   return (
     <div className="w-full rounded-2xl bg-default-100 dark:bg-dark-swap-bg p-4 text-left">
       <div className="space-y-2 text-[13px] text-default-700 dark:text-default-300">
@@ -157,24 +158,24 @@ export function PayResultNode(props: {
 
           <div className="mt-3 flex items-center text-foreground justify-between gap-3">
             <div className="flex min-w-0 items-center gap-2">
-              {USDC.iconSrc && (
+              {props.payTokenIcon && (
                 <img
-                  src={USDC.iconSrc}
-                  alt="USDC"
+                  src={props.payTokenIcon}
+                  alt={props.payTokenSymbol}
                   className="h-5 w-5 object-contain"
                 />
               )}
-              <span className="font-semibold">USDC</span>
+              <span className="font-semibold">{props.payTokenSymbol}</span>
             </div>
 
             <div className="text-right">
-              <span className="font-semibold">{props.payAmountUsdc}</span>
+              <span className="font-semibold">{props.payAmount}</span>
             </div>
           </div>
         </div>
 
         {/* Settlement */}
-        {(props.reEnter || props.refundUsdc) && (
+        {(props.reEnter || props.refund) && (
           <div className="mt-2 border-t border-default-200/60 pt-2 dark:border-default-100/20">
             <div className="text-[11px] text-default-500">Settlement</div>
 
@@ -204,22 +205,22 @@ export function PayResultNode(props: {
               </div>
             )} */}
 
-            {props.refundUsdc && (
+            {props.refund && (
               <div className="mt-2 flex items-center justify-between gap-3">
                 <div className="text-[13px] text-default-700 dark:text-default-300">
                   Refund
                 </div>
 
                 <div className="flex items-center justify-end gap-2 text-right text-foreground">
-                  {USDC.iconSrc && (
+                  {props.refundTokenIcon && (
                     <img
-                      src={USDC.iconSrc}
-                      alt="USDC"
+                      src={props.refundTokenIcon}
+                      alt={props.refundTokenSymbol ?? "refund"}
                       className="h-5 w-5 object-contain"
                     />
                   )}
                   <span className="font-semibold">
-                    {fmtBd(props.refundUsdc, 6)} USDC
+                    {fmtBd(props.refund, 6)} {props.refundTokenSymbol ?? ""}
                   </span>
                 </div>
               </div>

@@ -130,10 +130,12 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
   const token =
     mode === "PAY"
-      ? tokens.USDC
+      ? pay.payToken
       : pay.nativeSymbol === "ETH"
         ? tokens.ETH
-        : tokens.USDC;
+        : pay.nativeSymbol === "EURC"
+          ? tokens.EURC
+          : tokens.USDC;
 
   const showLock =
     mode === "ENTER" && pay.nativeSymbol !== "ETH" && !!pay.showApproveUI;
@@ -391,9 +393,12 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         setAmount("");
         if (nextToken.symbol === "ETH") pay.setNativeSymbol("ETH");
         if (nextToken.symbol === "USDC") pay.setNativeSymbol("USDC");
+        if (nextToken.symbol === "EURC") pay.setNativeSymbol("EURC");
         return;
       }
       if (mode === "PAY") {
+        if (nextToken.symbol === "USDC") pay.setPaySymbol("USDC");
+        if (nextToken.symbol === "EURC") pay.setPaySymbol("EURC");
         pay.setPayAmount("");
       }
     },

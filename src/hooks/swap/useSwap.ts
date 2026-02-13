@@ -24,7 +24,9 @@ import { ADDRESS } from "@/const/contracts/contractAddresses";
 
 export default function useSwap() {
   const chainId = useChainId();
-  const [fromToken, setFromToken] = useState<ICurrency | undefined>(tokens.ETH);
+  const [fromToken, setFromToken] = useState<ICurrency | undefined>(
+    tokens.USDC,
+  );
   const [toToken, setToToken] = useState<ICurrency | undefined>(undefined);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
@@ -59,7 +61,7 @@ export default function useSwap() {
   const [isTyping, setIsTyping] = useState(false);
 
   const [priceImpact, setPriceImpact] = useState<BigDecimal | undefined>(
-    undefined
+    undefined,
   );
 
   // ===== Router / Wrapper 주소
@@ -75,7 +77,7 @@ export default function useSwap() {
 
   const toTokenAddr = useMemo(
     () => getTokenAddress({ token: toToken as any, chainId }),
-    [toToken, chainId]
+    [toToken, chainId],
   );
 
   const isToETH = useMemo(() => {
@@ -256,7 +258,7 @@ export default function useSwap() {
 
       const fromAmountBD = new BigDecimal(
         fromAmount || "0",
-        fromToken?.decimals ?? 18
+        fromToken?.decimals ?? 18,
       );
 
       const newToAmount =
