@@ -15,6 +15,7 @@ import TransactionStatus from "@/types/TransactionStatus";
 import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
 
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import { birdieswap_wrapper_abi } from "@/const/contracts/abis/birdieswap_wrapper_abi";
 
@@ -161,6 +162,19 @@ export async function pay(params: {
     sharesDecimals
   );
 
+  console.log("[PAY][ACTION] easyPay args", {
+    stakingPoolAddress,
+    receiver,
+    payTokenSymbol,
+    payTokenAddress,
+    payAmount,
+    payTokenDecimals,
+    stakingSharesStr,
+    sharesDecimals,
+    _stakedAmount: stakingShares.toString(),
+    exactOut: exactOut.toString(),
+  });
+
   // ✅ transactionProps (CONFIRM_NEEDED에서 시작)
   const transactionProps: TransactionStatusProps = {
     transactionType: TransactionType.PAY,
@@ -240,7 +254,7 @@ export async function approveErc20ForEnter(params: {
   const tokenMeta =
     Object.values(tokens).find(
       (t) => t.addresses?.[chainId]?.toLowerCase() === tokenAddress.toLowerCase()
-    ) ?? tokens.WETH;
+    ) ?? externalTokens.WETH;
 
   const transactionProps: TransactionStatusProps = {
     transactionType: TransactionType.APPROVE,
@@ -369,7 +383,7 @@ export async function enter(params: {
       token:
         Object.values(tokens).find(
           (t) => t.symbol.toUpperCase() === inputTokenSymbol.toUpperCase()
-        ) ?? tokens.ETH,
+        ) ?? externalTokens.ETH,
       amount: undefined,
     },
     onSubmittedInfo: enterSummaryNode,

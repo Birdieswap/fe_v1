@@ -1,5 +1,5 @@
 // derivePoolInfo.ts
-import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { PoolInfo, Addr } from "./types";
 
 const DEBUG_DERIVE_POOL_INFO = false; // 필요할 때 true 로
@@ -22,7 +22,9 @@ function normalizeToErc20Address(params: {
   chainId: number;
 }) {
   const { addr, entry, chainId } = params;
-  const weth = tokens?.WETH?.addresses?.[chainId] as `0x${string}` | undefined;
+  const weth = externalTokens?.WETH?.addresses?.[chainId] as
+    | `0x${string}`
+    | undefined;
 
   // ✅ 1) addr 자체가 ETH-like면 WETH로
   if (addr && weth && isEthLike(addr)) return weth;

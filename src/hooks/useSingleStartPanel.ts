@@ -28,6 +28,7 @@ import {
   ZERO_ADDRESS,
 } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 /** ETH/WETH 토글 */
@@ -115,9 +116,9 @@ export function useSingleStartPanel(item: FarmSingle) {
   const nativeToggleCanShow = defaultIsETH;
 
   // 표시용 토큰 메타
-  const ethDisplayMeta = tokens.ETH;
+  const ethDisplayMeta = externalTokens.ETH;
 
-  const wethDisplayMeta = tokens.WETH;
+  const wethDisplayMeta = externalTokens.WETH;
 
   // ETH/WETH 반영된 표시 토큰
   const displayToken = useMemo(() => {

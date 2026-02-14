@@ -65,12 +65,10 @@ export function useAccountWalletData(
     Awaited<ReturnType<typeof getMyTransactionData>>["Transactions"]
   >([]);
 
-  // ===== 균일 페이스용 보강(autoboost) 파라미터 =====
-  const PAGE_TARGET = 30;
+  // ===== 빈 구간 백필 스캔 파라미터 =====
   const BLOCK_WINDOW = 50_400;
+  const BLOCK_STEP = BLOCK_WINDOW + 1; // 50,401
   const preFetchLenRef = useRef(0); // fetch 시작 직전의 길이
-  const boostCountRef = useRef(0); // 연속 보강 횟수 (무한 루프 방지)
-  const MAX_BOOST = 3;
 
   const parseStartBlock = useCallback((v?: string | number) => {
     const n =
@@ -92,7 +90,6 @@ export function useAccountWalletData(
     setEarliestBlock(undefined);
     setRefreshNonce(0);
 
-    boostCountRef.current = 0;
     preFetchLenRef.current = 0;
 
     // console.log("[useAWD] reset", { address, chainId, initialCursor: initial });
@@ -218,7 +215,7 @@ export function useAccountWalletData(
 
     // 다음 요청 커서 계산:
     // 1) 첫 호출(latest) 이후: "현재 페이지 기준 최신 block - 50,401"
-    // 2) 그 다음부터는: "이전 요청 cursor - 50,400" 고정 간격
+    // 2) 그 다음부터는: "이전 요청 cursor - 50,401" 고정 간격
     const maxInPage =
       list.length > 0
         ? Math.max(...list.map((t) => Number(t.blockNumber)))
@@ -228,13 +225,23 @@ export function useAccountWalletData(
 
     let computedNextCursor: number | undefined = undefined;
     if (!hasCursor && hasMaxInPage) {
-      computedNextCursor = Math.max(maxInPage - (BLOCK_WINDOW + 1), 0);
+      computedNextCursor = Math.max(maxInPage - BLOCK_STEP, 0);
     } else if (hasCursor) {
-      computedNextCursor = Math.max((cursor as number) - BLOCK_WINDOW, 0);
+      computedNextCursor = Math.max((cursor as number) - BLOCK_STEP, 0);
     }
 
     if (Number.isFinite(computedNextCursor as number)) {
       setNextCursor(computedNextCursor as number);
+    }
+
+    // 진행 불가(커서가 더 내려가지 않음)면 종료
+    if (
+      hasCursor &&
+      Number.isFinite(computedNextCursor as number) &&
+      (computedNextCursor as number) >= (cursor as number)
+    ) {
+      setEndReached(true);
+      return;
     }
 
     // 종료 조건: 다음 커서가 EarliestBlock보다 작아지면 종료
@@ -247,11 +254,26 @@ export function useAccountWalletData(
       return;
     }
 
+    // 핵심 요구사항:
+    // 초기/현재 누적 결과가 비어 있고 현재 페이지도 비어 있으면
+    // 50,401 블록씩 자동으로 뒤로 이동해 earliest까지 스캔한다.
+    if (
+      list.length === 0 &&
+      accTxs.length === 0 &&
+      Number.isFinite(computedNextCursor as number)
+    ) {
+      const next = computedNextCursor as number;
+      if (!Number.isFinite(pageEarliest) || next >= pageEarliest) {
+        setCursor(next);
+        return;
+      }
+    }
+
     // 안전장치: 초기 페이지부터 비어있고 다음 커서도 계산 불가하면 종료
     if (list.length === 0 && !Number.isFinite(computedNextCursor as number)) {
       setEndReached(true);
     }
-  }, [txQ.data, cursor, txKey, txKeyNum]);
+  }, [txQ.data, cursor, txKey, txKeyNum, accTxs.length]);
 
   // loadMore: nextCursor를 사용해 고정 window 간격으로 이동
   const loadMore = useCallback(() => {
@@ -265,30 +287,20 @@ export function useAccountWalletData(
     if (!accTxs.length) return;
     const maxBlock = Math.max(...accTxs.map((t) => Number(t.blockNumber)));
     if (Number.isNaN(maxBlock)) return;
-    setCursor(Math.max(maxBlock - (BLOCK_WINDOW + 1), 0));
+    setCursor(Math.max(maxBlock - BLOCK_STEP, 0));
   }, [accTxs, endReached, nextCursor]);
 
-  // ===== 자동 보강(autoboost): fetch가 끝난 뒤 추가된 개수가 30 미만이면 자동으로 더 가져오기 =====
+  // ===== 초기 빈 결과 백필용 자동 보강 =====
+  // 트랜잭션을 아직 하나도 못 찾은 상태에서만 자동으로 이어서 조회.
+  // 한 번이라도 찾으면 이후는 sentinel 스크롤로만 다음 페이지를 요청한다.
   useEffect(() => {
     if (txQ.isFetching || endReached) return;
 
     const added = accTxs.length - preFetchLenRef.current;
-
-    if (added >= PAGE_TARGET) {
-      boostCountRef.current = 0;
-      return;
-    }
-
-    if (added < PAGE_TARGET && boostCountRef.current < MAX_BOOST) {
-      boostCountRef.current += 1;
-      // console.log("[useAWD] autoboost", {
-      //   added,
-      //   target: PAGE_TARGET,
-      //   boostTry: boostCountRef.current,
-      // });
+    if (accTxs.length === 0 && added === 0 && Number.isFinite(nextCursor)) {
       loadMore();
     }
-  }, [txQ.isFetching, accTxs.length, endReached, loadMore]);
+  }, [txQ.isFetching, accTxs.length, endReached, loadMore, nextCursor]);
 
   // 주소/체인 바뀌면 보수적으로 invalidate (기존 유지)
   useEffect(() => {
@@ -314,7 +326,6 @@ export function useAccountWalletData(
     );
     setEndReached(false);
     setEarliestBlock(undefined);
-    boostCountRef.current = 0;
     preFetchLenRef.current = 0;
     setRefreshNonce((n) => n + 1);
   }, [blockHeight, parseStartBlock]);
