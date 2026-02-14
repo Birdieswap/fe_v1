@@ -35,7 +35,7 @@ const WETH_USD = PriceFeedGuard({
     [networks.base.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
     [networks.arbitrum.id]: "0xEAeFFF521cb36dFb414E8580f8635BFB44d96255",
   },
-  base: tokens.WETH,
+  base: externalTokens.WETH,
   quote: "USD",
   decimals: 8,
 });
@@ -48,7 +48,7 @@ const ETH_USD = PriceFeedGuard({
     [networks.base.id]: "0x71041dddad3595F9CEd3DcCFBe3D1F4b0a16Bb70",
     [networks.arbitrum.id]: "0xEAeFFF521cb36dFb414E8580f8635BFB44d96255",
   },
-  base: tokens.ETH,
+  base: externalTokens.ETH,
   quote: "USD",
   decimals: 8,
 });
