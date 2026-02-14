@@ -11,7 +11,7 @@ const CBBTC_USD = PriceFeedGuard({
     [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
     [networks.base.id]: "0x07DA0E54543a844a80ABE69c8A12F22B3aA59f9D",
   },
-  base: RewardsTokens.CBBTC,
+  base: externalTokens.CBBTC,
   quote: "USD",
   decimals: 8,
 });
@@ -74,7 +74,7 @@ const EURC_USD = PriceFeedGuard({
     [networks.base.id]: "0xDAe398520e2B67cd3f27aeF9Cf14D93D927f8250",
     [networks.arbitrum.id]: "0xCF9752295D0ac9215461fA095faFEC1B854b849B",
   },
-  base: RewardsTokens.EURC,
+  base: tokens.EURC,
   quote: "USD",
   decimals: 8,
 });
