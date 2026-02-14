@@ -11,7 +11,7 @@ import networks from "../networks";
 
 import stakingProviders from "./stakingProviders";
 import tokens from "./tokens";
-import { externalTokens } from "./externalTokens";
+import externalTokens from "./externalTokens";
 
 export const Uniswap_ETH_USDC = SwapPoolGuard({
   type: EContractType.SWAP,

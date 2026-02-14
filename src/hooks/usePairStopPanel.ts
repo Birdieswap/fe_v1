@@ -10,6 +10,7 @@ import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
 import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
 import { useClient } from "wagmi";
@@ -57,8 +58,8 @@ export function usePairStopPanel(item: FarmPair) {
   ]);
 
   // 표기용 메타
-  const ethDisplayMeta = tokens.ETH;
-  const wethDisplayMeta = tokens.WETH;
+  const ethDisplayMeta = externalTokens.ETH;
+  const wethDisplayMeta = externalTokens.WETH;
 
   // 표시 토큰 (토글 반영)
   const displayTokens = useMemo(() => {

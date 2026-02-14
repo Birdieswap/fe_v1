@@ -1,4 +1,5 @@
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { BigDecimal } from "@/types/BigDecimal";
 import {
   quoteExactInputSingle,
@@ -47,7 +48,7 @@ const isETH = (t?: any) => symUP(t) === "ETH";
 /** Quoter에 넘길 ERC20주소: ETH면 WETH 주소 사용 */
 function quoteAddr(token: any, chainId: number): `0x${string}` | undefined {
   if (!token || !chainId) return undefined;
-  if (isETH(token)) return tokens.WETH.addresses?.[chainId] as any;
+  if (isETH(token)) return externalTokens.WETH.addresses?.[chainId] as any;
 
   const a = token.addresses?.[chainId];
   return typeof a === "string" && a.length > 0 ? (a as any) : undefined;
@@ -55,7 +56,7 @@ function quoteAddr(token: any, chainId: number): `0x${string}` | undefined {
 
 /** 내부 로직에서 underlying 계산은 ETH면 WETH로 */
 function underlyingErc20(token: any) {
-  return isETH(token) ? tokens.WETH : token;
+  return isETH(token) ? externalTokens.WETH : token;
 }
 
 /** outAmountStr(토큰 단위 문자열)에 0.9975 곱해서 fallback benchmark 생성 */

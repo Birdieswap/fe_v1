@@ -17,6 +17,7 @@ import isAmountInputValid from "@/utils/isAmountInputValid";
 import { ICurrency } from "@/const/contracts/types/tokenTypes";
 import getSwapPool from "@/utils/assets/getSwapPool";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { useReferral } from "@/app/ReferralContextProvider";
 
@@ -368,9 +369,9 @@ export default function useSwapTokens({
       const setAmount = side === "in" ? setToAmount : setFromAmount;
 
       const fromTokenERC20 =
-        useFromToken.symbol === "ETH" ? tokens.WETH : useFromToken;
+        useFromToken.symbol === "ETH" ? externalTokens.WETH : useFromToken;
       const toTokenERC20 =
-        useToToken.symbol === "ETH" ? tokens.WETH : useToToken;
+        useToToken.symbol === "ETH" ? externalTokens.WETH : useToToken;
 
       if (
         newAmountBD.isZero() ||

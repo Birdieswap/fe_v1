@@ -27,6 +27,7 @@ import { TransactionType } from "@/types/TransactionTypes";
 import type { TransactionStatusProps } from "@/app/TransactionContextProvider";
 
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import lpVaults from "@/const/contracts/tokens/lpVaults";
 import { BigDecimal } from "@/types/BigDecimal";
 import { ADDRESS } from "@/const/contracts/contractAddresses";
@@ -303,7 +304,7 @@ export default function usePay() {
 
   const USDC = tokens.USDC;
   const PAY_EURC = tokens.EURC;
-  const ETH = tokens.ETH;
+  const ETH = externalTokens.ETH;
   const EURC = tokens.EURC;
   const payToken = paySymbol === "EURC" ? PAY_EURC : USDC;
   const enterToken =
@@ -366,7 +367,8 @@ export default function usePay() {
     (token?: ICurrency): string => {
       if (!token || !chainId) return "";
       const addr = getTokenAddress({ token, chainId }) ?? "";
-      const wethAddr = (tokens.WETH.addresses?.[chainId] ?? "") as string;
+      const wethAddr = (externalTokens.WETH.addresses?.[chainId] ??
+        "") as string;
       if (token.symbol.toUpperCase() === "ETH") return safeLower(wethAddr);
       if (isEthLikeAddress(addr)) return safeLower(wethAddr);
       return safeLower(addr);
@@ -778,7 +780,8 @@ export default function usePay() {
 
     const tokenAddr =
       nativeSymbol === "ETH"
-        ? ((tokens.ETH.addresses?.[chainId] as string | undefined) ?? ZERO_ADDR)
+        ? ((externalTokens.ETH.addresses?.[chainId] as string | undefined) ??
+          ZERO_ADDR)
         : (enterToken.addresses?.[chainId] as string | undefined);
 
     const balanceBd = getTokenBalanceFromAssets(assets, tokenAddr);
@@ -1431,6 +1434,12 @@ export default function usePay() {
         disabled: true,
         variant: "MINT" as const,
       };
+    if (!stakingSharesBd || stakingSharesBd.lte(0))
+      return {
+        text: "Calculating required stake...",
+        disabled: true,
+        variant: "MINT" as const,
+      };
     if (isPayInsufficientPoolBalance)
       return {
         text: `Insufficient ${selectedPool.symbol} balance`,
@@ -1453,6 +1462,7 @@ export default function usePay() {
     payAmount,
     payToken.symbol,
     selectedPool,
+    stakingSharesBd,
     isPayInsufficientPoolBalance,
     isPayPriceImpactOverTolerance,
   ]);
@@ -1580,6 +1590,18 @@ export default function usePay() {
       if (!selectedPool || !stakingPoolAddress) return;
       if (!receiver?.trim()) return;
       if (isEmptyAmount(payAmount)) return;
+      if (!stakingSharesBd || stakingSharesBd.lte(0)) {
+        console.warn("[PAY] skip: invalid stakingSharesBd", {
+          stakingSharesBd: stakingSharesBd?.toPrecisionString?.(true, false),
+          poolPriceUsdPerToken: poolPriceUsdPerToken?.toPrecisionString?.(
+            true,
+            false,
+          ),
+          payAmount,
+          paySymbol,
+        });
+        return;
+      }
       if (isPayInsufficientPoolBalance) return;
       if (isPayPriceImpactOverTolerance) return;
 
@@ -1603,24 +1625,43 @@ export default function usePay() {
         watchStakedInputTokenAddrs: [poolInputTokenAddr],
       });
 
-      // console.log("[PAY][BEFORE]", {
-      //   stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-      //   usdcBefore: usdcBeforeBd?.toPrecisionString(true, true),
-      //   usdcAddr,
-      //   poolInputTokenAddr,
-      //   prevKey,
-      //   balancesVersion: assetsRef.current?.balancesVersion,
-      // });
+      console.log("[PAY][BEFORE]", {
+        stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
+
+        poolInputTokenAddr,
+        prevKey,
+        balancesVersion: assetsRef.current?.balancesVersion,
+      });
 
       const sharesDecimals = findVaultDecimalsByPoolAddress(
         chainId,
         safeLower(selectedPool.address),
       );
 
-      // viem parseUnits 가능한 형태로
-      const sharesStr = (
-        stakingSharesBd?.roundToDecimals(8) ?? new BigDecimal("0", 18)
-      ).toPrecisionString(true, true);
+      // viem parseUnits 가능한 형태로 (pool share decimals 기준)
+      const roundedSharesBd = stakingSharesBd.roundToDecimals(sharesDecimals);
+      const sharesStr = roundedSharesBd.toPrecisionString(true, false);
+      if (roundedSharesBd.lte(0)) {
+        console.warn("[PAY] skip: rounded staking shares is zero", {
+          sharesDecimals,
+          rawStakingShares: stakingSharesBd.toPrecisionString(true, false),
+          roundedStakingShares: sharesStr,
+        });
+        return;
+      }
+
+      console.log("[PAY][TX] request", {
+        pool: selectedPool.symbol,
+        poolAddress: selectedPool.address,
+        stakingPoolAddress,
+        receiver,
+        payAmount,
+        payTokenSymbol: paySymbol,
+        payTokenAddress: payTokenAddr,
+        sharesDecimals,
+        stakingSharesRaw: stakingSharesBd.toPrecisionString(true, false),
+        stakingSharesRounded: sharesStr,
+      });
 
       didSubmit = true;
 
@@ -1698,16 +1739,15 @@ export default function usePay() {
               : null;
           })();
 
-          // console.log("[PAY][AFTER]", {
-          //   stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
-          //   usdcAfter: usdcAfterBd?.toPrecisionString(true, true),
-          //   balancesVersion: assetsRef.current?.balancesVersion,
-          // });
+          console.log("[PAY][AFTER]", {
+            stakedAfter: stakedAfterBd?.toPrecisionString(true, true),
+            balancesVersion: assetsRef.current?.balancesVersion,
+          });
 
-          // console.log("[PAY][DELTA]", {
-          //   reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
-          //   refundUsdc: refundBd?.toPrecisionString(true, true),
-          // });
+          console.log("[PAY][DELTA]", {
+            reEnterShares: reEnterSharesBd?.toPrecisionString(true, true),
+            refundUsdc: refundBd?.toPrecisionString(true, true),
+          });
 
           const payResultNode = (
             <PayResultBlock

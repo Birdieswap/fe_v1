@@ -6,6 +6,7 @@ import networks from "../networks";
 
 import stakingProviders from "./stakingProviders";
 import tokens from "./tokens";
+import externalTokens from "./externalTokens";
 import { contractAddresses } from "../contractAddresses";
 
 // const bHarvestAutopilotETH = BirdieSingleFarmGuard({
@@ -20,7 +21,7 @@ import { contractAddresses } from "../contractAddresses";
 //   },
 //   abi: erc20_abi,
 //   provider: stakingProviders.BIRDIESWAP_Wrapper,
-//   input: tokens.ETH,
+//   input: externalTokens.ETH,
 //   decimals: 18,
 //   displayDecimals: 4,
 //   iconSrc: "/tokens/b-token.svg",
@@ -39,7 +40,7 @@ import { contractAddresses } from "../contractAddresses";
 //   },
 //   abi: erc20_abi,
 //   provider: stakingProviders.BIRDIESWAP_Router,
-//   input: tokens.WETH,
+//   input: externalTokens.WETH,
 //   decimals: 18,
 //   displayDecimals: 4,
 //   iconSrc: "/tokens/b-token.svg",

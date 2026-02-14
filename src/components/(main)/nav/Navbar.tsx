@@ -28,7 +28,7 @@ export default function NavbarImpl() {
   const { account } = useContext(WalletContext);
   const isAccountConnected = !!account?.address;
 
-  const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL!;
+  const WEB_URL = process.env.NEXT_PUBLIC_WEB_URL?.trim() || "/";
 
   return (
     <Navbar

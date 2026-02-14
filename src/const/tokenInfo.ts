@@ -1,7 +1,7 @@
 import { CryptoTokenInfo } from "@/types/CryptoTokenInfo";
 
 import tokens from "./contracts/tokens/tokens";
-import { externalTokens } from "./contracts/tokens/externalTokens";
+import externalTokens from "./contracts/tokens/externalTokens";
 import { ICurrency } from "@/const/contracts/types/tokenTypes";
 
 const AAVE: CryptoTokenInfo = {
@@ -70,9 +70,9 @@ export default TokenInfo;
 /* -------------------- 기존과 동일한 default export 유지 -------------------- */
 
 // export const SwapTokens = [
-//   tokens.WETH,
+//   externalTokens.WETH,
 //   tokens.USDC,
-//   tokens.ETH,
+//   externalTokens.ETH,
 //   tokens.WBTC,
 //   //tokens.USDT,
 //   //tokens.AAVE,
