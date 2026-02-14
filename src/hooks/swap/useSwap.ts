@@ -8,6 +8,7 @@ import { ICurrency } from "@/const/contracts/types/tokenTypes";
 import getSwapResult from "@/utils/assets/getSwapResult";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 import useBalance from "../useBalance";
 import useTokenAddress from "../useTokenAddress";
@@ -129,14 +130,14 @@ export default function useSwap() {
     const prev = prevChainIdRef.current;
     if (!chainId || prev === chainId) return;
 
-    setFromToken(tokens.ETH);
+    setFromToken(externalTokens.ETH);
     setToToken(undefined);
     setFromAmount("");
     setToAmount("");
     setPriceImpact(undefined);
     setIsTyping(false);
 
-    prevFromTokenRef.current = tokens.ETH;
+    prevFromTokenRef.current = externalTokens.ETH;
     prevToTokenRef.current = undefined;
     prevChainIdRef.current = chainId;
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -8,6 +8,7 @@ import singleVaults from "./contracts/tokens/singleVaults";
 import stakingProviders from "./contracts/tokens/stakingProviders";
 import swapPools from "./contracts/tokens/swapPool";
 import tokens from "./contracts/tokens/tokens";
+import externalTokens from "./contracts/tokens/externalTokens";
 
 export const contracts = {
   birdieRouter: {
@@ -87,7 +88,7 @@ export const contracts = {
   },
   harvestVaults: {},
   // WETH: {
-  //   address: tokens.WETH.addresses[networks.baseFork.id],
+  //   address: externalTokens.WETH.addresses[networks.baseFork.id],
   //   abi: erc20_abi,
   // },
   // USDT: {

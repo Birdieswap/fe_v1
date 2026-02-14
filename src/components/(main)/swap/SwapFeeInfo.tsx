@@ -16,6 +16,7 @@ import { useAccount, useChainId } from "wagmi";
 import { isEthOnlyOneSide, isWrapPair } from "@/utils/swap/swapMode";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 export default function SwapFeeInfo() {
   const [open, setOpen] = useState(false);
@@ -64,7 +65,7 @@ export default function SwapFeeInfo() {
 
     const isEth = fromToken.symbol?.toUpperCase?.() === "ETH";
     if (isEth) {
-      const weth = tokens.WETH?.addresses?.[chainId];
+      const weth = externalTokens.WETH?.addresses?.[chainId];
       return (weth ?? null) as `0x${string}` | null;
     }
 
@@ -95,7 +96,7 @@ export default function SwapFeeInfo() {
       // ✅ ETH면 WETH decimals 기준으로 스케일 맞춤
       const isEth = fromToken.symbol?.toUpperCase?.() === "ETH";
       const decimals = isEth
-        ? (tokens.WETH?.decimals ?? 18)
+        ? (externalTokens.WETH?.decimals ?? 18)
         : (fromToken.decimals ?? 18);
 
       const amountBD = new BigDecimal(String(fromAmount));

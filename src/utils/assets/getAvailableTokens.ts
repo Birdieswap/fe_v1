@@ -2,6 +2,7 @@ import type { ICurrency } from "@/const/contracts/types/tokenTypes";
 import internalSwapPoolsMod from "@/const/contracts/tokens/swapPool";
 import externalSwapPoolsMod from "@/const/contracts/tokens/externalSwapPool";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { INTERNAL_TOKENS, EXTERNAL_TOKENS } from "@/const/tokenInfo";
 
 const symUP = (t?: ICurrency | null) => String(t?.symbol ?? "").toUpperCase();
@@ -46,7 +47,7 @@ function hasAddressOnChain(token?: ICurrency | null, chainId?: number) {
 function matchAddrLower(token?: ICurrency | null, chainId?: number): string {
   if (!token || !chainId) return "";
   const addr = isETH(token)
-    ? (tokens.WETH.addresses?.[chainId] as string | undefined)
+    ? (externalTokens.WETH.addresses?.[chainId] as string | undefined)
     : (token.addresses?.[chainId] as string | undefined);
   return typeof addr === "string" && addr.length > 0 ? addr.toLowerCase() : "";
 }
@@ -73,8 +74,8 @@ function buildAddrToDisplayToken(chainId: number) {
   }
 
   //  핵심: WETH 주소는 표시용으로 ETH로 보이게 (ETH 선택 UX 유지)
-  const wethAddr = matchAddrLower(tokens.WETH as any, chainId);
-  if (wethAddr) map.set(wethAddr, tokens.ETH as any as ICurrency);
+  const wethAddr = matchAddrLower(externalTokens.WETH as any, chainId);
+  if (wethAddr) map.set(wethAddr, externalTokens.ETH as any as ICurrency);
 
   return map;
 }
@@ -234,12 +235,12 @@ export default function getAvailableTokens(
   for (const p of getPartnerTokens(baseToken, chainId)) push(p);
 
   // ETH <-> WETH "표시/선택 편의" 규칙
-  if (isETH(baseToken)) push(tokens.WETH as any as ICurrency);
-  if (isWETH(baseToken)) push(tokens.ETH as any as ICurrency);
+  if (isETH(baseToken)) push(externalTokens.WETH as any as ICurrency);
+  if (isWETH(baseToken)) push(externalTokens.ETH as any as ICurrency);
 
   // toToken 후보(out)에 ETH가 있으면 WETH도 같이 포함
   const hasEthInOut = out.some((t) => isETH(t));
-  if (hasEthInOut) push(tokens.WETH as any as ICurrency);
+  if (hasEthInOut) push(externalTokens.WETH as any as ICurrency);
 
   return out;
 }

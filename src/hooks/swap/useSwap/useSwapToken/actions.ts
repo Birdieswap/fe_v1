@@ -6,6 +6,7 @@ import { TransactionType } from "@/types/TransactionTypes";
 import { getWriteTransactionHandlers } from "@/utils/handleWriteTransaction";
 import { contracts } from "@/const/contracts";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { BigDecimal } from "@/types/BigDecimal";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
 import { weth_abi } from "@/const/contracts/abis/weth_abi";
@@ -225,13 +226,13 @@ export async function swap(params: {
 
   if (isDeposit) {
     const amount = new BigDecimal(fromAmount);
-    const tokenAddress = tokens.WETH.addresses?.[chainId] as `0x${string}`;
+    const tokenAddress = externalTokens.WETH.addresses?.[chainId] as `0x${string}`;
 
     const hash = await writeWithHandlers({
       address: tokenAddress,
       abi: weth_abi,
       functionName: "deposit",
-      value: parseUnits(amount.toString(), tokens.WETH.decimals ?? 18),
+      value: parseUnits(amount.toString(), externalTokens.WETH.decimals ?? 18),
     } as any);
 
     await finalizeAfterTxSuccess({
@@ -262,13 +263,13 @@ export async function swap(params: {
 
   if (isWithdraw) {
     const amount = new BigDecimal(toAmount);
-    const tokenAddress = tokens.WETH.addresses?.[chainId] as `0x${string}`;
+    const tokenAddress = externalTokens.WETH.addresses?.[chainId] as `0x${string}`;
 
     const hash = await writeWithHandlers({
       address: tokenAddress,
       abi: weth_abi,
       functionName: "withdraw",
-      args: [parseUnits(amount.toString(), tokens.WETH.decimals ?? 18)],
+      args: [parseUnits(amount.toString(), externalTokens.WETH.decimals ?? 18)],
     } as any);
 
     await finalizeAfterTxSuccess({
@@ -316,7 +317,7 @@ export async function swap(params: {
 
     const value = parseUnits(
       new BigDecimal(fromAmount).toString(),
-      tokens.WETH.decimals ?? 18
+      externalTokens.WETH.decimals ?? 18
     );
 
     const hash = await writeWithHandlers({

@@ -21,6 +21,7 @@ import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { BigDecimal } from "@/types/BigDecimal";
 import { formatUnits } from "viem";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 type AnyFarm = FarmPair | FarmSingle;
 
@@ -147,13 +148,13 @@ export default function useFarmStopPanelCommon(
 
     const normalizedOutputs = underlyingTokens.map((t) => {
       // WRAPPER 경로: WETH → ETH
-      if (unwrapToEth && isWETH(t)) return tokens.ETH;
+      if (unwrapToEth && isWETH(t)) return externalTokens.ETH;
 
       // ROUTER 경로: ETH가 언더라이잉에 섞여 있으면 WETH로 강제(받기옵션 WETH 보장)
-      if (keepAsWeth && isETH(t)) return tokens.WETH;
+      if (keepAsWeth && isETH(t)) return externalTokens.WETH;
 
-      // ROUTER 경로: 언더라이잉이 WETH “유사 객체”면 공식 tokens.WETH로 통일
-      if (keepAsWeth && isWETH(t)) return tokens.WETH;
+      // ROUTER 경로: 언더라이잉이 WETH “유사 객체”면 공식 externalTokens.WETH로 통일
+      if (keepAsWeth && isWETH(t)) return externalTokens.WETH;
 
       return t;
     });

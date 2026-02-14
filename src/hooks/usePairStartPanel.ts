@@ -37,6 +37,7 @@ import {
   ZERO_ADDRESS,
 } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
@@ -158,8 +159,8 @@ export function usePairStartPanel(
   const balance0 = useBalance(inputToken0);
   const balance1 = useBalance(inputToken1);
 
-  const ethDisplayMeta = tokens.ETH;
-  const wethDisplayMeta = tokens.WETH;
+  const ethDisplayMeta = externalTokens.ETH;
+  const wethDisplayMeta = externalTokens.WETH;
 
   const displayTokens = useMemo(() => {
     const t0 = defaultIsETH[0]

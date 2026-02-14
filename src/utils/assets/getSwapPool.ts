@@ -1,6 +1,7 @@
 import internalSwapPoolsMod from "@/const/contracts/tokens/swapPool";
 import externalSwapPoolsMod from "@/const/contracts/tokens/externalSwapPool";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 import {
   isBirdieSingleFarm,
@@ -44,7 +45,7 @@ function addrForExternalMatch(
   chainId: number
 ): `0x${string}` | undefined {
   if (!token) return undefined;
-  if (isETH(token)) return tokens.WETH.addresses?.[chainId] as any;
+  if (isETH(token)) return externalTokens.WETH.addresses?.[chainId] as any;
   const a = token.addresses?.[chainId];
   return typeof a === "string" && a.length > 0 ? (a as any) : undefined;
 }

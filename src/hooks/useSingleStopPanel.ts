@@ -10,6 +10,7 @@ import useBalance from "./useBalance";
 
 import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
 export enum InvalidStatuses {
@@ -32,8 +33,8 @@ export function useSingleStopPanel(item: FarmSingle) {
   );
 
   // 표기용 메타
-  const ethDisplayMeta = tokens.ETH;
-  const wethDisplayMeta = tokens.WETH;
+  const ethDisplayMeta = externalTokens.ETH;
+  const wethDisplayMeta = externalTokens.WETH;
 
   // displayToken: 기본이 ETH일 때만 토글 적용
   const displayToken = useMemo(() => {
