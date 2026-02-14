@@ -7,10 +7,11 @@ import { usePublicClient } from "wagmi";
 import tokens from "@/const/contracts/tokens/tokens";
 import { getSwapQuoteForProviders } from "@/utils/assets/getSwapQuote";
 import { BigDecimal } from "@/types/BigDecimal";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 export default function Page() {
   const client = usePublicClient();
-  const token0 = tokens.WETH;
+  const token0 = externalTokens.WETH;
   const token1 = tokens.USDC;
   const [data0, setData0] = useState<string | null>(null);
   const [data1, setData1] = useState<string | null>(null);
