@@ -5,9 +5,9 @@ import { useState } from "react";
 import { usePublicClient } from "wagmi";
 
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import { getSwapQuoteForProviders } from "@/utils/assets/getSwapQuote";
 import { BigDecimal } from "@/types/BigDecimal";
-import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 export default function Page() {
   const client = usePublicClient();

@@ -1,8 +1,8 @@
 import networks from "./networks";
 import tokens from "./tokens/tokens";
+import externalTokens from "./tokens/externalTokens";
 import { PriceFeedGuard } from "./types/typeGuards";
 import RewardsTokens from "./tokens/RewardsTokens";
-import { externalTokens } from "./tokens/externalTokens";
 
 const CBBTC_USD = PriceFeedGuard({
   symbol: "LINK:cbBTC_USD",

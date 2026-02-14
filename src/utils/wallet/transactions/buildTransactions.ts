@@ -17,7 +17,7 @@ const NATIVE_PLACEHOLDER = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 function normalizeTokenAddress(tokenAddress: string, chainId: number): string {
   if (lc(tokenAddress) !== NATIVE_PLACEHOLDER) return tokenAddress;
-  return tokensDefault.ETH.addresses?.[chainId] ?? tokenAddress;
+  return externalTokensDefault.ETH.addresses?.[chainId] ?? tokenAddress;
 }
 
 function makeTxKey(ev: any): string {
@@ -251,7 +251,7 @@ function makeStakeTokenInfo(
 }
 
 function findEthIconSrc() {
-  return tokensDefault.ETH?.iconSrc ?? "/tokens/ETH.svg";
+  return externalTokensDefault.ETH?.iconSrc ?? "/tokens/ETH.svg";
 }
 
 function normalizeWethToEth(
@@ -259,7 +259,7 @@ function normalizeWethToEth(
   chainId: number,
   info: TransactionTokenInfo
 ): TransactionTokenInfo {
-  const wethAddr = tokensDefault.WETH?.addresses?.[chainId];
+  const wethAddr = externalTokensDefault.WETH?.addresses?.[chainId];
   if (wethAddr && lc(wethAddr) === lc(tokenAddr)) {
     return { ...info, symbol: "ETH", src: findEthIconSrc() };
   }

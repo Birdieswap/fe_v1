@@ -13,6 +13,7 @@ import { useChainId } from "wagmi";
 import { useSearchParams } from "next/navigation";
 
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
 import type { ICurrency } from "@/const/contracts/types/tokenTypes";
 import lpVaults from "@/const/contracts/tokens/lpVaults";
 import Icons from "@/assets/icons/icons";
@@ -132,7 +133,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
     mode === "PAY"
       ? pay.payToken
       : pay.nativeSymbol === "ETH"
-        ? tokens.ETH
+        ? externalTokens.ETH
         : pay.nativeSymbol === "EURC"
           ? tokens.EURC
           : tokens.USDC;
@@ -422,7 +423,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
     const tolPct = getPayTolerancePercent(pay.tolerance);
     const toleranceFactor = new BigDecimal(String(1 + tolPct / 100), 18);
 
-    const tokenAmountFromPoolUsd = pay.selectedPool.usdValue.divide(payTokenPriceUsd);
+    const tokenAmountFromPoolUsd =
+      pay.selectedPool.usdValue.divide(payTokenPriceUsd);
     const tokenAmountWithTolerance =
       tokenAmountFromPoolUsd.divide(toleranceFactor);
     const oneToken = new BigDecimal("1", token.decimals ?? 6);
@@ -602,6 +604,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 // import { useChainId } from "wagmi";
 
 // import tokens from "@/const/contracts/tokens/tokens";
+// import externalTokens from "@/const/contracts/tokens/externalTokens";
 // import lpVaults from "@/const/contracts/tokens/lpVaults";
 // import Icons from "@/assets/icons/icons";
 // import { BigDecimal } from "@/types/BigDecimal";
@@ -644,8 +647,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 //     mode === "PAY"
 //       ? tokens.USDC
 //       : pay.nativeSymbol === "ETH"
-//         ? tokens.ETH
-//         : tokens.WETH;
+//         ? externalTokens.ETH
+//         : externalTokens.WETH;
 
 //   // ---- Approve UI 조건 (usePay에서 계산된 값 사용) ----
 //   // showApproveUI: "WETH 선택 + pool 선택 + allowance 확인 끝 + needsApprove true" 같은 조건을 usePay에서 만들어 둔 값
