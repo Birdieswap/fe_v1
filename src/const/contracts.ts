@@ -15,25 +15,25 @@ export const contracts = {
     abi: birdieswap_router_abi,
   },
   birdieVaults: {
-    WETH_USDC_HARVEST: {
-      address:
-        lpVaults.blpHarvestAutopilotWETHUSDC.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
+    // WETH_USDC_HARVEST: {
+    //   address:
+    //     lpVaults.blpHarvestAutopilotWETHUSDC.addresses[networks.baseFork.id],
+    //   abi: birdieLpVaults_abi,
+    // },
     // CBBTC_USDC_HARVEST: {
     //   address:
     //     lpVaults.blpHarvestAutopilotCBBTCUSDC.addresses[networks.baseFork.id],
     //   abi: birdieLpVaults_abi,
     // },
-    WETH_DAI_HARVEST: {
-      address: "0x0000000000000000000000000000000000000000",
-      abi: birdieLpVaults_abi,
-    },
-    WETH_harvest_autopilot: {
-      address:
-        singleVaults.bHarvestAutopilotWETH.addresses[networks.baseFork.id],
-      abi: birdieLpVaults_abi,
-    },
+    // WETH_DAI_HARVEST: {
+    //   address: "0x0000000000000000000000000000000000000000",
+    //   abi: birdieLpVaults_abi,
+    // },
+    // WETH_harvest_autopilot: {
+    //   address:
+    //     singleVaults.bHarvestAutopilotWETH.addresses[networks.baseFork.id],
+    //   abi: birdieLpVaults_abi,
+    // },
     // CBBTC_harvest_autopilot: {
     //   address:
     //     singleVaults.bHarvestAutopilotCBBTC.addresses[networks.baseFork.id],
@@ -72,12 +72,12 @@ export const contracts = {
       address:
         swapPools.blpUniswapHarvestCBBTCUSDC.addresses[networks.baseFork.id],
     }, */
-    blpWETH_USDC_harvest_autopilot: {
-      address:
-        swapPools.blpUniswapHarvestAutopilotWETHUSDC.addresses[
-          networks.baseFork.id
-        ],
-    },
+    // blpWETH_USDC_harvest_autopilot: {
+    //   address:
+    //     swapPools.blpUniswapHarvestAutopilotWETHUSDC.addresses[
+    //       networks.baseFork.id
+    //     ],
+    // },
     // blpCBBTC_USDC_harvest_autopilot: {
     //   address:
     //     swapPools.blpUniswapHarvestAutopilotCBBTCUSDC.addresses[
@@ -86,26 +86,26 @@ export const contracts = {
     // },
   },
   harvestVaults: {},
-  WETH: {
-    address: tokens.WETH.addresses[networks.baseFork.id],
-    abi: erc20_abi,
-  },
-  USDT: {
-    address: "0x0000000000000000000000000000000000000000",
-    abi: erc20_abi,
-  },
-  USDC: {
-    address: tokens.USDC.addresses[networks.baseFork.id],
-    abi: erc20_abi,
-  },
-  DAI: {
-    address: "0x0000000000000000000000000000000000000000",
-    abi: erc20_abi,
-  },
-  AAVE: {
-    address: "0x0000000000000000000000000000000000000000",
-    abi: erc20_abi,
-  },
+  // WETH: {
+  //   address: tokens.WETH.addresses[networks.baseFork.id],
+  //   abi: erc20_abi,
+  // },
+  // USDT: {
+  //   address: "0x0000000000000000000000000000000000000000",
+  //   abi: erc20_abi,
+  // },
+  // USDC: {
+  //   address: tokens.USDC.addresses[networks.baseFork.id],
+  //   abi: erc20_abi,
+  // },
+  // DAI: {
+  //   address: "0x0000000000000000000000000000000000000000",
+  //   abi: erc20_abi,
+  // },
+  // AAVE: {
+  //   address: "0x0000000000000000000000000000000000000000",
+  //   abi: erc20_abi,
+  // },
   // CBBTC: {
   //   address: tokens.CBBTC.addresses[networks.baseFork.id],
   //   abi: erc20_abi,
