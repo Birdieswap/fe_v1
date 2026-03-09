@@ -39,6 +39,7 @@ export default async function previewFullDeposit(
 
   const abi: Abi =
     (providerOverride?.abi as Abi | undefined) ?? (farm.provider.abi as Abi);
+  const underlyingDecimals = (farm as any)?.input?.decimals ?? farm.decimals;
 
   // console.log("previewFulDeposit ", farm);
 
@@ -52,7 +53,7 @@ export default async function previewFullDeposit(
     address: providerAddress as `0x${string}`,
     abi,
     functionName: "previewFullDeposit",
-    args: [farmAddress, amount.roundToDecimals(farm.decimals).value],
+    args: [farmAddress, amount.roundToDecimals(underlyingDecimals).value],
   };
 
   const data = await readContract(client, args);

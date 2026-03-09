@@ -25,6 +25,7 @@ export default async function previewRedeem(
 
   const providerAddress =
     stakingProviders.BIRDIESWAP_Router.addresses?.[chainId];
+  const underlyingDecimals = (farm as any)?.input?.decimals ?? farm.decimals;
 
   if (!farmAddress) return null;
 
@@ -40,5 +41,5 @@ export default async function previewRedeem(
   };
 
   const data = await readContract(client, args);
-  return new BigDecimal(data as bigint, farm.decimals);
+  return new BigDecimal(data as bigint, underlyingDecimals);
 }

@@ -6,8 +6,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { formatUnits, parseUnits, PublicClient } from "viem";
-import { Position as UniV3Position } from "@uniswap/v3-sdk";
+import { parseUnits, PublicClient } from "viem";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -45,6 +44,8 @@ import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
 import previewFullDeposit from "@/utils/farm/previewFullDeposit";
 import previewRedeem from "@/utils/farm/previewRedeem";
 import { useV3UnderlyingFromTokenId } from "@/utils/farm/useV3UnderlyingFromTokenId";
+import { getSlot0 } from "@/utils/uniswap/getPoolState";
+import { getPoolPrice } from "@/utils/uniswap/getPoolPrice";
 
 type NativeMode = "ETH" | "WETH" | null;
 
@@ -302,15 +303,15 @@ export function usePairStartPanel(
     bToken1,
   });
 
-  // console.log("[V3] usePairStartPanel V3 inputs", {
-  //   chainId,
-  //   tokenId: tokenId?.toString?.(),
-  //   uniswapPoolAddress,
-  //   bToken0: bToken0?.symbol,
-  //   bToken1: bToken1?.symbol,
-  //   bToken0Address: bToken0?.addresses?.[chainId as number],
-  //   bToken1Address: bToken1?.addresses?.[chainId as number],
-  // });
+  console.log("[V3] usePairStartPanel V3 inputs", {
+    chainId,
+    tokenId: tokenId?.toString?.(),
+    uniswapPoolAddress,
+    bToken0: bToken0?.symbol,
+    bToken1: bToken1?.symbol,
+    bToken0Address: bToken0?.addresses?.[chainId as number],
+    bToken1Address: bToken1?.addresses?.[chainId as number],
+  });
 
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
@@ -414,31 +415,31 @@ export function usePairStartPanel(
 
       // 3) ✅ fallback: Uniswap V3 수학 + Birdieswap preview (slot0 기반 v3Pool/v3Position 사용)
       if (!client || !chainId || !v3Pool || !v3Position) {
-        // console.log("[V3] getOtherAmount fallback skipped: missing deps", {
-        //   hasClient: !!client,
-        //   chainId,
-        //   hasV3Pool: !!v3Pool,
-        //   hasV3Position: !!v3Position,
-        // });
+        console.log("[V3] getOtherAmount fallback skipped: missing deps", {
+          hasClient: !!client,
+          chainId,
+          hasV3Pool: !!v3Pool,
+          hasV3Position: !!v3Position,
+        });
         return BigDecimal.ZERO();
       }
 
       try {
-        // console.log("[V3] getOtherAmount fallback start", {
-        //   chainId,
-        //   baseIndex: index,
-        //   baseUnderlying: baseUnderlying?.symbol,
-        //   otherUnderlying: otherUnderlyingToken?.symbol,
-        //   baseBToken: baseBToken?.symbol,
-        //   otherBToken: otherBToken?.symbol,
-        //   baseAddress: baseBToken?.addresses?.[chainId],
-        //   otherAddress: otherBToken?.addresses?.[chainId],
-        //   poolToken0: v3Pool?.token0?.address,
-        //   poolToken1: v3Pool?.token1?.address,
-        //   tickLower: v3Position?.tickLower,
-        //   tickUpper: v3Position?.tickUpper,
-        //   inputValue: value?.toString?.(),
-        // });
+        console.log("[V3] getOtherAmount fallback start", {
+          chainId,
+          baseIndex: index,
+          baseUnderlying: baseUnderlying?.symbol,
+          otherUnderlying: otherUnderlyingToken?.symbol,
+          baseBToken: baseBToken?.symbol,
+          otherBToken: otherBToken?.symbol,
+          baseAddress: baseBToken?.addresses?.[chainId],
+          otherAddress: otherBToken?.addresses?.[chainId],
+          poolToken0: v3Pool?.token0?.address,
+          poolToken1: v3Pool?.token1?.address,
+          tickLower: v3Position?.tickLower,
+          tickUpper: v3Position?.tickUpper,
+          inputValue: value?.toString?.(),
+        });
         const baseProvider = (baseBToken as any)?.provider;
         const wrapperProvider = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
         const routerProvider = (stakingProviders as any)?.BIRDIESWAP_Router;
@@ -461,21 +462,15 @@ export function usePairStartPanel(
           providerOverride,
         );
         if (!bBase || bBase.eq(0)) {
-          // console.log("[V3] previewFullDeposit empty", {
-          //   bBase: bBase?.toString?.(),
-          //   baseBToken: baseBToken?.symbol,
-          //   baseAddress: baseBToken?.addresses?.[chainId],
-          // });
+          console.log("[V3] previewFullDeposit empty", {
+            bBase: bBase?.toString?.(),
+            baseBToken: baseBToken?.symbol,
+            baseAddress: baseBToken?.addresses?.[chainId],
+          });
           return BigDecimal.ZERO();
         }
 
-        const baseBDecimals = baseBToken.decimals ?? 18;
-        const rawBase = parseUnits(
-          bBase.roundToDecimals(baseBDecimals).toString(),
-          baseBDecimals,
-        );
-
-        // ✅ 여기부터가 핵심: index가 아니라 "pool token0/1 매칭"으로 분기
+        // ✅ 핵심: index가 아니라 "pool token0/1 매칭"으로 분기
         const baseAddr = (
           baseBToken.addresses?.[chainId] as string | undefined
         )?.toLowerCase?.();
@@ -490,42 +485,29 @@ export function usePairStartPanel(
             baseAddr,
             poolToken0Addr,
             poolToken1Addr,
+            baseBToken: baseBToken?.symbol,
+            otherBToken: otherBToken?.symbol,
+            baseAddressRaw: baseBToken?.addresses?.[chainId],
+            otherAddressRaw: otherBToken?.addresses?.[chainId],
           });
           return BigDecimal.ZERO();
         }
 
-        let simulatedPos: UniV3Position;
-
-        if (baseIsToken0) {
-          simulatedPos = UniV3Position.fromAmount0({
-            pool: v3Pool as any,
-            tickLower: v3Position.tickLower,
-            tickUpper: v3Position.tickUpper,
-            amount0: rawBase.toString(),
-            useFullPrecision: true,
-          });
-        } else {
-          simulatedPos = UniV3Position.fromAmount1({
-            pool: v3Pool as any,
-            tickLower: v3Position.tickLower,
-            tickUpper: v3Position.tickUpper,
-            amount1: rawBase.toString(),
-          });
+        if (!uniswapPoolAddress) {
+          console.log("[V3] getOtherAmount fallback skipped: no pool address");
+          return BigDecimal.ZERO();
         }
 
-        const amount0Raw = BigInt(
-          (simulatedPos.amount0 as any).quotient.toString(),
-        );
-        const amount1Raw = BigInt(
-          (simulatedPos.amount1 as any).quotient.toString(),
-        );
+        const slot0 = await getSlot0(client as PublicClient, uniswapPoolAddress);
+        const bPrice = getPoolPrice({
+          sqrtPriceX96: slot0.sqrtPriceX96,
+          token0Decimals: v3Pool.token0.decimals,
+          token1Decimals: v3Pool.token1.decimals,
+          zeroForOne: baseIsToken0,
+          precision: 36,
+        });
 
-        // ✅ otherRaw도 baseIsToken0 기준으로 선택해야 함 (index 기준이면 틀림)
-        const otherRaw = baseIsToken0 ? amount1Raw : amount0Raw;
-
-        const otherBDecimals = otherBToken.decimals ?? 18;
-        const otherBHuman = formatUnits(otherRaw, otherBDecimals);
-        const otherBAmountBD = new BigDecimal(otherBHuman);
+        const otherBAmountBD = bBase.mul(bPrice);
 
         const otherUnderlyingBD = await previewRedeem(
           client as PublicClient,
@@ -533,21 +515,21 @@ export function usePairStartPanel(
           otherBAmountBD,
         );
         if (!otherUnderlyingBD) {
-          // console.log("[V3] previewRedeem empty", {
-          //   otherBAmount: otherBAmountBD?.toString?.(),
-          //   otherBToken: otherBToken?.symbol,
-          //   otherAddress: otherBToken?.addresses?.[chainId],
-          // });
+          console.log("[V3] previewRedeem empty", {
+            otherBAmount: otherBAmountBD?.toString?.(),
+            otherBToken: otherBToken?.symbol,
+            otherAddress: otherBToken?.addresses?.[chainId],
+          });
           return BigDecimal.ZERO();
         }
 
-        // console.log("[V3] getOtherAmount fallback result", {
-        //   baseIsToken0,
-        //   amount0Raw: amount0Raw.toString(),
-        //   amount1Raw: amount1Raw.toString(),
-        //   otherRaw: otherRaw.toString(),
-        //   otherUnderlying: otherUnderlyingBD?.toString?.(),
-        // });
+        console.log("[V3] getOtherAmount fallback result", {
+          baseIsToken0,
+          bBase: bBase?.toString?.(),
+          bPrice: bPrice?.toString?.(),
+          otherBAmount: otherBAmountBD?.toString?.(),
+          otherUnderlying: otherUnderlyingBD?.toString?.(),
+        });
 
         return otherUnderlyingBD.roundToDecimals(
           otherUnderlyingToken.decimals ?? 18,
@@ -570,6 +552,7 @@ export function usePairStartPanel(
       underlyingBalance1,
       v3Pool,
       v3Position,
+      uniswapPoolAddress,
     ],
   );
 
@@ -877,6 +860,24 @@ export function usePairStartPanel(
 
     const addr0 = displayTokens[0].addresses[chainId] as `0x${string}`;
     const addr1 = displayTokens[1].addresses[chainId] as `0x${string}`;
+    const amount0Str = tokenStatuses[0].amount?.toString() || "0";
+    const amount1Str = tokenStatuses[1].amount?.toString() || "0";
+    const amount0Raw = parseUnits(amount0Str, tokenStatuses[0].input.decimals);
+    const amount1Raw = parseUnits(amount1Str, tokenStatuses[1].input.decimals);
+
+    console.log("[startFarming] dualDeposit args", {
+      account: address,
+      addr0,
+      symbol0: tokenStatuses[0].input?.symbol,
+      decimals0: tokenStatuses[0].input?.decimals,
+      amount0: amount0Str,
+      amount0Raw: amount0Raw.toString(),
+      addr1,
+      symbol1: tokenStatuses[1].input?.symbol,
+      decimals1: tokenStatuses[1].input?.decimals,
+      amount1: amount1Str,
+      amount1Raw: amount1Raw.toString(),
+    });
 
     writeContract(
       {
@@ -886,15 +887,9 @@ export function usePairStartPanel(
         args: [
           address,
           addr0,
-          parseUnits(
-            tokenStatuses[0].amount?.toString() || "0",
-            tokenStatuses[0].input.decimals,
-          ),
+          amount0Raw,
           addr1,
-          parseUnits(
-            tokenStatuses[1].amount?.toString() || "0",
-            tokenStatuses[1].input.decimals,
-          ),
+          amount1Raw,
         ],
       },
       {
