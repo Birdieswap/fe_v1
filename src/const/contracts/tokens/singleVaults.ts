@@ -132,7 +132,7 @@ const bHarvestAutopilotEURC = BirdieSingleFarmGuard({
   abi: erc20_abi,
   provider: stakingProviders.BIRDIESWAP_Router,
   input: tokens.EURC,
-  decimals: 6,
+  decimals: 8,
   displayDecimals: 4,
   iconSrc: "/tokens/b-token.svg",
 } as const);
