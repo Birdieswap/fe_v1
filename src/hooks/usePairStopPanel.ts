@@ -1,19 +1,23 @@
-import { useContext, useMemo, useState, useCallback } from "react";
+import { useContext, useMemo, useState, useCallback, useEffect } from "react";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
 import { AssetsContext } from "@/app/AssetsContextProvider";
 
 import useFarmStopPanelCommon, { StopRoute } from "./useFarmStopPanelCommon";
-import { parseUnits, PublicClient } from "viem";
+import { formatUnits, parseUnits, PublicClient } from "viem";
 import { FarmTokenStatus as FarmStopTokenStatus } from "./FarmTokenStatus";
 import useBalance from "./useBalance";
 import { isZeroAddress } from "@/utils/farm/getAddressHelpers";
-import tokens from "@/const/contracts/tokens/tokens";
 import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
-import { useClient } from "wagmi";
+import { usePublicClient } from "wagmi";
+import miscContracts from "@/const/contracts/tokens/others";
+import { fetchV3Position } from "@/utils/uniswap/positionManager";
+import { getPoolState } from "@/utils/uniswap/getPoolState";
+import { quoteV3RemoveLiquidity } from "@/hooks/farm/useV3RemoveLiquidityQuote";
+import previewRedeem from "@/utils/farm/previewRedeem";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -24,7 +28,7 @@ export enum InvalidStatuses {
 type NativeMode = "ETH" | "WETH" | null;
 
 export function usePairStopPanel(item: FarmPair) {
-  const client = useClient();
+  const client = usePublicClient();
   const { assetValues } = useContext(AssetsContext);
   const farmCalc = useFarmCalcOnce(
     client as PublicClient | undefined,
@@ -160,42 +164,217 @@ export function usePairStopPanel(item: FarmPair) {
     ]
   );
 
-  const unlockAmounts = useMemo(() => {
-    const token0 = item.wip_stakeToken.swap.input[0].input;
-    const token1 = item.wip_stakeToken.swap.input[1].input;
+  const [receiveAmount, setReceiveAmount] = useState<
+    [BigDecimal, BigDecimal]
+  >([BigDecimal.ZERO(), BigDecimal.ZERO()]);
 
-    const blpAmount = amount ?? BigDecimal.ZERO();
-    if (!blpAmount || blpAmount.lte(0)) return [BigDecimal.ZERO(), BigDecimal.ZERO()] as const;
-    if (!totalSupply || totalSupply.lte(0)) return [BigDecimal.ZERO(), BigDecimal.ZERO()] as const;
+  useEffect(() => {
+    let cancelled = false;
 
-    // Concentrated 기준에서도 BLP는 현재 vault underlying 총량에 대한 지분을 의미한다.
-    const share = blpAmount.div(totalSupply).roundToDecimals(36);
-    const out0 = poolBalance0
-      .mul(share)
-      .roundToDecimals(token0.decimals ?? 18);
-    const out1 = poolBalance1
-      .mul(share)
-      .roundToDecimals(token1.decimals ?? 18);
+    (async () => {
+      const blpAmount = amount ?? BigDecimal.ZERO();
+      if (!blpAmount || blpAmount.lte(0) || !totalSupply || totalSupply.lte(0)) {
+        if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+        return;
+      }
 
-    return [out0, out1] as const;
+      if (!client || !chainId) {
+        if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+        return;
+      }
+
+      const uniswapPoolAddress = item.wip_stakeToken.swap.addresses?.[
+        chainId
+      ] as `0x${string}` | undefined;
+      const rawTokenId = item.wip_stakeToken.swap.tokenId?.[chainId];
+      const tokenId = rawTokenId ? BigInt(rawTokenId) : 0n;
+      if (!uniswapPoolAddress || tokenId === 0n) {
+        if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+        return;
+      }
+
+      const nfpmAddress = miscContracts.UniswapNonfungiblePositionManager
+        .addresses[chainId] as `0x${string}` | undefined;
+      if (!nfpmAddress) {
+        if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+        return;
+      }
+
+      try {
+        const poolName =
+          item?.name ||
+          (item as any)?.wip_stakeToken?.name ||
+          `${bToken0?.symbol ?? "token0"}/${bToken1?.symbol ?? "token1"}`;
+        const removeBpsRaw = blpAmount
+          .mul(new BigDecimal("10000"))
+          .div(totalSupply);
+        const removeBpsNum = Math.floor(Number(removeBpsRaw.toString()));
+        const removeBps = Math.max(0, Math.min(10_000, removeBpsNum));
+        if (!Number.isFinite(removeBpsNum) || removeBps <= 0) {
+          if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+          return;
+        }
+
+        console.log("[V3][RemoveQuote] read position start", {
+          chainId,
+          poolName,
+          poolAddress: uniswapPoolAddress,
+          tokenId: tokenId.toString(),
+          blpAmount: blpAmount.toString(),
+          totalSupply: totalSupply.toString(),
+          removeBps,
+        });
+
+        const [position, poolState] = await Promise.all([
+          fetchV3Position(client as PublicClient, nfpmAddress, tokenId),
+          getPoolState(client as PublicClient, uniswapPoolAddress),
+        ]);
+
+        console.log("[V3][RemoveQuote] position loaded", {
+          tokenId: tokenId.toString(),
+          token0: position.token0,
+          token1: position.token1,
+          fee: Number(position.fee),
+          tickLower: Number(position.tickLower),
+          tickUpper: Number(position.tickUpper),
+          liquidity: position.liquidity.toString(),
+          tokensOwed0: position.tokensOwed0.toString(),
+          tokensOwed1: position.tokensOwed1.toString(),
+          sqrtPriceX96: poolState.sqrtPriceX96.toString(),
+          tickCurrent: Number(poolState.tick),
+          poolLiquidity: poolState.liquidity.toString(),
+        });
+
+        const poolToken0Addr = position.token0.toLowerCase();
+        const poolToken1Addr = position.token1.toLowerCase();
+        const b0Addr = (
+          bToken0.addresses?.[chainId] as string | undefined
+        )?.toLowerCase?.();
+        const b1Addr = (
+          bToken1.addresses?.[chainId] as string | undefined
+        )?.toLowerCase?.();
+        if (!b0Addr || !b1Addr) {
+          if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+          return;
+        }
+
+        let poolBToken0 = bToken0 as any;
+        let poolBToken1 = bToken1 as any;
+        let amount0IsForBToken0 = true;
+        if (poolToken0Addr === b0Addr && poolToken1Addr === b1Addr) {
+          poolBToken0 = bToken0;
+          poolBToken1 = bToken1;
+          amount0IsForBToken0 = true;
+        } else if (poolToken0Addr === b1Addr && poolToken1Addr === b0Addr) {
+          poolBToken0 = bToken1;
+          poolBToken1 = bToken0;
+          amount0IsForBToken0 = false;
+        } else {
+          console.error("[V3] stop panel token mapping failed", {
+            poolToken0Addr,
+            poolToken1Addr,
+            b0Addr,
+            b1Addr,
+          });
+          if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+          return;
+        }
+
+        const quote = quoteV3RemoveLiquidity({
+          token0: {
+            chainId,
+            address: position.token0,
+            decimals: poolBToken0.decimals ?? 18,
+            symbol: poolBToken0.symbol ?? "bToken0",
+            name: poolBToken0.name,
+          },
+          token1: {
+            chainId,
+            address: position.token1,
+            decimals: poolBToken1.decimals ?? 18,
+            symbol: poolBToken1.symbol ?? "bToken1",
+            name: poolBToken1.name,
+          },
+          pool: {
+            fee: Number(position.fee),
+            sqrtPriceX96: poolState.sqrtPriceX96,
+            tickCurrent: Number(poolState.tick),
+            poolLiquidity: poolState.liquidity,
+          },
+          position: {
+            tokenId,
+            tickLower: Number(position.tickLower),
+            tickUpper: Number(position.tickUpper),
+            liquidity: position.liquidity,
+            tokensOwed0: position.tokensOwed0,
+            tokensOwed1: position.tokensOwed1,
+          },
+          removeBps,
+          slippageBps: 50,
+        });
+
+        const b0Raw = amount0IsForBToken0
+          ? quote.removePrincipal.amount0Raw
+          : quote.removePrincipal.amount1Raw;
+        const b1Raw = amount0IsForBToken0
+          ? quote.removePrincipal.amount1Raw
+          : quote.removePrincipal.amount0Raw;
+
+        const b0Amount = new BigDecimal(
+          formatUnits(BigInt(b0Raw), bToken0.decimals ?? 18),
+        );
+        const b1Amount = new BigDecimal(
+          formatUnits(BigInt(b1Raw), bToken1.decimals ?? 18),
+        );
+
+        const [under0, under1] = await Promise.all([
+          previewRedeem(client as PublicClient, bToken0, b0Amount),
+          previewRedeem(client as PublicClient, bToken1, b1Amount),
+        ]);
+
+        if (!cancelled) {
+          setReceiveAmount([
+            (under0 ?? BigDecimal.ZERO()).roundToDecimals(
+              inputToken0?.decimals ?? 18,
+            ),
+            (under1 ?? BigDecimal.ZERO()).roundToDecimals(
+              inputToken1?.decimals ?? 18,
+            ),
+          ]);
+        }
+
+        console.log("[V3][RemoveQuote] receive result", {
+          tokenId: tokenId.toString(),
+          poolAddress: uniswapPoolAddress,
+          removeBps,
+          b0Raw,
+          b1Raw,
+          under0: under0?.toString?.(),
+          under1: under1?.toString?.(),
+          tokensOwed0: quote.storedOwed.amount0Raw,
+          tokensOwed1: quote.storedOwed.amount1Raw,
+        });
+      } catch (e) {
+        console.error("[V3] stop panel quote failed", e);
+        if (!cancelled) setReceiveAmount([BigDecimal.ZERO(), BigDecimal.ZERO()]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     amount,
-    item.wip_stakeToken.swap.input,
-    poolBalance0,
-    poolBalance1,
     totalSupply,
+    client,
+    chainId,
+    item.wip_stakeToken.swap.addresses,
+    item.wip_stakeToken.swap.tokenId,
+    bToken0,
+    bToken1,
+    inputToken0?.decimals,
+    inputToken1?.decimals,
   ]);
-
-  // 2) 화면 표시용 receiveAmount (토글과 무관)
-  const receiveAmount = useMemo<[BigDecimal, BigDecimal]>(() => {
-    const [amount0, amount1] = unlockAmounts;
-
-    if (!amount0 || !amount1) {
-      return [BigDecimal.ZERO(), BigDecimal.ZERO()];
-    } else {
-      return [amount0, amount1];
-    }
-  }, [unlockAmounts]);
 
   // 실행: 어느 한쪽이라도 ETH 선택 → WRAPPER_PAIR, 아니면 ROUTER_PAIR
   const stopFarming = useCallback(() => {
@@ -214,7 +393,7 @@ export function usePairStopPanel(item: FarmPair) {
       blpAmount,
       onSuccess: () => setAmount(BigDecimal.ZERO()),
     });
-  }, [address, amount, nativeMode, hasWethLike, stakeToken, performStop]);
+  }, [address, amount, anyETH, stakeToken, performStop]);
 
   const isStoppable = useMemo(
     () =>
