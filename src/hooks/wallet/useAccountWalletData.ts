@@ -76,6 +76,19 @@ export function useAccountWalletData(
     return Number.isFinite(n) ? n : undefined;
   }, []);
 
+  const parseEarliestBlock = useCallback((v?: string | number) => {
+    if (typeof v === "number") {
+      return Number.isFinite(v) ? v : undefined;
+    }
+    if (typeof v === "string") {
+      const trimmed = v.trim();
+      if (!trimmed) return undefined;
+      const parsed = Number(trimmed);
+      return Number.isFinite(parsed) ? parsed : undefined;
+    }
+    return undefined;
+  }, []);
+
   // 주소/체인/초기 blockHeight 바뀌면 전체 리셋
   useEffect(() => {
     setAccTxs([]);
@@ -190,8 +203,8 @@ export function useAccountWalletData(
     // });
 
     // EarliestBlock 갱신
-    const pageEarliest = Number(page.EarliestBlock);
-    if (!Number.isNaN(pageEarliest)) setEarliestBlock(pageEarliest);
+    const pageEarliest = parseEarliestBlock(page.EarliestBlock);
+    if (pageEarliest !== undefined) setEarliestBlock(pageEarliest);
 
     // 병합: blockNumber+transactionIndex+logIndex 조합으로 dedupe 후 정렬
     if (list.length > 0) {
@@ -246,10 +259,16 @@ export function useAccountWalletData(
 
     // 종료 조건: 다음 커서가 EarliestBlock보다 작아지면 종료
     if (
-      Number.isFinite(pageEarliest) &&
+      pageEarliest !== undefined &&
       Number.isFinite(computedNextCursor as number) &&
       (computedNextCursor as number) < pageEarliest
     ) {
+      setEndReached(true);
+      return;
+    }
+
+    // EarliestBlock이 비어있으면 더 이상 페이지네이션을 진행하지 않는다.
+    if (list.length === 0 && pageEarliest === undefined) {
       setEndReached(true);
       return;
     }
@@ -263,7 +282,7 @@ export function useAccountWalletData(
       Number.isFinite(computedNextCursor as number)
     ) {
       const next = computedNextCursor as number;
-      if (!Number.isFinite(pageEarliest) || next >= pageEarliest) {
+      if (pageEarliest !== undefined && next >= pageEarliest) {
         setCursor(next);
         return;
       }
@@ -273,7 +292,7 @@ export function useAccountWalletData(
     if (list.length === 0 && !Number.isFinite(computedNextCursor as number)) {
       setEndReached(true);
     }
-  }, [txQ.data, cursor, txKey, txKeyNum, accTxs.length]);
+  }, [txQ.data, cursor, txKey, txKeyNum, accTxs.length, parseEarliestBlock]);
 
   // loadMore: nextCursor를 사용해 고정 window 간격으로 이동
   const loadMore = useCallback(() => {
