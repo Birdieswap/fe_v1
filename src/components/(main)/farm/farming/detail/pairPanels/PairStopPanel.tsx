@@ -10,7 +10,7 @@ import { ExecuteButtons } from "../../common/ExecuteButtons";
 
 import PairStopAmountInput from "./pairStop/PairStopAmountInput";
 import PairStopReceiveAmountBox from "./pairStop/PairStopReceiveAmountBox";
-import PairStopSummary from "./pairStop/PairStopSummary";
+// import PairStopSummary from "./pairStop/PairStopSummary";
 
 export function PairStopPanel({ item }: { item: FarmPair }) {
   const state = usePairStopPanel(item);
@@ -57,7 +57,7 @@ export function PairStopPanel({ item }: { item: FarmPair }) {
           price={price}
           // nativeToggle={nativeToggle}
         />
-        <PairStopSummary item={item} state={state} />
+        {/* <PairStopSummary item={item} state={state} /> */}
       </motion.div>
       <PairStopReceiveAmountBox
         input={item.wip_stakeToken.swap.input}

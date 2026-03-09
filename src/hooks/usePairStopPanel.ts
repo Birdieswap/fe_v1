@@ -34,6 +34,7 @@ export function usePairStopPanel(item: FarmPair) {
 
   const poolBalance0 = farmCalc?.poolBalance0 ?? BigDecimal.ZERO();
   const poolBalance1 = farmCalc?.poolBalance1 ?? BigDecimal.ZERO();
+  const totalSupply = farmCalc?.totalSupply ?? BigDecimal.ZERO();
   const rawPrice = farmCalc?.price ?? null; // BigDecimal | null
   const price = rawPrice ?? BigDecimal.ZERO(); // UI용 안전한 값
 
@@ -163,40 +164,26 @@ export function usePairStopPanel(item: FarmPair) {
     const token0 = item.wip_stakeToken.swap.input[0].input;
     const token1 = item.wip_stakeToken.swap.input[1].input;
 
-    // dL: BLP 감소량(정수값으로 계산하기 위해 BLP decimals만큼 내림)
-    const dL =
-      amount?.shift(-(item.wip_stakeToken.decimals ?? 18)) ?? BigDecimal.ZERO();
+    const blpAmount = amount ?? BigDecimal.ZERO();
+    if (!blpAmount || blpAmount.lte(0)) return [BigDecimal.ZERO(), BigDecimal.ZERO()] as const;
+    if (!totalSupply || totalSupply.lte(0)) return [BigDecimal.ZERO(), BigDecimal.ZERO()] as const;
 
-    // 풀 잔고 x, y: 각 토큰 decimals 보정 후 고정 소수점 정밀도로 사용
-    const x = poolBalance0.shift(-(token0.decimals ?? 18)).roundToDecimals(36);
-    const y = poolBalance1.shift(-(token1.decimals ?? 18)).roundToDecimals(36);
+    // Concentrated 기준에서도 BLP는 현재 vault underlying 총량에 대한 지분을 의미한다.
+    const share = blpAmount.div(totalSupply).roundToDecimals(36);
+    const out0 = poolBalance0
+      .mul(share)
+      .roundToDecimals(token0.decimals ?? 18);
+    const out1 = poolBalance1
+      .mul(share)
+      .roundToDecimals(token1.decimals ?? 18);
 
-    if (x.eq(0)) return [null, null] as const;
-
-    const P = y.div(x);
-    const sqrt_P = P.sqrt(); // 가격의 제곱근
-
-    if (sqrt_P.eq(0)) return [null, null] as const;
-
-    // dx = dL / sqrt(P)
-    const dx = dL
-      .div(sqrt_P)
-      .roundToDecimals(0)
-      .shiftTo(token0.decimals ?? 18);
-
-    // dy = dL * sqrt(P)
-    const dy = dL
-      .mul(sqrt_P)
-      .roundToDecimals(0)
-      .shiftTo(token1.decimals ?? 18);
-
-    return [dx, dy] as const;
+    return [out0, out1] as const;
   }, [
     amount,
-    item.wip_stakeToken.decimals,
     item.wip_stakeToken.swap.input,
     poolBalance0,
     poolBalance1,
+    totalSupply,
   ]);
 
   // 2) 화면 표시용 receiveAmount (토글과 무관)
