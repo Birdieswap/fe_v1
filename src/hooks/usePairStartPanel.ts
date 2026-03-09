@@ -46,6 +46,7 @@ import previewRedeem from "@/utils/farm/previewRedeem";
 import { useV3UnderlyingFromTokenId } from "@/utils/farm/useV3UnderlyingFromTokenId";
 import { getSlot0 } from "@/utils/uniswap/getPoolState";
 import { getPoolPrice } from "@/utils/uniswap/getPoolPrice";
+import { getPoolImmutables } from "@/utils/uniswap/getPoolImmutables";
 
 type NativeMode = "ETH" | "WETH" | null;
 
@@ -368,10 +369,9 @@ export function usePairStartPanel(
   }, [insolvency0, amounts, insolvency1]);
 
   /**
-   * ✅ getOtherAmount:
-   * 1) poolBalance 비율(정상 케이스)
-   * 2) poolBalance가 0이면 v3 underlying 비율(있으면)
-   * 3) 그것도 없으면 slot0 기반 v3수학 + Birdie previewFullDeposit/previewRedeem
+   * ✅ getOtherAmount (Concentrated range 전용):
+   * slot0로 bToken 교환비를 구하고,
+   * previewFullDeposit/previewRedeem를 통해 underlying otherAmount를 계산한다.
    */
   const getOtherAmount = useCallback(
     async (value: BigDecimal, index: 0 | 1): Promise<BigDecimal> => {
@@ -387,45 +387,40 @@ export function usePairStartPanel(
       // 음수/0 방어
       if (!value || value.lte(0)) return BigDecimal.ZERO();
 
-      // 1) ✅ poolBalance 비율로 계산 (기존/정상 로직)
-      const thisPool = index === 0 ? poolBalance0 : poolBalance1;
-      const otherPool = index === 0 ? poolBalance1 : poolBalance0;
+      // [Disabled] 기존 full-range 분기 (poolBalance/underlying 비율)
+      // const thisPool = index === 0 ? poolBalance0 : poolBalance1;
+      // const otherPool = index === 0 ? poolBalance1 : poolBalance0;
+      // if (thisPool && otherPool && !thisPool.eq(0) && !otherPool.eq(0)) {
+      //   return value
+      //     .mul(otherPool)
+      //     .div(thisPool)
+      //     .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
+      // }
+      // const thisUnderlying =
+      //   (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
+      //   BigDecimal.ZERO();
+      // const otherUnderlying =
+      //   (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
+      //   BigDecimal.ZERO();
+      // if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
+      //   return value
+      //     .mul(otherUnderlying)
+      //     .div(thisUnderlying)
+      //     .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
+      // }
 
-      if (thisPool && otherPool && !thisPool.eq(0) && !otherPool.eq(0)) {
-        return value
-          .mul(otherPool)
-          .div(thisPool)
-          .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
-      }
-
-      // 2) ✅ v3Position에서 뽑은 underlying 비율이 있으면 그걸로
-      const thisUnderlying =
-        (index === 0 ? underlyingBalance0 : underlyingBalance1) ??
-        BigDecimal.ZERO();
-      const otherUnderlying =
-        (index === 0 ? underlyingBalance1 : underlyingBalance0) ??
-        BigDecimal.ZERO();
-
-      if (!thisUnderlying.eq(0) && !otherUnderlying.eq(0)) {
-        return value
-          .mul(otherUnderlying)
-          .div(thisUnderlying)
-          .roundToDecimals(otherUnderlyingToken.decimals ?? 18);
-      }
-
-      // 3) ✅ fallback: Uniswap V3 수학 + Birdieswap preview (slot0 기반 v3Pool/v3Position 사용)
-      if (!client || !chainId || !v3Pool || !v3Position) {
-        console.log("[V3] getOtherAmount fallback skipped: missing deps", {
+      // slot0 + preview 단일 경로
+      if (!client || !chainId || !uniswapPoolAddress) {
+        console.log("[V3] getOtherAmount skipped: missing deps", {
           hasClient: !!client,
           chainId,
-          hasV3Pool: !!v3Pool,
-          hasV3Position: !!v3Position,
+          uniswapPoolAddress,
         });
         return BigDecimal.ZERO();
       }
 
       try {
-        console.log("[V3] getOtherAmount fallback start", {
+        console.log("[V3] getOtherAmount slot0-flow start", {
           chainId,
           baseIndex: index,
           baseUnderlying: baseUnderlying?.symbol,
@@ -470,12 +465,25 @@ export function usePairStartPanel(
           return BigDecimal.ZERO();
         }
 
-        // ✅ 핵심: index가 아니라 "pool token0/1 매칭"으로 분기
+        // pool token0/token1 정보 확보 (v3Pool 우선, 없으면 on-chain immutables 조회)
+        let poolToken0Addr = (v3Pool?.token0?.address as string | undefined)
+          ?.toLowerCase?.();
+        let poolToken1Addr = (v3Pool?.token1?.address as string | undefined)
+          ?.toLowerCase?.();
+
+        if (!poolToken0Addr || !poolToken1Addr) {
+          const imm = await getPoolImmutables(
+            client as PublicClient,
+            uniswapPoolAddress,
+          );
+          poolToken0Addr = (imm.token0 as string).toLowerCase();
+          poolToken1Addr = (imm.token1 as string).toLowerCase();
+        }
+
+        // index가 아니라 "pool token0/1 주소 매칭"으로 분기
         const baseAddr = (
           baseBToken.addresses?.[chainId] as string | undefined
         )?.toLowerCase?.();
-        const poolToken0Addr = (v3Pool.token0.address as string).toLowerCase();
-        const poolToken1Addr = (v3Pool.token1.address as string).toLowerCase();
 
         const baseIsToken0 = !!baseAddr && baseAddr === poolToken0Addr;
         const baseIsToken1 = !!baseAddr && baseAddr === poolToken1Addr;
@@ -493,16 +501,38 @@ export function usePairStartPanel(
           return BigDecimal.ZERO();
         }
 
-        if (!uniswapPoolAddress) {
-          console.log("[V3] getOtherAmount fallback skipped: no pool address");
+        const b0Addr = (
+          bToken0.addresses?.[chainId] as string | undefined
+        )?.toLowerCase?.();
+        const b1Addr = (
+          bToken1.addresses?.[chainId] as string | undefined
+        )?.toLowerCase?.();
+
+        let token0Decimals: number | undefined;
+        let token1Decimals: number | undefined;
+        if (poolToken0Addr === b0Addr && poolToken1Addr === b1Addr) {
+          token0Decimals = bToken0.decimals ?? 18;
+          token1Decimals = bToken1.decimals ?? 18;
+        } else if (poolToken0Addr === b1Addr && poolToken1Addr === b0Addr) {
+          token0Decimals = bToken1.decimals ?? 18;
+          token1Decimals = bToken0.decimals ?? 18;
+        }
+
+        if (token0Decimals == null || token1Decimals == null) {
+          console.error("[V3] pool token decimals mapping failed", {
+            poolToken0Addr,
+            poolToken1Addr,
+            b0Addr,
+            b1Addr,
+          });
           return BigDecimal.ZERO();
         }
 
         const slot0 = await getSlot0(client as PublicClient, uniswapPoolAddress);
         const bPrice = getPoolPrice({
           sqrtPriceX96: slot0.sqrtPriceX96,
-          token0Decimals: v3Pool.token0.decimals,
-          token1Decimals: v3Pool.token1.decimals,
+          token0Decimals,
+          token1Decimals,
           zeroForOne: baseIsToken0,
           precision: 36,
         });
@@ -523,7 +553,7 @@ export function usePairStartPanel(
           return BigDecimal.ZERO();
         }
 
-        console.log("[V3] getOtherAmount fallback result", {
+        console.log("[V3] getOtherAmount slot0-flow result", {
           baseIsToken0,
           bBase: bBase?.toString?.(),
           bPrice: bPrice?.toString?.(),
@@ -546,12 +576,7 @@ export function usePairStartPanel(
       inputToken1,
       bToken0,
       bToken1,
-      poolBalance0,
-      poolBalance1,
-      underlyingBalance0,
-      underlyingBalance1,
       v3Pool,
-      v3Position,
       uniswapPoolAddress,
     ],
   );
