@@ -24,6 +24,10 @@ export default function useApprove(props: {
   refetch?: () => Promise<unknown>;
 }) {
   const chainId = useChainId();
+  const sleep = useCallback(
+    (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
+    []
+  );
   const refetchWithRetry = useCallback(async () => {
     if (!props.refetch) return;
     try {
@@ -98,7 +102,11 @@ export default function useApprove(props: {
                     // no-op: handler가 이미 상태 업데이트/실패 처리
                   }
                 }
-                await refetchWithRetry();
+                // allowance/indexer 반영 지연을 고려해 몇 번 더 재조회
+                for (const waitMs of [0, 500, 1200, 2200]) {
+                  if (waitMs > 0) await sleep(waitMs);
+                  await refetchWithRetry();
+                }
                 resolve();
               } catch (e) {
                 reject(e);
@@ -115,6 +123,7 @@ export default function useApprove(props: {
       props.transactionContext,
       props.writeContract,
       refetchWithRetry,
+      sleep,
     ]
   );
 
