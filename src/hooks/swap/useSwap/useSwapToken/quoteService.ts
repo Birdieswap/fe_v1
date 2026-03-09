@@ -440,8 +440,6 @@ async function getOtherAmountInternal(
           meta: { isInternalPool: true, benchmarkUsed: "none" },
         };
 
-      setQuoteReceive?.(quote.amountOut);
-
       // bOut -> underlying (final)
       const bOutBD = new BigDecimal(quote.amountOut, outputMeta.bDec ?? 18);
       const finalUnderlyingOut = await previewRedeem(
@@ -457,6 +455,8 @@ async function getOtherAmountInternal(
         };
 
       const amountStr = finalUnderlyingOut.toPrecisionString(true, false);
+      // minReceive는 항상 최종 underlying(toToken) raw 단위를 사용
+      setQuoteReceive?.(finalUnderlyingOut.value);
 
       // ✅ benchmarkOut: 필요 없는 호출(Enter/Pay PI 등)에서는 생략 가능
       let benchmarkOut: string | null = null;
@@ -527,6 +527,9 @@ async function getOtherAmountInternal(
         benchmarkOut: "0",
         meta: { isInternalPool: true, benchmarkUsed: "none" },
       };
+
+    // minReceive는 원하는 underlying out(raw) 기준으로 세팅
+    setQuoteReceive?.(desiredUnderlyingOut.value);
 
     // desired underlying -> desired bOut
     const desiredBOut = await previewFullDeposit(
@@ -764,7 +767,8 @@ async function getOtherAmountExternal(
         meta: { isInternalPool: false, benchmarkUsed: "none" },
       };
 
-    setQuoteReceive?.(quote.amountIn);
+    // exactOutput에서도 minReceive는 toToken underlying raw 기준
+    setQuoteReceive?.(desiredOut.value);
 
     const inBD = new BigDecimal(quote.amountIn, fromErc20.decimals ?? 18);
     const amountStr = inBD.toPrecisionString(true, false);
