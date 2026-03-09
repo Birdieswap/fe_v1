@@ -6,7 +6,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { parseUnits, PublicClient } from "viem";
+import { formatUnits, parseUnits, PublicClient } from "viem";
 
 import { FarmPair } from "@/types/FarmListTableRowProps";
 import { BigDecimal } from "@/types/BigDecimal";
@@ -35,7 +35,6 @@ import {
   isZeroAddress,
   ZERO_ADDRESS,
 } from "@/utils/farm/getAddressHelpers";
-import tokens from "@/const/contracts/tokens/tokens";
 import externalTokens from "@/const/contracts/tokens/externalTokens";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
 
@@ -44,9 +43,11 @@ import { useFarmCalcOnce } from "./farm/useFarmCalcOnce";
 import previewFullDeposit from "@/utils/farm/previewFullDeposit";
 import previewRedeem from "@/utils/farm/previewRedeem";
 import { useV3UnderlyingFromTokenId } from "@/utils/farm/useV3UnderlyingFromTokenId";
-import { getSlot0 } from "@/utils/uniswap/getPoolState";
-import { getPoolPrice } from "@/utils/uniswap/getPoolPrice";
 import { getPoolImmutables } from "@/utils/uniswap/getPoolImmutables";
+import { getPoolState } from "@/utils/uniswap/getPoolState";
+import miscContracts from "@/const/contracts/tokens/others";
+import { fetchV3Position } from "@/utils/uniswap/positionManager";
+import { quoteV3AddLiquidity } from "@/hooks/farm/useV3AddLiquidityQuote";
 
 type NativeMode = "ETH" | "WETH" | null;
 
@@ -304,15 +305,15 @@ export function usePairStartPanel(
     bToken1,
   });
 
-  console.log("[V3] usePairStartPanel V3 inputs", {
-    chainId,
-    tokenId: tokenId?.toString?.(),
-    uniswapPoolAddress,
-    bToken0: bToken0?.symbol,
-    bToken1: bToken1?.symbol,
-    bToken0Address: bToken0?.addresses?.[chainId as number],
-    bToken1Address: bToken1?.addresses?.[chainId as number],
-  });
+  // console.log("[V3] usePairStartPanel V3 inputs", {
+  //   chainId,
+  //   tokenId: tokenId?.toString?.(),
+  //   uniswapPoolAddress,
+  //   bToken0: bToken0?.symbol,
+  //   bToken1: bToken1?.symbol,
+  //   bToken0Address: bToken0?.addresses?.[chainId as number],
+  //   bToken1Address: bToken1?.addresses?.[chainId as number],
+  // });
 
   const [isApprovePending, setIsApprovePending] = useState<[boolean, boolean]>([
     false,
@@ -411,30 +412,30 @@ export function usePairStartPanel(
 
       // slot0 + preview 단일 경로
       if (!client || !chainId || !uniswapPoolAddress) {
-        console.log("[V3] getOtherAmount skipped: missing deps", {
-          hasClient: !!client,
-          chainId,
-          uniswapPoolAddress,
-        });
+        // console.log("[V3] getOtherAmount skipped: missing deps", {
+        //   hasClient: !!client,
+        //   chainId,
+        //   uniswapPoolAddress,
+        // });
         return BigDecimal.ZERO();
       }
 
       try {
-        console.log("[V3] getOtherAmount slot0-flow start", {
-          chainId,
-          baseIndex: index,
-          baseUnderlying: baseUnderlying?.symbol,
-          otherUnderlying: otherUnderlyingToken?.symbol,
-          baseBToken: baseBToken?.symbol,
-          otherBToken: otherBToken?.symbol,
-          baseAddress: baseBToken?.addresses?.[chainId],
-          otherAddress: otherBToken?.addresses?.[chainId],
-          poolToken0: v3Pool?.token0?.address,
-          poolToken1: v3Pool?.token1?.address,
-          tickLower: v3Position?.tickLower,
-          tickUpper: v3Position?.tickUpper,
-          inputValue: value?.toString?.(),
-        });
+        // console.log("[V3] getOtherAmount slot0-flow start", {
+        //   chainId,
+        //   baseIndex: index,
+        //   baseUnderlying: baseUnderlying?.symbol,
+        //   otherUnderlying: otherUnderlyingToken?.symbol,
+        //   baseBToken: baseBToken?.symbol,
+        //   otherBToken: otherBToken?.symbol,
+        //   baseAddress: baseBToken?.addresses?.[chainId],
+        //   otherAddress: otherBToken?.addresses?.[chainId],
+        //   poolToken0: v3Pool?.token0?.address,
+        //   poolToken1: v3Pool?.token1?.address,
+        //   tickLower: v3Position?.tickLower,
+        //   tickUpper: v3Position?.tickUpper,
+        //   inputValue: value?.toString?.(),
+        // });
         const baseProvider = (baseBToken as any)?.provider;
         const wrapperProvider = (stakingProviders as any)?.BIRDIESWAP_Wrapper;
         const routerProvider = (stakingProviders as any)?.BIRDIESWAP_Router;
@@ -457,37 +458,70 @@ export function usePairStartPanel(
           providerOverride,
         );
         if (!bBase || bBase.eq(0)) {
-          console.log("[V3] previewFullDeposit empty", {
-            bBase: bBase?.toString?.(),
-            baseBToken: baseBToken?.symbol,
-            baseAddress: baseBToken?.addresses?.[chainId],
-          });
+          // console.log("[V3] previewFullDeposit empty", {
+          //   bBase: bBase?.toString?.(),
+          //   baseBToken: baseBToken?.symbol,
+          //   baseAddress: baseBToken?.addresses?.[chainId],
+          // });
           return BigDecimal.ZERO();
         }
 
-        // pool token0/token1 정보 확보 (v3Pool 우선, 없으면 on-chain immutables 조회)
-        let poolToken0Addr = (v3Pool?.token0?.address as string | undefined)
-          ?.toLowerCase?.();
-        let poolToken1Addr = (v3Pool?.token1?.address as string | undefined)
-          ?.toLowerCase?.();
-
-        if (!poolToken0Addr || !poolToken1Addr) {
-          const imm = await getPoolImmutables(
-            client as PublicClient,
-            uniswapPoolAddress,
-          );
-          poolToken0Addr = (imm.token0 as string).toLowerCase();
-          poolToken1Addr = (imm.token1 as string).toLowerCase();
+        if (!tokenId || tokenId === 0n) {
+          console.error("[V3] tokenId missing for add-liquidity quote");
+          return BigDecimal.ZERO();
         }
 
-        // index가 아니라 "pool token0/1 주소 매칭"으로 분기
+        const nfpmAddress = miscContracts.UniswapNonfungiblePositionManager
+          .addresses[chainId] as `0x${string}` | undefined;
+        if (!nfpmAddress) {
+          console.error("[V3] nfpm address missing", { chainId });
+          return BigDecimal.ZERO();
+        }
+
+        const poolName =
+          item?.name ||
+          (item as any)?.wip_stakeToken?.name ||
+          `${bToken0?.symbol ?? "token0"}/${bToken1?.symbol ?? "token1"}`;
+        console.log("[V3][AddQuote] read position start", {
+          chainId,
+          poolName,
+          poolAddress: uniswapPoolAddress,
+          tokenId: tokenId.toString(),
+          baseIndex: index,
+          baseUnderlying: baseUnderlying?.symbol,
+          otherUnderlying: otherUnderlyingToken?.symbol,
+          baseBToken: baseBToken?.symbol,
+          inputUnderlying: value?.toString?.(),
+          inputBToken: bBase?.toString?.(),
+        });
+
+        const [position, poolState, imm] = await Promise.all([
+          fetchV3Position(client as PublicClient, nfpmAddress, tokenId),
+          getPoolState(client as PublicClient, uniswapPoolAddress),
+          getPoolImmutables(client as PublicClient, uniswapPoolAddress),
+        ]);
+
+        console.log("[V3][AddQuote] position loaded", {
+          tokenId: tokenId.toString(),
+          token0: position.token0,
+          token1: position.token1,
+          fee: Number(position.fee),
+          tickLower: Number(position.tickLower),
+          tickUpper: Number(position.tickUpper),
+          liquidity: position.liquidity.toString(),
+          sqrtPriceX96: poolState.sqrtPriceX96.toString(),
+          tickCurrent: Number(poolState.tick),
+          poolLiquidity: poolState.liquidity.toString(),
+        });
+
+        const poolToken0Addr = (imm.token0 as string).toLowerCase();
+        const poolToken1Addr = (imm.token1 as string).toLowerCase();
+
         const baseAddr = (
           baseBToken.addresses?.[chainId] as string | undefined
         )?.toLowerCase?.();
-
         const baseIsToken0 = !!baseAddr && baseAddr === poolToken0Addr;
         const baseIsToken1 = !!baseAddr && baseAddr === poolToken1Addr;
-
         if (!baseIsToken0 && !baseIsToken1) {
           console.error("[V3] base token not in pool tokens", {
             baseAddr,
@@ -495,8 +529,6 @@ export function usePairStartPanel(
             poolToken1Addr,
             baseBToken: baseBToken?.symbol,
             otherBToken: otherBToken?.symbol,
-            baseAddressRaw: baseBToken?.addresses?.[chainId],
-            otherAddressRaw: otherBToken?.addresses?.[chainId],
           });
           return BigDecimal.ZERO();
         }
@@ -508,18 +540,16 @@ export function usePairStartPanel(
           bToken1.addresses?.[chainId] as string | undefined
         )?.toLowerCase?.();
 
-        let token0Decimals: number | undefined;
-        let token1Decimals: number | undefined;
+        let poolBToken0 = bToken0 as any;
+        let poolBToken1 = bToken1 as any;
         if (poolToken0Addr === b0Addr && poolToken1Addr === b1Addr) {
-          token0Decimals = bToken0.decimals ?? 18;
-          token1Decimals = bToken1.decimals ?? 18;
+          poolBToken0 = bToken0;
+          poolBToken1 = bToken1;
         } else if (poolToken0Addr === b1Addr && poolToken1Addr === b0Addr) {
-          token0Decimals = bToken1.decimals ?? 18;
-          token1Decimals = bToken0.decimals ?? 18;
-        }
-
-        if (token0Decimals == null || token1Decimals == null) {
-          console.error("[V3] pool token decimals mapping failed", {
+          poolBToken0 = bToken1;
+          poolBToken1 = bToken0;
+        } else {
+          console.error("[V3] pool token/bToken mapping failed", {
             poolToken0Addr,
             poolToken1Addr,
             b0Addr,
@@ -528,16 +558,49 @@ export function usePairStartPanel(
           return BigDecimal.ZERO();
         }
 
-        const slot0 = await getSlot0(client as PublicClient, uniswapPoolAddress);
-        const bPrice = getPoolPrice({
-          sqrtPriceX96: slot0.sqrtPriceX96,
-          token0Decimals,
-          token1Decimals,
-          zeroForOne: baseIsToken0,
-          precision: 36,
+        const quote = quoteV3AddLiquidity({
+          token0: {
+            chainId,
+            address: poolToken0Addr as `0x${string}`,
+            decimals: poolBToken0.decimals ?? 18,
+            symbol: poolBToken0.symbol ?? "bToken0",
+            name: poolBToken0.name,
+          },
+          token1: {
+            chainId,
+            address: poolToken1Addr as `0x${string}`,
+            decimals: poolBToken1.decimals ?? 18,
+            symbol: poolBToken1.symbol ?? "bToken1",
+            name: poolBToken1.name,
+          },
+          pool: {
+            fee: Number(position.fee),
+            sqrtPriceX96: poolState.sqrtPriceX96,
+            tickCurrent: Number(poolState.tick),
+            poolLiquidity: poolState.liquidity,
+          },
+          range: {
+            tickLower: Number(position.tickLower),
+            tickUpper: Number(position.tickUpper),
+          },
+          input: baseIsToken0
+            ? { side: "token0", amount: bBase.toString() }
+            : { side: "token1", amount: bBase.toString() },
+          slippageBps: 50,
         });
 
-        const otherBAmountBD = bBase.mul(bPrice);
+        if (!quote.requiredAmounts) {
+          console.error("[V3] add quote requiredAmounts is null");
+          return BigDecimal.ZERO();
+        }
+
+        const otherBAmountRaw = baseIsToken0
+          ? quote.requiredAmounts.amount1Raw
+          : quote.requiredAmounts.amount0Raw;
+        const otherDecimals = (otherBToken as any)?.decimals ?? 18;
+        const otherBAmountBD = new BigDecimal(
+          formatUnits(BigInt(otherBAmountRaw), otherDecimals),
+        );
 
         const otherUnderlyingBD = await previewRedeem(
           client as PublicClient,
@@ -545,18 +608,20 @@ export function usePairStartPanel(
           otherBAmountBD,
         );
         if (!otherUnderlyingBD) {
-          console.log("[V3] previewRedeem empty", {
-            otherBAmount: otherBAmountBD?.toString?.(),
-            otherBToken: otherBToken?.symbol,
-            otherAddress: otherBToken?.addresses?.[chainId],
-          });
+          // console.log("[V3] previewRedeem empty", {
+          //   otherBAmount: otherBAmountBD?.toString?.(),
+          //   otherBToken: otherBToken?.symbol,
+          //   otherAddress: otherBToken?.addresses?.[chainId],
+          // });
           return BigDecimal.ZERO();
         }
 
-        console.log("[V3] getOtherAmount slot0-flow result", {
+        console.log("[V3][AddQuote] getOtherAmount result", {
+          tokenId: tokenId.toString(),
+          poolAddress: uniswapPoolAddress,
           baseIsToken0,
           bBase: bBase?.toString?.(),
-          bPrice: bPrice?.toString?.(),
+          quotePrice: quote.spotPrice,
           otherBAmount: otherBAmountBD?.toString?.(),
           otherUnderlying: otherUnderlyingBD?.toString?.(),
         });
@@ -577,6 +642,8 @@ export function usePairStartPanel(
       bToken0,
       bToken1,
       v3Pool,
+      v3Position,
+      tokenId,
       uniswapPoolAddress,
     ],
   );
@@ -890,19 +957,19 @@ export function usePairStartPanel(
     const amount0Raw = parseUnits(amount0Str, tokenStatuses[0].input.decimals);
     const amount1Raw = parseUnits(amount1Str, tokenStatuses[1].input.decimals);
 
-    console.log("[startFarming] dualDeposit args", {
-      account: address,
-      addr0,
-      symbol0: tokenStatuses[0].input?.symbol,
-      decimals0: tokenStatuses[0].input?.decimals,
-      amount0: amount0Str,
-      amount0Raw: amount0Raw.toString(),
-      addr1,
-      symbol1: tokenStatuses[1].input?.symbol,
-      decimals1: tokenStatuses[1].input?.decimals,
-      amount1: amount1Str,
-      amount1Raw: amount1Raw.toString(),
-    });
+    // console.log("[startFarming] dualDeposit args", {
+    //   account: address,
+    //   addr0,
+    //   symbol0: tokenStatuses[0].input?.symbol,
+    //   decimals0: tokenStatuses[0].input?.decimals,
+    //   amount0: amount0Str,
+    //   amount0Raw: amount0Raw.toString(),
+    //   addr1,
+    //   symbol1: tokenStatuses[1].input?.symbol,
+    //   decimals1: tokenStatuses[1].input?.decimals,
+    //   amount1: amount1Str,
+    //   amount1Raw: amount1Raw.toString(),
+    // });
 
     writeContract(
       {
