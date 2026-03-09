@@ -54,12 +54,17 @@ function looksLikeCF(text: string) {
 
 /* ───────── route (GET) ───────── */
 
-export async function GET(req: Request, context: any) {
+type RouteContext = {
+  params?: Promise<{ path?: string[] | string }> | { path?: string[] | string };
+};
+
+export async function GET(req: Request, context: RouteContext) {
   try {
     const url = new URL(req.url);
 
     // 1) App Router params
-    const raw = context?.params?.path;
+    const params = context?.params ? await context.params : undefined;
+    const raw = params?.path;
     const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
     // 2) tail 보정

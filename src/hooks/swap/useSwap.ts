@@ -28,7 +28,7 @@ export default function useSwap() {
   const [fromToken, setFromToken] = useState<ICurrency | undefined>(
     tokens.USDC,
   );
-  const [toToken, setToToken] = useState<ICurrency | undefined>(undefined);
+  const [toToken, setToToken] = useState<ICurrency | undefined>(tokens.EURC);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [maxSlippage, setMaxSlippage] = useState<"auto" | number>("auto");
