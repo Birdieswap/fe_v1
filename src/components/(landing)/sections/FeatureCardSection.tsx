@@ -8,7 +8,7 @@ function FeatureCard(props: {
   titleAccent: string;
   desc: React.ReactNode;
   bottomTop: string;
-  bottomBottom: React.ReactNode;
+  bottomBottom?: React.ReactNode;
 }) {
   return (
     <div className="flex h-full flex-col items-center text-center">
@@ -89,39 +89,45 @@ export default function FeatureCardsSection() {
                 </>
               }
               bottomTop="Supply once, earn both"
-              bottomBottom={
-                <>
-                  Only on{" "}
-                  <span className="font-medium text-light-primary dark:text-dark-green-key">
-                    Birdieswap
-                  </span>
-                </>
-              }
+              // bottomBottom={
+              //   <>
+              //     Only on{" "}
+              //     <span className="font-medium text-light-primary dark:text-dark-green-key">
+              //       Birdieswap
+              //     </span>
+              //   </>
+              // }
             />
           </div>
 
           <div className="shrink-0">
             <FeatureCard
               imgSrc="/landing/card2.svg"
-              imgAlt="Earn Swap Points"
-              titleLeft="Earn"
-              titleAccent="Swap Points"
+              // imgAlt="Earn Swap Points"
+              // titleLeft="Earn"
+              // titleAccent="Swap Points"
+              imgAlt="Easy Enter & Pay"
+              titleLeft="Easy"
+              titleAccent="Enter & Pay"
               desc={
                 <>
-                  Swap and Earn
+                  {/* Swap and Earn */}
+                  Move in and out of your assets
                   <br />
-                  Birdieswap Points for selected pairs
+                  {/* Birdieswap Points for selected pairs */}
+                  with less friction, whenever you want
                 </>
               }
-              bottomTop="Swap more, get points more"
-              bottomBottom={
-                <>
-                  Only on{" "}
-                  <span className="font-medium text-light-primary dark:text-dark-green-key">
-                    Birdieswap
-                  </span>
-                </>
-              }
+              // bottomTop="Swap more, get points more"
+              bottomTop="Click once, move freely"
+              // bottomBottom={
+              //   <>
+              //     Only on{" "}
+              //     <span className="font-medium text-light-primary dark:text-dark-green-key">
+              //       Birdieswap
+              //     </span>
+              //   </>
+              // }
             />
           </div>
         </div>
