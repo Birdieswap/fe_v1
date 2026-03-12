@@ -102,7 +102,7 @@ export default function FeatureCardsSection() {
 
           <div className="shrink-0">
             <FeatureCard
-              imgSrc="/landing/card2.svg"
+              imgSrc="/landing/card2-1.svg"
               // imgAlt="Earn Swap Points"
               // titleLeft="Earn"
               // titleAccent="Swap Points"
