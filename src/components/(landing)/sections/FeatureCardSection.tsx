@@ -38,13 +38,7 @@ function FeatureCard(props: {
       </p>
 
       {/* Bottom Box를 카드 하단으로 밀어 고정 */}
-      <div
-        className="
-          mt-auto pt-6 w-full
-          max-w-[328px]
-          md:max-w-[408px]
-        "
-      >
+      <div className="mt-auto w-[328px] max-w-full pt-6 md:w-[408px]">
         <div
           className="
             h-[107px] md:h-[110px]
@@ -112,10 +106,10 @@ export default function FeatureCardsSection() {
               desc={
                 <>
                   {/* Swap and Earn */}
-                  Move in and out of your assets
+                  Move in and out of your assets with less friction
                   <br />
                   {/* Birdieswap Points for selected pairs */}
-                  with less friction, whenever you want
+                  Add more whenever you want
                 </>
               }
               // bottomTop="Swap more, get points more"
