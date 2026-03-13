@@ -92,8 +92,8 @@ const nextConfig = {
   // async rewrites() {
   //   return [
   //     {
-  //       source: "/api/realkimp/:path*",
-  //       destination: "https://realkimp.com/birdieswap/:path*",
+  //       source: "/api/birdieswap/:path*",
+  //       destination: "https://api.birdieswap.com/:path*",
   //     },
   //   ];
   // },
