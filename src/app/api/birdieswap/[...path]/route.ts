@@ -7,8 +7,8 @@ export const runtime = "edge";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-// 업스트림 (요청하신 대로 .com만)
-const UPSTREAM = "https://realkimp.com/birdieswap";
+// 운영 업스트림
+const UPSTREAM = "https://api.birdieswap.com";
 
 /* ───────── helpers ───────── */
 
@@ -26,10 +26,10 @@ function makeBrowseryHeaders(tail: string) {
   h.set("pragma", "no-cache");
 
   // 🔸 CF가 보는 헤더들
-  h.set("origin", "https://realkimp.com");
+  h.set("origin", "https://api.birdieswap.com");
   // /Transactions → /Transactions/ 기준 레퍼러로 고정
   const tailNorm = tail.replace(/\/+$/, "");
-  h.set("referer", `https://realkimp.com/birdieswap/${tailNorm}/`);
+  h.set("referer", `https://api.birdieswap.com/${tailNorm}/`);
 
   // 일부 WAF가 체크하는 sec-* 헤더들 (서버에서 진짜로 의미는 없지만 통과율↑)
   h.set("sec-fetch-site", "cross-site");
@@ -70,7 +70,7 @@ export async function GET(req: Request, context: RouteContext) {
     // 2) tail 보정
     let tail: string = strip(parts.join("/"));
     if (!tail) {
-      const base = "/api/realkimp/";
+      const base = "/api/birdieswap/";
       const i = url.pathname.indexOf(base);
       if (i >= 0) tail = strip(url.pathname.slice(i + base.length));
     }
@@ -79,7 +79,7 @@ export async function GET(req: Request, context: RouteContext) {
         {
           ok: false,
           error: "missing_endpoint",
-          hint: "call /api/realkimp/<path>",
+          hint: "call /api/birdieswap/<path>",
         },
         { status: 400 }
       );

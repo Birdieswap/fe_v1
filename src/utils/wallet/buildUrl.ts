@@ -47,7 +47,7 @@ export function buildUrl(
   const q = qs ? `?${qs}` : "";
 
   // ✅ 항상 /api 프록시만 사용 (여기서 .json 절대 붙이지 않음)
-  const proxyUrl = `/api/realkimp/${normalized}${q}`;
+  const proxyUrl = `/api/birdieswap/${normalized}${q}`;
 
   if (typeof window !== "undefined" && SENSITIVE.has(normalized)) {
     // console.log(`[buildUrl] PROXY ONLY → ${normalized} =`, proxyUrl);
