@@ -15,7 +15,7 @@ export async function GET(_req: Request) {
   //   return NextResponse.json({ error: "Invalid chainId" }, { status: 400 });
   // }
 
-  const upstreamUrl = `https://realkimp.com/birdieswap/${id}.json`;
+  const upstreamUrl = `https://api.birdieswap.com/${id}.json`;
 
   // const upstreamRes = await fetch(upstreamUrl, {
   //   method: "GET",
@@ -41,7 +41,7 @@ export async function GET(_req: Request) {
       "upgrade-insecure-requests": "1",
       pragma: "no-cache",
       // 때에 따라 도움 될 수도 있는 참조자
-      referer: "https://realkimp.com/",
+      referer: "https://api.birdieswap.com/",
     },
   });
 
