@@ -2,9 +2,9 @@ name: Security Suite (ZAP + CodeQL + Semgrep + Trivy + OSV + SBOM + IaC + Secret
 
 on:
   push:
-    branches: [main, master] #, dev_fe]
+    branches: [main, master, dev_fe]
   pull_request:
-    branches: [main, master] #, dev_fe]
+    branches: [main, master, dev_fe]
   schedule:
     - cron: "0 18 * * 0" # 매주 월 03:00 KST 근처(UTC 일 18:00)
   workflow_dispatch:
@@ -35,22 +35,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Resolve ZAP target
+        id: zap_target
         shell: bash
         run: |
-          if [ -n "${{ inputs.zap_target }}" ]; then
-            TARGET="${{ inputs.zap_target }}"
+          if [ -n "${{ github.event.inputs.zap_target }}" ]; then
+            TARGET="${{ github.event.inputs.zap_target }}"
           elif [ -n "${{ vars.PREVIEW_URL }}" ]; then
             TARGET="${{ vars.PREVIEW_URL }}"
           else
             TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
           fi
-          echo "ZAP_TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         continue-on-error: true
         with:
-          target: ${{ env.ZAP_TARGET }}
+          target: ${{ steps.zap_target.outputs.target }}
           cmd_options: "-j -m 5 -T 120"
           allow_issue_writing: false
 
@@ -69,22 +70,23 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Resolve ZAP target
+        id: zap_target
         shell: bash
         run: |
-          if [ -n "${{ inputs.zap_target }}" ]; then
-            TARGET="${{ inputs.zap_target }}"
+          if [ -n "${{ github.event.inputs.zap_target }}" ]; then
+            TARGET="${{ github.event.inputs.zap_target }}"
           elif [ -n "${{ vars.PREVIEW_URL }}" ]; then
             TARGET="${{ vars.PREVIEW_URL }}"
           else
             TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
           fi
-          echo "ZAP_TARGET=$TARGET" >> "$GITHUB_ENV"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.12.0
         continue-on-error: true
         with:
-          target: ${{ env.ZAP_TARGET }}
+          target: ${{ steps.zap_target.outputs.target }}
           cmd_options: "-j -m 5"
           docker_name: "ghcr.io/zaproxy/zaproxy:stable"
           allow_issue_writing: false
@@ -179,12 +181,15 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Trivy FS scan
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
+          scan-ref: .
           format: sarif
           output: trivy.sarif
           ignore-unfixed: true
+          timeout: 10m
+          token-setup-trivy: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload Trivy FS SARIF
         uses: actions/upload-artifact@v4
@@ -295,11 +300,12 @@ jobs:
         run: |
           if [ -f Dockerfile ]; then
             IMAGE="ghcr.io/${{ github.repository_owner }}/$(basename "$GITHUB_REPOSITORY"):${{ github.sha }}"
-            echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
             echo "will_build=true" >> "$GITHUB_OUTPUT"
+            echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
             docker build -t "$IMAGE" .
           else
             echo "will_build=false" >> "$GITHUB_OUTPUT"
+            echo "image=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Install syft & grype
@@ -360,19 +366,21 @@ jobs:
 
       - name: Trivy Image scan -> SARIF
         if: steps.build.outputs.will_build == 'true'
-        uses: aquasecurity/trivy-action@0.24.0
+        uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: image
-          image-ref: ${{ env.IMAGE }}
+          image-ref: ${{ steps.build.outputs.image }}
           format: sarif
           output: trivy-image.sarif
           ignore-unfixed: true
+          timeout: 10m
+          token-setup-trivy: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Dockle (container best-practices)
         if: steps.build.outputs.will_build == 'true'
         run: |
           docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
-            goodwithtech/dockle:v0.4.14 -f sarif "$IMAGE" > dockle.sarif || true
+            goodwithtech/dockle:v0.4.14 -f sarif "${{ steps.build.outputs.image }}" > dockle.sarif || true
 
       - name: Upload image scan artifacts
         if: steps.build.outputs.will_build == 'true'
