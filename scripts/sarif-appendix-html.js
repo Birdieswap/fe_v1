@@ -82,4 +82,3 @@ th,td{border:1px solid #ddd;padding:8px}th{background:#f6f8fa;text-align:left}
 
 fs.writeFileSync(outPath, shell(html));
 console.log(`Wrote ${outPath}`);
-EOF;
