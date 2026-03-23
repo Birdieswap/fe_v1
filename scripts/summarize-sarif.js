@@ -146,9 +146,28 @@ for (const r of rows) {
   byTool.set(r.tool, list);
 }
 
+function shell(body) {
+  return `<!doctype html><html><head><meta charset="utf-8">
+<title>Birdieswap Security Report</title>
+<style>
+body{font-family:system-ui,Segoe UI,Arial,sans-serif;margin:24px;color:#1f2328}
+h1{margin:0 0 8px} h2{margin-top:28px}
+table{border-collapse:collapse;width:100%;margin:12px 0}
+th,td{border:1px solid #d0d7de;padding:8px;vertical-align:top}
+th{background:#f6f8fa;text-align:left}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;margin-right:6px}
+.sev-HIGH{background:#cf222e;color:#fff}
+.sev-MEDIUM{background:#bf8700;color:#fff}
+.sev-LOW{background:#1a7f37;color:#fff}
+</style></head><body>${body}</body></html>`;
+}
+
 // HTML
 let html = "";
-html += `<h1>Security Summary</h1>`;
+html += `<h1>Birdieswap Security Report</h1>`;
+html += `<p>Combined SARIF results</p>`;
+html += `<h2>Security Summary</h2>`;
 html += `<p>ZAP (Baseline/Full), CodeQL, Semgrep, Trivy, OSV의 결과를 통합 요약합니다.</p>`;
 
 html += `<h2>Overall Severity</h2><p>`;
@@ -220,5 +239,5 @@ if (hasFull) html += `<li>Full Scan HTML/JSON은 해당 런 아티팩트에 포�
 if (!hasBaseline && !hasFull) html += `<li>(다운로드된 ZAP 아티팩트 없음)</li>`;
 html += `</ul>`;
 
-fs.writeFileSync(outPath, html, "utf-8");
+fs.writeFileSync(outPath, shell(html), "utf-8");
 console.log(`Wrote ${outPath}`);
