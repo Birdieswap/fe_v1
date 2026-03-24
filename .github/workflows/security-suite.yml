@@ -20,78 +20,171 @@ permissions:
   pull-requests: read
 
 env:
-  ZAP_TARGET_DEFAULT: https://birdieswap-dev.vercel.app
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ---------------------------- ZAP (DAST) ----------------------------
-  zap-baseline:
+  zap-target-matrix:
     runs-on: ubuntu-latest
+    outputs:
+      baseline_matrix: ${{ steps.set.outputs.baseline_matrix }}
+      full_matrix: ${{ steps.set.outputs.full_matrix }}
+      smoke_matrix: ${{ steps.set.outputs.smoke_matrix }}
+    steps:
+      - name: Build branch-aware ZAP matrices
+        id: set
+        shell: bash
+        env:
+          TARGET_BRANCH: ${{ github.base_ref || github.ref_name }}
+          LANDING_SCAN_URL: ${{ vars.LANDING_SCAN_URL }}
+          APP_SCAN_URL: ${{ vars.APP_SCAN_URL }}
+          API_SCAN_URL: ${{ vars.API_SCAN_URL }}
+        run: |
+          set -euo pipefail
+
+          if [[ "$TARGET_BRANCH" == "main" || "$TARGET_BRANCH" == "master" ]]; then
+            baseline_matrix='{"include":[
+              {"name":"landing-www","target":"https://www.birdieswap.com"},
+              {"name":"landing-root","target":"https://birdieswap.com"},
+              {"name":"app","target":"https://app.birdieswap.com"},
+              {"name":"api-healthz","target":"https://api.birdieswap.com/healthz"}
+            ]}'
+            full_matrix='{"include":[
+              {"name":"app","target":"https://app.birdieswap.com"}
+            ]}'
+            smoke_matrix='{"include":[
+              {"name":"landing-www","kind":"web","target":"https://www.birdieswap.com"},
+              {"name":"landing-root","kind":"web","target":"https://birdieswap.com"},
+              {"name":"app","kind":"web","target":"https://app.birdieswap.com"},
+              {"name":"api-healthz","kind":"api","target":"https://api.birdieswap.com/healthz"}
+            ]}'
+          else
+            landing="${LANDING_SCAN_URL:-https://birdieswap-landing.vercel.app}"
+            app="${APP_SCAN_URL:-https://birdieswap-dev.vercel.app}"
+            api="${API_SCAN_URL:-https://api.birdieswap.com/healthz}"
+
+            baseline_matrix=$(jq -cn \
+              --arg landing "$landing" \
+              --arg app "$app" \
+              --arg api "$api" \
+              '{include:[
+                {name:"landing", target:$landing},
+                {name:"app", target:$app},
+                {name:"api-healthz", target:$api}
+              ]}')
+            full_matrix=$(jq -cn \
+              --arg app "$app" \
+              '{include:[{name:"app", target:$app}]}')
+            smoke_matrix=$(jq -cn \
+              --arg landing "$landing" \
+              --arg app "$app" \
+              --arg api "$api" \
+              '{include:[
+                {name:"landing", kind:"web", target:$landing},
+                {name:"app", kind:"web", target:$app},
+                {name:"api-healthz", kind:"api", target:$api}
+              ]}')
+          fi
+
+          echo "baseline_matrix=$baseline_matrix" >> "$GITHUB_OUTPUT"
+          echo "full_matrix=$full_matrix" >> "$GITHUB_OUTPUT"
+          echo "smoke_matrix=$smoke_matrix" >> "$GITHUB_OUTPUT"
+
+  zap-baseline:
+    needs: [zap-target-matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.zap-target-matrix.outputs.baseline_matrix) }}
     steps:
       - uses: actions/checkout@v5
-
-      - name: Resolve ZAP target
-        id: zap_target
-        shell: bash
-        run: |
-          if [ -n "${{ vars.PREVIEW_URL }}" ]; then
-            TARGET="${{ vars.PREVIEW_URL }}"
-          else
-            TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
-          fi
-          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.15.0
         continue-on-error: true
         with:
-          target: ${{ steps.zap_target.outputs.target }}
+          target: ${{ matrix.target }}
           cmd_options: "-j -m 5 -T 120"
           allow_issue_writing: false
-          artifact_name: zap-scan-baseline
+          artifact_name: zap-scan-baseline-${{ matrix.name }}
 
       - name: Upload ZAP Baseline reports
         uses: actions/upload-artifact@v6
         with:
-          name: zap_baseline_${{ github.run_id }}_${{ github.run_attempt }}
+          name: zap_baseline_${{ matrix.name }}_${{ github.run_id }}_${{ github.run_attempt }}
           path: |
             report_html.html
             report_json.json
           if-no-files-found: warn
 
   zap-full:
+    needs: [zap-target-matrix]
     runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.zap-target-matrix.outputs.full_matrix) }}
     steps:
       - uses: actions/checkout@v5
-
-      - name: Resolve ZAP target
-        id: zap_target
-        shell: bash
-        run: |
-          if [ -n "${{ vars.PREVIEW_URL }}" ]; then
-            TARGET="${{ vars.PREVIEW_URL }}"
-          else
-            TARGET="${{ env.ZAP_TARGET_DEFAULT }}"
-          fi
-          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ZAP Full Scan
         uses: zaproxy/action-full-scan@v0.13.0
         continue-on-error: true
         with:
-          target: ${{ steps.zap_target.outputs.target }}
-          cmd_options: "-j -m 5"
+          target: ${{ matrix.target }}
+          cmd_options: "-j -m 3 -T 90"
           docker_name: "ghcr.io/zaproxy/zaproxy:stable"
           allow_issue_writing: false
-          artifact_name: zap-scan-full
+          artifact_name: zap-scan-full-${{ matrix.name }}
 
       - name: Upload ZAP Full reports
         uses: actions/upload-artifact@v6
         with:
-          name: zap_full_${{ github.run_id }}_${{ github.run_attempt }}
+          name: zap_full_${{ matrix.name }}_${{ github.run_id }}_${{ github.run_attempt }}
           path: |
             report_html.html
             report_json.json
           if-no-files-found: warn
+
+  # ---------------------------- Header Smoke ----------------------------
+  header-smoke:
+    needs: [zap-target-matrix]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.zap-target-matrix.outputs.smoke_matrix) }}
+    steps:
+      - name: Fetch response
+        run: |
+          curl -fsS -D headers.txt -o body.txt "${{ matrix.target }}"
+          cat headers.txt
+          cat body.txt || true
+
+      - name: Assert common headers
+        run: |
+          grep -qiE '^strict-transport-security:' headers.txt
+          grep -qiE '^x-content-type-options:[[:space:]]*nosniff' headers.txt
+
+      - name: Assert web headers
+        if: matrix.kind == 'web'
+        run: |
+          grep -qiE '^content-security-policy:' headers.txt
+          grep -qiE '^referrer-policy:' headers.txt
+
+      - name: Assert api healthz
+        if: matrix.kind == 'api'
+        run: |
+          grep -qiE '^content-type:[[:space:]]*application/json' headers.txt
+          grep -q '"status":"ok"' body.txt
+
+      - name: Upload smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: header-smoke-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            headers.txt
+            body.txt
 
   # ---------------------------- CodeQL ----------------------------
   codeql:
@@ -166,6 +259,18 @@ jobs:
           name: sarif-semgrep-${{ github.run_id }}-${{ github.run_attempt }}
           path: semgrep.sarif
           if-no-files-found: error
+
+  # ---------------------------- Secrets: Gitleaks ----------------------------
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # ---------------------------- SCA: Trivy (FS) ----------------------------
   trivy:
@@ -517,8 +622,10 @@ jobs:
     needs:
       - zap-baseline
       - zap-full
+      - header-smoke
       - codeql
       - semgrep
+      - gitleaks
       - trivy
       - osv
       - tfsec
@@ -530,7 +637,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download SARIF artifacts (sarif-*)
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           pattern: sarif-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: sarif_in
@@ -538,10 +645,26 @@ jobs:
 
       - name: Download container scan artifacts
         if: needs.container_build_and_scan.outputs.will_build == 'true'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v6
         with:
           name: container-scans-${{ github.run_id }}-${{ github.run_attempt }}
           path: sarif_in
+        continue-on-error: true
+
+      - name: Download ZAP Baseline reports
+        uses: actions/download-artifact@v6
+        with:
+          pattern: zap_baseline_*_${{ github.run_id }}_${{ github.run_attempt }}
+          path: zap_baseline
+          merge-multiple: false
+        continue-on-error: true
+
+      - name: Download ZAP Full reports
+        uses: actions/download-artifact@v6
+        with:
+          pattern: zap_full_*_${{ github.run_id }}_${{ github.run_attempt }}
+          path: zap_full
+          merge-multiple: false
         continue-on-error: true
 
       - name: Merge SARIFs
@@ -588,7 +711,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: security-merged-${{ github.run_id }}-${{ github.run_attempt }}
           path: out

@@ -30,6 +30,19 @@ const APP_PATHS = new Set(["/swap", "/farm", "/docs", "/faq", "/pay"]);
 const APP_ORIGIN =
   process.env.NEXT_PUBLIC_APP_URL || "https://app.birdieswap.com";
 
+function safeOrigin(url?: string) {
+  if (!url) return "";
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+}
+
+function uniq(values: string[]) {
+  return [...new Set(values.filter(Boolean))];
+}
+
 export function middleware(req: NextRequest) {
   // host는 dev에서 "www.birdieswap.local:3000" 형태라 포트 제거 필요
   const rawHost = (req.headers.get("host") ?? "").toLowerCase();
@@ -93,8 +106,43 @@ export function middleware(req: NextRequest) {
 
   // ⛑ PROD CSP (네 기존 로직 유지)
   const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"].join(
-    " "
+    " ",
   );
+  const envRpcOrigins = uniq(
+    [
+      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
+      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
+      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK,
+      process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY,
+      process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA,
+      process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_ALCHEMY,
+      process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_INFURA,
+      process.env.NEXT_PUBLIC_CONSENT_GET_BASE,
+    ].map((v) => safeOrigin(v)),
+  );
+  const connectSrc = uniq([
+    "'self'",
+    safeOrigin(APP_ORIGIN),
+    "https://api.birdieswap.com",
+    "https://script.google.com",
+    "https://sepolia.drpc.org",
+    "https://mainnet.base.org",
+    "https://arb1.arbitrum.io",
+    "https://rpc.scroll.io",
+    "https://relay.walletconnect.com",
+    "wss://relay.walletconnect.com",
+    "https://rpc.walletconnect.com",
+    ...envRpcOrigins,
+  ]).join(" ");
+  const imgSrc = uniq([
+    "'self'",
+    "data:",
+    "blob:",
+    "https://www.birdieswap.com",
+    safeOrigin(APP_ORIGIN),
+    "https://birdieswap-dev.vercel.app",
+    "https://coin-images.coingecko.com",
+  ]).join(" ");
   const csp = [
     "default-src 'self'",
     "base-uri 'self'",
@@ -106,9 +154,9 @@ export function middleware(req: NextRequest) {
     "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "style-src-attr 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com data:",
-    `connect-src 'self' https: ws: wss:`,
-    `img-src 'self' data: blob: https:`,
-    `frame-src 'self' https:`,
+    `connect-src ${connectSrc}`,
+    `img-src ${imgSrc}`,
+    "frame-src 'self'",
     "upgrade-insecure-requests",
     "block-all-mixed-content",
   ].join("; ");
@@ -116,14 +164,14 @@ export function middleware(req: NextRequest) {
   res.headers.set("Content-Security-Policy", csp);
   res.headers.set(
     "Strict-Transport-Security",
-    "max-age=63072000; includeSubDomains; preload"
+    "max-age=63072000; includeSubDomains; preload",
   );
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("X-Frame-Options", "SAMEORIGIN");
   res.headers.set(
     "Permissions-Policy",
-    "camera=(), microphone=(), geolocation=()"
+    "camera=(), microphone=(), geolocation=()",
   );
 
   return res;
