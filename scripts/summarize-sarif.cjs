@@ -30,6 +30,29 @@ function listSarifFiles(dir) {
     .filter((f) => f.endsWith(".sarif"))
     .map((f) => path.join(dir, f));
 }
+function findFilesByNameRecursive(dir, filename) {
+  const out = [];
+  if (!fs.existsSync(dir)) return out;
+  const stack = [dir];
+  while (stack.length > 0) {
+    const cur = stack.pop();
+    let entries = [];
+    try {
+      entries = fs.readdirSync(cur, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const ent of entries) {
+      const p = path.join(cur, ent.name);
+      if (ent.isDirectory()) {
+        stack.push(p);
+      } else if (ent.isFile() && ent.name === filename) {
+        out.push(p);
+      }
+    }
+  }
+  return out.sort();
+}
 function levelToSeverity(level) {
   const lv = (level || "").toLowerCase();
   if (lv === "error") return "HIGH";
@@ -81,6 +104,73 @@ function collectFromSarif(sarifJson, label) {
   }
   return entries;
 }
+function collectToolNamesFromSarif(sarifJson) {
+  const runs = sarifJson.runs || [];
+  const names = [];
+  for (const run of runs) names.push(detectToolName(run));
+  return names;
+}
+function zapRiskToSeverity(riskcode) {
+  const rc = String(riskcode ?? "");
+  if (rc === "3") return "HIGH";
+  if (rc === "2") return "MEDIUM";
+  if (rc === "1") return "LOW";
+  return "LOW";
+}
+function collectFromZapJson(jsonPath, toolLabel) {
+  if (!fs.existsSync(jsonPath)) return [];
+  let doc;
+  try {
+    doc = readJSON(jsonPath);
+  } catch {
+    return [];
+  }
+  const sites = Array.isArray(doc.site) ? doc.site : [];
+  const rows = [];
+  for (const site of sites) {
+    const siteUrl = site["@name"] || "";
+    const alerts = Array.isArray(site.alerts) ? site.alerts : [];
+    for (const a of alerts) {
+      const severity = zapRiskToSeverity(a.riskcode);
+      const level =
+        severity === "HIGH"
+          ? "error"
+          : severity === "MEDIUM"
+          ? "warning"
+          : "note";
+      const ruleId = String(a.pluginid || a.alertRef || a.alert || "ZAP");
+      const ruleName = String(a.alert || ruleId);
+      const msg = String(a.desc || a.alert || "");
+      const instances = Array.isArray(a.instances) ? a.instances : [];
+      if (instances.length === 0) {
+        rows.push({
+          label: path.basename(jsonPath),
+          tool: toolLabel,
+          severity,
+          level,
+          ruleId,
+          ruleName,
+          message: msg,
+          uri: siteUrl,
+        });
+        continue;
+      }
+      for (const inst of instances) {
+        rows.push({
+          label: path.basename(jsonPath),
+          tool: toolLabel,
+          severity,
+          level,
+          ruleId,
+          ruleName,
+          message: msg,
+          uri: inst.uri || siteUrl || "",
+        });
+      }
+    }
+  }
+  return rows;
+}
 function countBy(arr, key) {
   const m = new Map();
   for (const it of arr) m.set(it[key], (m.get(it[key]) || 0) + 1);
@@ -121,20 +211,35 @@ function topRules(arr, n = 15) {
 
 // 수집
 let rows = [];
+const seenTools = new Set();
 for (const f of listSarifFiles(inDir)) {
   try {
-    rows = rows.concat(collectFromSarif(readJSON(f), path.basename(f)));
+    const doc = readJSON(f);
+    for (const t of collectToolNamesFromSarif(doc)) seenTools.add(t);
+    rows = rows.concat(collectFromSarif(doc, path.basename(f)));
   } catch (e) {
     console.error("SARIF parse error:", f, e.message);
   }
 }
 if (fs.existsSync(combinedPath)) {
   try {
-    rows = rows.concat(
-      collectFromSarif(readJSON(combinedPath), path.basename(combinedPath))
-    );
+    const doc = readJSON(combinedPath);
+    for (const t of collectToolNamesFromSarif(doc)) seenTools.add(t);
+    rows = rows.concat(collectFromSarif(doc, path.basename(combinedPath)));
   } catch {}
 }
+const zapBaselineJsonFiles = findFilesByNameRecursive(
+  zapBaselineDir,
+  "report_json.json"
+);
+const zapFullJsonFiles = findFilesByNameRecursive(zapFullDir, "report_json.json");
+const zapBaselineRows = zapBaselineJsonFiles.flatMap((p) =>
+  collectFromZapJson(p, "ZAP Baseline")
+);
+const zapFullRows = zapFullJsonFiles.flatMap((p) => collectFromZapJson(p, "ZAP Full"));
+rows = rows.concat(zapBaselineRows, zapFullRows);
+if (zapBaselineJsonFiles.length > 0) seenTools.add("ZAP Baseline");
+if (zapFullJsonFiles.length > 0) seenTools.add("ZAP Full");
 
 // 집계
 const order = ["HIGH", "MEDIUM", "LOW"];
@@ -145,6 +250,7 @@ for (const r of rows) {
   list.push(r);
   byTool.set(r.tool, list);
 }
+for (const t of seenTools) if (!byTool.has(t)) byTool.set(t, []);
 
 function shell(body) {
   return `<!doctype html><html><head><meta charset="utf-8">
@@ -228,14 +334,18 @@ for (const r of sample) {
 }
 html += `</tbody></table>`;
 
-const hasBaseline = fs.existsSync(
-  path.join(zapBaselineDir, "report_html.html")
-);
-const hasFull = fs.existsSync(path.join(zapFullDir, "report_html.html"));
+const hasBaseline =
+  findFilesByNameRecursive(zapBaselineDir, "report_html.html").length > 0;
+const hasFull = findFilesByNameRecursive(zapFullDir, "report_html.html").length > 0;
 html += `<h2>ZAP Reports</h2><ul>`;
 if (hasBaseline)
-  html += `<li>Baseline HTML/JSON은 해당 런 아티팩트에 포함</li>`;
-if (hasFull) html += `<li>Full Scan HTML/JSON은 해당 런 아티팩트에 포함</li>`;
+  html += `<li>Baseline HTML/JSON은 해당 런 아티팩트에 포함 (findings: ${
+    zapBaselineRows.length
+  })</li>`;
+if (hasFull)
+  html += `<li>Full Scan HTML/JSON은 해당 런 아티팩트에 포함 (findings: ${
+    zapFullRows.length
+  })</li>`;
 if (!hasBaseline && !hasFull) html += `<li>(다운로드된 ZAP 아티팩트 없음)</li>`;
 html += `</ul>`;
 
