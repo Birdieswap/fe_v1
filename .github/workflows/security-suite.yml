@@ -156,7 +156,8 @@ jobs:
     steps:
       - name: Fetch response
         run: |
-          curl -fsS -D headers.txt -o body.txt "${{ matrix.target }}"
+          curl -fsSL --retry 2 --retry-delay 2 -D headers.raw -o body.txt "${{ matrix.target }}"
+          awk 'BEGIN{RS="\r\n\r\n"} {last=$0} END{print last}' headers.raw | tr -d '\r' > headers.txt
           cat headers.txt
           cat body.txt || true
 
@@ -175,7 +176,14 @@ jobs:
         if: matrix.kind == 'api'
         run: |
           grep -qiE '^content-type:[[:space:]]*application/json' headers.txt
-          grep -q '"status":"ok"' body.txt
+          python3 - <<'PY'
+          import json
+          with open("body.txt", "r", encoding="utf-8") as f:
+              data = json.load(f)
+          ok = data.get("status") == "ok" or data.get("ok") is True
+          if not ok:
+              raise SystemExit(f"Unexpected healthz body: {data!r}")
+          PY
 
       - name: Upload smoke artifacts
         if: always()
@@ -183,6 +191,7 @@ jobs:
         with:
           name: header-smoke-${{ matrix.name }}-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
+            headers.raw
             headers.txt
             body.txt
 
@@ -267,10 +276,18 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Run Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        run: |
+          docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.24.2 \
+            git /repo --report-format sarif --report-path /repo/gitleaks.sarif --redact
         continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Gitleaks SARIF
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: sarif-gitleaks-${{ github.run_id }}-${{ github.run_attempt }}
+          path: gitleaks.sarif
+          if-no-files-found: warn
 
   # ---------------------------- SCA: Trivy (FS) ----------------------------
   trivy:
