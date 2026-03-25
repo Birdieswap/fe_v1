@@ -34,7 +34,7 @@
     "start": "next start",
     "lint": "next lint",
     "env:backup": "cp -f .env.local .env.local.backup || true",
-    "env:restore": "test -f .env.local.backup && cp -f .env.local.backup .env.local || cp -f .env.local.example .env.local",
+    "env:restore": "test -f .env.local.backup && cp -f .env.local.backup .env.local || (echo '.env.local.backup not found' && exit 1)",
     "rename:tokens": "zsh scripts/rename-tokens.zsh",
     "rename:tokens:dry": "zsh scripts/rename-tokens.zsh --dry",
     "postinstall": "npx update-browserslist-db@latest || true"
