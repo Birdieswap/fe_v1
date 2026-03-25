@@ -233,30 +233,31 @@ jobs:
 
       - name: Create CodeQL DB (no build)
         run: |
+          set -euo pipefail
           /opt/codeql/codeql database create codeql-db \
             --language=javascript \
-            --source-root=.
+            --source-root=. 2>&1 | tee codeql-db-create.log
 
       - name: Run CodeQL Analysis -> SARIF
         run: |
+          set -euo pipefail
           /opt/codeql/codeql database analyze codeql-db \
             javascript-code-scanning.qls \
             --format=sarifv2.1.0 \
-            --output=codeql.sarif || true
+            --output=codeql.sarif 2>&1 | tee codeql-analyze.log
 
-      - name: Ensure SARIF exists (even if empty)
-        run: |
-          if [ ! -s codeql.sarif ]; then
-            cat > codeql.sarif <<'JSON'
-            {
-              "version": "2.1.0",
-              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
-              "runs": []
-            }
-          JSON
-          fi
+      - name: Upload CodeQL diagnostics (always)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: codeql-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            codeql-db-create.log
+            codeql-analyze.log
+          if-no-files-found: warn
 
       - name: Upload CodeQL SARIF artifact (for aggregate job)
+        if: success()
         uses: actions/upload-artifact@v6
         with:
           name: sarif-codeql-${{ github.run_id }}-${{ github.run_attempt }}
@@ -418,17 +419,44 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - run: |
+      - name: Run hadolint or mark skipped
+        shell: bash
+        run: |
+          set -euo pipefail
           if [ -f ./Dockerfile ]; then
             HDL=v2.12.0
             sudo wget -qO /usr/local/bin/hadolint \
               "https://github.com/hadolint/hadolint/releases/download/${HDL}/hadolint-Linux-x86_64"
             sudo chmod +x /usr/local/bin/hadolint
-            /usr/local/bin/hadolint -f sarif ./Dockerfile > hadolint.sarif || true
+            set +e
+            /usr/local/bin/hadolint -f sarif ./Dockerfile > hadolint.sarif 2> hadolint.stderr
+            rc=$?
+            set -e
+            if [ "${rc}" -ne 0 ] && [ ! -s hadolint.sarif ]; then
+              printf '%s\n' "hadolint failed with exit code ${rc}; no SARIF output generated." > hadolint-error.txt
+              jq -n \
+                --arg msg "hadolint execution failed (exit ${rc}). See hadolint.stderr artifact." \
+                '{version:"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json",runs:[{tool:{driver:{name:"hadolint",informationUri:"https://github.com/hadolint/hadolint"}},invocations:[{executionSuccessful:false,toolExecutionNotifications:[{level:"error",message:{text:$msg}}]}],results:[{ruleId:"HADOLINT_EXECUTION_FAILED",level:"error",message:{text:$msg}}]}]}' > hadolint.sarif
+            fi
           else
-            # Dockerfile 없으면 빈 SARIF 만들어서 다음 단계들이 실패하지 않게 함
-            printf '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}\n' > hadolint.sarif
+            # Dockerfile이 없으면 skipped 상태를 SARIF에 명시
+            jq -n \
+              --arg msg "Skipped hadolint scan: no Dockerfile found at ./Dockerfile" \
+              '{version:"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json",runs:[{tool:{driver:{name:"hadolint",informationUri:"https://github.com/hadolint/hadolint"}},invocations:[{executionSuccessful:true,toolExecutionNotifications:[{level:"note",message:{text:$msg}}]}],results:[{ruleId:"HADOLINT_SKIPPED_NO_DOCKERFILE",level:"note",message:{text:$msg}}]}]}' > hadolint.sarif
+            printf '%s\n' "skipped(no Dockerfile): ./Dockerfile not found" > hadolint-skip.txt
           fi
+
+      - name: Upload hadolint diagnostics (always)
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: hadolint-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            hadolint.stderr
+            hadolint-error.txt
+            hadolint-skip.txt
+          if-no-files-found: warn
+
       - uses: actions/upload-artifact@v6
         with:
           name: sarif-hadolint-${{ github.run_id }}-${{ github.run_attempt }}
@@ -675,7 +703,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Download SARIF artifacts (sarif-*)
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: sarif-*-${{ github.run_id }}-${{ github.run_attempt }}
           path: sarif_in
@@ -683,14 +711,14 @@ jobs:
 
       - name: Download container scan artifacts
         if: needs.container_build_and_scan.outputs.will_build == 'true'
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           name: container-scans-${{ github.run_id }}-${{ github.run_attempt }}
           path: sarif_in
         continue-on-error: true
 
       - name: Download ZAP Baseline reports
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: zap_baseline_*_${{ github.run_id }}_${{ github.run_attempt }}
           path: zap_baseline
@@ -698,7 +726,7 @@ jobs:
         continue-on-error: true
 
       - name: Download ZAP Full reports
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v8
         with:
           pattern: zap_full_*_${{ github.run_id }}_${{ github.run_attempt }}
           path: zap_full
@@ -749,7 +777,7 @@ jobs:
       actions: read
       contents: read
     steps:
-      - uses: actions/download-artifact@v6
+      - uses: actions/download-artifact@v8
         with:
           name: security-merged-${{ github.run_id }}-${{ github.run_attempt }}
           path: out
