@@ -1,0 +1,14 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Allow known non-secret values used in app code and samples"
+paths = [
+  '''src/utils/wallet/consentLocal.ts''',
+]
+regexes = [
+  '''birdieswap_consent_proofs_v1''',
+  '''0xAD472D7a314Ef6fA8268f34BFE27e282047BE1F8''',
+  '''0x6cdA51ee2061fd000D6bD6e6e357d546b172B5DA''',
+  '''0x0f48a4Be8E0Cbd49E7144BB95906BEf75ad34c3c''',
+]

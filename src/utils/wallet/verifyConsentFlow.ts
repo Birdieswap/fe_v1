@@ -60,7 +60,7 @@ function extractMessageAndNonceRaw(
         Consent: Omit<NormalizedConsentMessage, "nonce"> & {
           nonce: string | number;
         };
-      }
+      },
 ): { messageNorm: NormalizedConsentMessage; nonceRaw: string | number } {
   if (typeof (wireMessage as any)?.Consent !== "undefined") {
     const inner = (wireMessage as any).Consent as Omit<
@@ -124,7 +124,7 @@ async function verifyTypedDataWithClient(params: {
 }
 
 export async function verifyConsentFlow(
-  params: VerifyConsentParams
+  params: VerifyConsentParams,
 ): Promise<VerifyConsentResult> {
   const {
     config,
@@ -182,7 +182,7 @@ export async function verifyConsentFlow(
     // 2) 모달 열고 initiate → sign → verify
     await new Promise((r) => setTimeout(r, 10));
     await new Promise((r) =>
-      requestAnimationFrame(() => requestAnimationFrame(r))
+      requestAnimationFrame(() => requestAnimationFrame(r)),
     );
 
     // ★ 추가: 모달 오픈 시점 로그
@@ -220,7 +220,7 @@ export async function verifyConsentFlow(
             if (DEBUG)
               console.debug(
                 "[consent] EIP712Payload (wire)",
-                JSON.stringify(wire)
+                JSON.stringify(wire),
               );
 
             const types = toRuntimeTypes((wire as any).types);
@@ -233,7 +233,7 @@ export async function verifyConsentFlow(
             };
 
             const { messageNorm, nonceRaw } = extractMessageAndNonceRaw(
-              (wire as any).message
+              (wire as any).message,
             );
 
             // ★ 추가: domain / types / messageNorm / nonceRaw 디버그 출력
@@ -297,7 +297,7 @@ export async function verifyConsentFlow(
               if (DEBUG)
                 console.error(
                   "[consent] verifyTypedData threw error",
-                  verifyErr
+                  verifyErr,
                 );
               throw verifyErr;
             }
@@ -372,7 +372,7 @@ export async function verifyConsentFlow(
             // (g) 로컬 proof 저장
             const policyHash = await computePolicyHash(
               (messageNorm as any).statement,
-              (messageNorm as any).version
+              (messageNorm as any).version,
             );
 
             // ★ 여기 추가: NormalizedEIP712Payload용 domain 별도 생성

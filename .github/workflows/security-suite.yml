@@ -245,6 +245,8 @@ jobs:
           /opt/codeql/codeql database analyze codeql-db \
             codeql/javascript-queries:codeql-suites/javascript-code-scanning.qls \
             --download \
+            --threads=1 \
+            --ram=6144 \
             --format=sarifv2.1.0 \
             --output=codeql.sarif 2>&1 | tee codeql-analyze.log
 
@@ -300,7 +302,7 @@ jobs:
       - name: Run Gitleaks
         run: |
           docker run --rm -v "$PWD:/repo" -w /repo zricethezav/gitleaks:v8.24.2 \
-            git /repo --report-format sarif --report-path /repo/gitleaks.sarif --redact --exit-code 0 || true
+            dir /repo --config /repo/.gitleaks.toml --report-format sarif --report-path /repo/gitleaks.sarif --redact --exit-code 0 || true
           if [ ! -s gitleaks.sarif ]; then
             echo '{"version":"2.1.0","$schema":"https://json.schemastore.org/sarif-2.1.0.json","runs":[]}' > gitleaks.sarif
           fi
@@ -734,6 +736,110 @@ jobs:
           path: zap_full
           merge-multiple: false
         continue-on-error: true
+
+      - name: Convert ZAP reports to SARIF (for combined.sarif)
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          def sev_from_riskcode(riskcode):
+            rc = str(riskcode or "")
+            if rc == "3":
+              return "error"
+            if rc == "2":
+              return "warning"
+            return "note"
+
+          def collect_json_files(root):
+            p = Path(root)
+            if not p.exists():
+              return []
+            return sorted(p.rglob("report_json.json"))
+
+          def to_sarif(doc, tool_name):
+            rules = {}
+            results = []
+            sites = doc.get("site", []) if isinstance(doc, dict) else []
+            for site in sites:
+              site_url = site.get("@name", "")
+              alerts = site.get("alerts", []) if isinstance(site, dict) else []
+              for alert in alerts:
+                rid = str(alert.get("pluginid") or alert.get("alertRef") or alert.get("alert") or "ZAP")
+                rname = str(alert.get("alert") or rid)
+                desc = str(alert.get("desc") or rname)
+                if rid not in rules:
+                  rules[rid] = {
+                    "id": rid,
+                    "name": rname,
+                    "shortDescription": {"text": rname},
+                    "fullDescription": {"text": desc},
+                  }
+                level = sev_from_riskcode(alert.get("riskcode"))
+                instances = alert.get("instances", []) if isinstance(alert, dict) else []
+                if not instances:
+                  results.append({
+                    "ruleId": rid,
+                    "level": level,
+                    "message": {"text": desc},
+                    "locations": [{
+                      "physicalLocation": {
+                        "artifactLocation": {"uri": site_url}
+                      }
+                    }]
+                  })
+                  continue
+                for inst in instances:
+                  uri = ""
+                  if isinstance(inst, dict):
+                    uri = str(inst.get("uri") or "")
+                  results.append({
+                    "ruleId": rid,
+                    "level": level,
+                    "message": {"text": desc},
+                    "locations": [{
+                      "physicalLocation": {
+                        "artifactLocation": {"uri": uri or site_url}
+                      }
+                    }]
+                  })
+            return {
+              "version": "2.1.0",
+              "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+              "runs": [{
+                "tool": {
+                  "driver": {
+                    "name": tool_name,
+                    "rules": list(rules.values())
+                  }
+                },
+                "results": results
+              }]
+            }
+
+          Path("sarif_in").mkdir(parents=True, exist_ok=True)
+
+          converted = 0
+          for root, prefix, tool_name in [
+            ("zap_baseline", "zap-baseline", "ZAP Baseline"),
+            ("zap_full", "zap-full", "ZAP Full"),
+          ]:
+            for src in collect_json_files(root):
+              try:
+                doc = json.loads(src.read_text(encoding="utf-8"))
+              except Exception as e:
+                print(f"[zap->sarif] skip parse error: {src}: {e}")
+                continue
+              rel = src.as_posix()
+              rel = re.sub(r"[^a-zA-Z0-9._-]+", "-", rel).strip("-")
+              out = Path("sarif_in") / f"{prefix}-{rel}.sarif"
+              out.write_text(json.dumps(to_sarif(doc, tool_name)), encoding="utf-8")
+              converted += 1
+              print(f"[zap->sarif] wrote {out}")
+
+          print(f"[zap->sarif] converted files: {converted}")
+          PY
 
       - name: Merge SARIFs
         run: |

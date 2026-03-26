@@ -180,6 +180,25 @@
               }
             },
             {
+              "id": "CVE-2026-33672",
+              "name": "CVE-2026-33672",
+              "shortDescription": {
+                "text": "CVE-2026-33672: Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching"
+              },
+              "fullDescription": {
+                "text": "### Impact\npicomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\nThis leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\nAll users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\n### Patches\n\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\nPossible mitigations include:\n- Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n- Avoiding the use of POSIX bracket expressions if user input is involved.\n- Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\n  ```js\n  const POSIX_REGEX_SOURCE = {\n    __proto__: null,\n    alnum: 'a-zA-Z0-9',\n    alpha: 'a-zA-Z',\n    // ... rest unchanged\n  };\n  \n### Resources\n\n- fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n- picomatch repository https://github.com/micromatch/picomatch",
+                "markdown": "### Impact\npicomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\nThis leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\nAll users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\n### Patches\n\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\n\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\nPossible mitigations include:\n- Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n- Avoiding the use of POSIX bracket expressions if user input is involved.\n- Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\n  ```js\n  const POSIX_REGEX_SOURCE = {\n    __proto__: null,\n    alnum: 'a-zA-Z0-9',\n    alpha: 'a-zA-Z',\n    // ... rest unchanged\n  };\n  \n### Resources\n\n- fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n- picomatch repository https://github.com/micromatch/picomatch"
+              },
+              "deprecatedIds": [
+                "CVE-2026-33672",
+                "GHSA-3v7f-55p6-f55p"
+              ],
+              "help": {
+                "text": "**Your dependency is vulnerable to [CVE-2026-33672](https://osv.dev/list?q=CVE-2026-33672)**.\n\n## [GHSA-3v7f-55p6-f55p](https://osv.dev/vulnerability/GHSA-3v7f-55p6-f55p)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ### Impact\n\u003e picomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\u003e \n\u003e This leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\u003e \n\u003e All users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\u003e \n\u003e ### Patches\n\u003e \n\u003e This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\u003e \n\u003e Users should upgrade to one of these versions or later, depending on their supported release line.\n\u003e \n\u003e ### Workarounds\n\u003e \n\u003e If upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\u003e \n\u003e Possible mitigations include:\n\u003e - Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n\u003e - Avoiding the use of POSIX bracket expressions if user input is involved.\n\u003e - Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\u003e \n\u003e   ```js\n\u003e   const POSIX_REGEX_SOURCE = {\n\u003e     __proto__: null,\n\u003e     alnum: 'a-zA-Z0-9',\n\u003e     alpha: 'a-zA-Z',\n\u003e     // ... rest unchanged\n\u003e   };\n\u003e   \n\u003e ### Resources\n\u003e \n\u003e - fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n\u003e - picomatch repository https://github.com/micromatch/picomatch\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 2.3.1 |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 4.0.3 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-3v7f-55p6-f55p | picomatch | 2.3.2, 3.0.2, 4.0.4 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33672\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
+                "markdown": "**Your dependency is vulnerable to [CVE-2026-33672](https://osv.dev/list?q=CVE-2026-33672)**.\n\n## [GHSA-3v7f-55p6-f55p](https://osv.dev/vulnerability/GHSA-3v7f-55p6-f55p)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ### Impact\n\u003e picomatch is vulnerable to a **method injection vulnerability (CWE-1321)** affecting the `POSIX_REGEX_SOURCE` object. Because the object inherits from `Object.prototype`, specially crafted POSIX bracket expressions (e.g., `[[:constructor:]]`) can reference inherited method names. These methods are implicitly converted to strings and injected into the generated regular expression.\n\u003e \n\u003e This leads to **incorrect glob matching behavior (integrity impact)**, where patterns may match unintended filenames. The issue does **not enable remote code execution**, but it can cause security-relevant logic errors in applications that rely on glob matching for filtering, validation, or access control.\n\u003e \n\u003e All users of affected `picomatch` versions that process untrusted or user-controlled glob patterns are potentially impacted.\n\u003e \n\u003e ### Patches\n\u003e \n\u003e This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\u003e \n\u003e Users should upgrade to one of these versions or later, depending on their supported release line.\n\u003e \n\u003e ### Workarounds\n\u003e \n\u003e If upgrading is not immediately possible, avoid passing untrusted glob patterns to picomatch.\n\u003e \n\u003e Possible mitigations include:\n\u003e - Sanitizing or rejecting untrusted glob patterns, especially those containing POSIX character classes like `[[:...:]]`.\n\u003e - Avoiding the use of POSIX bracket expressions if user input is involved.\n\u003e - Manually patching the library by modifying `POSIX_REGEX_SOURCE` to use a null prototype:\n\u003e \n\u003e   ```js\n\u003e   const POSIX_REGEX_SOURCE = {\n\u003e     __proto__: null,\n\u003e     alnum: 'a-zA-Z0-9',\n\u003e     alpha: 'a-zA-Z',\n\u003e     // ... rest unchanged\n\u003e   };\n\u003e   \n\u003e ### Resources\n\u003e \n\u003e - fix for similar issue: https://github.com/micromatch/picomatch/pull/144\n\u003e - picomatch repository https://github.com/micromatch/picomatch\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 2.3.1 |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 4.0.3 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-3v7f-55p6-f55p | picomatch | 2.3.2, 3.0.2, 4.0.4 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33672\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
+              }
+            },
+            {
               "id": "CVE-2026-22818",
               "name": "CVE-2026-22818",
               "shortDescription": {
@@ -234,6 +253,25 @@
               "help": {
                 "text": "**Your dependency is vulnerable to [CVE-2026-25639](https://osv.dev/list?q=CVE-2026-25639)**.\n\n## [GHSA-43fc-jf86-j433](https://osv.dev/vulnerability/GHSA-43fc-jf86-j433)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e # Denial of Service via **proto** Key in mergeConfig\n\u003e \n\u003e ### Summary\n\u003e \n\u003e The `mergeConfig` function in axios crashes with a TypeError when processing configuration objects containing `__proto__` as an own property. An attacker can trigger this by providing a malicious configuration object created via `JSON.parse()`, causing complete denial of service.\n\u003e \n\u003e ### Details\n\u003e \n\u003e The vulnerability exists in `lib/core/mergeConfig.js` at lines 98-101:\n\u003e \n\u003e ```javascript\n\u003e utils.forEach(Object.keys({ ...config1, ...config2 }), function computeConfigValue(prop) {\n\u003e   const merge = mergeMap[prop] || mergeDeepProperties;\n\u003e   const configValue = merge(config1[prop], config2[prop], prop);\n\u003e   (utils.isUndefined(configValue) \u0026\u0026 merge !== mergeDirectKeys) || (config[prop] = configValue);\n\u003e });\n\u003e ```\n\u003e \n\u003e When `prop` is `'__proto__'`:\n\u003e \n\u003e 1. `JSON.parse('{\"__proto__\": {...}}')` creates an object with `__proto__` as an own enumerable property\n\u003e 2. `Object.keys()` includes `'__proto__'` in the iteration\n\u003e 3. `mergeMap['__proto__']` performs prototype chain lookup, returning `Object.prototype` (truthy object)\n\u003e 4. The expression `mergeMap[prop] || mergeDeepProperties` evaluates to `Object.prototype`\n\u003e 5. `Object.prototype(...)` throws `TypeError: merge is not a function`\n\u003e \n\u003e The `mergeConfig` function is called by:\n\u003e \n\u003e - `Axios._request()` at `lib/core/Axios.js:75`\n\u003e - `Axios.getUri()` at `lib/core/Axios.js:201`\n\u003e - All HTTP method shortcuts (`get`, `post`, etc.) at `lib/core/Axios.js:211,224`\n\u003e \n\u003e ### PoC\n\u003e \n\u003e ```javascript\n\u003e import axios from \"axios\";\n\u003e \n\u003e const maliciousConfig = JSON.parse('{\"__proto__\": {\"x\": 1}}');\n\u003e await axios.get(\"https://httpbin.org/get\", maliciousConfig);\n\u003e ```\n\u003e \n\u003e **Reproduction steps:**\n\u003e \n\u003e 1. Clone axios repository or `npm install axios`\n\u003e 2. Create file `poc.mjs` with the code above\n\u003e 3. Run: `node poc.mjs`\n\u003e 4. Observe the TypeError crash\n\u003e \n\u003e **Verified output (axios 1.13.4):**\n\u003e \n\u003e ```\n\u003e TypeError: merge is not a function\n\u003e     at computeConfigValue (lib/core/mergeConfig.js:100:25)\n\u003e     at Object.forEach (lib/utils.js:280:10)\n\u003e     at mergeConfig (lib/core/mergeConfig.js:98:9)\n\u003e ```\n\u003e \n\u003e **Control tests performed:**\n\u003e | Test | Config | Result |\n\u003e |------|--------|--------|\n\u003e | Normal config | `{\"timeout\": 5000}` | SUCCESS |\n\u003e | Malicious config | `JSON.parse('{\"__proto__\": {\"x\": 1}}')` | **CRASH** |\n\u003e | Nested object | `{\"headers\": {\"X-Test\": \"value\"}}` | SUCCESS |\n\u003e \n\u003e **Attack scenario:**\n\u003e An application that accepts user input, parses it with `JSON.parse()`, and passes it to axios configuration will crash when receiving the payload `{\"__proto__\": {\"x\": 1}}`.\n\u003e \n\u003e ### Impact\n\u003e \n\u003e **Denial of Service** - Any application using axios that processes user-controlled JSON and passes it to axios configuration methods is vulnerable. The application will crash when processing the malicious payload.\n\u003e \n\u003e Affected environments:\n\u003e \n\u003e - Node.js servers using axios for HTTP requests\n\u003e - Any backend that passes parsed JSON to axios configuration\n\u003e \n\u003e This is NOT prototype pollution - the application crashes before any assignment occurs.\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | axios | 1.13.2 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-43fc-jf86-j433 | axios | 0.30.3, 1.13.5 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-25639\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
                 "markdown": "**Your dependency is vulnerable to [CVE-2026-25639](https://osv.dev/list?q=CVE-2026-25639)**.\n\n## [GHSA-43fc-jf86-j433](https://osv.dev/vulnerability/GHSA-43fc-jf86-j433)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e # Denial of Service via **proto** Key in mergeConfig\n\u003e \n\u003e ### Summary\n\u003e \n\u003e The `mergeConfig` function in axios crashes with a TypeError when processing configuration objects containing `__proto__` as an own property. An attacker can trigger this by providing a malicious configuration object created via `JSON.parse()`, causing complete denial of service.\n\u003e \n\u003e ### Details\n\u003e \n\u003e The vulnerability exists in `lib/core/mergeConfig.js` at lines 98-101:\n\u003e \n\u003e ```javascript\n\u003e utils.forEach(Object.keys({ ...config1, ...config2 }), function computeConfigValue(prop) {\n\u003e   const merge = mergeMap[prop] || mergeDeepProperties;\n\u003e   const configValue = merge(config1[prop], config2[prop], prop);\n\u003e   (utils.isUndefined(configValue) \u0026\u0026 merge !== mergeDirectKeys) || (config[prop] = configValue);\n\u003e });\n\u003e ```\n\u003e \n\u003e When `prop` is `'__proto__'`:\n\u003e \n\u003e 1. `JSON.parse('{\"__proto__\": {...}}')` creates an object with `__proto__` as an own enumerable property\n\u003e 2. `Object.keys()` includes `'__proto__'` in the iteration\n\u003e 3. `mergeMap['__proto__']` performs prototype chain lookup, returning `Object.prototype` (truthy object)\n\u003e 4. The expression `mergeMap[prop] || mergeDeepProperties` evaluates to `Object.prototype`\n\u003e 5. `Object.prototype(...)` throws `TypeError: merge is not a function`\n\u003e \n\u003e The `mergeConfig` function is called by:\n\u003e \n\u003e - `Axios._request()` at `lib/core/Axios.js:75`\n\u003e - `Axios.getUri()` at `lib/core/Axios.js:201`\n\u003e - All HTTP method shortcuts (`get`, `post`, etc.) at `lib/core/Axios.js:211,224`\n\u003e \n\u003e ### PoC\n\u003e \n\u003e ```javascript\n\u003e import axios from \"axios\";\n\u003e \n\u003e const maliciousConfig = JSON.parse('{\"__proto__\": {\"x\": 1}}');\n\u003e await axios.get(\"https://httpbin.org/get\", maliciousConfig);\n\u003e ```\n\u003e \n\u003e **Reproduction steps:**\n\u003e \n\u003e 1. Clone axios repository or `npm install axios`\n\u003e 2. Create file `poc.mjs` with the code above\n\u003e 3. Run: `node poc.mjs`\n\u003e 4. Observe the TypeError crash\n\u003e \n\u003e **Verified output (axios 1.13.4):**\n\u003e \n\u003e ```\n\u003e TypeError: merge is not a function\n\u003e     at computeConfigValue (lib/core/mergeConfig.js:100:25)\n\u003e     at Object.forEach (lib/utils.js:280:10)\n\u003e     at mergeConfig (lib/core/mergeConfig.js:98:9)\n\u003e ```\n\u003e \n\u003e **Control tests performed:**\n\u003e | Test | Config | Result |\n\u003e |------|--------|--------|\n\u003e | Normal config | `{\"timeout\": 5000}` | SUCCESS |\n\u003e | Malicious config | `JSON.parse('{\"__proto__\": {\"x\": 1}}')` | **CRASH** |\n\u003e | Nested object | `{\"headers\": {\"X-Test\": \"value\"}}` | SUCCESS |\n\u003e \n\u003e **Attack scenario:**\n\u003e An application that accepts user input, parses it with `JSON.parse()`, and passes it to axios configuration will crash when receiving the payload `{\"__proto__\": {\"x\": 1}}`.\n\u003e \n\u003e ### Impact\n\u003e \n\u003e **Denial of Service** - Any application using axios that processes user-controlled JSON and passes it to axios configuration methods is vulnerable. The application will crash when processing the malicious payload.\n\u003e \n\u003e Affected environments:\n\u003e \n\u003e - Node.js servers using axios for HTTP requests\n\u003e - Any backend that passes parsed JSON to axios configuration\n\u003e \n\u003e This is NOT prototype pollution - the application crashes before any assignment occurs.\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | axios | 1.13.2 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-43fc-jf86-j433 | axios | 0.30.3, 1.13.5 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-25639\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
+              }
+            },
+            {
+              "id": "CVE-2026-33532",
+              "name": "CVE-2026-33532",
+              "shortDescription": {
+                "text": "CVE-2026-33532: yaml is vulnerable to Stack Overflow via deeply nested YAML collections"
+              },
+              "fullDescription": {
+                "text": "Parsing a YAML document with `yaml` may throw a RangeError due to a stack overflow.\n\nThe node resolution/composition phase uses recursive function calls without a depth bound. An attacker who can supply YAML for parsing can trigger a `RangeError: Maximum call stack size exceeded` with a small payload (~2–10 KB). The `RangeError` is not a `YAMLParseError`, so applications that only catch YAML-specific errors will encounter an unexpected exception type. Depending on the host application's exception handling, this can fail requests or terminate the Node.js process.\n\nFlow sequences allow deep nesting with minimal bytes (2 bytes per level: one `[` and one `]`). On the default Node.js stack, approximately 1,000–5,000 levels of nesting (2–10 KB input) exhaust the call stack. The exact threshold is environment-dependent (Node.js version, stack size, call stack depth at invocation).\n\nNote: the library's `Parser` (CST phase) uses a stack-based iterative approach and is not affected. Only the compose/resolve phase uses actual call-stack recursion.\n\nAll three public parsing APIs are affected: `YAML.parse()`, `YAML.parseDocument()`, and `YAML.parseAllDocuments()`.\n\n### PoC\n\n```javascript\nconst YAML = require('yaml');\n\n// ~10 KB payload: 5000 levels of nested flow sequences\nconst payload = '['.repeat(5000) + '1' + ']'.repeat(5000);\n\ntry {\n  YAML.parse(payload);\n} catch (e) {\n  console.log(e.constructor.name); // RangeError (NOT YAMLParseError)\n  console.log(e.message);          // Maximum call stack size exceeded\n}\n```\n\nTest environment: Node.js v24.12.0, macOS darwin arm64\n\n| Version | Nesting Depth | Input Size | Result |\n|---|---|---|---|\n| 1.0.0 | 5,000 | 10,001 B | RangeError |\n| 1.10.2 | 5,000 | 10,001 B | RangeError |\n| 2.0.0 | 5,000 | 10,001 B | RangeError |\n| 2.8.2 | 5,000 | 10,001 B | RangeError |\n| 2.8.3 | 5,000 | 10,001 B | YAMLParseError |\n\nDepth threshold on yaml 2.8.2:\n\n| Nesting Depth | Input Size | Result |\n|---|---|---|\n| 500 | 1,001 B | Parses successfully |\n| 1,000 | 2,001 B | RangeError (threshold varies by stack size) |\n| 5,000 | 10,001 B | RangeError |",
+                "markdown": "Parsing a YAML document with `yaml` may throw a RangeError due to a stack overflow.\n\nThe node resolution/composition phase uses recursive function calls without a depth bound. An attacker who can supply YAML for parsing can trigger a `RangeError: Maximum call stack size exceeded` with a small payload (~2–10 KB). The `RangeError` is not a `YAMLParseError`, so applications that only catch YAML-specific errors will encounter an unexpected exception type. Depending on the host application's exception handling, this can fail requests or terminate the Node.js process.\n\nFlow sequences allow deep nesting with minimal bytes (2 bytes per level: one `[` and one `]`). On the default Node.js stack, approximately 1,000–5,000 levels of nesting (2–10 KB input) exhaust the call stack. The exact threshold is environment-dependent (Node.js version, stack size, call stack depth at invocation).\n\nNote: the library's `Parser` (CST phase) uses a stack-based iterative approach and is not affected. Only the compose/resolve phase uses actual call-stack recursion.\n\nAll three public parsing APIs are affected: `YAML.parse()`, `YAML.parseDocument()`, and `YAML.parseAllDocuments()`.\n\n### PoC\n\n```javascript\nconst YAML = require('yaml');\n\n// ~10 KB payload: 5000 levels of nested flow sequences\nconst payload = '['.repeat(5000) + '1' + ']'.repeat(5000);\n\ntry {\n  YAML.parse(payload);\n} catch (e) {\n  console.log(e.constructor.name); // RangeError (NOT YAMLParseError)\n  console.log(e.message);          // Maximum call stack size exceeded\n}\n```\n\nTest environment: Node.js v24.12.0, macOS darwin arm64\n\n| Version | Nesting Depth | Input Size | Result |\n|---|---|---|---|\n| 1.0.0 | 5,000 | 10,001 B | RangeError |\n| 1.10.2 | 5,000 | 10,001 B | RangeError |\n| 2.0.0 | 5,000 | 10,001 B | RangeError |\n| 2.8.2 | 5,000 | 10,001 B | RangeError |\n| 2.8.3 | 5,000 | 10,001 B | YAMLParseError |\n\nDepth threshold on yaml 2.8.2:\n\n| Nesting Depth | Input Size | Result |\n|---|---|---|\n| 500 | 1,001 B | Parses successfully |\n| 1,000 | 2,001 B | RangeError (threshold varies by stack size) |\n| 5,000 | 10,001 B | RangeError |"
+              },
+              "deprecatedIds": [
+                "CVE-2026-33532",
+                "GHSA-48c2-rrv3-qjmp"
+              ],
+              "help": {
+                "text": "**Your dependency is vulnerable to [CVE-2026-33532](https://osv.dev/list?q=CVE-2026-33532)**.\n\n## [GHSA-48c2-rrv3-qjmp](https://osv.dev/vulnerability/GHSA-48c2-rrv3-qjmp)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e Parsing a YAML document with `yaml` may throw a RangeError due to a stack overflow.\n\u003e \n\u003e The node resolution/composition phase uses recursive function calls without a depth bound. An attacker who can supply YAML for parsing can trigger a `RangeError: Maximum call stack size exceeded` with a small payload (~2–10 KB). The `RangeError` is not a `YAMLParseError`, so applications that only catch YAML-specific errors will encounter an unexpected exception type. Depending on the host application's exception handling, this can fail requests or terminate the Node.js process.\n\u003e \n\u003e Flow sequences allow deep nesting with minimal bytes (2 bytes per level: one `[` and one `]`). On the default Node.js stack, approximately 1,000–5,000 levels of nesting (2–10 KB input) exhaust the call stack. The exact threshold is environment-dependent (Node.js version, stack size, call stack depth at invocation).\n\u003e \n\u003e Note: the library's `Parser` (CST phase) uses a stack-based iterative approach and is not affected. Only the compose/resolve phase uses actual call-stack recursion.\n\u003e \n\u003e All three public parsing APIs are affected: `YAML.parse()`, `YAML.parseDocument()`, and `YAML.parseAllDocuments()`.\n\u003e \n\u003e ### PoC\n\u003e \n\u003e ```javascript\n\u003e const YAML = require('yaml');\n\u003e \n\u003e // ~10 KB payload: 5000 levels of nested flow sequences\n\u003e const payload = '['.repeat(5000) + '1' + ']'.repeat(5000);\n\u003e \n\u003e try {\n\u003e   YAML.parse(payload);\n\u003e } catch (e) {\n\u003e   console.log(e.constructor.name); // RangeError (NOT YAMLParseError)\n\u003e   console.log(e.message);          // Maximum call stack size exceeded\n\u003e }\n\u003e ```\n\u003e \n\u003e Test environment: Node.js v24.12.0, macOS darwin arm64\n\u003e \n\u003e | Version | Nesting Depth | Input Size | Result |\n\u003e |---|---|---|---|\n\u003e | 1.0.0 | 5,000 | 10,001 B | RangeError |\n\u003e | 1.10.2 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.0.0 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.8.2 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.8.3 | 5,000 | 10,001 B | YAMLParseError |\n\u003e \n\u003e Depth threshold on yaml 2.8.2:\n\u003e \n\u003e | Nesting Depth | Input Size | Result |\n\u003e |---|---|---|\n\u003e | 500 | 1,001 B | Parses successfully |\n\u003e | 1,000 | 2,001 B | RangeError (threshold varies by stack size) |\n\u003e | 5,000 | 10,001 B | RangeError |\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | yaml | 2.8.2 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-48c2-rrv3-qjmp | yaml | 1.10.3, 2.8.3 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33532\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
+                "markdown": "**Your dependency is vulnerable to [CVE-2026-33532](https://osv.dev/list?q=CVE-2026-33532)**.\n\n## [GHSA-48c2-rrv3-qjmp](https://osv.dev/vulnerability/GHSA-48c2-rrv3-qjmp)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e Parsing a YAML document with `yaml` may throw a RangeError due to a stack overflow.\n\u003e \n\u003e The node resolution/composition phase uses recursive function calls without a depth bound. An attacker who can supply YAML for parsing can trigger a `RangeError: Maximum call stack size exceeded` with a small payload (~2–10 KB). The `RangeError` is not a `YAMLParseError`, so applications that only catch YAML-specific errors will encounter an unexpected exception type. Depending on the host application's exception handling, this can fail requests or terminate the Node.js process.\n\u003e \n\u003e Flow sequences allow deep nesting with minimal bytes (2 bytes per level: one `[` and one `]`). On the default Node.js stack, approximately 1,000–5,000 levels of nesting (2–10 KB input) exhaust the call stack. The exact threshold is environment-dependent (Node.js version, stack size, call stack depth at invocation).\n\u003e \n\u003e Note: the library's `Parser` (CST phase) uses a stack-based iterative approach and is not affected. Only the compose/resolve phase uses actual call-stack recursion.\n\u003e \n\u003e All three public parsing APIs are affected: `YAML.parse()`, `YAML.parseDocument()`, and `YAML.parseAllDocuments()`.\n\u003e \n\u003e ### PoC\n\u003e \n\u003e ```javascript\n\u003e const YAML = require('yaml');\n\u003e \n\u003e // ~10 KB payload: 5000 levels of nested flow sequences\n\u003e const payload = '['.repeat(5000) + '1' + ']'.repeat(5000);\n\u003e \n\u003e try {\n\u003e   YAML.parse(payload);\n\u003e } catch (e) {\n\u003e   console.log(e.constructor.name); // RangeError (NOT YAMLParseError)\n\u003e   console.log(e.message);          // Maximum call stack size exceeded\n\u003e }\n\u003e ```\n\u003e \n\u003e Test environment: Node.js v24.12.0, macOS darwin arm64\n\u003e \n\u003e | Version | Nesting Depth | Input Size | Result |\n\u003e |---|---|---|---|\n\u003e | 1.0.0 | 5,000 | 10,001 B | RangeError |\n\u003e | 1.10.2 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.0.0 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.8.2 | 5,000 | 10,001 B | RangeError |\n\u003e | 2.8.3 | 5,000 | 10,001 B | YAMLParseError |\n\u003e \n\u003e Depth threshold on yaml 2.8.2:\n\u003e \n\u003e | Nesting Depth | Input Size | Result |\n\u003e |---|---|---|\n\u003e | 500 | 1,001 B | Parses successfully |\n\u003e | 1,000 | 2,001 B | RangeError (threshold varies by stack size) |\n\u003e | 5,000 | 10,001 B | RangeError |\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | yaml | 2.8.2 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-48c2-rrv3-qjmp | yaml | 1.10.3, 2.8.3 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33532\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
               }
             },
             {
@@ -516,6 +554,25 @@
               "help": {
                 "text": "**Your dependency is vulnerable to [CVE-2026-24771](https://osv.dev/list?q=CVE-2026-24771)**.\n\n## [GHSA-9r54-q6cx-xmh5](https://osv.dev/vulnerability/GHSA-9r54-q6cx-xmh5)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ## Summary\n\u003e \n\u003e A Cross-Site Scripting (XSS) vulnerability exists in the `ErrorBoundary` component of the hono/jsx library. Under certain usage patterns, untrusted user-controlled strings may be rendered as raw HTML, allowing arbitrary script execution in the victim's browser.\n\u003e \n\u003e ## Details\n\u003e \n\u003e The issue is in the `ErrorBoundary` component (`src/jsx/components.ts`). `ErrorBoundary` previously forced certain rendered output paths to be treated as raw HTML, bypassing the library's default escaping behavior. This could result in unescaped rendering when developers pass user-controlled strings directly as children, or when fallbackRender returns user-controlled strings (for example, reflecting error messages that contain attacker input).\n\u003e \n\u003e This vulnerability is only exploitable when an application renders untrusted user input within `ErrorBoundary` without appropriate escaping or sanitization.\n\u003e \n\u003e ## Impact\n\u003e \n\u003e Successful exploitation may allow attackers to execute arbitrary JavaScript in the victim’s browser (reflected XSS). Depending on the application context, this can lead to actions such as session compromise, data exfiltration, or performing unauthorized actions as the victim.\n\u003e \n\u003e ## Affected Components\n\u003e \n\u003e * hono/jsx: `ErrorBoundary` component\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | hono | 4.10.8 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-9r54-q6cx-xmh5 | hono | 4.11.7 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-24771\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
                 "markdown": "**Your dependency is vulnerable to [CVE-2026-24771](https://osv.dev/list?q=CVE-2026-24771)**.\n\n## [GHSA-9r54-q6cx-xmh5](https://osv.dev/vulnerability/GHSA-9r54-q6cx-xmh5)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ## Summary\n\u003e \n\u003e A Cross-Site Scripting (XSS) vulnerability exists in the `ErrorBoundary` component of the hono/jsx library. Under certain usage patterns, untrusted user-controlled strings may be rendered as raw HTML, allowing arbitrary script execution in the victim's browser.\n\u003e \n\u003e ## Details\n\u003e \n\u003e The issue is in the `ErrorBoundary` component (`src/jsx/components.ts`). `ErrorBoundary` previously forced certain rendered output paths to be treated as raw HTML, bypassing the library's default escaping behavior. This could result in unescaped rendering when developers pass user-controlled strings directly as children, or when fallbackRender returns user-controlled strings (for example, reflecting error messages that contain attacker input).\n\u003e \n\u003e This vulnerability is only exploitable when an application renders untrusted user input within `ErrorBoundary` without appropriate escaping or sanitization.\n\u003e \n\u003e ## Impact\n\u003e \n\u003e Successful exploitation may allow attackers to execute arbitrary JavaScript in the victim’s browser (reflected XSS). Depending on the application context, this can lead to actions such as session compromise, data exfiltration, or performing unauthorized actions as the victim.\n\u003e \n\u003e ## Affected Components\n\u003e \n\u003e * hono/jsx: `ErrorBoundary` component\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | hono | 4.10.8 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-9r54-q6cx-xmh5 | hono | 4.11.7 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-24771\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
+              }
+            },
+            {
+              "id": "CVE-2026-33671",
+              "name": "CVE-2026-33671",
+              "shortDescription": {
+                "text": "CVE-2026-33671: Picomatch has a ReDoS vulnerability via extglob quantifiers"
+              },
+              "fullDescription": {
+                "text": "### Impact\n`picomatch` is vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input.\n\nExamples of problematic patterns include `+(a|aa)`, `+(*|?)`, `+(+(a))`, `*(+(a))`, and `+(+(+(a)))`. In local reproduction, these patterns caused multi-second event-loop blocking with relatively short inputs. For example, `+(a|aa)` compiled to `^(?:(?=.)(?:a|aa)+)$` and took about 2 seconds to reject a 41-character non-matching input, while nested patterns such as `+(+(a))` and `*(+(a))` took around 29 seconds to reject a 33-character input on a modern M1 MacBook.\n\nApplications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way.\n\n### Patches\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`.\n\nPossible mitigations include:\n- disable extglob support for untrusted patterns by using `noextglob: true`\n- reject or sanitize patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`\n- enforce strict allowlists for accepted pattern syntax\n- run matching in an isolated worker or separate process with time and resource limits\n- apply application-level request throttling and input validation for any endpoint that accepts glob patterns\n\n### Resources\n- Picomatch repository: https://github.com/micromatch/picomatch\n- `lib/parse.js` and `lib/constants.js` are involved in generating the vulnerable regex forms\n- Comparable ReDoS precedent: CVE-2024-4067 (`micromatch`)\n- Comparable generated-regex precedent: CVE-2024-45296 (`path-to-regexp`)",
+                "markdown": "### Impact\n`picomatch` is vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input.\n\nExamples of problematic patterns include `+(a|aa)`, `+(*|?)`, `+(+(a))`, `*(+(a))`, and `+(+(+(a)))`. In local reproduction, these patterns caused multi-second event-loop blocking with relatively short inputs. For example, `+(a|aa)` compiled to `^(?:(?=.)(?:a|aa)+)$` and took about 2 seconds to reject a 41-character non-matching input, while nested patterns such as `+(+(a))` and `*(+(a))` took around 29 seconds to reject a 33-character input on a modern M1 MacBook.\n\nApplications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way.\n\n### Patches\nThis issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\nUsers should upgrade to one of these versions or later, depending on their supported release line.\n\n### Workarounds\nIf upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`.\n\nPossible mitigations include:\n- disable extglob support for untrusted patterns by using `noextglob: true`\n- reject or sanitize patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`\n- enforce strict allowlists for accepted pattern syntax\n- run matching in an isolated worker or separate process with time and resource limits\n- apply application-level request throttling and input validation for any endpoint that accepts glob patterns\n\n### Resources\n- Picomatch repository: https://github.com/micromatch/picomatch\n- `lib/parse.js` and `lib/constants.js` are involved in generating the vulnerable regex forms\n- Comparable ReDoS precedent: CVE-2024-4067 (`micromatch`)\n- Comparable generated-regex precedent: CVE-2024-45296 (`path-to-regexp`)"
+              },
+              "deprecatedIds": [
+                "CVE-2026-33671",
+                "GHSA-c2c7-rcm5-vvqj"
+              ],
+              "help": {
+                "text": "**Your dependency is vulnerable to [CVE-2026-33671](https://osv.dev/list?q=CVE-2026-33671)**.\n\n## [GHSA-c2c7-rcm5-vvqj](https://osv.dev/vulnerability/GHSA-c2c7-rcm5-vvqj)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ### Impact\n\u003e `picomatch` is vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input.\n\u003e \n\u003e Examples of problematic patterns include `+(a|aa)`, `+(*|?)`, `+(+(a))`, `*(+(a))`, and `+(+(+(a)))`. In local reproduction, these patterns caused multi-second event-loop blocking with relatively short inputs. For example, `+(a|aa)` compiled to `^(?:(?=.)(?:a|aa)+)$` and took about 2 seconds to reject a 41-character non-matching input, while nested patterns such as `+(+(a))` and `*(+(a))` took around 29 seconds to reject a 33-character input on a modern M1 MacBook.\n\u003e \n\u003e Applications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way.\n\u003e \n\u003e ### Patches\n\u003e This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\u003e \n\u003e Users should upgrade to one of these versions or later, depending on their supported release line.\n\u003e \n\u003e ### Workarounds\n\u003e If upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`.\n\u003e \n\u003e Possible mitigations include:\n\u003e - disable extglob support for untrusted patterns by using `noextglob: true`\n\u003e - reject or sanitize patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`\n\u003e - enforce strict allowlists for accepted pattern syntax\n\u003e - run matching in an isolated worker or separate process with time and resource limits\n\u003e - apply application-level request throttling and input validation for any endpoint that accepts glob patterns\n\u003e \n\u003e ### Resources\n\u003e - Picomatch repository: https://github.com/micromatch/picomatch\n\u003e - `lib/parse.js` and `lib/constants.js` are involved in generating the vulnerable regex forms\n\u003e - Comparable ReDoS precedent: CVE-2024-4067 (`micromatch`)\n\u003e - Comparable generated-regex precedent: CVE-2024-45296 (`path-to-regexp`)\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 2.3.1 |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 4.0.3 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-c2c7-rcm5-vvqj | picomatch | 2.3.2, 3.0.2, 4.0.4 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33671\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
+                "markdown": "**Your dependency is vulnerable to [CVE-2026-33671](https://osv.dev/list?q=CVE-2026-33671)**.\n\n## [GHSA-c2c7-rcm5-vvqj](https://osv.dev/vulnerability/GHSA-c2c7-rcm5-vvqj)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e ### Impact\n\u003e `picomatch` is vulnerable to Regular Expression Denial of Service (ReDoS) when processing crafted extglob patterns. Certain patterns using extglob quantifiers such as `+()` and `*()`, especially when combined with overlapping alternatives or nested extglobs, are compiled into regular expressions that can exhibit catastrophic backtracking on non-matching input.\n\u003e \n\u003e Examples of problematic patterns include `+(a|aa)`, `+(*|?)`, `+(+(a))`, `*(+(a))`, and `+(+(+(a)))`. In local reproduction, these patterns caused multi-second event-loop blocking with relatively short inputs. For example, `+(a|aa)` compiled to `^(?:(?=.)(?:a|aa)+)$` and took about 2 seconds to reject a 41-character non-matching input, while nested patterns such as `+(+(a))` and `*(+(a))` took around 29 seconds to reject a 33-character input on a modern M1 MacBook.\n\u003e \n\u003e Applications are impacted when they allow untrusted users to supply glob patterns that are passed to `picomatch` for compilation or matching. In those cases, an attacker can cause excessive CPU consumption and block the Node.js event loop, resulting in a denial of service. Applications that only use trusted, developer-controlled glob patterns are much less likely to be exposed in a security-relevant way.\n\u003e \n\u003e ### Patches\n\u003e This issue is fixed in picomatch 4.0.4, 3.0.2 and 2.3.2.\n\u003e \n\u003e Users should upgrade to one of these versions or later, depending on their supported release line.\n\u003e \n\u003e ### Workarounds\n\u003e If upgrading is not immediately possible, avoid passing untrusted glob patterns to `picomatch`.\n\u003e \n\u003e Possible mitigations include:\n\u003e - disable extglob support for untrusted patterns by using `noextglob: true`\n\u003e - reject or sanitize patterns containing nested extglobs or extglob quantifiers such as `+()` and `*()`\n\u003e - enforce strict allowlists for accepted pattern syntax\n\u003e - run matching in an isolated worker or separate process with time and resource limits\n\u003e - apply application-level request throttling and input validation for any endpoint that accepts glob patterns\n\u003e \n\u003e ### Resources\n\u003e - Picomatch repository: https://github.com/micromatch/picomatch\n\u003e - `lib/parse.js` and `lib/constants.js` are involved in generating the vulnerable regex forms\n\u003e - Comparable ReDoS precedent: CVE-2024-4067 (`micromatch`)\n\u003e - Comparable generated-regex precedent: CVE-2024-45296 (`path-to-regexp`)\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 2.3.1 |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | picomatch | 4.0.3 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-c2c7-rcm5-vvqj | picomatch | 2.3.2, 3.0.2, 4.0.4 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2026-33671\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
               }
             },
             {
@@ -1144,8 +1201,42 @@
           ]
         },
         {
-          "ruleId": "CVE-2026-22818",
+          "ruleId": "CVE-2026-33672",
           "ruleIndex": 9,
+          "level": "warning",
+          "message": {
+            "text": "Package 'picomatch@2.3.1' is vulnerable to 'CVE-2026-33672' (also known as 'GHSA-3v7f-55p6-f55p')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33672",
+          "ruleIndex": 9,
+          "level": "warning",
+          "message": {
+            "text": "Package 'picomatch@4.0.3' is vulnerable to 'CVE-2026-33672' (also known as 'GHSA-3v7f-55p6-f55p')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-22818",
+          "ruleIndex": 10,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-22818' (also known as 'GHSA-3vhc-576x-3qv4')."
@@ -1162,7 +1253,7 @@
         },
         {
           "ruleId": "CVE-2026-27980",
-          "ruleIndex": 10,
+          "ruleIndex": 11,
           "level": "warning",
           "message": {
             "text": "Package 'next@15.5.9' is vulnerable to 'CVE-2026-27980' (also known as 'GHSA-3x4c-7xq6-9pq8')."
@@ -1179,7 +1270,7 @@
         },
         {
           "ruleId": "CVE-2026-25639",
-          "ruleIndex": 11,
+          "ruleIndex": 12,
           "level": "warning",
           "message": {
             "text": "Package 'axios@1.13.2' is vulnerable to 'CVE-2026-25639' (also known as 'GHSA-43fc-jf86-j433')."
@@ -1195,8 +1286,25 @@
           ]
         },
         {
+          "ruleId": "CVE-2026-33532",
+          "ruleIndex": 13,
+          "level": "warning",
+          "message": {
+            "text": "Package 'yaml@2.8.2' is vulnerable to 'CVE-2026-33532' (also known as 'GHSA-48c2-rrv3-qjmp')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
           "ruleId": "CVE-2026-1527",
-          "ruleIndex": 12,
+          "ruleIndex": 14,
           "level": "warning",
           "message": {
             "text": "Package 'undici@5.29.0' is vulnerable to 'CVE-2026-1527' (also known as 'GHSA-4992-7rv2-5pvq')."
@@ -1213,7 +1321,7 @@
         },
         {
           "ruleId": "GHSA-4hxc-9384-m385",
-          "ruleIndex": 13,
+          "ruleIndex": 15,
           "level": "warning",
           "message": {
             "text": "Package 'h3@1.15.4' is vulnerable to 'GHSA-4hxc-9384-m385'."
@@ -1230,7 +1338,7 @@
         },
         {
           "ruleId": "CVE-2025-54798",
-          "ruleIndex": 14,
+          "ruleIndex": 16,
           "level": "warning",
           "message": {
             "text": "Package 'tmp@0.0.33' is vulnerable to 'CVE-2025-54798' (also known as 'GHSA-52f5-9888-hmc6')."
@@ -1247,7 +1355,7 @@
         },
         {
           "ruleId": "GHSA-5c6j-r48x-rmvq",
-          "ruleIndex": 15,
+          "ruleIndex": 17,
           "level": "warning",
           "message": {
             "text": "Package 'serialize-javascript@6.0.2' is vulnerable to 'GHSA-5c6j-r48x-rmvq'."
@@ -1264,7 +1372,7 @@
         },
         {
           "ruleId": "CVE-2025-59472",
-          "ruleIndex": 16,
+          "ruleIndex": 18,
           "level": "warning",
           "message": {
             "text": "Package 'next@15.5.9' is vulnerable to 'CVE-2025-59472' (also known as 'GHSA-5f7q-jpqc-wp7h')."
@@ -1281,7 +1389,7 @@
         },
         {
           "ruleId": "CVE-2026-29086",
-          "ruleIndex": 17,
+          "ruleIndex": 19,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-29086' (also known as 'GHSA-5pq2-9x2x-5p6w')."
@@ -1298,7 +1406,7 @@
         },
         {
           "ruleId": "CVE-2026-33151",
-          "ruleIndex": 18,
+          "ruleIndex": 20,
           "level": "warning",
           "message": {
             "text": "Package 'socket.io-parser@4.2.4' is vulnerable to 'CVE-2026-33151' (also known as 'GHSA-677m-j7p3-52f9')."
@@ -1315,7 +1423,7 @@
         },
         {
           "ruleId": "CVE-2026-24472",
-          "ruleIndex": 19,
+          "ruleIndex": 21,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-24472' (also known as 'GHSA-6wqw-2p9w-4vw4')."
@@ -1332,7 +1440,7 @@
         },
         {
           "ruleId": "GHSA-72gr-qfp7-vwhw",
-          "ruleIndex": 20,
+          "ruleIndex": 22,
           "level": "warning",
           "message": {
             "text": "Package 'h3@1.15.4' is vulnerable to 'GHSA-72gr-qfp7-vwhw'."
@@ -1349,7 +1457,7 @@
         },
         {
           "ruleId": "CVE-2026-24001",
-          "ruleIndex": 21,
+          "ruleIndex": 23,
           "level": "warning",
           "message": {
             "text": "Package 'diff@4.0.2' is vulnerable to 'CVE-2026-24001' (also known as 'GHSA-73rr-hh4g-fpgx')."
@@ -1366,7 +1474,7 @@
         },
         {
           "ruleId": "CVE-2026-24001",
-          "ruleIndex": 21,
+          "ruleIndex": 23,
           "level": "warning",
           "message": {
             "text": "Package 'diff@5.2.0' is vulnerable to 'CVE-2026-24001' (also known as 'GHSA-73rr-hh4g-fpgx')."
@@ -1383,7 +1491,7 @@
         },
         {
           "ruleId": "CVE-2026-27903",
-          "ruleIndex": 22,
+          "ruleIndex": 24,
           "level": "warning",
           "message": {
             "text": "Package 'minimatch@3.1.2' is vulnerable to 'CVE-2026-27903' (also known as 'GHSA-7r86-cg39-jmmj')."
@@ -1400,7 +1508,7 @@
         },
         {
           "ruleId": "CVE-2026-27903",
-          "ruleIndex": 22,
+          "ruleIndex": 24,
           "level": "warning",
           "message": {
             "text": "Package 'minimatch@5.1.6' is vulnerable to 'CVE-2026-27903' (also known as 'GHSA-7r86-cg39-jmmj')."
@@ -1417,7 +1525,7 @@
         },
         {
           "ruleId": "CVE-2026-27903",
-          "ruleIndex": 22,
+          "ruleIndex": 24,
           "level": "warning",
           "message": {
             "text": "Package 'minimatch@9.0.5' is vulnerable to 'CVE-2026-27903' (also known as 'GHSA-7r86-cg39-jmmj')."
@@ -1434,7 +1542,7 @@
         },
         {
           "ruleId": "CVE-2025-14505",
-          "ruleIndex": 23,
+          "ruleIndex": 25,
           "level": "warning",
           "message": {
             "text": "Package 'elliptic@6.6.1' is vulnerable to 'CVE-2025-14505' (also known as 'GHSA-848j-6mx2-7j84')."
@@ -1451,7 +1559,7 @@
         },
         {
           "ruleId": "CVE-2025-68458",
-          "ruleIndex": 24,
+          "ruleIndex": 26,
           "level": "warning",
           "message": {
             "text": "Package 'webpack@5.103.0' is vulnerable to 'CVE-2025-68458' (also known as 'GHSA-8fgc-7cc6-rx7x')."
@@ -1468,7 +1576,7 @@
         },
         {
           "ruleId": "CVE-2025-59471",
-          "ruleIndex": 25,
+          "ruleIndex": 27,
           "level": "warning",
           "message": {
             "text": "Package 'next@15.5.9' is vulnerable to 'CVE-2025-59471' (also known as 'GHSA-9g9p-9gw9-jx7f')."
@@ -1485,7 +1593,7 @@
         },
         {
           "ruleId": "CVE-2026-24771",
-          "ruleIndex": 26,
+          "ruleIndex": 28,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-24771' (also known as 'GHSA-9r54-q6cx-xmh5')."
@@ -1501,8 +1609,42 @@
           ]
         },
         {
+          "ruleId": "CVE-2026-33671",
+          "ruleIndex": 29,
+          "level": "warning",
+          "message": {
+            "text": "Package 'picomatch@2.3.1' is vulnerable to 'CVE-2026-33671' (also known as 'GHSA-c2c7-rcm5-vvqj')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2026-33671",
+          "ruleIndex": 29,
+          "level": "warning",
+          "message": {
+            "text": "Package 'picomatch@4.0.3' is vulnerable to 'CVE-2026-33671' (also known as 'GHSA-c2c7-rcm5-vvqj')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
           "ruleId": "CVE-2026-22817",
-          "ruleIndex": 27,
+          "ruleIndex": 30,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-22817' (also known as 'GHSA-f67f-6cw9-8mq4')."
@@ -1519,7 +1661,7 @@
         },
         {
           "ruleId": "CVE-2026-22036",
-          "ruleIndex": 28,
+          "ruleIndex": 31,
           "level": "warning",
           "message": {
             "text": "Package 'undici@5.29.0' is vulnerable to 'CVE-2026-22036' (also known as 'GHSA-g9mf-h72j-4rw9')."
@@ -1536,7 +1678,7 @@
         },
         {
           "ruleId": "CVE-2026-29057",
-          "ruleIndex": 29,
+          "ruleIndex": 32,
           "level": "warning",
           "message": {
             "text": "Package 'next@15.5.9' is vulnerable to 'CVE-2026-29057' (also known as 'GHSA-ggv3-7p47-pfv8')."
@@ -1553,7 +1695,7 @@
         },
         {
           "ruleId": "GHSA-gq3j-xvxp-8hrf",
-          "ruleIndex": 30,
+          "ruleIndex": 33,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'GHSA-gq3j-xvxp-8hrf'."
@@ -1570,7 +1712,7 @@
         },
         {
           "ruleId": "GHSA-h25m-26qc-wcjf",
-          "ruleIndex": 31,
+          "ruleIndex": 34,
           "level": "warning",
           "message": {
             "text": "Package 'next@15.5.9' is vulnerable to 'GHSA-h25m-26qc-wcjf'."
@@ -1587,7 +1729,7 @@
         },
         {
           "ruleId": "CVE-2026-23527",
-          "ruleIndex": 32,
+          "ruleIndex": 35,
           "level": "warning",
           "message": {
             "text": "Package 'h3@1.15.4' is vulnerable to 'CVE-2026-23527' (also known as 'GHSA-mp2g-9vg9-f4cg')."
@@ -1604,7 +1746,7 @@
         },
         {
           "ruleId": "CVE-2026-29085",
-          "ruleIndex": 33,
+          "ruleIndex": 36,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-29085' (also known as 'GHSA-p6xx-57qc-3wxr')."
@@ -1621,7 +1763,7 @@
         },
         {
           "ruleId": "CVE-2024-47764",
-          "ruleIndex": 34,
+          "ruleIndex": 37,
           "level": "warning",
           "message": {
             "text": "Package 'cookie@0.4.2' is vulnerable to 'CVE-2024-47764' (also known as 'GHSA-pxg6-pf52-xh8x')."
@@ -1638,7 +1780,7 @@
         },
         {
           "ruleId": "CVE-2026-29045",
-          "ruleIndex": 35,
+          "ruleIndex": 38,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-29045' (also known as 'GHSA-q5qw-h33p-qvwr')."
@@ -1655,7 +1797,7 @@
         },
         {
           "ruleId": "CVE-2026-24398",
-          "ruleIndex": 36,
+          "ruleIndex": 39,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-24398' (also known as 'GHSA-r354-f388-2fhh')."
@@ -1672,7 +1814,7 @@
         },
         {
           "ruleId": "CVE-2026-33228",
-          "ruleIndex": 37,
+          "ruleIndex": 40,
           "level": "warning",
           "message": {
             "text": "Package 'flatted@3.3.3' is vulnerable to 'CVE-2026-33228' (also known as 'GHSA-rf6f-7fwh-wjgh')."
@@ -1689,7 +1831,7 @@
         },
         {
           "ruleId": "GHSA-v8w9-8mx6-g223",
-          "ruleIndex": 38,
+          "ruleIndex": 41,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'GHSA-v8w9-8mx6-g223'."
@@ -1706,7 +1848,7 @@
         },
         {
           "ruleId": "CVE-2026-2229",
-          "ruleIndex": 39,
+          "ruleIndex": 42,
           "level": "warning",
           "message": {
             "text": "Package 'undici@5.29.0' is vulnerable to 'CVE-2026-2229' (also known as 'GHSA-v9p9-hfj2-hcw8')."
@@ -1723,7 +1865,7 @@
         },
         {
           "ruleId": "CVE-2026-1526",
-          "ruleIndex": 40,
+          "ruleIndex": 43,
           "level": "warning",
           "message": {
             "text": "Package 'undici@5.29.0' is vulnerable to 'CVE-2026-1526' (also known as 'GHSA-vrm6-8vpv-qv8q')."
@@ -1740,7 +1882,7 @@
         },
         {
           "ruleId": "CVE-2026-24473",
-          "ruleIndex": 41,
+          "ruleIndex": 44,
           "level": "warning",
           "message": {
             "text": "Package 'hono@4.10.8' is vulnerable to 'CVE-2026-24473' (also known as 'GHSA-w332-q679-j88p')."
@@ -1757,7 +1899,7 @@
         },
         {
           "ruleId": "CVE-2026-29063",
-          "ruleIndex": 42,
+          "ruleIndex": 45,
           "level": "warning",
           "message": {
             "text": "Package 'immutable@3.7.6' is vulnerable to 'CVE-2026-29063' (also known as 'GHSA-wf6x-7x77-mvgw')."
@@ -1774,7 +1916,7 @@
         },
         {
           "ruleId": "CVE-2026-29063",
-          "ruleIndex": 42,
+          "ruleIndex": 45,
           "level": "warning",
           "message": {
             "text": "Package 'immutable@4.3.7' is vulnerable to 'CVE-2026-29063' (also known as 'GHSA-wf6x-7x77-mvgw')."
@@ -1791,7 +1933,7 @@
         },
         {
           "ruleId": "GHSA-wr4h-v87w-p3r7",
-          "ruleIndex": 43,
+          "ruleIndex": 46,
           "level": "warning",
           "message": {
             "text": "Package 'h3@1.15.4' is vulnerable to 'GHSA-wr4h-v87w-p3r7'."
@@ -1808,7 +1950,7 @@
         },
         {
           "ruleId": "CVE-2026-29074",
-          "ruleIndex": 44,
+          "ruleIndex": 47,
           "level": "warning",
           "message": {
             "text": "Package 'svgo@3.3.2' is vulnerable to 'CVE-2026-29074' (also known as 'GHSA-xpqw-6gx7-v673')."
@@ -1825,7 +1967,7 @@
         },
         {
           "ruleId": "CVE-2025-13465",
-          "ruleIndex": 45,
+          "ruleIndex": 48,
           "level": "warning",
           "message": {
             "text": "Package 'lodash@4.17.21' is vulnerable to 'CVE-2025-13465' (also known as 'GHSA-xxjr-mmjv-4gpg')."
