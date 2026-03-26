@@ -40,11 +40,7 @@ export default function NavPoints() {
       <Icons.PointIcon className="h-6 w-6" />
       <div className="flex max-w-[148px] flex-col items-center mx-0 px-0">
         <span className="text-md font-semibold">
-          {isPointsLoading || total == null ? (
-            <LoadingPulse w="w-10" />
-          ) : (
-            <span>{totalFormatted}</span>
-          )}
+          {isPointsLoading ? <LoadingPulse w="w-10" /> : <span>{totalFormatted}</span>}
         </span>
       </div>
     </Button>

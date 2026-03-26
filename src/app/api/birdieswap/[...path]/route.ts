@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-const strip = (s: string) => s.replace(/^\/+|\/+$/g, "");
-
 // ✅ Edge 런타임으로 변경
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -9,58 +7,76 @@ export const revalidate = 0;
 
 // 운영 업스트림
 const UPSTREAM = new URL("https://api.birdieswap.com");
-const MAX_SEGMENT_LENGTH = 120;
-const MAX_QUERY_KEY_LENGTH = 40;
-const MAX_QUERY_VALUE_LENGTH = 200;
+const ALLOWED_ENDPOINTS: Record<string, string[]> = {
+  Transactions: ["/Transactions/", "/Transactions", "/Transactions.json"],
+  CurrentUserPoints: [
+    "/CurrentUserPoints/",
+    "/CurrentUserPoints",
+    "/CurrentUserPoints.json",
+  ],
+  CurrentUserRewards: [
+    "/CurrentUserRewards/",
+    "/CurrentUserRewards",
+    "/CurrentUserRewards.json",
+  ],
+  SwapRewards: ["/SwapRewards/", "/SwapRewards", "/SwapRewards.json"],
+  ReferralRewards: [
+    "/ReferralRewards/",
+    "/ReferralRewards",
+    "/ReferralRewards.json",
+  ],
+};
+const ALLOWED_QUERY_KEYS = new Set([
+  "address",
+  "blockHeight",
+  "chainId",
+  "page",
+  "size",
+]);
+const MAX_QUERY_VALUE_LENGTH = 160;
+const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
+const DIGITS_RE = /^\d+$/;
 
 /* ───────── helpers ───────── */
 
-function getSafeTailSegments(rawTail: string): string[] | null {
-  const cleaned = strip(rawTail);
-  if (!cleaned) return null;
-
-  const segments = cleaned.split("/").filter(Boolean);
-  for (const segment of segments) {
-    if (
-      segment.length > MAX_SEGMENT_LENGTH ||
-      segment === "." ||
-      segment === ".." ||
-      /%2f|%5c|%2e/i.test(segment) ||
-      !/^[a-zA-Z0-9._~-]+$/.test(segment)
-    ) {
-      return null;
-    }
-  }
-
-  return segments;
+function getUpstreamPaths(
+  rawPath: string[] | string | undefined,
+): string[] | null {
+  const parts = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
+  if (parts.length !== 1) return null;
+  const endpoint = parts[0];
+  return ALLOWED_ENDPOINTS[endpoint] ?? null;
 }
 
-function appendSafeQuery(
-  incoming: URLSearchParams,
-  target: URLSearchParams,
-): boolean {
-  for (const [key, value] of incoming.entries()) {
+function appendValidatedQuery(req: Request, target: URL): boolean {
+  const { searchParams } = new URL(req.url);
+  for (const [key, value] of searchParams.entries()) {
     if (
-      !/^[a-zA-Z0-9_-]+$/.test(key) ||
-      key.length > MAX_QUERY_KEY_LENGTH ||
+      !ALLOWED_QUERY_KEYS.has(key) ||
+      value.length === 0 ||
       value.length > MAX_QUERY_VALUE_LENGTH ||
       /[\r\n]/.test(value) ||
       /(?:https?:)?\/\//i.test(value)
     ) {
       return false;
     }
-    target.append(key, value);
+
+    if (key === "address") {
+      if (!ADDRESS_RE.test(value)) return false;
+      target.searchParams.set(key, value.toLowerCase());
+      continue;
+    }
+
+    if (!DIGITS_RE.test(value)) return false;
+    const asNum = Number(value);
+    if (!Number.isSafeInteger(asNum) || asNum < 0) return false;
+
+    if (key === "size" && (asNum < 1 || asNum > 200)) return false;
+    if (key === "page" && asNum > 10000) return false;
+
+    target.searchParams.set(key, String(asNum));
   }
   return true;
-}
-
-function buildUpstreamUrl(pathname: string, searchParams: URLSearchParams) {
-  const target = new URL(pathname, UPSTREAM);
-  if (!appendSafeQuery(searchParams, target.searchParams)) return null;
-  if (target.protocol !== "https:" || target.hostname !== UPSTREAM.hostname) {
-    return null;
-  }
-  return target.toString();
 }
 
 function makeBrowseryHeaders(tail: string) {
@@ -111,89 +127,66 @@ type RouteContext = {
 
 export async function GET(req: Request, context: RouteContext) {
   try {
-    const url = new URL(req.url);
-
-    // 1) App Router params
+    // 1) App Router params 기반으로 허용 엔드포인트만 선택
     const params = context?.params ? await context.params : undefined;
-    const raw = params?.path;
-    const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
-
-    // 2) tail 보정
-    let safeSegments = getSafeTailSegments(parts.join("/"));
-    if (!safeSegments) {
-      const base = "/api/birdieswap/";
-      const i = url.pathname.indexOf(base);
-      if (i >= 0) {
-        safeSegments = getSafeTailSegments(url.pathname.slice(i + base.length));
-      }
-    }
-    if (!safeSegments?.length) {
+    const upstreamPaths = getUpstreamPaths(params?.path);
+    if (!upstreamPaths?.length) {
       return NextResponse.json(
         {
           ok: false,
-          error: "missing_endpoint",
-          hint: "call /api/birdieswap/<path>",
+          error: "invalid_endpoint",
+          hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const tail = safeSegments.join("/");
+    const endpointName = Array.isArray(params?.path)
+      ? params.path[0]
+      : params?.path ?? "";
+    const upstreamHeaders = makeBrowseryHeaders(endpointName);
 
-    // 숫자 id 추출 (후보 생성용)
-    const m = tail.match(/^(\d+)(?:\.json)?$/);
-    const id = m ? m[1] : null;
-
-    // 🔥 후보 우선순위: 슬래시 → 원본 → .json
-    const candidatePaths = [
-      `/${tail}/`,
-      `/${tail}`,
-      `/${tail}.json`,
-      ...(id ? [`/${id}/`, `/${id}`, `/${id}.json`, `/chains/${id}.json`] : []),
-    ];
-
-    const candidates = Array.from(
-      new Set(
-        candidatePaths
-          .map((pathname) => buildUpstreamUrl(pathname, url.searchParams))
-          .filter((v): v is string => v != null)
-      )
-    );
-    if (!candidates.length) {
-      return NextResponse.json(
-        { ok: false, error: "invalid_query" },
-        { status: 400 }
-      );
-    }
-
-    const tried: string[] = [];
-    for (const href of candidates) {
-      tried.push(href);
-      const upstreamHeaders = makeBrowseryHeaders(tail);
+    let lastStatus: number | null = null;
+    let lastReason = "upstream_non_json_or_error";
+    for (const upstreamPath of upstreamPaths) {
+      // 2) 고정 upstream에 검증된 query만 부착
+      const upstream = new URL(upstreamPath, UPSTREAM);
+      if (!appendValidatedQuery(req, upstream)) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_query" },
+          { status: 400 },
+        );
+      }
+      if (upstream.origin !== UPSTREAM.origin) {
+        return NextResponse.json(
+          { ok: false, error: "invalid_target" },
+          { status: 400 },
+        );
+      }
 
       // Edge fetch (노드와 다르게 TLS/네트워크 핑거프린트가 달라져 CF 통과율↑)
       let r: Response;
       try {
-        r = await fetch(href, {
+        r = await fetch(upstream.toString(), {
           method: "GET",
           headers: upstreamHeaders,
           redirect: "follow",
           cache: "no-store",
         });
-      } catch (e) {
-        // 네트워크 오류면 다음 후보 시도
+      } catch {
+        lastReason = "network_error";
         continue;
       }
 
+      lastStatus = r.status;
       const ct = r.headers.get("content-type") || "";
       const buf = await r.text().catch(() => "");
 
-      // CF 차단 페이지면 다음 후보
       if (r.status === 403 || r.status === 503 || looksLikeCF(buf)) {
+        lastReason = "upstream_blocked";
         continue;
       }
 
-      // JSON이면 패스스루
       if (
         r.ok &&
         (ct.includes("application/json") || /^[\s\r\n]*[\{\[]/.test(buf))
@@ -201,32 +194,23 @@ export async function GET(req: Request, context: RouteContext) {
         const out = new Headers();
         out.set("content-type", "application/json; charset=utf-8");
         out.set("cache-control", "no-store, max-age=0");
-        out.set("x-upstream-url", href);
-        out.set("x-upstream-tried", tried.join(" | "));
-
-        // body가 스트림이면 그대로 전달, 아니면 텍스트->응답
-        // 위에서 buf를 읽었으니 여기선 buf 사용
+        out.set("x-upstream-url", upstream.toString());
         return new NextResponse(buf, { status: 200, headers: out });
       }
-
-      // 다른 형식이면 다음 후보
-      if (!r.ok) continue;
     }
 
-    // 모든 후보 실패
     return NextResponse.json(
       {
         ok: false,
-        status: 502,
-        reason: "upstream_error_or_cloudflare_challenge",
-        tried: candidates,
+        status: lastStatus ?? 502,
+        reason: lastReason,
       },
-      { status: 502 }
+      { status: 502 },
     );
   } catch (e) {
     return NextResponse.json(
       { ok: false, status: 502, reason: "route_error", message: String(e) },
-      { status: 502 }
+      { status: 502 },
     );
   }
 }

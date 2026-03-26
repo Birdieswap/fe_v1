@@ -169,42 +169,28 @@ export async function GET(req: Request) {
   const baseUrl = getCgBaseUrl(plan);
   const headers = getHeaders(plan);
 
-  // Coin data by token contract address endpoint (price 포함)
-  const tokenDataUrl = new URL(
-    `coins/${platform}/contract/${address}`,
-    baseUrl
-  ).toString();
-  // Onchain simple price endpoint (fallback)
-  const onchainUrl = new URL(
-    `onchain/simple/networks/${platform}/token_price/${address}`,
-    baseUrl
-  ).toString();
+  // 고정 endpoint + 검증된 query 값만 사용
+  const tokenPriceUrl = new URL(`simple/token_price/${platform}`, baseUrl);
+  tokenPriceUrl.searchParams.set("contract_addresses", address);
+  tokenPriceUrl.searchParams.set("vs_currencies", "usd");
 
-  console.log("[coingecko usd] fetching", { tokenDataUrl, onchainUrl, plan });
+  console.log("[coingecko usd] fetching", {
+    tokenPriceUrl: tokenPriceUrl.toString(),
+    plan,
+  });
 
   try {
-    const res = await fetch(tokenDataUrl, { headers, cache: "no-store" });
+    const res = await fetch(tokenPriceUrl.toString(), {
+      headers,
+      cache: "no-store",
+    });
     let usd: number | null = null;
-    let status = res.status;
+    const status = res.status;
 
     if (res.ok) {
       const json = await res.json();
-      const primaryUsd = Number(json?.market_data?.current_price?.usd);
-      usd = Number.isFinite(primaryUsd) ? primaryUsd : null;
-    }
-
-    // fallback: onchain simple price
-    if (usd == null) {
-      const res2 = await fetch(onchainUrl, { headers, cache: "no-store" });
-      status = res2.status;
-      if (res2.ok) {
-        const json2 = await res2.json();
-        const raw =
-          json2?.data?.attributes?.token_prices?.[address?.toLowerCase?.()] ??
-          json2?.data?.attributes?.token_prices?.[address];
-        const fallbackUsd = Number(raw);
-        usd = Number.isFinite(fallbackUsd) ? fallbackUsd : null;
-      }
+      const rawUsd = Number(json?.[address]?.usd);
+      usd = Number.isFinite(rawUsd) ? rawUsd : null;
     }
 
     const finalUsd = Number.isFinite(usd) ? usd : null;
