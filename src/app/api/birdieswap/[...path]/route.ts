@@ -36,16 +36,43 @@ const ALLOWED_QUERY_KEYS = new Set([
 const MAX_QUERY_VALUE_LENGTH = 160;
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const DIGITS_RE = /^\d+$/;
+const UPSTREAM_PATH_PREFIXES = new Set([
+  "/Transactions",
+  "/CurrentUserPoints",
+  "/CurrentUserRewards",
+  "/SwapRewards",
+  "/ReferralRewards",
+]);
+
+type AllowedEndpoint =
+  | "Transactions"
+  | "CurrentUserPoints"
+  | "CurrentUserRewards"
+  | "SwapRewards"
+  | "ReferralRewards";
 
 /* ───────── helpers ───────── */
 
-function getUpstreamPaths(
+function resolveEndpoint(
   rawPath: string[] | string | undefined,
-): string[] | null {
+): AllowedEndpoint | null {
   const parts = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
   if (parts.length !== 1) return null;
-  const endpoint = parts[0];
-  return ALLOWED_ENDPOINTS[endpoint] ?? null;
+  const endpoint = parts[0] as AllowedEndpoint;
+  switch (endpoint) {
+    case "Transactions":
+    case "CurrentUserPoints":
+    case "CurrentUserRewards":
+    case "SwapRewards":
+    case "ReferralRewards":
+      return endpoint;
+    default:
+      return null;
+  }
+}
+
+function getUpstreamPaths(endpoint: AllowedEndpoint): string[] {
+  return ALLOWED_ENDPOINTS[endpoint];
 }
 
 function appendValidatedQuery(req: Request, target: URL): boolean {
@@ -129,8 +156,8 @@ export async function GET(req: Request, context: RouteContext) {
   try {
     // 1) App Router params 기반으로 허용 엔드포인트만 선택
     const params = context?.params ? await context.params : undefined;
-    const upstreamPaths = getUpstreamPaths(params?.path);
-    if (!upstreamPaths?.length) {
+    const endpoint = resolveEndpoint(params?.path);
+    if (!endpoint) {
       return NextResponse.json(
         {
           ok: false,
@@ -141,14 +168,11 @@ export async function GET(req: Request, context: RouteContext) {
       );
     }
 
-    const endpointName = Array.isArray(params?.path)
-      ? params.path[0]
-      : params?.path ?? "";
-    const upstreamHeaders = makeBrowseryHeaders(endpointName);
+    const upstreamHeaders = makeBrowseryHeaders(endpoint);
 
     let lastStatus: number | null = null;
     let lastReason = "upstream_non_json_or_error";
-    for (const upstreamPath of upstreamPaths) {
+    for (const upstreamPath of getUpstreamPaths(endpoint)) {
       // 2) 고정 upstream에 검증된 query만 부착
       const upstream = new URL(upstreamPath, UPSTREAM);
       if (!appendValidatedQuery(req, upstream)) {
@@ -157,7 +181,14 @@ export async function GET(req: Request, context: RouteContext) {
           { status: 400 },
         );
       }
-      if (upstream.origin !== UPSTREAM.origin) {
+      const hasAllowedPrefix = Array.from(UPSTREAM_PATH_PREFIXES).some((prefix) =>
+        upstream.pathname.startsWith(prefix),
+      );
+      if (
+        upstream.protocol !== "https:" ||
+        upstream.origin !== UPSTREAM.origin ||
+        !hasAllowedPrefix
+      ) {
         return NextResponse.json(
           { ok: false, error: "invalid_target" },
           { status: 400 },
