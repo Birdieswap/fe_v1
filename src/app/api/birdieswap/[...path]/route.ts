@@ -8,9 +8,60 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 // 운영 업스트림
-const UPSTREAM = "https://api.birdieswap.com";
+const UPSTREAM = new URL("https://api.birdieswap.com");
+const MAX_SEGMENT_LENGTH = 120;
+const MAX_QUERY_KEY_LENGTH = 40;
+const MAX_QUERY_VALUE_LENGTH = 200;
 
 /* ───────── helpers ───────── */
+
+function getSafeTailSegments(rawTail: string): string[] | null {
+  const cleaned = strip(rawTail);
+  if (!cleaned) return null;
+
+  const segments = cleaned.split("/").filter(Boolean);
+  for (const segment of segments) {
+    if (
+      segment.length > MAX_SEGMENT_LENGTH ||
+      segment === "." ||
+      segment === ".." ||
+      /%2f|%5c|%2e/i.test(segment) ||
+      !/^[a-zA-Z0-9._~-]+$/.test(segment)
+    ) {
+      return null;
+    }
+  }
+
+  return segments;
+}
+
+function appendSafeQuery(
+  incoming: URLSearchParams,
+  target: URLSearchParams,
+): boolean {
+  for (const [key, value] of incoming.entries()) {
+    if (
+      !/^[a-zA-Z0-9_-]+$/.test(key) ||
+      key.length > MAX_QUERY_KEY_LENGTH ||
+      value.length > MAX_QUERY_VALUE_LENGTH ||
+      /[\r\n]/.test(value) ||
+      /(?:https?:)?\/\//i.test(value)
+    ) {
+      return false;
+    }
+    target.append(key, value);
+  }
+  return true;
+}
+
+function buildUpstreamUrl(pathname: string, searchParams: URLSearchParams) {
+  const target = new URL(pathname, UPSTREAM);
+  if (!appendSafeQuery(searchParams, target.searchParams)) return null;
+  if (target.protocol !== "https:" || target.hostname !== UPSTREAM.hostname) {
+    return null;
+  }
+  return target.toString();
+}
 
 function makeBrowseryHeaders(tail: string) {
   const h = new Headers();
@@ -68,13 +119,15 @@ export async function GET(req: Request, context: RouteContext) {
     const parts = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
     // 2) tail 보정
-    let tail: string = strip(parts.join("/"));
-    if (!tail) {
+    let safeSegments = getSafeTailSegments(parts.join("/"));
+    if (!safeSegments) {
       const base = "/api/birdieswap/";
       const i = url.pathname.indexOf(base);
-      if (i >= 0) tail = strip(url.pathname.slice(i + base.length));
+      if (i >= 0) {
+        safeSegments = getSafeTailSegments(url.pathname.slice(i + base.length));
+      }
     }
-    if (!tail) {
+    if (!safeSegments?.length) {
       return NextResponse.json(
         {
           ok: false,
@@ -85,32 +138,33 @@ export async function GET(req: Request, context: RouteContext) {
       );
     }
 
+    const tail = safeSegments.join("/");
+
     // 숫자 id 추출 (후보 생성용)
     const m = tail.match(/^(\d+)(?:\.json)?$/);
     const id = m ? m[1] : null;
 
     // 🔥 후보 우선순위: 슬래시 → 원본 → .json
+    const candidatePaths = [
+      `/${tail}/`,
+      `/${tail}`,
+      `/${tail}.json`,
+      ...(id ? [`/${id}/`, `/${id}`, `/${id}.json`, `/chains/${id}.json`] : []),
+    ];
+
     const candidates = Array.from(
       new Set(
-        [
-          `${UPSTREAM}/${tail}/`,
-          `${UPSTREAM}/${tail}`,
-          `${UPSTREAM}/${tail}.json`,
-          ...(id
-            ? [
-                `${UPSTREAM}/${id}/`,
-                `${UPSTREAM}/${id}`,
-                `${UPSTREAM}/${id}.json`,
-                `${UPSTREAM}/chains/${id}.json`,
-              ]
-            : []),
-        ].map((s) => {
-          const u = new URL(s);
-          u.search = url.search; // 쿼리 승계
-          return u.toString();
-        })
+        candidatePaths
+          .map((pathname) => buildUpstreamUrl(pathname, url.searchParams))
+          .filter((v): v is string => v != null)
       )
     );
+    if (!candidates.length) {
+      return NextResponse.json(
+        { ok: false, error: "invalid_query" },
+        { status: 400 }
+      );
+    }
 
     const tried: string[] = [];
     for (const href of candidates) {

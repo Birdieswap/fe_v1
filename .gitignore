@@ -52,3 +52,6 @@ next-env.d.ts
 # IDE files
 .vscode/
 .idea/
+
+# security reports
+/sarif/

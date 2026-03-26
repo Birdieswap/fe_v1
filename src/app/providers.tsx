@@ -99,6 +99,15 @@ const arbitrumUrls = [
   "https://arb1.arbitrum.io/rpc",
 ].filter(Boolean) as string[];
 
+function isExactHttpsHost(raw: string, expectedHost: string) {
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "https:" && parsed.hostname === expectedHost;
+  } catch {
+    return false;
+  }
+}
+
 if (
   process.env.NEXT_PUBLIC_VERCEL_ENV &&
   sepoliaUrls.length === 1 &&
@@ -111,7 +120,7 @@ if (
 if (
   process.env.NEXT_PUBLIC_VERCEL_ENV &&
   baseUrls.length === 1 &&
-  baseUrls[0].includes("mainnet.base.org")
+  isExactHttpsHost(baseUrls[0], "mainnet.base.org")
 ) {
   console.warn(
     "[RPC] Only mainnet.base.org configured for Base. Add ALCHEMY/INFURA for stability.",

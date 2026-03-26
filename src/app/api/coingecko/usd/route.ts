@@ -6,6 +6,8 @@ const cache = new Map<string, CacheEntry>();
 
 const TTL =
   Number(process.env.NEXT_PUBLIC_COINGECKO_TTL_SECONDS ?? "60") * 1000;
+const SYMBOL_RE = /^[a-z0-9-]{1,32}$/;
+const EVM_ADDRESS_RE = /^0x[a-f0-9]{40}$/;
 
 function getPlan() {
   const plan = (process.env.NEXT_PUBLIC_COINGECKO_PLAN ?? "none").toLowerCase();
@@ -16,9 +18,9 @@ function getPlan() {
 
 function getCgBaseUrl(plan: "pro" | "demo" | "none") {
   // pro base url
-  if (plan === "pro") return "https://pro-api.coingecko.com/api/v3";
+  if (plan === "pro") return new URL("https://pro-api.coingecko.com/api/v3/");
   // demo/free base url
-  return "https://api.coingecko.com/api/v3";
+  return new URL("https://api.coingecko.com/api/v3/");
 }
 
 function getHeaders(plan: "pro" | "demo" | "none") {
@@ -69,7 +71,7 @@ export async function GET(req: Request) {
 
   if (symbolsRaw) {
     const symbol = symbolsRaw.split(",")[0]?.trim().toLowerCase();
-    if (!symbol) {
+    if (!symbol || !SYMBOL_RE.test(symbol)) {
       return NextResponse.json(
         { usd: null, reason: "bad_request" },
         { status: 400 }
@@ -87,12 +89,12 @@ export async function GET(req: Request) {
     const baseUrl = getCgBaseUrl(plan);
     const headers = getHeaders(plan);
 
-    const url = `${baseUrl}/simple/price?vs_currencies=usd&symbols=${encodeURIComponent(
-      symbol
-    )}`;
+    const target = new URL("simple/price", baseUrl);
+    target.searchParams.set("vs_currencies", "usd");
+    target.searchParams.set("symbols", symbol);
 
     try {
-      const res = await fetch(url, { headers, cache: "no-store" });
+      const res = await fetch(target.toString(), { headers, cache: "no-store" });
       const status = res.status;
       let usd: number | null = null;
 
@@ -127,7 +129,12 @@ export async function GET(req: Request) {
   const chainId = Number(chainIdRaw);
   const address = (addressRaw ?? "").toLowerCase();
 
-  if (!chainIdRaw || !Number.isFinite(chainId) || !address) {
+  if (
+    !chainIdRaw ||
+    !Number.isInteger(chainId) ||
+    chainId <= 0 ||
+    !EVM_ADDRESS_RE.test(address)
+  ) {
     return NextResponse.json(
       { usd: null, reason: "bad_request" },
       { status: 400 }
@@ -163,14 +170,20 @@ export async function GET(req: Request) {
   const headers = getHeaders(plan);
 
   // Coin data by token contract address endpoint (price 포함)
-  const url = `${baseUrl}/coins/${platform}/contract/${address}`;
+  const tokenDataUrl = new URL(
+    `coins/${platform}/contract/${address}`,
+    baseUrl
+  ).toString();
   // Onchain simple price endpoint (fallback)
-  const onchainUrl = `${baseUrl}/onchain/simple/networks/${platform}/token_price/${address}`;
+  const onchainUrl = new URL(
+    `onchain/simple/networks/${platform}/token_price/${address}`,
+    baseUrl
+  ).toString();
 
-  console.log("[coingecko usd] fetching", { url, onchainUrl, plan });
+  console.log("[coingecko usd] fetching", { tokenDataUrl, onchainUrl, plan });
 
   try {
-    const res = await fetch(url, { headers, cache: "no-store" });
+    const res = await fetch(tokenDataUrl, { headers, cache: "no-store" });
     let usd: number | null = null;
     let status = res.status;
 
