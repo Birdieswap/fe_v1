@@ -99,12 +99,7 @@ function isDocumentLikePath(pathname: string) {
 }
 
 function isCspPolicyPath(pathname: string) {
-  return (
-    isDocumentLikePath(pathname) ||
-    pathname === "/robots.txt" ||
-    pathname === "/sitemap.xml" ||
-    pathname === "/manifest.json"
-  );
+  return isDocumentLikePath(pathname);
 }
 
 function requestHost(req: NextRequest) {
@@ -148,6 +143,19 @@ function applyStaticAssetCors(res: NextResponse, req: NextRequest, pathname: str
   res.headers.delete("Access-Control-Allow-Credentials");
   res.headers.delete("Access-Control-Max-Age");
 
+  const isPinnedStatic =
+    pathname === "/manifest.json" ||
+    pathname === "/favicon.ico" ||
+    /^\/android-icon-.*\.png$/i.test(pathname) ||
+    /^\/apple-icon.*\.png$/i.test(pathname) ||
+    /^\/ms-icon-.*\.png$/i.test(pathname) ||
+    /^\/favicon-.*\.png$/i.test(pathname) ||
+    pathname === "/browserconfig.xml";
+  if (isPinnedStatic) {
+    res.headers.set("Access-Control-Allow-Origin", "https://www.birdieswap.com");
+    return;
+  }
+
   const origin = req.headers.get("origin") ?? "";
   if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
@@ -170,14 +178,43 @@ function applySecurityHeaders(
   const host = requestHost(req);
   const isLandingHost = LANDING_HOSTS.has(host);
   const isAppHost = APP_HOSTS.has(host);
-  // 강제 CSP는 동작 안정성을 위해 최소 정책만 유지.
-  // 상세/엄격 정책은 Report-Only에서 점진 적용한다.
-  const enforceCspDocument = [
+  // app: 호환성 우선 (inline/eval 허용), but directive 누락은 없도록 명시
+  const enforceCspAppDocument = [
+    "default-src 'self' https: data: blob:",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https: wss:",
+    "frame-src 'self' https:",
+    "worker-src 'self' blob:",
     "form-action 'self' https:",
     "upgrade-insecure-requests",
+    "block-all-mixed-content",
+  ].join("; ");
+  // landing: app보다 더 엄격하게 운영
+  const enforceCspLandingDocument = [
+    "default-src 'self' https: data: blob:",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "script-src 'self' https: blob:",
+    "script-src-attr 'none'",
+    "style-src 'self' https:",
+    "style-src-attr 'none'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https: wss:",
+    "frame-src 'none'",
+    "manifest-src 'self'",
+    "media-src 'self' https: data: blob:",
+    "worker-src 'self' blob:",
+    "form-action 'self' https:",
+    "upgrade-insecure-requests",
+    "block-all-mixed-content",
   ].join("; ");
 
   if (!isProd || isDemo) {
@@ -197,8 +234,10 @@ function applySecurityHeaders(
 
   res.headers.delete("Content-Security-Policy");
   if (isCspPath) {
-    // 2단계: 동작 리스크를 낮춘 완화형 강제 CSP
-    res.headers.set("Content-Security-Policy", enforceCspDocument);
+    res.headers.set(
+      "Content-Security-Policy",
+      isLandingHost ? enforceCspLandingDocument : enforceCspAppDocument,
+    );
     res.headers.delete("Content-Security-Policy-Report-Only");
   } else {
     res.headers.delete("Content-Security-Policy-Report-Only");
@@ -249,11 +288,16 @@ function applySecurityHeaders(
       "Cross-Origin-Opener-Policy",
       isLandingHost ? "same-origin" : "same-origin-allow-popups",
     );
+  } else if (pathname === "/manifest.json") {
+    res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   } else {
     res.headers.delete("Cross-Origin-Opener-Policy");
   }
   if (isDocument && isLandingHost) {
     // landing은 app 대비 외부 의존이 적어 credentialless 적용이 비교적 안전
+    res.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+    res.headers.delete("Cross-Origin-Embedder-Policy-Report-Only");
+  } else if (pathname === "/manifest.json") {
     res.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
     res.headers.delete("Cross-Origin-Embedder-Policy-Report-Only");
   } else {
