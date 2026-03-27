@@ -81,6 +81,20 @@ function isStaticAssetPath(pathname: string) {
   );
 }
 
+function isDocumentLikePath(pathname: string) {
+  if (pathname.startsWith("/api/")) return false;
+  if (isStaticAssetPath(pathname)) return false;
+  if (
+    pathname.startsWith("/_next/") ||
+    pathname === "/favicon.ico" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml"
+  ) {
+    return false;
+  }
+  return true;
+}
+
 function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string) {
   res.headers.delete("Access-Control-Allow-Origin");
   res.headers.delete("Access-Control-Allow-Methods");
@@ -109,6 +123,7 @@ function applySecurityHeaders(
   nonce: string,
 ) {
   applyCorsHeaders(res, req, pathname);
+  const isDocument = isDocumentLikePath(pathname);
 
   if (!isProd || isDemo) {
     res.headers.delete("Content-Security-Policy");
@@ -126,7 +141,28 @@ function applySecurityHeaders(
   }
 
   res.headers.delete("Content-Security-Policy");
-  res.headers.delete("Content-Security-Policy-Report-Only");
+  if (isDocument) {
+    // 1단계: 차단 없는 관측 모드(CSP Report-Only)
+    res.headers.set(
+      "Content-Security-Policy-Report-Only",
+      [
+        "default-src 'self' https: data: blob:",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https:",
+        "style-src 'self' 'unsafe-inline' https:",
+        "img-src 'self' data: blob: https:",
+        "font-src 'self' data: https:",
+        "connect-src 'self' https: wss:",
+        "frame-src 'self' https:",
+        "worker-src 'self' blob:",
+        "form-action 'self' https:",
+      ].join("; "),
+    );
+  } else {
+    res.headers.delete("Content-Security-Policy-Report-Only");
+  }
 
   res.headers.set(
     "Strict-Transport-Security",
@@ -137,9 +173,14 @@ function applySecurityHeaders(
   res.headers.delete("X-Frame-Options");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.headers.delete("Cross-Origin-Resource-Policy");
-  res.headers.delete("Cross-Origin-Opener-Policy");
+  if (isDocument) {
+    // 지갑 팝업 호환성을 위해 same-origin-allow-popups 사용
+    res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  } else {
+    res.headers.delete("Cross-Origin-Opener-Policy");
+  }
   res.headers.delete("Cross-Origin-Embedder-Policy");
-  res.headers.set("x-csp-debug", "fully-disabled-for-recovery");
+  res.headers.set("x-csp-debug", isDocument ? "report-only-phase-1" : "no-document-csp");
 
   return res;
 }

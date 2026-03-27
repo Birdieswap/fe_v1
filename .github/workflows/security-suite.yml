@@ -174,7 +174,7 @@ jobs:
       - name: Assert web headers
         if: matrix.kind == 'web'
         run: |
-          grep -qiE '^content-security-policy:' headers.txt
+          grep -qiE '^(content-security-policy|content-security-policy-report-only):' headers.txt
           grep -qiE '^referrer-policy:' headers.txt
 
       - name: Assert api healthz
