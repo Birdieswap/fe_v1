@@ -28,19 +28,46 @@ const ALLOWED_ENDPOINTS: Record<string, string[]> = {
   Check: ["/Consent/Check/", "/Consent/Check"],
   Initiate: ["/Consent/Initiate/", "/Consent/Initiate"],
 };
-const ALLOWED_QUERY_KEYS = new Set([
-  "address",
-  "blockHeight",
-  "chainId",
-  "page",
-  "size",
-  "type",
-  "_ts",
-]);
+const ENDPOINT_QUERY_KEYS: Record<AllowedEndpoint, Set<string>> = {
+  Transactions: new Set([
+    "address",
+    "blockHeight",
+    "chainId",
+    "page",
+    "size",
+    "_ts",
+    "cursor",
+    "offset",
+    "limit",
+    "fromBlock",
+    "toBlock",
+    "sort",
+    "order",
+    "type",
+  ]),
+  CurrentUserPoints: new Set(["address", "chainId", "_ts"]),
+  CurrentUserRewards: new Set(["address", "chainId", "page", "size", "_ts"]),
+  SwapRewards: new Set(["address", "chainId", "page", "size", "_ts"]),
+  ReferralRewards: new Set(["address", "chainId", "page", "size", "_ts"]),
+  Check: new Set(["address", "_ts"]),
+  Initiate: new Set(["address", "chainId", "type", "_ts"]),
+};
 const MAX_QUERY_VALUE_LENGTH = 160;
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const DIGITS_RE = /^\d+$/;
 const TYPE_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+const NUMERIC_QUERY_KEYS = new Set([
+  "blockHeight",
+  "chainId",
+  "page",
+  "size",
+  "cursor",
+  "offset",
+  "limit",
+  "fromBlock",
+  "toBlock",
+]);
+const TEXT_QUERY_KEYS = new Set(["type", "sort", "order"]);
 const UPSTREAM_PATH_PREFIXES = new Set([
   "/Transactions",
   "/CurrentUserPoints",
@@ -66,8 +93,12 @@ function resolveEndpoint(
   rawPath: string[] | string | undefined,
 ): AllowedEndpoint | null {
   const parts = Array.isArray(rawPath) ? rawPath : rawPath ? [rawPath] : [];
-  if (parts.length !== 1) return null;
-  const endpoint = parts[0] as AllowedEndpoint;
+  if (parts.length < 1 || parts.length > 2) return null;
+  // consentApi에서 /api/birdieswap/Consent/Check 형태를 쓰는 환경과
+  // /api/birdieswap/Check 형태를 모두 허용
+  const endpointToken =
+    parts.length === 2 && parts[0] === "Consent" ? parts[1] : parts[0];
+  const endpoint = endpointToken as AllowedEndpoint;
   switch (endpoint) {
     case "Transactions":
     case "CurrentUserPoints":
@@ -86,41 +117,65 @@ function getUpstreamPaths(endpoint: AllowedEndpoint): string[] {
   return ALLOWED_ENDPOINTS[endpoint];
 }
 
-function appendValidatedQuery(req: Request, target: URL): boolean {
+function appendValidatedQuery(
+  req: Request,
+  target: URL,
+  endpoint: AllowedEndpoint,
+): { ok: true } | { ok: false; key: string; reason: string } {
+  const endpointKeys = ENDPOINT_QUERY_KEYS[endpoint];
   const { searchParams } = new URL(req.url);
   for (const [key, value] of searchParams.entries()) {
+    // 엔드포인트 스펙에 없는 키는 보안상 전달하지 않고 무시한다.
+    if (!endpointKeys.has(key)) continue;
+
     if (
-      !ALLOWED_QUERY_KEYS.has(key) ||
       value.length === 0 ||
       value.length > MAX_QUERY_VALUE_LENGTH ||
       /[\r\n]/.test(value) ||
       /(?:https?:)?\/\//i.test(value)
     ) {
-      return false;
+      return { ok: false, key, reason: "malformed_value" };
     }
 
     if (key === "address") {
-      if (!ADDRESS_RE.test(value)) return false;
+      if (!ADDRESS_RE.test(value)) {
+        return { ok: false, key, reason: "invalid_address" };
+      }
       target.searchParams.set(key, value.toLowerCase());
       continue;
     }
 
-    if (key === "type") {
-      if (!TYPE_RE.test(value)) return false;
+    if (TEXT_QUERY_KEYS.has(key)) {
+      if (!TYPE_RE.test(value)) {
+        return { ok: false, key, reason: "invalid_text_value" };
+      }
       target.searchParams.set(key, value);
       continue;
     }
 
-    if (!DIGITS_RE.test(value)) return false;
-    const asNum = Number(value);
-    if (!Number.isSafeInteger(asNum) || asNum < 0) return false;
+    if (!NUMERIC_QUERY_KEYS.has(key)) {
+      // allowlist에 있지만 별도 타입 분류가 없다면 전달하지 않음
+      continue;
+    }
 
-    if (key === "size" && (asNum < 1 || asNum > 200)) return false;
-    if (key === "page" && asNum > 10000) return false;
+    if (!DIGITS_RE.test(value)) {
+      return { ok: false, key, reason: "invalid_numeric_value" };
+    }
+    const asNum = Number(value);
+    if (!Number.isSafeInteger(asNum) || asNum < 0) {
+      return { ok: false, key, reason: "invalid_numeric_range" };
+    }
+
+    if (key === "size" && (asNum < 1 || asNum > 200)) {
+      return { ok: false, key, reason: "size_out_of_range" };
+    }
+    if (key === "page" && asNum > 10000) {
+      return { ok: false, key, reason: "page_out_of_range" };
+    }
 
     target.searchParams.set(key, String(asNum));
   }
-  return true;
+  return { ok: true };
 }
 
 function makeBrowseryHeaders(tail: string) {
@@ -192,9 +247,15 @@ export async function GET(req: Request, context: RouteContext) {
     for (const upstreamPath of getUpstreamPaths(endpoint)) {
       // 2) 고정 upstream에 검증된 query만 부착
       const upstream = new URL(upstreamPath, UPSTREAM);
-      if (!appendValidatedQuery(req, upstream)) {
+      const validatedQuery = appendValidatedQuery(req, upstream, endpoint);
+      if (!validatedQuery.ok) {
         return NextResponse.json(
-          { ok: false, error: "invalid_query" },
+          {
+            ok: false,
+            error: "invalid_query",
+            key: validatedQuery.key,
+            reason: validatedQuery.reason,
+          },
           { status: 400 },
         );
       }

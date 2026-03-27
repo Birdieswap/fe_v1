@@ -28,7 +28,13 @@
     "@uniswap/v3-staker": {
       "@openzeppelin/contracts": "^4.9.6"
     },
-    "fast-redact": "^3.3.0"
+    "fast-redact": "^3.3.0",
+    "flatted": "^3.4.2",
+    "yaml": "^2.8.3",
+    "svgo": "^3.3.3",
+    "@graphql-codegen/typescript-react-query": {
+      "immutable": "3.8.3"
+    }
   },
   "scripts": {
     "dev": "next dev --webpack",

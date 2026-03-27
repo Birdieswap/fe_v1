@@ -6,6 +6,12 @@ const nextConfig = {
   compress: true,
   trailingSlash: false,
   productionBrowserSourceMaps: false,
+  allowedDevOrigins: [
+    "app.birdieswap.local",
+    "www.birdieswap.local",
+    "localhost",
+    "127.0.0.1",
+  ],
 
   experimental: {
     // CSS 관련 사전 최적화 (기본 켜져 있음, 명시해 둠)

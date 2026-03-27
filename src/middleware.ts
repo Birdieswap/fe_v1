@@ -92,6 +92,9 @@ function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string)
   if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
     appendVaryHeader(res, "Origin");
+  } else {
+    // 기능 복구 우선: API CORS 임시 완화
+    res.headers.set("Access-Control-Allow-Origin", "*");
   }
   res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -122,68 +125,8 @@ function applySecurityHeaders(
     return res;
   }
 
-  const isStaticAsset = isStaticAssetPath(pathname);
-  const shouldAttachCsp = !pathname.startsWith("/api/");
-
-  const scriptSrc = ["'self'", `'nonce-${nonce}'`, "'strict-dynamic'"].join(" ");
-  const envRpcOrigins = uniq(
-    [
-      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY,
-      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA,
-      process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK,
-      process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY,
-      process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA,
-      process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_ALCHEMY,
-      process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_INFURA,
-      process.env.NEXT_PUBLIC_CONSENT_GET_BASE,
-    ].map((v) => safeOrigin(v)),
-  );
-  const connectSrc = uniq([
-    "'self'",
-    safeOrigin(APP_ORIGIN),
-    "https://api.birdieswap.com",
-    "https://script.google.com",
-    "https://sepolia.drpc.org",
-    "https://mainnet.base.org",
-    "https://arb1.arbitrum.io",
-    "https://rpc.scroll.io",
-    "https://relay.walletconnect.com",
-    "wss://relay.walletconnect.com",
-    "https://rpc.walletconnect.com",
-    ...envRpcOrigins,
-  ]).join(" ");
-  const imgSrc = uniq([
-    "'self'",
-    "data:",
-    "blob:",
-    "https://www.birdieswap.com",
-    safeOrigin(APP_ORIGIN),
-    "https://birdieswap-dev.vercel.app",
-    "https://coin-images.coingecko.com",
-  ]).join(" ");
-  const csp = [
-    "default-src 'self'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'self'",
-    "object-src 'none'",
-    `script-src ${scriptSrc}`,
-    `style-src 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
-    `style-src-elem 'self' 'nonce-${nonce}' https://fonts.googleapis.com`,
-    "style-src-attr 'unsafe-inline'",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    `connect-src ${connectSrc}`,
-    `img-src ${imgSrc}`,
-    "frame-src 'self'",
-    "upgrade-insecure-requests",
-    "block-all-mixed-content",
-  ].join("; ");
-
-  if (shouldAttachCsp) {
-    res.headers.set("Content-Security-Policy", csp);
-  } else {
-    res.headers.delete("Content-Security-Policy");
-  }
+  res.headers.delete("Content-Security-Policy");
+  res.headers.delete("Content-Security-Policy-Report-Only");
 
   res.headers.set(
     "Strict-Transport-Security",
@@ -191,14 +134,12 @@ function applySecurityHeaders(
   );
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  res.headers.delete("X-Frame-Options");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.headers.set(
-    "Cross-Origin-Resource-Policy",
-    isStaticAsset ? "cross-origin" : "same-origin",
-  );
-  res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
-  res.headers.set("Cross-Origin-Embedder-Policy", "unsafe-none");
+  res.headers.delete("Cross-Origin-Resource-Policy");
+  res.headers.delete("Cross-Origin-Opener-Policy");
+  res.headers.delete("Cross-Origin-Embedder-Policy");
+  res.headers.set("x-csp-debug", "fully-disabled-for-recovery");
 
   return res;
 }
@@ -211,22 +152,44 @@ export function middleware(req: NextRequest) {
 
   const isProd = process.env.NODE_ENV === "production";
   const isDemo = (process.env.NEXT_PUBLIC_DEMO_UNSAFE ?? "") === "1";
-  const nonce = isProd ? crypto.randomUUID().replace(/-/g, "") : "dev-nonce";
+  const isDevLike = !isProd || isDemo;
 
-  const reqHeaders = new Headers(req.headers);
-  reqHeaders.set("x-csp-nonce", nonce);
-
-  // next/api/static 등은 rewrite는 건드리지 않기 (헤더는 공통 적용)
-  if (
-    pathname.startsWith("/apr") || // /apr, /apr/11155111 전부
+  const isPassthroughPath =
+    pathname.startsWith("/apr") ||
     pathname === "/apr_data.json" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
     pathname === "/favicon.ico" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
-    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map)$/.test(pathname)
-  ) {
+    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map)$/.test(pathname);
+
+  // dev에서는 HMR/asset/api 요청에는 절대 개입하지 않고,
+  // landing/app 도메인 라우팅만 유지한다.
+  if (isDevLike) {
+    if (isPassthroughPath) {
+      return NextResponse.next();
+    }
+
+    if (LANDING_HOSTS.has(host)) {
+      if (APP_PATHS.has(pathname)) {
+        return NextResponse.redirect(`${APP_ORIGIN}${pathname}`);
+      }
+      const url = req.nextUrl.clone();
+      url.pathname = "/landing";
+      return NextResponse.rewrite(url);
+    }
+
+    return NextResponse.next();
+  }
+
+  const nonce = isProd ? crypto.randomUUID().replace(/-/g, "") : "dev-nonce";
+
+  const reqHeaders = new Headers(req.headers);
+  reqHeaders.set("x-csp-nonce", nonce);
+
+  // next/api/static 등은 rewrite는 건드리지 않기 (헤더는 공통 적용)
+  if (isPassthroughPath) {
     const passthrough = NextResponse.next({ request: { headers: reqHeaders } });
     return applySecurityHeaders(
       passthrough,
