@@ -1,20 +1,5 @@
 /** @type {import('next').NextConfig} */
 
-const securityHeaders = [
-  {
-    key: "Strict-Transport-Security",
-    value: "max-age=63072000; includeSubDomains; preload",
-  },
-  { key: "X-Content-Type-Options", value: "nosniff" },
-  // 👇 middleware.ts와 일치시키기 (SAMEORIGIN)
-  { key: "X-Frame-Options", value: "SAMEORIGIN" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  {
-    key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=()",
-  },
-];
-
 const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
@@ -102,31 +87,6 @@ const nextConfig = {
   // async redirects() {
   //   return [];
   // },
-
-  async headers() {
-    return [
-      // {
-      //   source: "/(.*)",
-      //   headers: securityHeaders,
-      // },
-      // (선택) 특정 경로 CORS 허용 예시
-      {
-        source: "/api/:path*",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "https://birdieswap-dev.vercel.app",
-          },
-          { key: "Vary", value: "Origin" },
-          { key: "Access-Control-Allow-Methods", value: "GET,POST,OPTIONS" },
-          {
-            key: "Access-Control-Allow-Headers",
-            value: "Content-Type, Authorization",
-          },
-        ],
-      },
-    ];
-  },
 
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

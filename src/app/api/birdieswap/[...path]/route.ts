@@ -25,6 +25,8 @@ const ALLOWED_ENDPOINTS: Record<string, string[]> = {
     "/ReferralRewards",
     "/ReferralRewards.json",
   ],
+  Check: ["/Consent/Check/", "/Consent/Check"],
+  Initiate: ["/Consent/Initiate/", "/Consent/Initiate"],
 };
 const ALLOWED_QUERY_KEYS = new Set([
   "address",
@@ -32,16 +34,21 @@ const ALLOWED_QUERY_KEYS = new Set([
   "chainId",
   "page",
   "size",
+  "type",
+  "_ts",
 ]);
 const MAX_QUERY_VALUE_LENGTH = 160;
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const DIGITS_RE = /^\d+$/;
+const TYPE_RE = /^[a-zA-Z0-9_-]{1,64}$/;
 const UPSTREAM_PATH_PREFIXES = new Set([
   "/Transactions",
   "/CurrentUserPoints",
   "/CurrentUserRewards",
   "/SwapRewards",
   "/ReferralRewards",
+  "/Consent/Check",
+  "/Consent/Initiate",
 ]);
 
 type AllowedEndpoint =
@@ -49,7 +56,9 @@ type AllowedEndpoint =
   | "CurrentUserPoints"
   | "CurrentUserRewards"
   | "SwapRewards"
-  | "ReferralRewards";
+  | "ReferralRewards"
+  | "Check"
+  | "Initiate";
 
 /* ───────── helpers ───────── */
 
@@ -65,6 +74,8 @@ function resolveEndpoint(
     case "CurrentUserRewards":
     case "SwapRewards":
     case "ReferralRewards":
+    case "Check":
+    case "Initiate":
       return endpoint;
     default:
       return null;
@@ -91,6 +102,12 @@ function appendValidatedQuery(req: Request, target: URL): boolean {
     if (key === "address") {
       if (!ADDRESS_RE.test(value)) return false;
       target.searchParams.set(key, value.toLowerCase());
+      continue;
+    }
+
+    if (key === "type") {
+      if (!TYPE_RE.test(value)) return false;
+      target.searchParams.set(key, value);
       continue;
     }
 
@@ -162,7 +179,7 @@ export async function GET(req: Request, context: RouteContext) {
         {
           ok: false,
           error: "invalid_endpoint",
-          hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards",
+          hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards, Check, Initiate",
         },
         { status: 400 },
       );
