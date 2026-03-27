@@ -1,0 +1,40 @@
+{
+  "headers": [
+    {
+      "source": "/_next/static/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://www.birdieswap.com"
+        }
+      ]
+    },
+    {
+      "source": "/tokens/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://www.birdieswap.com"
+        }
+      ]
+    },
+    {
+      "source": "/networks/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://www.birdieswap.com"
+        }
+      ]
+    },
+    {
+      "source": "/landing/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://www.birdieswap.com"
+        }
+      ]
+    }
+  ]
+}

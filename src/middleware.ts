@@ -137,6 +137,24 @@ function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string)
   }
 }
 
+function applyStaticAssetCors(res: NextResponse, req: NextRequest, pathname: string) {
+  if (pathname.startsWith("/api/")) return;
+  if (!isStaticAssetPath(pathname)) return;
+
+  // 정적 자산의 과도한 '*' CORS를 제거하고 허용 origin만 반영
+  res.headers.delete("Access-Control-Allow-Origin");
+  res.headers.delete("Access-Control-Allow-Methods");
+  res.headers.delete("Access-Control-Allow-Headers");
+  res.headers.delete("Access-Control-Allow-Credentials");
+  res.headers.delete("Access-Control-Max-Age");
+
+  const origin = req.headers.get("origin") ?? "";
+  if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    appendVaryHeader(res, "Origin");
+  }
+}
+
 function applySecurityHeaders(
   res: NextResponse,
   req: NextRequest,
@@ -146,6 +164,7 @@ function applySecurityHeaders(
   nonce: string,
 ) {
   applyCorsHeaders(res, req, pathname);
+  applyStaticAssetCors(res, req, pathname);
   const isDocument = isDocumentLikePath(pathname);
   const isCspPath = isCspPolicyPath(pathname);
   const host = requestHost(req);
@@ -180,32 +199,7 @@ function applySecurityHeaders(
   if (isCspPath) {
     // 2단계: 동작 리스크를 낮춘 완화형 강제 CSP
     res.headers.set("Content-Security-Policy", enforceCspDocument);
-
-    // 1단계: 차단 없는 관측 모드(CSP Report-Only)
-    res.headers.set(
-      "Content-Security-Policy-Report-Only",
-      [
-        "default-src 'self' https: data: blob:",
-        "upgrade-insecure-requests",
-        "block-all-mixed-content",
-        "base-uri 'none'",
-        "object-src 'none'",
-        "frame-ancestors 'none'",
-        "script-src 'self' https:",
-        "script-src-attr 'none'",
-        "require-trusted-types-for 'script'",
-        "style-src 'self' https:",
-        "style-src-attr 'none'",
-        "img-src 'self' data: blob: https:",
-        "font-src 'self' data: https:",
-        "connect-src 'self' https:",
-        "frame-src 'none'",
-        "manifest-src 'self'",
-        "media-src 'self' https: data: blob:",
-        "worker-src 'self' blob:",
-        "form-action 'self' https:",
-      ].join("; "),
-    );
+    res.headers.delete("Content-Security-Policy-Report-Only");
   } else {
     res.headers.delete("Content-Security-Policy-Report-Only");
     if (pathname.startsWith("/api/")) {
