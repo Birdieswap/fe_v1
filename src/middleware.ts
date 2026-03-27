@@ -151,41 +151,14 @@ function applySecurityHeaders(
   const host = requestHost(req);
   const isLandingHost = LANDING_HOSTS.has(host);
   const isAppHost = APP_HOSTS.has(host);
-  const enforceCspAppDocument = [
-    "default-src 'self' https: data: blob:",
-    "upgrade-insecure-requests",
-    "block-all-mixed-content",
+  // 강제 CSP는 동작 안정성을 위해 최소 정책만 유지.
+  // 상세/엄격 정책은 Report-Only에서 점진 적용한다.
+  const enforceCspDocument = [
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https: blob:",
-    "style-src 'self' 'unsafe-inline' https:",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss:",
-    "frame-src 'self' https:",
-    "worker-src 'self' blob:",
     "form-action 'self' https:",
-  ].join("; ");
-  const enforceCspLandingDocument = [
-    "default-src 'self' https: data: blob:",
     "upgrade-insecure-requests",
-    "block-all-mixed-content",
-    "base-uri 'self'",
-    "object-src 'none'",
-    "frame-ancestors 'none'",
-    // landing은 app보다 엄격: eval/wasm-eval 허용 제거
-    "script-src 'self' 'unsafe-inline' https: blob:",
-    "script-src-attr 'none'",
-    "style-src 'self' 'unsafe-inline' https:",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss:",
-    "frame-src 'none'",
-    "manifest-src 'self'",
-    "media-src 'self' https: data: blob:",
-    "worker-src 'self' blob:",
-    "form-action 'self' https:",
   ].join("; ");
 
   if (!isProd || isDemo) {
@@ -206,10 +179,7 @@ function applySecurityHeaders(
   res.headers.delete("Content-Security-Policy");
   if (isCspPath) {
     // 2단계: 동작 리스크를 낮춘 완화형 강제 CSP
-    res.headers.set(
-      "Content-Security-Policy",
-      isLandingHost ? enforceCspLandingDocument : enforceCspAppDocument,
-    );
+    res.headers.set("Content-Security-Policy", enforceCspDocument);
 
     // 1단계: 차단 없는 관측 모드(CSP Report-Only)
     res.headers.set(
