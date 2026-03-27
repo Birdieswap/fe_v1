@@ -75,6 +75,7 @@ function appendVaryHeader(res: NextResponse, token: string) {
 function isStaticAssetPath(pathname: string) {
   return (
     pathname.startsWith("/_next/static") ||
+    pathname === "/manifest.json" ||
     /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map|woff|woff2|ttf|otf|eot)$/i.test(
       pathname,
     )
@@ -99,6 +100,7 @@ function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string)
   res.headers.delete("Access-Control-Allow-Origin");
   res.headers.delete("Access-Control-Allow-Methods");
   res.headers.delete("Access-Control-Allow-Headers");
+  res.headers.delete("Access-Control-Allow-Credentials");
 
   if (!pathname.startsWith("/api/")) return;
 
@@ -106,9 +108,7 @@ function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string)
   if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
     appendVaryHeader(res, "Origin");
-  } else {
-    // 기능 복구 우선: API CORS 임시 완화
-    res.headers.set("Access-Control-Allow-Origin", "*");
+    res.headers.set("Access-Control-Allow-Credentials", "true");
   }
   res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
@@ -170,9 +170,20 @@ function applySecurityHeaders(
   );
   res.headers.set("X-Content-Type-Options", "nosniff");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.headers.delete("X-Frame-Options");
+  if (isDocument) {
+    res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  } else {
+    res.headers.delete("X-Frame-Options");
+  }
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
-  res.headers.delete("Cross-Origin-Resource-Policy");
+  if (isDocument) {
+    res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  } else if (isStaticAssetPath(pathname)) {
+    // 정적 자산은 외부 임베딩 가능성을 남기기 위해 완화
+    res.headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+  } else {
+    res.headers.delete("Cross-Origin-Resource-Policy");
+  }
   if (isDocument) {
     // 지갑 팝업 호환성을 위해 same-origin-allow-popups 사용
     res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");

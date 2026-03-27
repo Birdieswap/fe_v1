@@ -17,7 +17,13 @@ export async function copyToClipboard(text: string): Promise<boolean> {
   }
 
   // 2. Fallback: execCommand('copy')
-  return copyFallback(text);
+  if (copyFallback(text)) return true;
+
+  // 3. 최후 fallback: 수동 복사 유도
+  if (typeof window !== "undefined") {
+    window.prompt("Copy to clipboard: Ctrl+C (or Cmd+C), Enter", text);
+  }
+  return false;
 }
 
 function copyFallback(text: string): boolean {
@@ -29,10 +35,13 @@ function copyFallback(text: string): boolean {
     textArea.style.position = "fixed";
     textArea.style.left = "-9999px";
     textArea.style.top = "0";
+    textArea.setAttribute("readonly", "true");
+    textArea.style.opacity = "0";
     document.body.appendChild(textArea);
 
     textArea.focus();
     textArea.select();
+    textArea.setSelectionRange(0, textArea.value.length);
 
     const successful = document.execCommand("copy");
     document.body.removeChild(textArea);
