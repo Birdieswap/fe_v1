@@ -89,6 +89,26 @@ type AllowedEndpoint =
 
 /* ───────── helpers ───────── */
 
+function applyApiSecurityHeaders(headers: Headers) {
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "no-referrer");
+  headers.set("X-Frame-Options", "DENY");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  headers.set(
+    "Content-Security-Policy",
+    "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+  );
+  headers.set("Cache-Control", "private, no-store, max-age=0");
+  headers.set("Pragma", "no-cache");
+}
+
+function jsonResponse(body: unknown, status: number) {
+  const res = NextResponse.json(body, { status });
+  applyApiSecurityHeaders(res.headers);
+  return res;
+}
+
 function resolveEndpoint(
   rawPath: string[] | string | undefined,
 ): AllowedEndpoint | null {
@@ -230,13 +250,13 @@ export async function GET(req: Request, context: RouteContext) {
     const params = context?.params ? await context.params : undefined;
     const endpoint = resolveEndpoint(params?.path);
     if (!endpoint) {
-      return NextResponse.json(
+      return jsonResponse(
         {
           ok: false,
           error: "invalid_endpoint",
           hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards, Check, Initiate",
         },
-        { status: 400 },
+        400,
       );
     }
 
@@ -249,14 +269,14 @@ export async function GET(req: Request, context: RouteContext) {
       const upstream = new URL(upstreamPath, UPSTREAM);
       const validatedQuery = appendValidatedQuery(req, upstream, endpoint);
       if (!validatedQuery.ok) {
-        return NextResponse.json(
+        return jsonResponse(
           {
             ok: false,
             error: "invalid_query",
             key: validatedQuery.key,
             reason: validatedQuery.reason,
           },
-          { status: 400 },
+          400,
         );
       }
       const hasAllowedPrefix = Array.from(UPSTREAM_PATH_PREFIXES).some((prefix) =>
@@ -267,9 +287,9 @@ export async function GET(req: Request, context: RouteContext) {
         upstream.origin !== UPSTREAM.origin ||
         !hasAllowedPrefix
       ) {
-        return NextResponse.json(
+        return jsonResponse(
           { ok: false, error: "invalid_target" },
-          { status: 400 },
+          400,
         );
       }
 
@@ -304,22 +324,23 @@ export async function GET(req: Request, context: RouteContext) {
         out.set("content-type", "application/json; charset=utf-8");
         out.set("cache-control", "no-store, max-age=0");
         out.set("x-upstream-url", upstream.toString());
+        applyApiSecurityHeaders(out);
         return new NextResponse(buf, { status: 200, headers: out });
       }
     }
 
-    return NextResponse.json(
+    return jsonResponse(
       {
         ok: false,
         status: lastStatus ?? 502,
         reason: lastReason,
       },
-      { status: 502 },
+      502,
     );
   } catch (e) {
-    return NextResponse.json(
+    return jsonResponse(
       { ok: false, status: 502, reason: "route_error", message: String(e) },
-      { status: 502 },
+      502,
     );
   }
 }

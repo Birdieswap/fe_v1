@@ -44,6 +44,8 @@ const CORS_ALLOW_ORIGINS = new Set(
     "http://127.0.0.1:3000",
   ]),
 );
+const PERMISSIONS_POLICY =
+  "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()";
 
 function safeOrigin(url?: string) {
   if (!url) return "";
@@ -96,11 +98,26 @@ function isDocumentLikePath(pathname: string) {
   return true;
 }
 
+function isCspPolicyPath(pathname: string) {
+  return (
+    isDocumentLikePath(pathname) ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/manifest.json"
+  );
+}
+
+function requestHost(req: NextRequest) {
+  const rawHost = (req.headers.get("host") ?? "").toLowerCase();
+  return rawHost.split(":")[0];
+}
+
 function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string) {
   res.headers.delete("Access-Control-Allow-Origin");
   res.headers.delete("Access-Control-Allow-Methods");
   res.headers.delete("Access-Control-Allow-Headers");
   res.headers.delete("Access-Control-Allow-Credentials");
+  res.headers.delete("Access-Control-Max-Age");
 
   if (!pathname.startsWith("/api/")) return;
 
@@ -108,10 +125,16 @@ function applyCorsHeaders(res: NextResponse, req: NextRequest, pathname: string)
   if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
     res.headers.set("Access-Control-Allow-Origin", origin);
     appendVaryHeader(res, "Origin");
+    appendVaryHeader(res, "Access-Control-Request-Method");
+    appendVaryHeader(res, "Access-Control-Request-Headers");
     res.headers.set("Access-Control-Allow-Credentials", "true");
+    res.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    );
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    res.headers.set("Access-Control-Max-Age", "600");
   }
-  res.headers.set("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
 function applySecurityHeaders(
@@ -124,6 +147,46 @@ function applySecurityHeaders(
 ) {
   applyCorsHeaders(res, req, pathname);
   const isDocument = isDocumentLikePath(pathname);
+  const isCspPath = isCspPolicyPath(pathname);
+  const host = requestHost(req);
+  const isLandingHost = LANDING_HOSTS.has(host);
+  const isAppHost = APP_HOSTS.has(host);
+  const enforceCspAppDocument = [
+    "default-src 'self' https: data: blob:",
+    "upgrade-insecure-requests",
+    "block-all-mixed-content",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' https: blob:",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https: wss:",
+    "frame-src 'self' https:",
+    "worker-src 'self' blob:",
+    "form-action 'self' https:",
+  ].join("; ");
+  const enforceCspLandingDocument = [
+    "default-src 'self' https: data: blob:",
+    "upgrade-insecure-requests",
+    "block-all-mixed-content",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    // landing은 app보다 엄격: eval/wasm-eval 허용 제거
+    "script-src 'self' 'unsafe-inline' https: blob:",
+    "script-src-attr 'none'",
+    "style-src 'self' 'unsafe-inline' https:",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https:",
+    "connect-src 'self' https: wss:",
+    "frame-src 'none'",
+    "manifest-src 'self'",
+    "media-src 'self' https: data: blob:",
+    "worker-src 'self' blob:",
+    "form-action 'self' https:",
+  ].join("; ");
 
   if (!isProd || isDemo) {
     res.headers.delete("Content-Security-Policy");
@@ -141,27 +204,47 @@ function applySecurityHeaders(
   }
 
   res.headers.delete("Content-Security-Policy");
-  if (isDocument) {
+  if (isCspPath) {
+    // 2단계: 동작 리스크를 낮춘 완화형 강제 CSP
+    res.headers.set(
+      "Content-Security-Policy",
+      isLandingHost ? enforceCspLandingDocument : enforceCspAppDocument,
+    );
+
     // 1단계: 차단 없는 관측 모드(CSP Report-Only)
     res.headers.set(
       "Content-Security-Policy-Report-Only",
       [
         "default-src 'self' https: data: blob:",
-        "base-uri 'self'",
+        "upgrade-insecure-requests",
+        "block-all-mixed-content",
+        "base-uri 'none'",
         "object-src 'none'",
         "frame-ancestors 'none'",
-        "script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https:",
-        "style-src 'self' 'unsafe-inline' https:",
+        "script-src 'self' https:",
+        "script-src-attr 'none'",
+        "require-trusted-types-for 'script'",
+        "style-src 'self' https:",
+        "style-src-attr 'none'",
         "img-src 'self' data: blob: https:",
         "font-src 'self' data: https:",
-        "connect-src 'self' https: wss:",
-        "frame-src 'self' https:",
+        "connect-src 'self' https:",
+        "frame-src 'none'",
+        "manifest-src 'self'",
+        "media-src 'self' https: data: blob:",
         "worker-src 'self' blob:",
         "form-action 'self' https:",
       ].join("; "),
     );
   } else {
     res.headers.delete("Content-Security-Policy-Report-Only");
+    if (pathname.startsWith("/api/")) {
+      // API 응답은 렌더링 목적이 아니므로 최소 CSP로 명시 차단
+      res.headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      );
+    }
   }
 
   res.headers.set(
@@ -169,29 +252,77 @@ function applySecurityHeaders(
     "max-age=63072000; includeSubDomains; preload",
   );
   res.headers.set("X-Content-Type-Options", "nosniff");
+  res.headers.set("X-Download-Options", "noopen");
+  res.headers.set("X-DNS-Prefetch-Control", "off");
+  res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  if (isDocument) {
+  if (isCspPath) {
     res.headers.set("X-Frame-Options", "SAMEORIGIN");
   } else {
     res.headers.delete("X-Frame-Options");
   }
-  res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (isDocument) {
+    res.headers.set("Origin-Agent-Cluster", "?1");
+  } else {
+    res.headers.delete("Origin-Agent-Cluster");
+  }
+  res.headers.set("Permissions-Policy", PERMISSIONS_POLICY);
   if (isDocument) {
     res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  } else if (pathname === "/manifest.json") {
+    res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   } else if (isStaticAssetPath(pathname)) {
-    // 정적 자산은 외부 임베딩 가능성을 남기기 위해 완화
-    res.headers.set("Cross-Origin-Resource-Policy", "cross-origin");
+    // 정적 자산은 동일 사이트(app/landing) 범위만 공유
+    res.headers.set("Cross-Origin-Resource-Policy", "same-site");
+  } else if (pathname.startsWith("/api/")) {
+    res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   } else {
     res.headers.delete("Cross-Origin-Resource-Policy");
   }
   if (isDocument) {
-    // 지갑 팝업 호환성을 위해 same-origin-allow-popups 사용
-    res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    // landing은 stronger isolation, app은 지갑 팝업 호환 유지
+    res.headers.set(
+      "Cross-Origin-Opener-Policy",
+      isLandingHost ? "same-origin" : "same-origin-allow-popups",
+    );
   } else {
     res.headers.delete("Cross-Origin-Opener-Policy");
   }
-  res.headers.delete("Cross-Origin-Embedder-Policy");
-  res.headers.set("x-csp-debug", isDocument ? "report-only-phase-1" : "no-document-csp");
+  if (isDocument && isLandingHost) {
+    // landing은 app 대비 외부 의존이 적어 credentialless 적용이 비교적 안전
+    res.headers.set("Cross-Origin-Embedder-Policy", "credentialless");
+    res.headers.delete("Cross-Origin-Embedder-Policy-Report-Only");
+  } else {
+    res.headers.delete("Cross-Origin-Embedder-Policy");
+    if (isDocument) {
+      // app은 호환성 검증을 위해 관측 모드로만 먼저 적용
+      res.headers.set("Cross-Origin-Embedder-Policy-Report-Only", "credentialless");
+      if (!isLandingHost) {
+        // app은 지갑 팝업 호환을 유지하면서도 stronger COOP 목표를 관측
+        res.headers.set("Cross-Origin-Opener-Policy-Report-Only", "same-origin");
+      } else {
+        res.headers.delete("Cross-Origin-Opener-Policy-Report-Only");
+      }
+    } else {
+      res.headers.delete("Cross-Origin-Embedder-Policy-Report-Only");
+      res.headers.delete("Cross-Origin-Opener-Policy-Report-Only");
+    }
+  }
+  if (pathname.startsWith("/api/birdieswap/")) {
+    // 지갑/트랜잭션 민감 API는 공유 캐시를 피한다.
+    res.headers.set("Cache-Control", "private, no-store, max-age=0");
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+  } else if (isDocument && isAppHost) {
+    // app 문서는 개인 상태(지갑/포인트/트랜잭션)와 결합되므로 보수적으로 캐시 금지
+    res.headers.set("Cache-Control", "private, no-store, max-age=0");
+    res.headers.set("Pragma", "no-cache");
+    res.headers.set("Expires", "0");
+  }
+  res.headers.set(
+    "x-csp-debug",
+    isCspPath ? "enforce-relaxed-and-report-phase-3" : "no-document-csp",
+  );
 
   return res;
 }
@@ -201,6 +332,8 @@ export function middleware(req: NextRequest) {
   const rawHost = (req.headers.get("host") ?? "").toLowerCase();
   const host = rawHost.split(":")[0]; // ✅ 포트 제거
   const pathname = req.nextUrl.pathname;
+  const secFetchSite = (req.headers.get("sec-fetch-site") || "").toLowerCase();
+  const origin = req.headers.get("origin") || "";
 
   const isProd = process.env.NODE_ENV === "production";
   const isDemo = (process.env.NEXT_PUBLIC_DEMO_UNSAFE ?? "") === "1";
@@ -215,6 +348,55 @@ export function middleware(req: NextRequest) {
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
     /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map)$/.test(pathname);
+
+  // 민감 프록시 API는 cross-site 요청을 선제 차단한다.
+  // same-origin/same-site/none(주소창 직접 접근) 또는 헤더 미존재만 허용.
+  if (
+    pathname.startsWith("/api/birdieswap/") &&
+    req.method !== "OPTIONS" &&
+    secFetchSite === "cross-site"
+  ) {
+    return new NextResponse(
+      JSON.stringify({ ok: false, error: "blocked_by_fetch_metadata" }),
+      {
+        status: 403,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "no-store, max-age=0",
+          pragma: "no-cache",
+          "x-content-type-options": "nosniff",
+        },
+      },
+    );
+  }
+
+  // Origin이 존재하는 민감 API 요청은 allowlist origin만 허용.
+  if (
+    pathname.startsWith("/api/birdieswap/") &&
+    req.method !== "OPTIONS" &&
+    origin &&
+    !CORS_ALLOW_ORIGINS.has(origin)
+  ) {
+    return new NextResponse(
+      JSON.stringify({ ok: false, error: "blocked_by_origin_policy" }),
+      {
+        status: 403,
+        headers: {
+          "content-type": "application/json; charset=utf-8",
+          "cache-control": "no-store, max-age=0",
+          pragma: "no-cache",
+          "x-content-type-options": "nosniff",
+        },
+      },
+    );
+  }
+
+  // CORS preflight는 여기서 즉시 응답해 정책을 일관 적용
+  if (pathname.startsWith("/api/") && req.method === "OPTIONS") {
+    const preflight = new NextResponse(null, { status: 204 });
+    applyCorsHeaders(preflight, req, pathname);
+    return preflight;
+  }
 
   // dev에서는 HMR/asset/api 요청에는 절대 개입하지 않고,
   // landing/app 도메인 라우팅만 유지한다.

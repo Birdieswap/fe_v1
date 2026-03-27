@@ -110,6 +110,33 @@ const nextConfig = {
     // ignoreBuildErrors: true,
   },
 
+  async headers() {
+    const isProd = process.env.NODE_ENV === "production";
+    if (!isProd) return [];
+
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          {
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Download-Options", value: "noopen" },
+          { key: "X-DNS-Prefetch-Control", value: "off" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value:
+              "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()",
+          },
+        ],
+      },
+    ];
+  },
+
 };
 
 export default nextConfig;
