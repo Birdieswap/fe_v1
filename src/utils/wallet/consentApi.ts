@@ -5,20 +5,26 @@ import type {
   VerifyResponse,
 } from "@/types/consent";
 
-const BASE_GET_DEFAULT = "https://api.birdieswap.com/Consent";
-// ✅ prod에서 env로 업스트림 고정하지 말고, 우선 프록시를 쓰자
+const BASE_GET_DEFAULT = "/api/birdieswap/Consent";
+// 기본은 same-origin 프록시. 필요 시 env로 업스트림 직접 호출도 가능.
 const BASE_GET = (
   process.env.NEXT_PUBLIC_CONSENT_GET_BASE ?? BASE_GET_DEFAULT
 ).replace(/\/$/, "");
 
 const DEBUG = process.env.NEXT_PUBLIC_DEBUG === "1";
 
-// POST는 업스트림 직접 호출
-const BASE_POST = "https://api.birdieswap.com/Consent";
+const BASE_POST_DEFAULT = "/api/birdieswap/Consent";
+const BASE_POST = (
+  process.env.NEXT_PUBLIC_CONSENT_POST_BASE ?? BASE_POST_DEFAULT
+).replace(/\/$/, "");
 
 function absGet(path: string) {
   // path는 '/Check/', '/Initiate/' 형태로 전달됨
   return `${BASE_GET}${path}`;
+}
+
+function absPost(path: string) {
+  return `${BASE_POST}${path}`;
 }
 
 async function parseJsonSafe<T>(res: Response): Promise<T> {
@@ -122,7 +128,7 @@ export async function apiVerify(body: VerifyRequest): Promise<VerifyResponse> {
   const encoded = params.toString();
   if (DEBUG) console.debug("[apiVerify] encoded body:", encoded.slice(0, 500));
 
-  const url = `${BASE_POST}/Verify/index.php`;
+  const url = absPost("/Verify");
   const res = await fetch(url, {
     method: "POST",
     credentials: "include", // cf_clearance 등 쿠키 필요

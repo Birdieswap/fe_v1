@@ -27,6 +27,7 @@ const ALLOWED_ENDPOINTS: Record<string, string[]> = {
   ],
   Check: ["/Consent/Check/", "/Consent/Check"],
   Initiate: ["/Consent/Initiate/", "/Consent/Initiate"],
+  Verify: ["/Consent/Verify/", "/Consent/Verify", "/Consent/Verify/index.php"],
 };
 const ENDPOINT_QUERY_KEYS: Record<AllowedEndpoint, Set<string>> = {
   Transactions: new Set([
@@ -51,11 +52,15 @@ const ENDPOINT_QUERY_KEYS: Record<AllowedEndpoint, Set<string>> = {
   ReferralRewards: new Set(["address", "chainId", "page", "size", "_ts"]),
   Check: new Set(["address", "_ts"]),
   Initiate: new Set(["address", "chainId", "type", "_ts"]),
+  Verify: new Set(),
 };
 const MAX_QUERY_VALUE_LENGTH = 160;
+const MAX_POST_VALUE_LENGTH = 16_384;
 const ADDRESS_RE = /^0x[a-fA-F0-9]{40}$/;
 const DIGITS_RE = /^\d+$/;
 const TYPE_RE = /^[a-zA-Z0-9_-]{1,64}$/;
+const HEX_SIG_RE = /^0x[a-fA-F0-9]{130}$/;
+const HEX_32_RE = /^0x[a-fA-F0-9]{64}$/;
 const NUMERIC_QUERY_KEYS = new Set([
   "blockHeight",
   "chainId",
@@ -76,6 +81,7 @@ const UPSTREAM_PATH_PREFIXES = new Set([
   "/ReferralRewards",
   "/Consent/Check",
   "/Consent/Initiate",
+  "/Consent/Verify",
 ]);
 
 type AllowedEndpoint =
@@ -85,7 +91,8 @@ type AllowedEndpoint =
   | "SwapRewards"
   | "ReferralRewards"
   | "Check"
-  | "Initiate";
+  | "Initiate"
+  | "Verify";
 
 /* ───────── helpers ───────── */
 
@@ -127,6 +134,7 @@ function resolveEndpoint(
     case "ReferralRewards":
     case "Check":
     case "Initiate":
+    case "Verify":
       return endpoint;
     default:
       return null;
@@ -238,6 +246,60 @@ function looksLikeCF(text: string) {
   );
 }
 
+function validateVerifyForm(
+  form: URLSearchParams,
+): { ok: true } | { ok: false; key: string; reason: string } {
+  const address = form.get("address") ?? "";
+  const signature = form.get("signature") ?? "";
+  const digest = form.get("digest") ?? "";
+  const chainId = form.get("chainId") ?? "";
+  const nonce = form.get("nonce") ?? "";
+  const type = form.get("type") ?? "";
+  const version = form.get("version") ?? "";
+  const payload = form.get("EIP712Payload");
+
+  if (!ADDRESS_RE.test(address)) return { ok: false, key: "address", reason: "invalid_address" };
+  if (!HEX_SIG_RE.test(signature)) return { ok: false, key: "signature", reason: "invalid_signature" };
+  if (!HEX_32_RE.test(digest)) return { ok: false, key: "digest", reason: "invalid_digest" };
+  if (!DIGITS_RE.test(chainId)) return { ok: false, key: "chainId", reason: "invalid_chain_id" };
+  if (!DIGITS_RE.test(nonce)) return { ok: false, key: "nonce", reason: "invalid_nonce" };
+  if (!TYPE_RE.test(type)) return { ok: false, key: "type", reason: "invalid_type" };
+  if (!/^[a-zA-Z0-9._-]{1,32}$/.test(version)) {
+    return { ok: false, key: "version", reason: "invalid_version" };
+  }
+  if (payload) {
+    if (payload.length > MAX_POST_VALUE_LENGTH) {
+      return { ok: false, key: "EIP712Payload", reason: "payload_too_large" };
+    }
+    try {
+      JSON.parse(payload);
+    } catch {
+      return { ok: false, key: "EIP712Payload", reason: "invalid_payload_json" };
+    }
+  }
+  return { ok: true };
+}
+
+async function readVerifyForm(req: Request): Promise<URLSearchParams> {
+  const ct = req.headers.get("content-type") ?? "";
+  if (ct.includes("application/x-www-form-urlencoded")) {
+    return new URLSearchParams(await req.text());
+  }
+  if (ct.includes("application/json")) {
+    const body = (await req.json().catch(() => null)) as
+      | Record<string, unknown>
+      | null;
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(body ?? {})) {
+      if (v == null) continue;
+      if (typeof v === "object") params.set(k, JSON.stringify(v));
+      else params.set(k, String(v));
+    }
+    return params;
+  }
+  return new URLSearchParams();
+}
+
 /* ───────── route (GET) ───────── */
 
 type RouteContext = {
@@ -254,10 +316,13 @@ export async function GET(req: Request, context: RouteContext) {
         {
           ok: false,
           error: "invalid_endpoint",
-          hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards, Check, Initiate",
+          hint: "allowed: Transactions, CurrentUserPoints, CurrentUserRewards, SwapRewards, ReferralRewards, Check, Initiate, Verify",
         },
         400,
       );
+    }
+    if (endpoint === "Verify") {
+      return jsonResponse({ ok: false, error: "method_not_allowed" }, 405);
     }
 
     const upstreamHeaders = makeBrowseryHeaders(endpoint);
@@ -337,6 +402,84 @@ export async function GET(req: Request, context: RouteContext) {
       },
       502,
     );
+  } catch (e) {
+    return jsonResponse(
+      { ok: false, status: 502, reason: "route_error", message: String(e) },
+      502,
+    );
+  }
+}
+
+export async function POST(req: Request, context: RouteContext) {
+  try {
+    const params = context?.params ? await context.params : undefined;
+    const endpoint = resolveEndpoint(params?.path);
+    if (endpoint !== "Verify") {
+      return jsonResponse({ ok: false, error: "invalid_endpoint" }, 400);
+    }
+
+    const form = await readVerifyForm(req);
+    if (!form.size) {
+      return jsonResponse({ ok: false, error: "empty_body" }, 400);
+    }
+    const validated = validateVerifyForm(form);
+    if (!validated.ok) {
+      return jsonResponse(
+        {
+          ok: false,
+          error: "invalid_body",
+          key: validated.key,
+          reason: validated.reason,
+        },
+        400,
+      );
+    }
+
+    const upstream = new URL(getUpstreamPaths(endpoint)[0], UPSTREAM);
+    const hasAllowedPrefix = Array.from(UPSTREAM_PATH_PREFIXES).some((prefix) =>
+      upstream.pathname.startsWith(prefix),
+    );
+    if (
+      upstream.protocol !== "https:" ||
+      upstream.origin !== UPSTREAM.origin ||
+      !hasAllowedPrefix
+    ) {
+      return jsonResponse({ ok: false, error: "invalid_target" }, 400);
+    }
+
+    const headers = makeBrowseryHeaders(endpoint);
+    headers.set("content-type", "application/x-www-form-urlencoded");
+    headers.set("accept", "application/json, text/javascript;q=0.9, */*;q=0.8");
+
+    const r = await fetch(upstream.toString(), {
+      method: "POST",
+      headers,
+      redirect: "follow",
+      cache: "no-store",
+      body: form.toString(),
+    }).catch(() => null);
+
+    if (!r) {
+      return jsonResponse({ ok: false, status: 502, reason: "network_error" }, 502);
+    }
+
+    const status = r.status;
+    const ct = r.headers.get("content-type") || "";
+    const buf = await r.text().catch(() => "");
+    if (status === 403 || status === 503 || looksLikeCF(buf)) {
+      return jsonResponse({ ok: false, status, reason: "upstream_blocked" }, 502);
+    }
+
+    if (!r.ok || !(ct.includes("application/json") || /^[\s\r\n]*[\{\[]/.test(buf))) {
+      return jsonResponse({ ok: false, status, reason: "upstream_non_json_or_error" }, 502);
+    }
+
+    const out = new Headers();
+    out.set("content-type", "application/json; charset=utf-8");
+    out.set("cache-control", "no-store, max-age=0");
+    out.set("x-upstream-url", upstream.toString());
+    applyApiSecurityHeaders(out);
+    return new NextResponse(buf, { status: 200, headers: out });
   } catch (e) {
     return jsonResponse(
       { ok: false, status: 502, reason: "route_error", message: String(e) },

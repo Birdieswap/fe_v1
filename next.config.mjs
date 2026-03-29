@@ -113,55 +113,8 @@ const nextConfig = {
   async headers() {
     const isProd = process.env.NODE_ENV === "production";
     if (!isProd) return [];
-
-    return [
-      {
-        source: "/_next/static/:path*",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "https://www.birdieswap.com",
-          },
-        ],
-      },
-      {
-        source: "/(tokens|networks|landing)/:path*",
-        headers: [
-          {
-            key: "Access-Control-Allow-Origin",
-            value: "https://www.birdieswap.com",
-          },
-        ],
-      },
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "Content-Security-Policy",
-            value:
-              "base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self' https:; upgrade-insecure-requests",
-          },
-          {
-            key: "X-Frame-Options",
-            value: "SAMEORIGIN",
-          },
-          {
-            key: "Strict-Transport-Security",
-            value: "max-age=63072000; includeSubDomains; preload",
-          },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "X-Download-Options", value: "noopen" },
-          { key: "X-DNS-Prefetch-Control", value: "off" },
-          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          {
-            key: "Permissions-Policy",
-            value:
-              "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()",
-          },
-        ],
-      },
-    ];
+    // 보안 헤더는 middleware.ts에서 단일 정책으로 관리한다.
+    return [];
   },
 
 };

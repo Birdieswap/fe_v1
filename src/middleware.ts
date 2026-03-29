@@ -99,7 +99,8 @@ function isDocumentLikePath(pathname: string) {
 }
 
 function isCspPolicyPath(pathname: string) {
-  return isDocumentLikePath(pathname);
+  if (isDocumentLikePath(pathname)) return true;
+  return pathname === "/robots.txt" || pathname === "/sitemap.xml";
 }
 
 function requestHost(req: NextRequest) {
@@ -142,19 +143,6 @@ function applyStaticAssetCors(res: NextResponse, req: NextRequest, pathname: str
   res.headers.delete("Access-Control-Allow-Headers");
   res.headers.delete("Access-Control-Allow-Credentials");
   res.headers.delete("Access-Control-Max-Age");
-
-  const isPinnedStatic =
-    pathname === "/manifest.json" ||
-    pathname === "/favicon.ico" ||
-    /^\/android-icon-.*\.png$/i.test(pathname) ||
-    /^\/apple-icon.*\.png$/i.test(pathname) ||
-    /^\/ms-icon-.*\.png$/i.test(pathname) ||
-    /^\/favicon-.*\.png$/i.test(pathname) ||
-    pathname === "/browserconfig.xml";
-  if (isPinnedStatic) {
-    res.headers.set("Access-Control-Allow-Origin", "https://www.birdieswap.com");
-    return;
-  }
 
   const origin = req.headers.get("origin") ?? "";
   if (origin && CORS_ALLOW_ORIGINS.has(origin)) {
@@ -243,6 +231,12 @@ function applySecurityHeaders(
     res.headers.delete("Content-Security-Policy-Report-Only");
     if (pathname.startsWith("/api/")) {
       // API 응답은 렌더링 목적이 아니므로 최소 CSP로 명시 차단
+      res.headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+      );
+    } else if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
+      // 텍스트 리소스도 최소 CSP를 넣어 스캐너의 "header not set"을 줄인다.
       res.headers.set(
         "Content-Security-Policy",
         "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
