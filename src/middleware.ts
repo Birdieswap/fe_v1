@@ -46,6 +46,49 @@ const CORS_ALLOW_ORIGINS = new Set(
 );
 const PERMISSIONS_POLICY =
   "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()";
+const CSP_IMG_APP = ["'self'", "data:", "blob:", "https://coin-images.coingecko.com"];
+const CSP_IMG_LANDING = ["'self'", "data:", "blob:"];
+const CSP_CONNECT_APP = uniq([
+  "'self'",
+  "https://api.birdieswap.com",
+  "https://api.coingecko.com",
+  "https://pro-api.coingecko.com",
+  "https://mainnet.infura.io",
+  "https://sepolia.infura.io",
+  "https://base-mainnet.infura.io",
+  "https://mainnet.base.org",
+  "https://sepolia.drpc.org",
+  "https://arb1.arbitrum.io",
+  "https://polygon-rpc.com",
+  "https://rpc.scroll.io",
+  "wss://wss-rpc.scroll.io",
+  "https://relay.walletconnect.com",
+  "wss://relay.walletconnect.com",
+  "https://rpc.walletconnect.com",
+  safeOrigin(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_SEPOLIA_RPC_URL_CHAINSTACK),
+  safeOrigin(process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_OPTIMISM_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_BSC_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_BSC_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_POLYGON_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_POLYGON_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_SCROLL_RPC_URL_ALCHEMY),
+  safeOrigin(process.env.NEXT_PUBLIC_SCROLL_RPC_URL_INFURA),
+]);
+const CSP_CONNECT_LANDING = uniq([
+  "'self'",
+  "https://www.birdieswap.com",
+  "https://app.birdieswap.com",
+  "https://birdieswap-dev.vercel.app",
+  "https://birdieswap-landing.vercel.app",
+  "https://script.google.com",
+]);
 
 function safeOrigin(url?: string) {
   if (!url) return "";
@@ -99,8 +142,7 @@ function isDocumentLikePath(pathname: string) {
 }
 
 function isCspPolicyPath(pathname: string) {
-  if (isDocumentLikePath(pathname)) return true;
-  return pathname === "/robots.txt" || pathname === "/sitemap.xml";
+  return isDocumentLikePath(pathname);
 }
 
 function requestHost(req: NextRequest) {
@@ -166,41 +208,49 @@ function applySecurityHeaders(
   const host = requestHost(req);
   const isLandingHost = LANDING_HOSTS.has(host);
   const isAppHost = APP_HOSTS.has(host);
-  // app: 호환성 우선 (inline/eval 허용), but directive 누락은 없도록 명시
+  // app: 호환성 우선 (inline 일부 허용), directive 누락 없이 명시
   const enforceCspAppDocument = [
-    "default-src 'self' https: data: blob:",
+    "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:",
-    "style-src 'self' 'unsafe-inline' https:",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss:",
-    "frame-src 'self' https:",
+    "script-src 'self'",
+    "script-src-elem 'self' 'unsafe-inline'",
+    "script-src-attr 'none'",
+    "style-src 'self'",
+    "style-src-elem 'self' 'unsafe-inline'",
+    "style-src-attr 'unsafe-inline'",
+    `img-src ${CSP_IMG_APP.join(" ")}`,
+    "font-src 'self' data:",
+    `connect-src ${CSP_CONNECT_APP.join(" ")}`,
+    "frame-src 'self'",
+    "manifest-src 'self'",
+    "media-src 'self' data: blob:",
     "worker-src 'self' blob:",
-    "form-action 'self' https:",
+    "form-action 'self'",
     "upgrade-insecure-requests",
     "block-all-mixed-content",
   ].join("; ");
   // landing: app보다 더 엄격하게 운영
   const enforceCspLandingDocument = [
-    "default-src 'self' https: data: blob:",
+    "default-src 'self'",
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self' https: blob:",
+    "script-src 'self'",
+    "script-src-elem 'self'",
     "script-src-attr 'none'",
-    "style-src 'self' https:",
+    "style-src 'self'",
+    "style-src-elem 'self'",
     "style-src-attr 'none'",
-    "img-src 'self' data: blob: https:",
-    "font-src 'self' data: https:",
-    "connect-src 'self' https: wss:",
+    `img-src ${CSP_IMG_LANDING.join(" ")}`,
+    "font-src 'self' data:",
+    `connect-src ${CSP_CONNECT_LANDING.join(" ")}`,
     "frame-src 'none'",
     "manifest-src 'self'",
-    "media-src 'self' https: data: blob:",
+    "media-src 'self' data: blob:",
     "worker-src 'self' blob:",
-    "form-action 'self' https:",
+    "form-action 'self'",
     "upgrade-insecure-requests",
     "block-all-mixed-content",
   ].join("; ");
