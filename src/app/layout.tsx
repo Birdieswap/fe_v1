@@ -4,6 +4,7 @@ import "./globals.css";
 import clsx from "clsx";
 
 import Providers from "./providers";
+import LandingProviders from "./landing-providers";
 import TransactionContextProvider from "./TransactionContextProvider";
 import DeniedWalletModalHost from "@/components/modals/DeniedWalletModalHost";
 import RiskConsentModalHost from "@/components/modals/RiskConsentModalHost";
@@ -12,6 +13,13 @@ import { headers } from "next/headers";
 import AddMiniAppFab from "@/components/atoms/AddMiniAppFab";
 
 export const dynamic = "force-dynamic";
+
+const LANDING_HOSTS = new Set([
+  "www.birdieswap.com",
+  "birdieswap.com",
+  "birdieswap-landing.vercel.app",
+  "www.birdieswap.local",
+]);
 
 const inter = Inter({
   subsets: ["latin"],
@@ -52,6 +60,8 @@ export default async function RootLayout({
   const isDev = process.env.NODE_ENV !== "production";
   const reqHeaders = await headers();
   const headerNonce = reqHeaders.get("x-csp-nonce") ?? undefined;
+  const reqHost = (reqHeaders.get("host") ?? "").split(":")[0].toLowerCase();
+  const isLanding = LANDING_HOSTS.has(reqHost);
 
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
@@ -65,15 +75,27 @@ export default async function RootLayout({
             `,
           }}
         />
-        <Providers nonce={headerNonce}>
-          <div className="relative flex min-h-screen flex-col bg-background antialiased">
-            <TransactionContextProvider>{children}</TransactionContextProvider>
-          </div>
-        </Providers>
-        <DeniedWalletModalHost />
-        <RiskConsentModalHost />
-        <AddMiniAppFab />
-        <ClientHUD />
+        {isLanding ? (
+          <LandingProviders nonce={headerNonce}>
+            <div className="relative flex min-h-screen flex-col bg-background antialiased">
+              {children}
+            </div>
+          </LandingProviders>
+        ) : (
+          <Providers nonce={headerNonce}>
+            <div className="relative flex min-h-screen flex-col bg-background antialiased">
+              <TransactionContextProvider>{children}</TransactionContextProvider>
+            </div>
+          </Providers>
+        )}
+        {!isLanding && (
+          <>
+            <DeniedWalletModalHost />
+            <RiskConsentModalHost />
+            <AddMiniAppFab />
+            <ClientHUD />
+          </>
+        )}
       </body>
     </html>
   );
