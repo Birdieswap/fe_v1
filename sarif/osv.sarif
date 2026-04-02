@@ -9,6 +9,25 @@
           "name": "osv-scanner",
           "rules": [
             {
+              "id": "CVE-2025-59472",
+              "name": "CVE-2025-59472",
+              "shortDescription": {
+                "text": "CVE-2025-59472: Next.js has Unbounded Memory Consumption via PPR Resume Endpoint "
+              },
+              "fullDescription": {
+                "text": "A denial of service vulnerability exists in Next.js versions with Partial Prerendering (PPR) enabled when running in minimal mode. The PPR resume endpoint accepts unauthenticated POST requests with the `Next-Resume: 1` header and processes attacker-controlled postponed state data. Two closely related vulnerabilities allow an attacker to crash the server process through memory exhaustion:\n\n1. **Unbounded request body buffering**: The server buffers the entire POST request body into memory using `Buffer.concat()` without enforcing any size limit, allowing arbitrarily large payloads to exhaust available memory.\n\n2. **Unbounded decompression (zipbomb)**: The resume data cache is decompressed using `inflateSync()` without limiting the decompressed output size. A small compressed payload can expand to hundreds of megabytes or gigabytes, causing memory exhaustion.\n\nBoth attack vectors result in a fatal V8 out-of-memory error (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`) causing the Node.js process to terminate. The zipbomb variant is particularly dangerous as it can bypass reverse proxy request size limits while still causing large memory allocation on the server.\n\nTo be affected, an application must run with `experimental.ppr: true` or `cacheComponents: true` configured along with the NEXT_PRIVATE_MINIMAL_MODE=1 environment variable.\n\nStrongly consider upgrading to 15.6.0-canary.61 or 16.1.5 to reduce risk and prevent availability issues in Next applications.",
+                "markdown": "A denial of service vulnerability exists in Next.js versions with Partial Prerendering (PPR) enabled when running in minimal mode. The PPR resume endpoint accepts unauthenticated POST requests with the `Next-Resume: 1` header and processes attacker-controlled postponed state data. Two closely related vulnerabilities allow an attacker to crash the server process through memory exhaustion:\n\n1. **Unbounded request body buffering**: The server buffers the entire POST request body into memory using `Buffer.concat()` without enforcing any size limit, allowing arbitrarily large payloads to exhaust available memory.\n\n2. **Unbounded decompression (zipbomb)**: The resume data cache is decompressed using `inflateSync()` without limiting the decompressed output size. A small compressed payload can expand to hundreds of megabytes or gigabytes, causing memory exhaustion.\n\nBoth attack vectors result in a fatal V8 out-of-memory error (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`) causing the Node.js process to terminate. The zipbomb variant is particularly dangerous as it can bypass reverse proxy request size limits while still causing large memory allocation on the server.\n\nTo be affected, an application must run with `experimental.ppr: true` or `cacheComponents: true` configured along with the NEXT_PRIVATE_MINIMAL_MODE=1 environment variable.\n\nStrongly consider upgrading to 15.6.0-canary.61 or 16.1.5 to reduce risk and prevent availability issues in Next applications."
+              },
+              "deprecatedIds": [
+                "CVE-2025-59472",
+                "GHSA-5f7q-jpqc-wp7h"
+              ],
+              "help": {
+                "text": "**Your dependency is vulnerable to [CVE-2025-59472](https://osv.dev/list?q=CVE-2025-59472)**.\n\n## [GHSA-5f7q-jpqc-wp7h](https://osv.dev/vulnerability/GHSA-5f7q-jpqc-wp7h)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e A denial of service vulnerability exists in Next.js versions with Partial Prerendering (PPR) enabled when running in minimal mode. The PPR resume endpoint accepts unauthenticated POST requests with the `Next-Resume: 1` header and processes attacker-controlled postponed state data. Two closely related vulnerabilities allow an attacker to crash the server process through memory exhaustion:\n\u003e \n\u003e 1. **Unbounded request body buffering**: The server buffers the entire POST request body into memory using `Buffer.concat()` without enforcing any size limit, allowing arbitrarily large payloads to exhaust available memory.\n\u003e \n\u003e 2. **Unbounded decompression (zipbomb)**: The resume data cache is decompressed using `inflateSync()` without limiting the decompressed output size. A small compressed payload can expand to hundreds of megabytes or gigabytes, causing memory exhaustion.\n\u003e \n\u003e Both attack vectors result in a fatal V8 out-of-memory error (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`) causing the Node.js process to terminate. The zipbomb variant is particularly dangerous as it can bypass reverse proxy request size limits while still causing large memory allocation on the server.\n\u003e \n\u003e To be affected, an application must run with `experimental.ppr: true` or `cacheComponents: true` configured along with the NEXT_PRIVATE_MINIMAL_MODE=1 environment variable.\n\u003e \n\u003e Strongly consider upgrading to 15.6.0-canary.61 or 16.1.5 to reduce risk and prevent availability issues in Next applications.\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | next | 16.2.1 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-5f7q-jpqc-wp7h | next | 15.6.0-canary.61, 16.1.5 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2025-59472\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n",
+                "markdown": "**Your dependency is vulnerable to [CVE-2025-59472](https://osv.dev/list?q=CVE-2025-59472)**.\n\n## [GHSA-5f7q-jpqc-wp7h](https://osv.dev/vulnerability/GHSA-5f7q-jpqc-wp7h)\n\n\u003cdetails\u003e\n\u003csummary\u003eDetails\u003c/summary\u003e\n\n\u003e A denial of service vulnerability exists in Next.js versions with Partial Prerendering (PPR) enabled when running in minimal mode. The PPR resume endpoint accepts unauthenticated POST requests with the `Next-Resume: 1` header and processes attacker-controlled postponed state data. Two closely related vulnerabilities allow an attacker to crash the server process through memory exhaustion:\n\u003e \n\u003e 1. **Unbounded request body buffering**: The server buffers the entire POST request body into memory using `Buffer.concat()` without enforcing any size limit, allowing arbitrarily large payloads to exhaust available memory.\n\u003e \n\u003e 2. **Unbounded decompression (zipbomb)**: The resume data cache is decompressed using `inflateSync()` without limiting the decompressed output size. A small compressed payload can expand to hundreds of megabytes or gigabytes, causing memory exhaustion.\n\u003e \n\u003e Both attack vectors result in a fatal V8 out-of-memory error (`FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory`) causing the Node.js process to terminate. The zipbomb variant is particularly dangerous as it can bypass reverse proxy request size limits while still causing large memory allocation on the server.\n\u003e \n\u003e To be affected, an application must run with `experimental.ppr: true` or `cacheComponents: true` configured along with the NEXT_PRIVATE_MINIMAL_MODE=1 environment variable.\n\u003e \n\u003e Strongly consider upgrading to 15.6.0-canary.61 or 16.1.5 to reduce risk and prevent availability issues in Next applications.\n\n\u003c/details\u003e\n\n---\n\n### Affected Packages\n\n| Source | Package Name | Package Version |\n| --- | --- | --- |\n| lockfile:/home/runner/work/fe_v1/fe_v1/package-lock.json | next | 16.2.1 |\n\n## Remediation\n\nTo fix these vulnerabilities, update the vulnerabilities past the listed fixed versions below.\n\n### Fixed Versions\n\n| Vulnerability ID | Package Name | Fixed Version |\n| --- | --- | --- |\n| GHSA-5f7q-jpqc-wp7h | next | 15.6.0-canary.61, 16.1.5 |\n\nIf you believe these vulnerabilities do not affect your code and wish to ignore them, add them to the ignore list in an\n`osv-scanner.toml` file located in the same directory as the lockfile containing the vulnerable dependency.\n\nSee the format and more options in our documentation here: https://google.github.io/osv-scanner/configuration/\n\nAdd or append these values to the following config files to ignore this vulnerability:\n\n`/home/runner/work/fe_v1/fe_v1/osv-scanner.toml`\n\n```\n[[IgnoredVulns]]\nid = \"CVE-2025-59472\"\nreason = \"Your reason for ignoring this vulnerability\"\n```\n"
+              }
+            },
+            {
               "id": "CVE-2025-14505",
               "name": "CVE-2025-14505",
               "shortDescription": {
@@ -60,8 +79,25 @@
       ],
       "results": [
         {
-          "ruleId": "CVE-2025-14505",
+          "ruleId": "CVE-2025-59472",
           "ruleIndex": 0,
+          "level": "warning",
+          "message": {
+            "text": "Package 'next@16.2.1' is vulnerable to 'CVE-2025-59472' (also known as 'GHSA-5f7q-jpqc-wp7h')."
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "file:///home/runner/work/fe_v1/fe_v1/package-lock.json"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "ruleId": "CVE-2025-14505",
+          "ruleIndex": 1,
           "level": "warning",
           "message": {
             "text": "Package 'elliptic@6.6.1' is vulnerable to 'CVE-2025-14505' (also known as 'GHSA-848j-6mx2-7j84')."
@@ -78,7 +114,7 @@
         },
         {
           "ruleId": "CVE-2026-33750",
-          "ruleIndex": 1,
+          "ruleIndex": 2,
           "level": "warning",
           "message": {
             "text": "Package 'brace-expansion@1.1.12' is vulnerable to 'CVE-2026-33750' (also known as 'GHSA-f886-m6hf-6m8v')."
@@ -95,7 +131,7 @@
         },
         {
           "ruleId": "CVE-2026-33750",
-          "ruleIndex": 1,
+          "ruleIndex": 2,
           "level": "warning",
           "message": {
             "text": "Package 'brace-expansion@2.0.2' is vulnerable to 'CVE-2026-33750' (also known as 'GHSA-f886-m6hf-6m8v')."

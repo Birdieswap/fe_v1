@@ -9,7 +9,7 @@
     "axios": "^1.13.5",
     "preact": "^10.28.2",
     "socket.io-parser": "^4.2.6",
-    "lodash": "^4.17.23",
+    "lodash": "^4.18.0",
     "use-sync-external-store": "^1.6.0",
     "valtio": {
       "use-sync-external-store": "^1.6.0"
@@ -73,7 +73,7 @@
     "jsbi": "^3.0.0",
     "jsdom": "^27.0.0",
     "lottie-react": "^2.4.0",
-    "next": "^16.1.7",
+    "next": "^16.2.2",
     "next-themes": "0.4.3",
     "node-fetch": "^3.3.2",
     "react": "^19.2.3",
