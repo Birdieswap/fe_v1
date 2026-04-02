@@ -214,15 +214,16 @@ function applySecurityHeaders(
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self'",
-    "script-src-elem 'self' 'unsafe-inline'",
+    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src-elem 'self' 'nonce-${nonce}'`,
     "script-src-attr 'none'",
-    "style-src 'self'",
-    "style-src-elem 'self' 'unsafe-inline'",
+    `style-src 'self' 'nonce-${nonce}'`,
+    `style-src-elem 'self' 'nonce-${nonce}'`,
     "style-src-attr 'unsafe-inline'",
     `img-src ${CSP_IMG_APP.join(" ")}`,
     "font-src 'self' data:",
     `connect-src ${CSP_CONNECT_APP.join(" ")}`,
+    "child-src 'self'",
     "frame-src 'self'",
     "manifest-src 'self'",
     "media-src 'self' data: blob:",
@@ -237,15 +238,16 @@ function applySecurityHeaders(
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    "script-src 'self'",
-    "script-src-elem 'self'",
+    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src-elem 'self' 'nonce-${nonce}'`,
     "script-src-attr 'none'",
-    "style-src 'self'",
-    "style-src-elem 'self'",
+    `style-src 'self' 'nonce-${nonce}'`,
+    `style-src-elem 'self' 'nonce-${nonce}'`,
     "style-src-attr 'none'",
     `img-src ${CSP_IMG_LANDING.join(" ")}`,
     "font-src 'self' data:",
     `connect-src ${CSP_CONNECT_LANDING.join(" ")}`,
+    "child-src 'none'",
     "frame-src 'none'",
     "manifest-src 'self'",
     "media-src 'self' data: blob:",
@@ -283,13 +285,18 @@ function applySecurityHeaders(
       // API 응답은 렌더링 목적이 아니므로 최소 CSP로 명시 차단
       res.headers.set(
         "Content-Security-Policy",
-        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; form-action 'none'",
+      );
+    } else if (pathname === "/manifest.json") {
+      res.headers.set(
+        "Content-Security-Policy",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; manifest-src 'self'",
       );
     } else if (pathname === "/robots.txt" || pathname === "/sitemap.xml") {
       // 텍스트 리소스도 최소 CSP를 넣어 스캐너의 "header not set"을 줄인다.
       res.headers.set(
         "Content-Security-Policy",
-        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'",
       );
     }
   }
@@ -303,11 +310,8 @@ function applySecurityHeaders(
   res.headers.set("X-DNS-Prefetch-Control", "off");
   res.headers.set("X-Permitted-Cross-Domain-Policies", "none");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  if (isCspPath) {
-    res.headers.set("X-Frame-Options", "SAMEORIGIN");
-  } else {
-    res.headers.delete("X-Frame-Options");
-  }
+  if (isCspPath) res.headers.set("X-Frame-Options", "SAMEORIGIN");
+  else res.headers.set("X-Frame-Options", "DENY");
   if (isDocument) {
     res.headers.set("Origin-Agent-Cluster", "?1");
   } else {
@@ -473,6 +477,7 @@ export function middleware(req: NextRequest) {
 
   const reqHeaders = new Headers(req.headers);
   reqHeaders.set("x-csp-nonce", nonce);
+  reqHeaders.set("x-nonce", nonce);
 
   // next/api/static 등은 rewrite는 건드리지 않기 (헤더는 공통 적용)
   if (isPassthroughPath) {

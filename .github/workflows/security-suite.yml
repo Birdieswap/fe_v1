@@ -109,6 +109,21 @@ jobs:
           allow_issue_writing: false
           artifact_name: zap-scan-baseline-${{ matrix.name }}
 
+      - name: Rename ZAP Baseline JSON by target
+        shell: bash
+        run: |
+          name="${{ matrix.name }}"
+          suffix=""
+          case "$name" in
+            *healthz*|api-healthz) suffix="healthz" ;;
+            *landing*|landing-www|landing-root) suffix="landing" ;;
+            *app*) suffix="app" ;;
+            *) suffix="$(echo "$name" | tr -cs '[:alnum:]_-' '_' | sed 's/^_//; s/_$//')" ;;
+          esac
+          if [ -f report_json.json ]; then
+            cp report_json.json "report_${suffix}.json"
+          fi
+
       - name: Upload ZAP Baseline reports
         uses: actions/upload-artifact@v6
         with:
@@ -116,6 +131,7 @@ jobs:
           path: |
             report_html.html
             report_json.json
+            report_*.json
           if-no-files-found: warn
 
   zap-full:
@@ -139,6 +155,21 @@ jobs:
           allow_issue_writing: false
           artifact_name: zap-scan-full-${{ matrix.name }}
 
+      - name: Rename ZAP Full JSON by target
+        shell: bash
+        run: |
+          name="${{ matrix.name }}"
+          suffix=""
+          case "$name" in
+            *healthz*|api-healthz) suffix="healthz" ;;
+            *landing*|landing-www|landing-root) suffix="landing" ;;
+            *app*) suffix="app" ;;
+            *) suffix="$(echo "$name" | tr -cs '[:alnum:]_-' '_' | sed 's/^_//; s/_$//')" ;;
+          esac
+          if [ -f report_json.json ]; then
+            cp report_json.json "report_${suffix}.json"
+          fi
+
       - name: Upload ZAP Full reports
         uses: actions/upload-artifact@v6
         with:
@@ -146,6 +177,7 @@ jobs:
           path: |
             report_html.html
             report_json.json
+            report_*.json
           if-no-files-found: warn
 
   # ---------------------------- Header Smoke ----------------------------
@@ -756,7 +788,21 @@ jobs:
             p = Path(root)
             if not p.exists():
               return []
-            return sorted(p.rglob("report_json.json"))
+            grouped = {}
+            for f in p.rglob("*.json"):
+              n = f.name
+              if not re.match(r"^report(_json)?(_[A-Za-z0-9_-]+)?\.json$", n):
+                continue
+              grouped.setdefault(f.parent, []).append(f)
+
+            out = []
+            for parent, files in grouped.items():
+              named = [f for f in files if f.name != "report_json.json"]
+              if named:
+                out.extend(named)
+              else:
+                out.extend(files)
+            return sorted(out)
 
           def to_sarif(doc, tool_name):
             rules = {}
