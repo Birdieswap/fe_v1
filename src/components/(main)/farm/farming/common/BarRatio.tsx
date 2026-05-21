@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useId } from "react";
+import { useMemo, useId } from "react";
 import {
   ResponsiveContainer,
   BarChart,

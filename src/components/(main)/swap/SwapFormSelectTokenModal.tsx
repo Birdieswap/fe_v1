@@ -8,7 +8,7 @@ import {
   ModalHeader,
   Input,
 } from "@heroui/react";
-import React, { PropsWithChildren, useContext, useMemo, useState } from "react";
+import { PropsWithChildren, useContext, useMemo, useState } from "react";
 import clsx from "clsx";
 import { useChainId } from "wagmi";
 
