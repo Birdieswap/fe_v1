@@ -24,7 +24,14 @@ const nextConfig = {
     ],
   },
 
-  turbopack: {},
+  turbopack: {
+    rules: {
+      "*.svg": {
+        loaders: ["@svgr/webpack"],
+        as: "*.js",
+      },
+    },
+  },
 
   compiler: {
     // prod 빌드에서 console.* 제거
@@ -41,12 +48,31 @@ const nextConfig = {
       config.cache = { type: "memory" }; // 필요시 false도 가능
     }
 
-    // 기존 svg loader
     config.resolve.alias["@react-native-async-storage/async-storage"] = false;
-    config.module.rules.push({
-      test: /\.svg$/i,
-      use: ["@svgr/webpack"],
-    });
+
+    const fileLoaderRule = config.module.rules.find((rule) =>
+      rule.test?.test?.(".svg")
+    );
+
+    if (fileLoaderRule) {
+      config.module.rules.push(
+        {
+          ...fileLoaderRule,
+          test: /\.svg$/i,
+          resourceQuery: /url/,
+        },
+        {
+          test: /\.svg$/i,
+          issuer: fileLoaderRule.issuer,
+          resourceQuery: {
+            not: [...(fileLoaderRule.resourceQuery?.not ?? []), /url/],
+          },
+          use: ["@svgr/webpack"],
+        }
+      );
+
+      fileLoaderRule.exclude = /\.svg$/i;
+    }
 
     //  클라 번들에서 node-fetch 폴백 비활성화(서버 전용)
     if (!isServer) {

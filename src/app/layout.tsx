@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 import clsx from "clsx";
 
@@ -66,7 +67,9 @@ export default async function RootLayout({
   return (
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className={clsx(inter.className)}>
-        <script
+        <Script
+          id="lit-dev-flags"
+          strategy="beforeInteractive"
           {...(!isDev ? { nonce: headerNonce ?? undefined } : {})}
           dangerouslySetInnerHTML={{
             __html: `

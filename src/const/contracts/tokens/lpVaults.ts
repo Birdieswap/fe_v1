@@ -8,45 +8,45 @@ import stakingProviders from "./stakingProviders";
 import swapPools from "./swapPool";
 import { contractAddresses } from "../contractAddresses";
 
-// const blpHarvestAutopilotETHUSDC = BirdieLPFarmGuard({
-//   type: EContractType.BIRDIE_LP,
-//   symbol: "bUSDCWETH",
-//   fullName: "Birdieswap USDC 3000 WETH",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia
-//       .USDC_WETH_VAULT as `0x${string}`,
-//     // [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum
-//       .USDC_WETH_VAULT as `0x${string}`,
-//   },
-//   abi: birdieLpVaults_abi,
-//   provider: stakingProviders.BIRDIESWAP_Wrapper,
-//   swap: swapPools.blpUniswapHarvestAutopilotETHUSDC,
-//   lpPool: swapPools.blpUniswapHarvestAutopilotETHUSDC,
-//   decimals: 18,
-//   displayDecimals: 8,
-//   iconSrc: "/tokens/blp-token.svg",
-// } as const);
+const blpHarvestAutopilotETHUSDC = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bUSDCWETH",
+  fullName: "Birdieswap USDC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_VAULT as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
+    // [networks.arbitrum.id]: contractAddresses.arbitrum
+    //   .USDC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotETHUSDC,
+  lpPool: swapPools.blpUniswapHarvestAutopilotETHUSDC,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
 
-// const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
-//   type: EContractType.BIRDIE_LP,
-//   symbol: "bUSDCWETH",
-//   fullName: "Birdieswap USDC 3000 WETH",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia
-//       .USDC_WETH_VAULT as `0x${string}`,
-//     // [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum
-//       .USDC_WETH_VAULT as `0x${string}`,
-//   },
-//   abi: birdieLpVaults_abi,
-//   provider: stakingProviders.BIRDIESWAP_Router,
-//   swap: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
-//   lpPool: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
-//   decimals: 18,
-//   displayDecimals: 8,
-//   iconSrc: "/tokens/blp-token.svg",
-// } as const);
+const blpHarvestAutopilotWETHUSDC = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bUSDCWETH",
+  fullName: "Birdieswap USDC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .USDC_WETH_VAULT as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.USDC_WETH_VAULT as `0x${string}`,
+    // [networks.arbitrum.id]: contractAddresses.arbitrum
+    //   .USDC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
+  lpPool: swapPools.blpUniswapHarvestAutopilotWETHUSDC,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
 
 // const blpHarvestAutopilotCBBTCUSDC = BirdieLPFarmGuard({
 //   type: EContractType.BIRDIE_LP,
@@ -66,41 +66,43 @@ import { contractAddresses } from "../contractAddresses";
 //   iconSrc: "/tokens/blp-token.svg",
 // } as const);
 
-// const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
-//   type: EContractType.BIRDIE_LP,
-//   symbol: "bcbBTCWETH",
-//   fullName: "Birdieswap cbBTC 3000 WETH",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_WETH_VAULT as `0x${string}`,
-//     [networks.base.id]: contractAddresses.base.CBBTC_WETH_VAULT as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_WETH_VAULT as `0x${string}`,
-//   },
-//   abi: birdieLpVaults_abi,
-//   provider: stakingProviders.BIRDIE,
-//   swap: swapPools.blpUniswapHarvestAutopilotCBBTCWETH,
-//   lpPool: swapPools.blpUniswapHarvestAutopilotCBBTCWETH,
-//   decimals: 8,
-//   displayDecimals: 4,
-//   iconSrc: "/tokens/blp-token.svg",
-// } as const);
+const blpHarvestAutopilotCBBTCWETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bcbBTCWETH",
+  fullName: "Birdieswap cbBTC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .CBBTC_WETH_VAULT as `0x${string}`,
+    //   [networks.base.id]: contractAddresses.base.CBBTC_WETH_VAULT as `0x${string}`,
+    //   [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotCBBTCWETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotCBBTCWETH,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
 
-// const blpHarvestAutopilotCBBTCETH = BirdieLPFarmGuard({
-//   type: EContractType.BIRDIE_LP,
-//   symbol: "bcbBTCWETH",
-//   fullName: "Birdieswap cbBTC 3000 WETH",
-//   addresses: {
-//     [networks.sepolia.id]: contractAddresses.sepolia.CBBTC_WETH_VAULT as `0x${string}`,
-//     [networks.base.id]: contractAddresses.base.CBBTC_WETH_VAULT as `0x${string}`,
-//     [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_WETH_VAULT as `0x${string}`,
-//   },
-//   abi: birdieLpVaults_abi,
-//   provider: stakingProviders.BIRDIE,
-//   swap: swapPools.blpUniswapHarvestAutopilotCBBTCETH,
-//   lpPool: swapPools.blpUniswapHarvestAutopilotCBBTCETH,
-//   decimals: 8,
-//   displayDecimals: 4,
-//   iconSrc: "/tokens/blp-token.svg",
-// } as const);
+const blpHarvestAutopilotCBBTCETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bcbBTCWETH",
+  fullName: "Birdieswap cbBTC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .CBBTC_WETH_VAULT as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.CBBTC_WETH_VAULT as `0x${string}`,
+    // [networks.arbitrum.id]: contractAddresses.arbitrum.CBBTC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotCBBTCETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotCBBTCETH,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
 
 // const blpHarvestAutopilotUSDCWBTC = BirdieLPFarmGuard({
 //   type: EContractType.BIRDIE_LP,
@@ -199,6 +201,44 @@ import { contractAddresses } from "../contractAddresses";
 //   iconSrc: "/tokens/blp-token.svg",
 // } as const);
 
+const blpHarvestAutopilotEURCWETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bEURCWETH",
+  fullName: "Birdieswap EURC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .EURC_WETH_VAULT as `0x${string}`,
+    //   [networks.base.id]: contractAddresses.base.EURC_WETH_VAULT as `0x${string}`,
+    //   [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotEURCWETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotEURCWETH,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
+
+const blpHarvestAutopilotEURCETH = BirdieLPFarmGuard({
+  type: EContractType.BIRDIE_LP,
+  symbol: "bEURCETH",
+  fullName: "Birdieswap EURC 3000 WETH",
+  addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia
+      .EURC_WETH_VAULT as `0x${string}`,
+    // [networks.base.id]: contractAddresses.base.EURC_WETH_VAULT as `0x${string}`,
+    // [networks.arbitrum.id]: contractAddresses.arbitrum.EURC_WETH_VAULT as `0x${string}`,
+  },
+  abi: birdieLpVaults_abi,
+  provider: stakingProviders.BIRDIESWAP_Wrapper,
+  swap: swapPools.blpUniswapHarvestAutopilotEURCETH,
+  lpPool: swapPools.blpUniswapHarvestAutopilotEURCETH,
+  decimals: 18,
+  displayDecimals: 8,
+  iconSrc: "/tokens/blp-token.svg",
+} as const);
+
 const blpHarvestAutopilotEURCUSDC = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
   symbol: "bEURCUSDC",
@@ -207,8 +247,8 @@ const blpHarvestAutopilotEURCUSDC = BirdieLPFarmGuard({
     // [networks.sepolia.id]: contractAddresses.sepolia
     //   .EURC_USDC_VAULT as `0x${string}`,
     [networks.base.id]: contractAddresses.base.EURC_USDC_VAULT as `0x${string}`,
-    [networks.arbitrum.id]: contractAddresses.arbitrum
-      .EURC_USDC_VAULT as `0x${string}`,
+    // [networks.arbitrum.id]: contractAddresses.arbitrum
+    //   .EURC_USDC_VAULT as `0x${string}`,
   },
   abi: birdieLpVaults_abi,
   provider: stakingProviders.BIRDIESWAP_Wrapper,
@@ -220,17 +260,19 @@ const blpHarvestAutopilotEURCUSDC = BirdieLPFarmGuard({
 } as const);
 
 const lpVaults = {
-  // blpHarvestAutopilotWETHUSDC,
-  // blpHarvestAutopilotETHUSDC,
+  blpHarvestAutopilotWETHUSDC,
+  blpHarvestAutopilotETHUSDC,
   // blpHarvestAutopilotUSDCWBTC,
   // blpHarvestAutopilotWBTCWETH,
   // blpHarvestAutopilotWBTCETH,
   // blpHarvestAutopilotFARMWETH,
   // blpHarvestAutopilotFARMETH,
   // blpHarvestAutopilotCBBTCUSDC,
-  // blpHarvestAutopilotCBBTCWETH,
-  // blpHarvestAutopilotCBBTCETH,
+  blpHarvestAutopilotCBBTCWETH,
+  blpHarvestAutopilotCBBTCETH,
   blpHarvestAutopilotEURCUSDC,
+  blpHarvestAutopilotEURCETH,
+  blpHarvestAutopilotEURCWETH,
 };
 
 export default lpVaults;

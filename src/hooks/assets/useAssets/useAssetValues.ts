@@ -85,9 +85,9 @@ export function useAssetValues() {
     () =>
       priceFeedList.filter(
         (feed) =>
-          feed.addresses[chainId] &&
-          feed.base.addresses[chainId] &&
-          (feed.quote === "USD" || (feed as any).quote?.addresses?.[chainId])
+          feed?.addresses?.[chainId] &&
+          feed.base?.addresses?.[chainId] &&
+          (feed.quote === "USD" || feed.quote?.addresses?.[chainId])
       ),
     [chainId]
   );
