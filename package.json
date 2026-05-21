@@ -103,7 +103,7 @@
     "browserslist": "^4.26.3",
     "encoding": "^0.1.13",
     "eslint": "^8",
-    "eslint-config-next": "^16.2.2",
+    "eslint-config-next": "^15.5.7",
     "eslint-config-prettier": "^8.2.0",
     "eslint-plugin-import": "^2.26.0",
     "eslint-plugin-jsx-a11y": "^6.4.1",
