@@ -1,17 +1,47 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { sdk } from "@farcaster/miniapp-sdk";
+
+type MiniAppSdk = {
+  context: Promise<{
+    user?: unknown;
+    client: { added: boolean };
+  } | null>;
+  actions: {
+    addFrame: () => Promise<void>;
+  };
+};
+
+async function loadMiniAppSdk(): Promise<MiniAppSdk | null> {
+  try {
+    const dynamicImport = new Function(
+      "specifier",
+      "return import(specifier)"
+    ) as (specifier: string) => Promise<any>;
+    const mod = await dynamicImport("@farcaster/miniapp-sdk");
+    return (mod?.sdk ?? mod?.default ?? null) as MiniAppSdk | null;
+  } catch {
+    return null;
+  }
+}
 
 export default function AddMiniAppFab() {
   const [isVisible, setIsVisible] = useState(false); // 버튼 표시 여부
   const [isModalOpen, setIsModalOpen] = useState(false); // 모달 표시 여부
   const [isLoading, setIsLoading] = useState(false); // 로딩 상태
+  const [sdk, setSdk] = useState<MiniAppSdk | null>(null);
 
   useEffect(() => {
     const checkStatus = async () => {
       try {
-        const context = await sdk.context;
+        const loadedSdk = await loadMiniAppSdk();
+        if (!loadedSdk) {
+          setIsVisible(false);
+          return;
+        }
+        setSdk(loadedSdk);
+
+        const context = await loadedSdk.context;
 
         // 1. 미니 앱 환경이 아니거나 유저 정보가 없으면 버튼 숨김
         if (!context || !context.user) {
@@ -36,6 +66,7 @@ export default function AddMiniAppFab() {
 
   // 앱 추가 실행 함수
   const handleConfirmAdd = async () => {
+    if (!sdk) return;
     setIsLoading(true);
     try {
       // 시스템의 앱 추가 팝업 호출

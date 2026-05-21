@@ -212,7 +212,7 @@ function makeBrowseryHeaders(tail: string) {
   // 최대한 현실적인 브라우저 UA/Accept
   h.set(
     "user-agent",
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
   );
   h.set("accept", "application/json, text/plain, */*");
   h.set("accept-language", "en-US,en;q=0.9,ko;q=0.8");
@@ -258,12 +258,18 @@ function validateVerifyForm(
   const version = form.get("version") ?? "";
   const payload = form.get("EIP712Payload");
 
-  if (!ADDRESS_RE.test(address)) return { ok: false, key: "address", reason: "invalid_address" };
-  if (!HEX_SIG_RE.test(signature)) return { ok: false, key: "signature", reason: "invalid_signature" };
-  if (!HEX_32_RE.test(digest)) return { ok: false, key: "digest", reason: "invalid_digest" };
-  if (!DIGITS_RE.test(chainId)) return { ok: false, key: "chainId", reason: "invalid_chain_id" };
-  if (!DIGITS_RE.test(nonce)) return { ok: false, key: "nonce", reason: "invalid_nonce" };
-  if (!TYPE_RE.test(type)) return { ok: false, key: "type", reason: "invalid_type" };
+  if (!ADDRESS_RE.test(address))
+    return { ok: false, key: "address", reason: "invalid_address" };
+  if (!HEX_SIG_RE.test(signature))
+    return { ok: false, key: "signature", reason: "invalid_signature" };
+  if (!HEX_32_RE.test(digest))
+    return { ok: false, key: "digest", reason: "invalid_digest" };
+  if (!DIGITS_RE.test(chainId))
+    return { ok: false, key: "chainId", reason: "invalid_chain_id" };
+  if (!DIGITS_RE.test(nonce))
+    return { ok: false, key: "nonce", reason: "invalid_nonce" };
+  if (!TYPE_RE.test(type))
+    return { ok: false, key: "type", reason: "invalid_type" };
   if (!/^[a-zA-Z0-9._-]{1,32}$/.test(version)) {
     return { ok: false, key: "version", reason: "invalid_version" };
   }
@@ -274,7 +280,11 @@ function validateVerifyForm(
     try {
       JSON.parse(payload);
     } catch {
-      return { ok: false, key: "EIP712Payload", reason: "invalid_payload_json" };
+      return {
+        ok: false,
+        key: "EIP712Payload",
+        reason: "invalid_payload_json",
+      };
     }
   }
   return { ok: true };
@@ -286,9 +296,10 @@ async function readVerifyForm(req: Request): Promise<URLSearchParams> {
     return new URLSearchParams(await req.text());
   }
   if (ct.includes("application/json")) {
-    const body = (await req.json().catch(() => null)) as
-      | Record<string, unknown>
-      | null;
+    const body = (await req.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
     const params = new URLSearchParams();
     for (const [k, v] of Object.entries(body ?? {})) {
       if (v == null) continue;
@@ -344,18 +355,15 @@ export async function GET(req: Request, context: RouteContext) {
           400,
         );
       }
-      const hasAllowedPrefix = Array.from(UPSTREAM_PATH_PREFIXES).some((prefix) =>
-        upstream.pathname.startsWith(prefix),
+      const hasAllowedPrefix = Array.from(UPSTREAM_PATH_PREFIXES).some(
+        (prefix) => upstream.pathname.startsWith(prefix),
       );
       if (
         upstream.protocol !== "https:" ||
         upstream.origin !== UPSTREAM.origin ||
         !hasAllowedPrefix
       ) {
-        return jsonResponse(
-          { ok: false, error: "invalid_target" },
-          400,
-        );
+        return jsonResponse({ ok: false, error: "invalid_target" }, 400);
       }
 
       // Edge fetch (노드와 다르게 TLS/네트워크 핑거프린트가 달라져 CF 통과율↑)
@@ -460,18 +468,30 @@ export async function POST(req: Request, context: RouteContext) {
     }).catch(() => null);
 
     if (!r) {
-      return jsonResponse({ ok: false, status: 502, reason: "network_error" }, 502);
+      return jsonResponse(
+        { ok: false, status: 502, reason: "network_error" },
+        502,
+      );
     }
 
     const status = r.status;
     const ct = r.headers.get("content-type") || "";
     const buf = await r.text().catch(() => "");
     if (status === 403 || status === 503 || looksLikeCF(buf)) {
-      return jsonResponse({ ok: false, status, reason: "upstream_blocked" }, 502);
+      return jsonResponse(
+        { ok: false, status, reason: "upstream_blocked" },
+        502,
+      );
     }
 
-    if (!r.ok || !(ct.includes("application/json") || /^[\s\r\n]*[\{\[]/.test(buf))) {
-      return jsonResponse({ ok: false, status, reason: "upstream_non_json_or_error" }, 502);
+    if (
+      !r.ok ||
+      !(ct.includes("application/json") || /^[\s\r\n]*[\{\[]/.test(buf))
+    ) {
+      return jsonResponse(
+        { ok: false, status, reason: "upstream_non_json_or_error" },
+        502,
+      );
     }
 
     const out = new Headers();

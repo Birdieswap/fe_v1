@@ -12,6 +12,7 @@ import {
   type V3PositionRaw,
 } from "@/utils/uniswap/positionManager";
 import previewRedeem from "@/utils/farm/previewRedeem";
+import { serializeError, stringifyForLog } from "@/utils/error/serializeError";
 
 type UseV3UnderlyingParams = {
   client: PublicClient | undefined;
@@ -93,8 +94,10 @@ export function useV3UnderlyingFromTokenId(
     let cancelled = false;
 
     (async () => {
+      let stage = "init";
       try {
         // 1. NFPM position
+        stage = "fetchV3Position";
         console.log("[V3] fetchV3Position start", {
           nfpmAddress,
           tokenId: tokenId.toString(),
@@ -120,6 +123,7 @@ export function useV3UnderlyingFromTokenId(
         });
 
         // 2. Pool slot0/liquidity
+        stage = "readPoolState";
         console.log("[V3] readContract slot0/liquidity start", {
           uniswapPoolAddress,
         });
@@ -221,6 +225,7 @@ export function useV3UnderlyingFromTokenId(
         });
 
         // 4. SDK Pool 생성 (pool token = bToken 기준)
+        stage = "buildSdkPool";
         const sdkToken0 = new Token(
           chainId,
           pos.token0 as `0x${string}`,
@@ -272,6 +277,7 @@ export function useV3UnderlyingFromTokenId(
         }
 
         // 5. SDK Position 생성 (기존 로직)
+        stage = "buildSdkPosition";
         const sdkPos = new V3Position({
           pool,
           liquidity: pos.liquidity.toString(),
@@ -321,6 +327,7 @@ export function useV3UnderlyingFromTokenId(
         });
 
         // 6. previewRedeem → underlying 수량
+        stage = "previewRedeem";
         const b0AmountBD = new BigDecimal(bToken0AmountHuman);
         const b1AmountBD = new BigDecimal(bToken1AmountHuman);
 
@@ -346,17 +353,21 @@ export function useV3UnderlyingFromTokenId(
           setUnderlying1(under1 ?? BigDecimal.ZERO());
         }
       } catch (e) {
-        console.error("[V3] useV3UnderlyingFromTokenId failed", {
-          error: e,
-          chainId,
-          tokenId: tokenId?.toString?.(),
-          uniswapPoolAddress,
-          nfpmAddress:
-            miscContracts.UniswapNonfungiblePositionManager.addresses[
-              chainId as number
-            ],
-          hasClient: !!client,
-        });
+        console.error(
+          "[V3] useV3UnderlyingFromTokenId failed",
+          stringifyForLog({
+            stage,
+            error: serializeError(e),
+            chainId,
+            tokenId: tokenId?.toString?.(),
+            uniswapPoolAddress,
+            nfpmAddress:
+              miscContracts.UniswapNonfungiblePositionManager.addresses[
+                chainId as number
+              ],
+            hasClient: !!client,
+          }),
+        );
         if (!cancelled) {
           setV3Position(null);
           setV3Pool(null);

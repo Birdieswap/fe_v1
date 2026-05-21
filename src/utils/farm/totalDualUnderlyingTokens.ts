@@ -15,6 +15,7 @@ import {
   toLower,
 } from "@/utils/farm/getAddressHelpers";
 import stakingProviders from "@/const/contracts/tokens/stakingProviders";
+import { isRateLimitError } from "@/utils/error/serializeError";
 
 function isNativeLike(addr: string) {
   const low = addr.toLowerCase();
@@ -67,14 +68,34 @@ export default async function totalDualUnderlyingTokens(
     args: [farmAddress],
   };
 
-  const data = (await readContract(client, args)) as [
-    string,
-    string,
-    bigint,
-    bigint,
-  ];
+  let lastError: unknown;
+  let data:
+    | [string, string, bigint, bigint]
+    | null = null;
 
-  if (!data) return null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      data = (await readContract(client, args)) as [
+        string,
+        string,
+        bigint,
+        bigint,
+      ];
+      break;
+    } catch (error) {
+      lastError = error;
+      if (!isRateLimitError(error) || attempt === 2) {
+        throw error;
+      }
+      const waitMs = 250 * (attempt + 1);
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+    }
+  }
+
+  if (!data) {
+    if (lastError) throw lastError;
+    return null;
+  }
 
   const [UnderlyingTokenA, UnderlyingTokenB, amountTokenA, amountTokenB] = data;
 

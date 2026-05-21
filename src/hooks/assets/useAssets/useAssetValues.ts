@@ -343,15 +343,24 @@ export function useAssetValues() {
       setIsUnderlyingFetching(true);
       try {
         // 1) vaultKey -> underlying balances 결과를 먼저 모은다(중복 제거된 RPC)
-        const vaultResults = await Promise.all(
-          uniqueVaultKeys.map(async (vaultKey) => {
-            const farm = (lpVaults as any)[vaultKey];
-            if (!farm) return { vaultKey, data: null as any };
+        const vaultResults: Array<{ vaultKey: string; data: any }> = [];
+        const batchSize = 3;
 
-            const data = await totalDualUnderlyingTokens(client, farm);
-            return { vaultKey, data };
-          })
-        );
+        for (let i = 0; i < uniqueVaultKeys.length; i += batchSize) {
+          const batch = uniqueVaultKeys.slice(i, i + batchSize);
+          const batchResults = await Promise.all(
+            batch.map(async (vaultKey) => {
+              const farm = (lpVaults as any)[vaultKey];
+              if (!farm) return { vaultKey, data: null as any };
+
+              const data = await totalDualUnderlyingTokens(client, farm);
+              return { vaultKey, data };
+            }),
+          );
+          vaultResults.push(...batchResults);
+
+          if (cancelled) return;
+        }
 
         if (cancelled) return;
 

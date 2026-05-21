@@ -2,7 +2,6 @@
 
 import { HeroUIProvider } from "@heroui/react";
 import { PropsWithChildren, useEffect } from "react";
-import sdk from "@farcaster/miniapp-sdk";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ThemeProvider, useTheme } from "next-themes";
 import {
@@ -252,6 +251,9 @@ if (arbitrumUrls.length) {
 const projectId =
   process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "your-project-id";
 const appName = process.env.NEXT_PUBLIC_APP_NAME || "Birdieswap";
+const enableCoinbaseWallet =
+  process.env.NEXT_PUBLIC_ENABLE_COINBASE_WALLET === "1" ||
+  process.env.NODE_ENV === "production";
 
 const coinbaseWalletAll = Object.assign(coinbaseWallet, {
   preference: { options: "all" },
@@ -308,20 +310,25 @@ const metaMaskInjectedWallet = () => {
   };
 };
 
+const popularWallets: any[] = [
+  metaMaskInjectedWallet,
+  walletConnectWallet,
+  uniswapWallet,
+  trustWallet,
+  braveWallet,
+  phantomWallet,
+  rabbyWallet,
+];
+
+if (enableCoinbaseWallet) {
+  popularWallets.splice(3, 0, coinbaseWalletAll);
+}
+
 const connectors = connectorsForWallets(
   [
     {
       groupName: "Popular",
-      wallets: [
-        metaMaskInjectedWallet,
-        walletConnectWallet,
-        uniswapWallet,
-        coinbaseWalletAll,
-        trustWallet,
-        braveWallet,
-        phantomWallet,
-        rabbyWallet,
-      ],
+      wallets: popularWallets,
     },
   ],
   { appName, projectId },
@@ -365,25 +372,28 @@ export default function Providers({
   children,
   nonce,
 }: PropsWithChildren<{ nonce?: string }>) {
-  //for mini app
   useEffect(() => {
-    const load = async () => {
+    const notifyReady = async () => {
       try {
-        // Base App에게 준비 완료 신호 전송
-        await sdk.actions.ready();
+        const dynamicImport = new Function(
+          "specifier",
+          "return import(specifier)"
+        ) as (specifier: string) => Promise<any>;
+        const mod = await dynamicImport("@farcaster/miniapp-sdk");
+        const miniAppSdk = mod?.sdk ?? mod?.default;
+        if (!miniAppSdk?.actions?.ready) return;
 
-        // (옵션) 혹시 모를 타이밍 이슈 방지용 안전 장치 (유지해도 좋습니다)
+        await miniAppSdk.actions.ready();
         setTimeout(() => {
-          sdk.actions.ready();
+          miniAppSdk.actions.ready?.();
         }, 500);
-      } catch (error) {
-        console.error("MiniApp SDK Load Error:", error);
+      } catch {
+        // Mini app SDK가 없는 환경에서는 조용히 무시한다.
       }
     };
 
-    // window 객체가 있을 때만 실행 (Next.js SSR 에러 방지)
     if (typeof window !== "undefined") {
-      load();
+      notifyReady();
     }
   }, []);
 
