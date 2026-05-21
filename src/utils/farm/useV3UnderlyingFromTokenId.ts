@@ -12,7 +12,11 @@ import {
   type V3PositionRaw,
 } from "@/utils/uniswap/positionManager";
 import previewRedeem from "@/utils/farm/previewRedeem";
-import { serializeError, stringifyForLog } from "@/utils/error/serializeError";
+import {
+  isRateLimitError,
+  serializeError,
+  stringifyForLog,
+} from "@/utils/error/serializeError";
 
 type UseV3UnderlyingParams = {
   client: PublicClient | undefined;
@@ -35,6 +39,16 @@ export function useV3UnderlyingFromTokenId(
 ): UseV3UnderlyingResult {
   const { client, chainId, tokenId, uniswapPoolAddress, bToken0, bToken1 } =
     params;
+  const bToken0Address = bToken0?.addresses?.[chainId ?? -1] as
+    | string
+    | undefined;
+  const bToken1Address = bToken1?.addresses?.[chainId ?? -1] as
+    | string
+    | undefined;
+  const bToken0Symbol = bToken0?.symbol as string | undefined;
+  const bToken1Symbol = bToken1?.symbol as string | undefined;
+  const bToken0Decimals = bToken0?.decimals as number | undefined;
+  const bToken1Decimals = bToken1?.decimals as number | undefined;
 
   const [underlying0, setUnderlying0] = useState<BigDecimal | null>(null);
   const [underlying1, setUnderlying1] = useState<BigDecimal | null>(null);
@@ -47,8 +61,12 @@ export function useV3UnderlyingFromTokenId(
       chainId,
       tokenId: tokenId?.toString(),
       uniswapPoolAddress,
-      bToken0,
-      bToken1,
+      bToken0Address,
+      bToken1Address,
+      bToken0Symbol,
+      bToken1Symbol,
+      bToken0Decimals,
+      bToken1Decimals,
     });
 
     // 기본 가드
@@ -164,13 +182,13 @@ export function useV3UnderlyingFromTokenId(
         // 3. NFPM token0/1 과 Birdieswap bToken 주소 매핑
         const posToken0 = pos.token0.toLowerCase();
         const posToken1 = pos.token1.toLowerCase();
-        const b0AddrRaw = bToken0?.addresses?.[chainId] as string | undefined;
-        const b1AddrRaw = bToken1?.addresses?.[chainId] as string | undefined;
+        const b0AddrRaw = bToken0Address;
+        const b1AddrRaw = bToken1Address;
         if (!b0AddrRaw || !b1AddrRaw) {
           console.error("[V3] bToken address missing for chain", {
             chainId,
-            bToken0: bToken0?.symbol,
-            bToken1: bToken1?.symbol,
+            bToken0: bToken0Symbol,
+            bToken1: bToken1Symbol,
             b0AddrRaw,
             b1AddrRaw,
           });
@@ -206,8 +224,8 @@ export function useV3UnderlyingFromTokenId(
           console.error("[V3] NFPM token0/1 does not match bTokens", {
             posToken0: pos.token0,
             posToken1: pos.token1,
-            bToken0: bToken0.addresses?.[chainId],
-            bToken1: bToken1.addresses?.[chainId],
+            bToken0: bToken0Address,
+            bToken1: bToken1Address,
           });
           if (!cancelled) {
             setV3Position(null);
@@ -320,8 +338,8 @@ export function useV3UnderlyingFromTokenId(
 
         console.log("[V3] mapped bToken human amounts", {
           amount0IsForBToken0,
-          bToken0Symbol: bToken0.symbol,
-          bToken1Symbol: bToken1.symbol,
+          bToken0Symbol,
+          bToken1Symbol,
           bToken0AmountHuman,
           bToken1AmountHuman,
         });
@@ -332,8 +350,8 @@ export function useV3UnderlyingFromTokenId(
         const b1AmountBD = new BigDecimal(bToken1AmountHuman);
 
         console.log("[V3] previewRedeem input", {
-          bToken0: bToken0.symbol,
-          bToken1: bToken1.symbol,
+          bToken0: bToken0Symbol,
+          bToken1: bToken1Symbol,
           b0AmountBD: b0AmountBD.toString?.() ?? b0AmountBD,
           b1AmountBD: b1AmountBD.toString?.() ?? b1AmountBD,
         });
@@ -353,21 +371,29 @@ export function useV3UnderlyingFromTokenId(
           setUnderlying1(under1 ?? BigDecimal.ZERO());
         }
       } catch (e) {
-        console.error(
-          "[V3] useV3UnderlyingFromTokenId failed",
-          stringifyForLog({
-            stage,
-            error: serializeError(e),
-            chainId,
-            tokenId: tokenId?.toString?.(),
-            uniswapPoolAddress,
-            nfpmAddress:
-              miscContracts.UniswapNonfungiblePositionManager.addresses[
-                chainId as number
-              ],
-            hasClient: !!client,
-          }),
-        );
+        const payload = {
+          stage,
+          error: serializeError(e),
+          chainId,
+          tokenId: tokenId?.toString?.(),
+          uniswapPoolAddress,
+          nfpmAddress:
+            miscContracts.UniswapNonfungiblePositionManager.addresses[
+              chainId as number
+            ],
+          hasClient: !!client,
+        };
+        if (isRateLimitError(e)) {
+          console.warn(
+            "[V3] underlying fetch rate-limited",
+            stringifyForLog(payload),
+          );
+        } else {
+          console.error(
+            "[V3] useV3UnderlyingFromTokenId failed",
+            stringifyForLog(payload),
+          );
+        }
         if (!cancelled) {
           setV3Position(null);
           setV3Pool(null);
@@ -381,7 +407,18 @@ export function useV3UnderlyingFromTokenId(
       console.log("[V3] cleanup, set cancelled = true");
       cancelled = true;
     };
-  }, [client, chainId, tokenId, uniswapPoolAddress, bToken0, bToken1]);
+  }, [
+    client,
+    chainId,
+    tokenId,
+    uniswapPoolAddress,
+    bToken0Address,
+    bToken1Address,
+    bToken0Symbol,
+    bToken1Symbol,
+    bToken0Decimals,
+    bToken1Decimals,
+  ]);
 
   return { underlying0, underlying1, v3Position, v3Pool };
 }

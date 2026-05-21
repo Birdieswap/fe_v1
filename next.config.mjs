@@ -24,6 +24,8 @@ const nextConfig = {
     ],
   },
 
+  turbopack: {},
+
   compiler: {
     // prod 빌드에서 console.* 제거
     // 에러/경고는 남기고 싶으면 exclude 사용
