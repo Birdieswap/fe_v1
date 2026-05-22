@@ -15,6 +15,8 @@ import {
 } from "@/utils/wallet/getRewardList";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
+import type { CurrentUserRewardsResponse } from "@/utils/wallet/getMyCurrentUserReward";
+import type { ReferralRewardsResponse } from "@/utils/wallet/getMyReferralReward";
 
 export type RewardItemProps = {
   name: string;
@@ -96,12 +98,14 @@ export default function RewardsReferral() {
   const { assetValues } = useContext(AssetsContext);
   const explorerURL = getBlockExplorerUrl(chainId);
   const { walletData } = useContext(WalletContext);
+  const currentUserReward =
+    walletData?.currentUserReward as CurrentUserRewardsResponse | undefined;
+  const referralRewards =
+    walletData?.referralRewards as ReferralRewardsResponse["ReferralRewards"] | undefined;
 
   // 2) 원본 데이터: 안전 디폴트
-  const ReferralRewardItem =
-    walletData?.currentUserReward?.ReferralRewards ?? {}; // map or {}
-  const ReferralRewardInfo =
-    walletData?.referralRewards ?? walletData?.referralRewards ?? []; // array or []
+  const ReferralRewardItem = currentUserReward?.ReferralRewards ?? {};
+  const ReferralRewardInfo = referralRewards ?? [];
 
   // 3) 계산 1: rewards/raw (항상 호출, 내부에서 방어)
   const rewardsMemo = useMemo(() => {

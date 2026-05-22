@@ -14,6 +14,8 @@ import {
 } from "@/utils/wallet/getRewardList";
 import { getBlockExplorerUrl } from "@/utils/farm/getBlockExplorerURL";
 import { getTimeAgoLinux } from "@/utils/farm/getTimeAgoLinux";
+import type { CurrentUserRewardsResponse } from "@/utils/wallet/getMyCurrentUserReward";
+import type { SwapRewardsResponse } from "@/utils/wallet/getMySwapReward";
 
 export type RewardItemProps = {
   name: string;
@@ -102,11 +104,14 @@ export default function RewardsSwap() {
   const { referralAddress } = useReferral();
   const explorerURL = getBlockExplorerUrl(chainId);
   const { walletData } = useContext(WalletContext);
+  const currentUserReward =
+    walletData?.currentUserReward as CurrentUserRewardsResponse | undefined;
+  const swapRewards =
+    walletData?.swapRewards as SwapRewardsResponse["SwapRewards"] | undefined;
 
   // ---------- 원본 데이터: 존재 안하면 안전 디폴트 ----------
-  const SwapRewardItem = walletData?.currentUserReward?.SwapRewards ?? {}; // 객체 or {}
-  const SwapRewardInfo =
-    walletData?.swapRewards ?? walletData?.swapRewards ?? [];
+  const SwapRewardItem = currentUserReward?.SwapRewards ?? {};
+  const SwapRewardInfo = swapRewards ?? [];
   const isSelfReferral = address === referralAddress;
 
   // ---------- 계산 1: rewards/raw (항상 useMemo 호출, 내부에서 방어) ----------

@@ -1,10 +1,8 @@
 import clsx from "clsx";
 import { useDisclosure } from "@heroui/react";
 
-import { Vault } from "@/types/FarmListTableRowProps";
-
 import VaultInfoModal from "./vaultInfo/VaultInfoModal";
-import { VaultRowItem } from "../EarningsPanel";
+import type { VaultRowItem } from "../InfoCards/VaultInfo";
 import Icons from "@/assets/icons/icons";
 import { useCallback, useRef } from "react";
 type PeriodKey = "apr1d" | "apr7d" | "apr30d";

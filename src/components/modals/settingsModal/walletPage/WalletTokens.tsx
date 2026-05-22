@@ -206,6 +206,21 @@ function formatBigDecimalLike(v: any): string {
   return formatAmountLoose(v);
 }
 
+function normalizeWalletTokenAddress(addr?: string) {
+  if (!addr) return "";
+  try {
+    return getAddress(addr).toLowerCase();
+  } catch {
+    return String(addr).toLowerCase();
+  }
+}
+
+function normalizeWalletTokenName(name?: string) {
+  return String(name ?? "")
+    .trim()
+    .toLowerCase();
+}
+
 /**
  * externalTokens.ts / tokens.ts 포맷이 조금 달라도 최대한 잘 읽기
  * - addresses[chainId] 지원
@@ -378,7 +393,26 @@ export default function WalletTokens({ onClose }: { onClose?: () => void }) {
         []) ||
       [];
 
-    const externalTokens = buildExternalWalletTokens(assetsLike, chainId);
+    const primaryTokenAddresses = new Set(
+      tokens
+        .map((token) => normalizeWalletTokenAddress(token.address))
+        .filter(Boolean)
+    );
+    const primaryTokenNames = new Set(
+      tokens.map((token) => normalizeWalletTokenName(token.name)).filter(Boolean)
+    );
+
+    const externalTokens = buildExternalWalletTokens(assetsLike, chainId).filter(
+      (token) => {
+        const addr = normalizeWalletTokenAddress(token.address);
+        const name = normalizeWalletTokenName(token.name);
+
+        if (addr && primaryTokenAddresses.has(addr)) return false;
+        if (name && primaryTokenNames.has(name)) return false;
+
+        return true;
+      }
+    );
 
     return { tokens, externalTokens };
   }, [total, chainId]);
