@@ -1217,6 +1217,7 @@ const CBBTC = CurrencyGuard({
   symbol: "cbBTC",
   fullName: "Coinbase Wrapped BTC",
   addresses: {
+    [networks.sepolia.id]: contractAddresses.sepolia.CBBTC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.CBBTC as `0x${string}`,
   },
   abi: erc20_abi,
