@@ -11,7 +11,7 @@ import type { StakeTokenStatus } from "./farm/StakeTokenStatus";
 import useFarmPanelCommon from "./useFarmPanelCommon";
 import useAllowance from "./useAllowance";
 import useApprove from "./useApprove";
-import { AssetsContext } from "@/app/AssetsContextProvider";
+import { AprEntry, AssetsContext } from "@/app/AssetsContextProvider";
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import {
   TransactionStatusProps,
@@ -41,7 +41,10 @@ type StakePanelState = {
   approve: (token: any) => Promise<void> | void;
 };
 
-export default function useStakePanel(item: any): StakePanelState {
+export default function useStakePanel(
+  item: any,
+  matched?: AprEntry
+): StakePanelState {
   const {
     client,
     transactionContext,
@@ -80,6 +83,7 @@ export default function useStakePanel(item: any): StakePanelState {
   }, [lpBalance]);
 
   const stakingInfo = useMemo(() => {
+    if (matched?.staking) return matched.staking;
     // total.aprDataState.apr 배열에서 contractAddress === stakeTokenAddress
     const aprList = (assetsTotal as any)?.aprDataState?.apr as
       | Array<{ contractAddress?: `0x${string}`; staking?: any }>
@@ -91,7 +95,7 @@ export default function useStakePanel(item: any): StakePanelState {
         x.contractAddress.toLowerCase() === stakeTokenAddress.toLowerCase()
     );
     return found?.staking;
-  }, [assetsTotal, stakeTokenAddress]);
+  }, [assetsTotal, matched?.staking, stakeTokenAddress]);
 
   const stakingAddress = stakingInfo?.contractAddress as
     | `0x${string}`
@@ -157,8 +161,14 @@ export default function useStakePanel(item: any): StakePanelState {
             amount,
             isApproved,
             isInsufficientBalance,
-            isApprovable: isConnected && !isApproved && !isApprovePending,
-            approve: () => approveWithPending(stakeToken as any),
+            isApprovable:
+              isConnected &&
+              !!stakingAddress &&
+              !isApproved &&
+              !isApprovePending,
+            approve: stakingAddress
+              ? () => approveWithPending(stakeToken as any)
+              : undefined,
           }),
         ]
       : [];
@@ -171,6 +181,7 @@ export default function useStakePanel(item: any): StakePanelState {
     isConnected,
     isApprovePending,
     approveWithPending,
+    stakingAddress,
     stakeToken,
   ]);
 
@@ -179,7 +190,7 @@ export default function useStakePanel(item: any): StakePanelState {
   }, [lpBalance]);
 
   const staking = useCallback(() => {
-    if (!address) return;
+    if (!address || !stakingAddress || !stakeToken) return;
 
     const transactionProps: TransactionStatusProps & stakeTransactionProps = {
       chainId,
@@ -238,6 +249,7 @@ export default function useStakePanel(item: any): StakePanelState {
     !!primaryStatus &&
       !!primaryStatus.amount &&
       primaryStatus.amount.gt(0) &&
+      !!stakingAddress &&
       primaryStatus.isApproved &&
       !primaryStatus.isInsufficientBalance &&
       !isWrongNetwork

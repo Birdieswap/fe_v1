@@ -7,7 +7,6 @@ import { AssetsContext } from "@/app/AssetsContextProvider";
 import { ICurrency } from "@/const/contracts/types/tokenTypes";
 import getSwapResult from "@/utils/assets/getSwapResult";
 import getTokenAddress from "@/utils/assets/getTokenAddress";
-import tokens from "@/const/contracts/tokens/tokens";
 import externalTokens from "@/const/contracts/tokens/externalTokens";
 
 import useBalance from "../useBalance";
@@ -26,9 +25,9 @@ import { ADDRESS } from "@/const/contracts/contractAddresses";
 export default function useSwap() {
   const chainId = useChainId();
   const [fromToken, setFromToken] = useState<ICurrency | undefined>(
-    tokens.USDC,
+    externalTokens.ETH,
   );
-  const [toToken, setToToken] = useState<ICurrency | undefined>(tokens.EURC);
+  const [toToken, setToToken] = useState<ICurrency | undefined>(undefined);
   const [fromAmount, setFromAmount] = useState("");
   const [toAmount, setToAmount] = useState("");
   const [maxSlippage, setMaxSlippage] = useState<"auto" | number>("auto");

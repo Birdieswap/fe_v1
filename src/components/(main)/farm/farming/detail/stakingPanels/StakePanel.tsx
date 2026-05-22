@@ -34,7 +34,7 @@ export default function StakePanel({
   price?: BigDecimal | null;
   hasRewards: boolean;
 }) {
-  const state = useStakePanel(item);
+  const state = useStakePanel(item, matched);
   const firstStatus = state.tokenStatuses?.[0];
   const balanceBD = firstStatus?.balance ?? null; // null이면 로딩 중으로 간주
   const symbol = state.token?.symbol ?? "";

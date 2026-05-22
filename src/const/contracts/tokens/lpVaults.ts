@@ -222,7 +222,7 @@ const blpHarvestAutopilotEURCWETH = BirdieLPFarmGuard({
 
 const blpHarvestAutopilotEURCETH = BirdieLPFarmGuard({
   type: EContractType.BIRDIE_LP,
-  symbol: "bEURCETH",
+  symbol: "bEURCWETH",
   fullName: "Birdieswap EURC 3000 WETH",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia

@@ -33,7 +33,10 @@ export function StakeExecuteButtons({
 }) {
   // console.log("tokenStatus", tokenStatuses);
   const isApproveVisible =
-    isConnected && tokenStatuses.some((v) => v.isApproved == false);
+    isConnected &&
+    tokenStatuses.some(
+      (v) => v.isApproved == false && (v.isApprovable ?? true)
+    );
 
   const isApprovePending = isPending && isApproveVisible;
   const isExecutePending = isPending && !isApproveVisible;
@@ -43,7 +46,9 @@ export function StakeExecuteButtons({
       <StakeApproveButtonsContainer isVisible={isApproveVisible}>
         {isApproveVisible &&
           tokenStatuses
-            .filter((v) => v.isApproved == false)
+            .filter(
+              (v) => v.isApproved == false && (v.isApprovable ?? true)
+            )
             .map((v) => (
               <StakeApproveButton
                 key={v.input?.symbol}
