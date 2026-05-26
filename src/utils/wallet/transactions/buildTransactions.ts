@@ -649,14 +649,40 @@ export function buildTransactions(
     }
 
     // ---------- EASY_ENTER ----------
-    if (typeStr === "EasyEnter") {
+    if (
+      typeStr === "EasyEnter" ||
+      typeStr === "easyEnter" ||
+      typeStr === "EASY_ENTER"
+    ) {
       const d = ev?.data ?? {};
-      const tokenInAddr = d?.tokenIn;
-      const tokenAmount = d?.tokenAmount ?? "0";
-      const stakingContract = d?.stakingContract;
+      const tokenInAddr =
+        d?.tokenIn ??
+        d?.tokenInAddress ??
+        d?._tokenIn ??
+        d?.inputToken ??
+        d?.inputTokenAddress;
+      const tokenAmount =
+        d?.tokenAmount ??
+        d?.tokenInAmount ??
+        d?._tokenInAmount ??
+        d?.amountIn ??
+        d?.inputAmount ??
+        "0";
+      const stakingContract =
+        d?.stakingContract ?? d?._stakingContract ?? d?.contractAddress;
       const stakingTokenAddr =
-        d?.stakingTokenAddress ?? d?.stakingToken ?? stakingContract;
-      const sharesMinted = d?.sharesMinted ?? "0";
+        d?.stakingTokenAddress ??
+        d?.stakingToken ??
+        d?.lpToken ??
+        d?.vaultToken ??
+        stakingContract;
+      const sharesMinted =
+        d?.sharesMinted ??
+        d?.shareMinted ??
+        d?.mintedShares ??
+        d?.stakeAmount ??
+        d?.blpAmount ??
+        "0";
 
       const fromRaw = makeTokenInfo(
         tokenInAddr,
@@ -710,15 +736,45 @@ export function buildTransactions(
     }
 
     // ---------- EASY_PAY ----------
-    if (typeStr === "EasyPay") {
+    if (
+      typeStr === "EasyPay" ||
+      typeStr === "easyPay" ||
+      typeStr === "EASY_PAY"
+    ) {
       const d = ev?.data ?? {};
-      const stakingContract = d?.stakingContract;
+      const stakingContract =
+        d?.stakingContract ?? d?._stakingContract ?? d?.contractAddress;
       const stakingTokenAddr =
-        d?.stakingTokenAddress ?? d?.stakingToken ?? stakingContract;
-      const blpTokenRedeemed = d?.blpTokenRedeemed ?? "0";
-      const beneficiary = String(d?.beneficiary ?? "");
-      const amountPaid = d?.amountPaid ?? "0";
-      const refundOut = d?.refundOut ?? "0";
+        d?.stakingTokenAddress ??
+        d?.stakingToken ??
+        d?.lpToken ??
+        d?.vaultToken ??
+        stakingContract;
+      const blpTokenRedeemed =
+        d?.blpTokenRedeemed ??
+        d?.stakedAmount ??
+        d?._stakedAmount ??
+        d?.sharesRedeemed ??
+        d?.redeemAmount ??
+        "0";
+      const beneficiary = String(
+        d?.beneficiary ?? d?._beneficiary ?? d?.receiver ?? "",
+      );
+      const amountPaid =
+        d?.amountPaid ??
+        d?.exactOut ??
+        d?._exactOut ??
+        d?.tokenOutAmount ??
+        d?.paidAmount ??
+        "0";
+      const refundOut =
+        d?.refundOut ??
+        d?.refundAmount ??
+        d?.tokenRefunded ??
+        d?.refund ??
+        "0";
+      const tokenOutAddr =
+        d?.tokenOut ?? d?._tokenOut ?? d?.outputToken ?? d?.tokenOutAddress;
 
       const stakingMeta =
         stakingTokenAddr
@@ -747,19 +803,51 @@ export function buildTransactions(
         redeemDecimals
       );
 
-      const usdcMeta = getUsdcMeta(chainId);
-      const paid = makeStakeTokenInfo(
-        usdcMeta.symbol,
-        usdcMeta.iconSrc,
-        amountPaid,
-        usdcMeta.decimals
-      );
-      const refund = makeStakeTokenInfo(
-        usdcMeta.symbol,
-        usdcMeta.iconSrc,
-        refundOut,
-        usdcMeta.decimals
-      );
+      const tokenOutInfo = tokenOutAddr
+        ? makeTokenInfo(
+            tokenOutAddr,
+            amountPaid,
+            chainId,
+            chainLinkPriceMap,
+            false,
+            tokensOverride,
+            vaultsOverride,
+            externalTokensDefault,
+          )
+        : null;
+      const fallbackMeta = getUsdcMeta(chainId);
+      const paid = tokenOutInfo
+        ? tokenOutInfo
+        : makeStakeTokenInfo(
+            fallbackMeta.symbol,
+            fallbackMeta.iconSrc,
+            amountPaid,
+            fallbackMeta.decimals,
+          );
+      const refund = tokenOutInfo
+        ? {
+            ...tokenOutInfo,
+            amount: toExactTrimmed(
+              new BigDecimal(
+                BigInt(String(refundOut)),
+                (() => {
+                  const meta = findTokenMetaFromTokens(
+                    normalizeTokenAddress(tokenOutAddr, chainId),
+                    chainId,
+                    tokensOverride,
+                    externalTokensDefault,
+                  );
+                  return meta?.decimals ?? 18;
+                })(),
+              ),
+            ),
+          }
+        : makeStakeTokenInfo(
+            fallbackMeta.symbol,
+            fallbackMeta.iconSrc,
+            refundOut,
+            fallbackMeta.decimals,
+          );
 
       txs.push({
         type: TransactionType.EASY_PAY,

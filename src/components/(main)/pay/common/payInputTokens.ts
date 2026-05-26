@@ -6,5 +6,10 @@ export const ENTER_INPUT_TOKENS: ICurrency[] = [
   externalTokens.ETH,
   tokens.USDC,
   tokens.EURC,
+  externalTokens.CBBTC,
 ];
-export const PAY_INPUT_TOKENS: ICurrency[] = [tokens.USDC, tokens.EURC];
+export const PAY_INPUT_TOKENS: ICurrency[] = [
+  tokens.USDC,
+  tokens.EURC,
+  externalTokens.CBBTC,
+];

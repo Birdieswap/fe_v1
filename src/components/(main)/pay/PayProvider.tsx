@@ -41,7 +41,7 @@ export function PayProvider({ children }: { children: React.ReactNode }) {
     (pay.setSelectedPool as any)?.(undefined);
 
     // ENTER 토글도 초기화 원하면
-    pay.setNativeSymbol("USDC");
+    pay.setNativeSymbol("ETH");
   }, [pay]);
 
   const value = useMemo<PayContextValueType>(

@@ -113,7 +113,7 @@ export async function pay(params: {
   receiver: `0x${string}`;
 
   payAmount: string; // payout token units string (ex: "12.34")
-  payTokenSymbol: "USDC" | "EURC";
+  payTokenSymbol: "USDC" | "EURC" | "CBBTC";
   payTokenAddress: `0x${string}`;
   payTokenDecimals: number;
   stakingSharesStr: string; // shares units string (ex: "0.12345678")
@@ -148,7 +148,7 @@ export async function pay(params: {
   } = params;
 
   const payToken =
-    Object.values(tokens).find(
+    [...Object.values(tokens), ...Object.values(externalTokens)].find(
       (t) => t.symbol?.toUpperCase() === payTokenSymbol.toUpperCase()
     ) ?? tokens.USDC;
 
@@ -252,7 +252,7 @@ export async function approveErc20ForEnter(params: {
   } = params;
 
   const tokenMeta =
-    Object.values(tokens).find(
+    [...Object.values(tokens), ...Object.values(externalTokens)].find(
       (t) => t.addresses?.[chainId]?.toLowerCase() === tokenAddress.toLowerCase()
     ) ?? externalTokens.WETH;
 
@@ -381,7 +381,7 @@ export async function enter(params: {
     transactionStatus: TransactionStatus.CONFIRM_NEEDED,
     input: {
       token:
-        Object.values(tokens).find(
+        [...Object.values(tokens), ...Object.values(externalTokens)].find(
           (t) => t.symbol.toUpperCase() === inputTokenSymbol.toUpperCase()
         ) ?? externalTokens.ETH,
       amount: undefined,

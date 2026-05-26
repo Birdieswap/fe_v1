@@ -62,8 +62,8 @@ import {
 
 // -------- helpers --------
 type PayMode = "PAY" | "ENTER";
-type EnterTokenSymbol = "ETH" | "USDC" | "EURC";
-type PayTokenSymbol = "USDC" | "EURC";
+type EnterTokenSymbol = "ETH" | "USDC" | "EURC" | "CBBTC";
+type PayTokenSymbol = "USDC" | "EURC" | "CBBTC";
 type LpUnderlyingSnapshot = {
   token0: ICurrency;
   token1: ICurrency;
@@ -121,7 +121,7 @@ function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
 function findTokenByAddress(chainId: number, address?: string) {
   if (!address) return undefined;
   const addr = address.toLowerCase();
-  const list = Object.values(tokens) as any[];
+  const list = [...Object.values(tokens), ...Object.values(externalTokens)] as any[];
   return list.find((t) => {
     const a = t?.addresses?.[chainId];
     return typeof a === "string" && a.toLowerCase() === addr;
@@ -278,7 +278,7 @@ export default function usePay() {
   const [enterAmount, setEnterAmount] = useState("");
   const [tolerance, setTolerance] = useState<"auto" | number>("auto");
   const [selectedPool, setSelectedPool] = useState<PoolLike | undefined>();
-  const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("USDC");
+  const [nativeSymbol, setNativeSymbol] = useState<EnterTokenSymbol>("ETH");
   const [enterPriceImpact, setEnterPriceImpact] = useState<
     BigDecimal | undefined
   >(undefined);
@@ -298,7 +298,7 @@ export default function usePay() {
   // ✨ ENTER 폼 리셋
   const resetEnterPanel = useCallback(() => {
     setEnterAmount("");
-    setNativeSymbol("USDC");
+    setNativeSymbol("ETH");
     setSelectedPool(undefined);
   }, []);
 
@@ -306,9 +306,17 @@ export default function usePay() {
   const PAY_EURC = tokens.EURC;
   const ETH = externalTokens.ETH;
   const EURC = tokens.EURC;
-  const payToken = paySymbol === "EURC" ? PAY_EURC : USDC;
+  const CBBTC = externalTokens.CBBTC;
+  const payToken =
+    paySymbol === "EURC" ? PAY_EURC : paySymbol === "CBBTC" ? CBBTC : USDC;
   const enterToken =
-    nativeSymbol === "ETH" ? ETH : nativeSymbol === "EURC" ? EURC : USDC;
+    nativeSymbol === "ETH"
+      ? ETH
+      : nativeSymbol === "EURC"
+        ? EURC
+        : nativeSymbol === "CBBTC"
+          ? CBBTC
+          : USDC;
   const priceImpactHubToken = tokens[
     PRICE_IMPACT_ROUTE_HUB_TOKEN_SYMBOL
   ] as ICurrency;

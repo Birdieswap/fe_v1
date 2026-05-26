@@ -136,7 +136,9 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         ? externalTokens.ETH
         : pay.nativeSymbol === "EURC"
           ? tokens.EURC
-          : tokens.USDC;
+          : pay.nativeSymbol === "CBBTC"
+            ? externalTokens.CBBTC
+            : tokens.USDC;
 
   const showLock =
     mode === "ENTER" && pay.nativeSymbol !== "ETH" && !!pay.showApproveUI;
@@ -395,11 +397,13 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
         if (nextToken.symbol === "ETH") pay.setNativeSymbol("ETH");
         if (nextToken.symbol === "USDC") pay.setNativeSymbol("USDC");
         if (nextToken.symbol === "EURC") pay.setNativeSymbol("EURC");
+        if (nextToken.symbol === "cbBTC") pay.setNativeSymbol("CBBTC");
         return;
       }
       if (mode === "PAY") {
         if (nextToken.symbol === "USDC") pay.setPaySymbol("USDC");
         if (nextToken.symbol === "EURC") pay.setPaySymbol("EURC");
+        if (nextToken.symbol === "cbBTC") pay.setPaySymbol("CBBTC");
         pay.setPayAmount("");
       }
     },

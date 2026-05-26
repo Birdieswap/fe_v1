@@ -113,7 +113,7 @@ const tokens = {
   ETH,
   WETH,
   USDC,
-  WBTC,
+  // WBTC,
   CBBTC,
   EURC,
   // FARM,
