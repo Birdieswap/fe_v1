@@ -19,7 +19,7 @@ const WBTC_USD = PriceFeedGuard({
   symbol: "LINK:WBTC_USD",
   fullName: "Chainlink WBTC/USD Price Feed", //sepolia BTC/USD로 대체
   addresses: {
-    [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
+    // [networks.sepolia.id]: "0x1b44F3514812d835EB1BDB0acB33d3fA3351Ee43",
     [networks.arbitrum.id]: "0xd0C7101eACbB49F3deCcCc166d238410D6D46d57",
   },
   base: tokens.WBTC,

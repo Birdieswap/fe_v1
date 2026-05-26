@@ -70,7 +70,7 @@ const WBTC = CurrencyGuard({
   symbol: "WBTC",
   fullName: "Wrapped BTC",
   addresses: {
-    [networks.sepolia.id]: contractAddresses.sepolia.WBTC as `0x${string}`,
+    // [networks.sepolia.id]: contractAddresses.sepolia.WBTC as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum.WBTC as `0x${string}`,
   },
   abi: erc20_abi,
@@ -113,7 +113,7 @@ const tokens = {
   ETH,
   WETH,
   USDC,
-  // WBTC,
+  WBTC,
   CBBTC,
   EURC,
   // FARM,
