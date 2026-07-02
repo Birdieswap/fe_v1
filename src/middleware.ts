@@ -58,6 +58,8 @@ const CSP_CONNECT_APP = uniq([
   "https://base-mainnet.infura.io",
   "https://mainnet.base.org",
   "https://sepolia.drpc.org",
+  "https://sepolia-rpc.giwa.io",
+  "https://sepolia-rpc-flashblocks.giwa.io",
   "https://arb1.arbitrum.io",
   "https://polygon-rpc.com",
   "https://rpc.scroll.io",
@@ -80,6 +82,7 @@ const CSP_CONNECT_APP = uniq([
   safeOrigin(process.env.NEXT_PUBLIC_POLYGON_RPC_URL_INFURA),
   safeOrigin(process.env.NEXT_PUBLIC_SCROLL_RPC_URL_ALCHEMY),
   safeOrigin(process.env.NEXT_PUBLIC_SCROLL_RPC_URL_INFURA),
+  safeOrigin(process.env.NEXT_PUBLIC_GIWA_SEPOLIA_RPC_URL),
 ]);
 const CSP_CONNECT_LANDING = uniq([
   "'self'",
