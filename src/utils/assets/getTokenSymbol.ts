@@ -1,6 +1,10 @@
 import tokens from "@/const/contracts/tokens/tokens";
+import externalTokens from "@/const/contracts/tokens/externalTokens";
+
 export type Address = `0x${string}`;
-type AnyToken = (typeof tokens)[keyof typeof tokens];
+type AnyToken =
+  | (typeof tokens)[keyof typeof tokens]
+  | (typeof externalTokens)[keyof typeof externalTokens];
 
 // 주소 정규화
 const norm = (addr: string) => addr.toLowerCase();
@@ -10,7 +14,7 @@ const reverseIndex: Record<number, Record<string, AnyToken>> = Object.create(nul
 
 // 애플리케이션 초기화 시 1회 빌드
 (function buildReverseIndex() {
-  const list = Object.values(tokens);
+  const list = [...Object.values(tokens), ...Object.values(externalTokens)];
   for (const token of list) {
     // token.addresses는 {[chainId: number]: string} 형태
     for (const [chainIdStr, address] of Object.entries(token.addresses)) {
@@ -18,6 +22,11 @@ const reverseIndex: Record<number, Record<string, AnyToken>> = Object.create(nul
       const chainId = Number(chainIdStr);
       if (!reverseIndex[chainId]) reverseIndex[chainId] = Object.create(null);
       reverseIndex[chainId][norm(address)] = token;
+
+      if (token.symbol === "ETH") {
+        reverseIndex[chainId]["0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"] =
+          token;
+      }
     }
   }
 })();

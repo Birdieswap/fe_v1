@@ -3,11 +3,36 @@ import internalSwapPoolsMod from "@/const/contracts/tokens/swapPool";
 import externalSwapPoolsMod from "@/const/contracts/tokens/externalSwapPool";
 import tokens from "@/const/contracts/tokens/tokens";
 import externalTokens from "@/const/contracts/tokens/externalTokens";
-import { INTERNAL_TOKENS, EXTERNAL_TOKENS } from "@/const/tokenInfo";
 
 const symUP = (t?: ICurrency | null) => String(t?.symbol ?? "").toUpperCase();
 const isETH = (t?: ICurrency | null) => symUP(t) === "ETH";
 const isWETH = (t?: ICurrency | null) => symUP(t) === "WETH";
+
+function getAllTokens(): ICurrency[] {
+  return [...Object.values(tokens), ...Object.values(externalTokens)].filter(
+    Boolean
+  ) as ICurrency[];
+}
+
+function tokenDedupeKey(token: ICurrency, chainId?: number) {
+  const symbol = symUP(token);
+  const addr = chainId ? matchAddrLower(token, chainId) : "";
+  return addr ? `${symbol}:${addr}` : symbol;
+}
+
+function dedupeTokens(list: ICurrency[], chainId?: number) {
+  const out: ICurrency[] = [];
+  const seen = new Set<string>();
+
+  for (const token of list) {
+    const key = tokenDedupeKey(token, chainId);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(token);
+  }
+
+  return out;
+}
 
 function resolvePoolList(mod: any): any[] {
   const root = (mod && (mod.default ?? mod)) ?? {};
@@ -64,9 +89,7 @@ function pairKey(a: string, b: string) {
  */
 function buildAddrToDisplayToken(chainId: number) {
   const map = new Map<string, ICurrency>();
-  const all = [...(INTERNAL_TOKENS ?? []), ...(EXTERNAL_TOKENS ?? [])].filter(
-    Boolean
-  ) as ICurrency[];
+  const all = getAllTokens();
 
   for (const t of all) {
     const a = matchAddrLower(t, chainId);
@@ -208,9 +231,7 @@ export default function getAvailableTokens(
   baseToken?: ICurrency,
   chainId?: number
 ): ICurrency[] {
-  const all = [...(INTERNAL_TOKENS ?? []), ...(EXTERNAL_TOKENS ?? [])].filter(
-    Boolean
-  ) as ICurrency[];
+  const all = dedupeTokens(getAllTokens(), chainId);
   if (!chainId) return all;
 
   // baseToken 없으면: 체인 주소 있는 토큰만
@@ -242,5 +263,5 @@ export default function getAvailableTokens(
   const hasEthInOut = out.some((t) => isETH(t));
   if (hasEthInOut) push(externalTokens.WETH as any as ICurrency);
 
-  return out;
+  return dedupeTokens(out, chainId);
 }

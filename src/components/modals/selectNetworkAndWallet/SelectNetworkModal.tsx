@@ -65,7 +65,7 @@ export default function SelectNetworkModal() {
         {selectedNetwork ? (
           <div
             className={clsx(
-              "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
+              "flex items-center justify-center h-6 w-6 p-0 border-1 border-default-300 dark:border-default-200", // bg-white
               // 아이콘 컨테이너도 같이 각지게 하려면 이것도 조건 처리
               isBase ? "rounded-none" : "rounded-full",
             )}

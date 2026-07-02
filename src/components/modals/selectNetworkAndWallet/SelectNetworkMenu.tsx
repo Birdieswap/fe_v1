@@ -31,14 +31,14 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
           alt={network.name}
           className={clsx(
             "size-full",
-            isBase ? "rounded-none" : "rounded-full"
+            isBase ? "rounded-none" : "rounded-full",
           )}
           height={24}
           src={iconSrc}
           width={24}
         />
       ) : (
-        <div className="size-6 rounded-full bg-default-300 dark:bg-white" />
+        <div className="size-6 rounded-full bg-default-300" /> // dark:bg-white
       )}
     </div>
   );
@@ -70,7 +70,7 @@ export function SelectNetworkListBox(props: {
                 onSettled: () => {
                   props.onClose();
                 },
-              }
+              },
             );
           }}
         >
@@ -116,7 +116,7 @@ export default function SelectNetworkMenu() {
           // ✅ base면 rounded-full 제거 (또는 rounded-none으로 명시)
           className={clsx(
             "h-8 w-8 min-w-8 p-0",
-            isBase ? "rounded-none" : "rounded-full"
+            isBase ? "rounded-none" : "rounded-full",
           )}
         >
           {selectedNetwork ? (
@@ -124,7 +124,7 @@ export default function SelectNetworkMenu() {
               className={clsx(
                 "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
                 // 아이콘 컨테이너도 같이 각지게 하려면 이것도 조건 처리
-                isBase ? "rounded-none" : "rounded-full"
+                isBase ? "rounded-none" : "rounded-full",
               )}
             >
               <NetworkIcon network={selectedNetwork} />
