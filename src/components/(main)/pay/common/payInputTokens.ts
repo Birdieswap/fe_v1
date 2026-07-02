@@ -4,6 +4,7 @@ import type { ICurrency } from "@/const/contracts/types/tokenTypes";
 
 export const ENTER_INPUT_TOKENS: ICurrency[] = [
   externalTokens.ETH,
+  tokens.WETH,
   tokens.USDC,
   tokens.EURC,
   externalTokens.CBBTC,

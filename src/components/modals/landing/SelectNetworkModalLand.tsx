@@ -2,7 +2,7 @@
 
 import "../selectNetworkAndWallet/SelectNetworkMenu.css";
 import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { Fragment, useEffect, useRef } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 
 import ModalBase from "@/components/atoms/ModalBase";
@@ -23,6 +23,7 @@ export default function SelectNetworkModalLand() {
   } = useLandingNetwork();
 
   const modalRef = useRef<HTMLButtonElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement>();
   const isBase = selectedNetwork?.name?.toLowerCase() === "base";
 
   // (선택) 데스크탑 전환 시 닫기 – app 모달과 동일한 UX
@@ -33,6 +34,10 @@ export default function SelectNetworkModalLand() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [isOpen, setIsOpen]);
+
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
 
   return (
     <Fragment>
@@ -50,8 +55,9 @@ export default function SelectNetworkModalLand() {
       >
         {selectedNetwork ? (
           <div
+            suppressHydrationWarning
             className={clsx(
-              "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
+              "flex items-center justify-center h-6 w-6 p-0 border-1 border-default-300 dark:border-default-200",
               isBase ? "rounded-none" : "rounded-full"
             )}
           >
@@ -64,9 +70,7 @@ export default function SelectNetworkModalLand() {
 
       <ModalBase
         hideCloseButton
-        portalContainer={
-          typeof window !== "undefined" ? document.body : undefined
-        }
+        portalContainer={portalContainer}
         className="sm:hidden"
         classNames={{
           backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",

@@ -8,35 +8,49 @@ import {
   PopoverTrigger,
   Image,
 } from "@heroui/react";
-import { useContext, useRef } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useChainId, useSwitchChain } from "wagmi";
-import { useTheme } from "next-themes";
 
 import { NetworkInfo } from "@/types/NetworkInfo";
 import { WalletContext } from "@/app/WalletContextProvider";
 import clsx from "clsx";
 
 export function NetworkIcon({ network }: { network: NetworkInfo }) {
-  const { resolvedTheme } = useTheme();
   const isBase = network?.name?.toLowerCase() === "base";
-  const iconSrc =
-    resolvedTheme === "dark" && network.iconSrcDark
-      ? network.iconSrcDark
-      : network.iconSrc;
+  const iconClassName = clsx(
+    "size-full",
+    isBase ? "rounded-none" : "rounded-full",
+  );
 
   return (
     <div className="size-6 rounded-full">
-      {iconSrc ? (
-        <Image
-          alt={network.name}
-          className={clsx(
-            "size-full",
-            isBase ? "rounded-none" : "rounded-full",
-          )}
-          height={24}
-          src={iconSrc}
-          width={24}
-        />
+      {network.iconSrc ? (
+        network.iconSrcDark ? (
+          <>
+            <Image
+              alt={network.name}
+              className={clsx(iconClassName, "dark:hidden")}
+              height={24}
+              src={network.iconSrc}
+              width={24}
+            />
+            <Image
+              alt={network.name}
+              className={clsx(iconClassName, "hidden dark:block")}
+              height={24}
+              src={network.iconSrcDark}
+              width={24}
+            />
+          </>
+        ) : (
+          <Image
+            alt={network.name}
+            className={iconClassName}
+            height={24}
+            src={network.iconSrc}
+            width={24}
+          />
+        )
       ) : (
         <div className="size-6 rounded-full bg-default-300" /> // dark:bg-white
       )}
@@ -90,6 +104,11 @@ export default function SelectNetworkMenu() {
   } = useContext(WalletContext);
 
   const popoverRef = useRef<HTMLDivElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement>();
+
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
 
   const isOpen = isNetworkModalOpen;
   const isBase = selectedNetwork?.name?.toLowerCase() === "base";
@@ -101,9 +120,7 @@ export default function SelectNetworkMenu() {
       offset={12}
       onOpenChange={(v) => setIsNetworkModalOpen(!!v)}
       // 항상 body 포털 사용 (z-index/overflow 영향 제거)
-      portalContainer={
-        typeof window !== "undefined" ? document.body : undefined
-      }
+      portalContainer={portalContainer}
       // 가려짐 방지를 위한 z-index 보정
       classNames={{ content: "z-[1000]" }}
     >
@@ -121,6 +138,7 @@ export default function SelectNetworkMenu() {
         >
           {selectedNetwork ? (
             <div
+              suppressHydrationWarning
               className={clsx(
                 "flex items-center justify-center h-6 w-6 p-0 border-1 border-default-300 dark:border-default-200", // bg-white
                 // 아이콘 컨테이너도 같이 각지게 하려면 이것도 조건 처리

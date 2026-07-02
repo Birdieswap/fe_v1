@@ -278,13 +278,8 @@ export default function useAssets() {
   const balances = baseBalances;
 
   const chainlinkReady = useMemo(() => {
-    const data = assetValues?.chainLinkData?.data;
-    if (!data) return false;
     return !assetValues?.chainLinkData?.isFetching;
-  }, [
-    assetValues?.chainLinkData?.data,
-    assetValues?.chainLinkData?.isFetching,
-  ]);
+  }, [assetValues?.chainLinkData?.isFetching]);
 
   const hasChainlinkPrice = useCallback(
     (symbol?: string) => {

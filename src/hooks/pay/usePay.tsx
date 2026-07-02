@@ -63,7 +63,7 @@ import {
 
 // -------- helpers --------
 type PayMode = "PAY" | "ENTER";
-type EnterTokenSymbol = "ETH" | "USDC" | "EURC" | "CBBTC";
+type EnterTokenSymbol = "ETH" | "WETH" | "USDC" | "EURC" | "CBBTC";
 type PayTokenSymbol = "USDC" | "EURC" | "CBBTC";
 type LpUnderlyingSnapshot = {
   token0: ICurrency;
@@ -313,6 +313,8 @@ export default function usePay() {
   const enterToken =
     nativeSymbol === "ETH"
       ? ETH
+      : nativeSymbol === "WETH"
+        ? tokens.WETH
       : nativeSymbol === "EURC"
         ? EURC
         : nativeSymbol === "CBBTC"
@@ -1324,12 +1326,19 @@ export default function usePay() {
     query: { enabled: shouldCheckAllowance && !!allowanceArgs },
   });
 
-  // ✅ allowanceWeth가 아직 없으면 "모름"으로 두고,
-  //    showApproveUI에서 로딩 중 숨기기 여부는 선택 가능
+  const isEnterAllowancePending = useMemo(() => {
+    return (
+      nativeSymbol !== "ETH" &&
+      shouldCheckAllowance &&
+      (isAllowanceLoading || allowanceWeth == null)
+    );
+  }, [nativeSymbol, shouldCheckAllowance, isAllowanceLoading, allowanceWeth]);
+
+  // allowanceWeth가 아직 없으면 승인 상태를 모르는 것이므로 Enter를 열지 않는다.
   const needsWethApprove = useMemo(() => {
     if (nativeSymbol === "ETH") return false;
     if (!shouldCheckAllowance) return false;
-    if (allowanceWeth == null) return false; // 아직 모름(=로딩/미수신)
+    if (allowanceWeth == null) return false;
 
     try {
       const decimals = enterToken.decimals ?? 18;
@@ -1350,11 +1359,11 @@ export default function usePay() {
   const showApproveUI = useMemo(() => {
     if (!shouldCheckAllowance) return false;
 
-    // 옵션 A) 지금처럼 "로딩 중에는 숨김" 유지
     if (isAllowanceLoading) return false;
+    if (allowanceWeth == null) return false;
 
     return needsWethApprove;
-  }, [shouldCheckAllowance, isAllowanceLoading, needsWethApprove]);
+  }, [shouldCheckAllowance, isAllowanceLoading, allowanceWeth, needsWethApprove]);
 
   // ---- debug logs ----
   // useEffect(() => {
@@ -1509,6 +1518,13 @@ export default function usePay() {
         variant: "MINT" as const,
       };
 
+    if (isEnterAllowancePending)
+      return {
+        text: "Checking approval...",
+        disabled: true,
+        variant: "MINT" as const,
+      };
+
     if (showApproveUI)
       return {
         text: "Enter",
@@ -1535,6 +1551,7 @@ export default function usePay() {
     isEnterInsufficientBalance,
     enterToken.symbol,
     selectedPool,
+    isEnterAllowancePending,
     showApproveUI,
     isEnterPriceImpactOverTolerance,
   ]);
@@ -1877,7 +1894,17 @@ export default function usePay() {
       if (isEnterPriceImpactOverTolerance) return;
 
       // ERC20 선택 + approve 필요하면 enter 막기
-      if (nativeSymbol !== "ETH" && showApproveUI) return;
+      if (nativeSymbol !== "ETH" && (isEnterAllowancePending || showApproveUI)) {
+        console.warn("[ENTER] skip: allowance is not ready or approval required", {
+          nativeSymbol,
+          stakingPoolAddress,
+          enterErc20Addr,
+          allowance: allowanceWeth?.toString?.(),
+          isAllowanceLoading,
+          showApproveUI,
+        });
+        return;
+      }
 
       const poolInputTokenAddr = selectedPool.address;
 
@@ -1935,20 +1962,27 @@ export default function usePay() {
         new BigDecimal("0", sharesDecimals)
       ).toPrecisionString(true, true);
 
-      // console.log("[ENTER][BEFORE]", {
-      //   nativeSymbol,
-      //   enterAmount,
-      //   poolInputTokenAddr,
-      //   stakingPoolAddress,
-      //   stakedBefore: stakedBeforeBd?.toPrecisionString(true, true),
-      //   token0Addr,
-      //   token1Addr,
-      //   token0Before: token0BeforeBd?.toPrecisionString(true, true),
-      //   token1Before: token1BeforeBd?.toPrecisionString(true, true),
-      //   prevKey,
-      //   balancesVersion: assetsRef.current?.balancesVersion,
-      //   enterMinStakeAmountStr: stakeAmountStr,
-      // });
+      console.log("[ENTER][TX] request", {
+        nativeSymbol,
+        enterTokenSymbol: enterToken.symbol,
+        enterAmount,
+        inputTokenAddress:
+          nativeSymbol === "ETH"
+            ? undefined
+            : ((enterToken.addresses?.[chainId] as `0x${string}` | undefined) ??
+              undefined),
+        poolInputTokenAddr,
+        stakingPoolAddress,
+        wrapperAddress: WRAPPER_ADDRESS,
+        token0Addr,
+        token1Addr,
+        token0Before: token0BeforeBd?.toPrecisionString(true, true),
+        token1Before: token1BeforeBd?.toPrecisionString(true, true),
+        sharesDecimals,
+        enterMinStakeAmountStr: stakeAmountStr,
+        allowance: allowanceWeth?.toString?.(),
+        balancesVersion: assetsRef.current?.balancesVersion,
+      });
 
       didSubmit = true;
 
@@ -2150,6 +2184,7 @@ export default function usePay() {
     enterAmount,
     isEnterInsufficientBalance,
     isEnterPriceImpactOverTolerance,
+    isEnterAllowancePending,
     showApproveUI,
     EnterSummaryNode,
     writeContract,
@@ -2158,6 +2193,9 @@ export default function usePay() {
     enterToken.iconSrc,
     enterToken.symbol,
     enterToken.addresses,
+    allowanceWeth,
+    isAllowanceLoading,
+    enterErc20Addr,
     resetEnterPanel,
   ]);
 

@@ -9,31 +9,46 @@ import {
   Image,
 } from "@heroui/react";
 import clsx from "clsx";
-import { useTheme } from "next-themes";
+import { useEffect, useState } from "react";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
 
 export function NetworkIcon({ network }: { network: NetworkInfo }) {
-  const { resolvedTheme } = useTheme();
   const isBase = network?.name?.toLowerCase() === "base";
-  const iconSrc =
-    resolvedTheme === "dark" && network.iconSrcDark
-      ? network.iconSrcDark
-      : network.iconSrc;
+  const iconClassName = clsx(
+    "size-full",
+    isBase ? "rounded-none" : "rounded-full"
+  );
 
   return (
     <div className="size-6 rounded-full">
-      {iconSrc ? (
-        <Image
-          alt={network.name}
-          className={clsx(
-            "size-full",
-            isBase ? "rounded-none" : "rounded-full"
-          )}
-          height={24}
-          src={iconSrc}
-          width={24}
-        />
+      {network.iconSrc ? (
+        network.iconSrcDark ? (
+          <>
+            <Image
+              alt={network.name}
+              className={clsx(iconClassName, "dark:hidden")}
+              height={24}
+              src={network.iconSrc}
+              width={24}
+            />
+            <Image
+              alt={network.name}
+              className={clsx(iconClassName, "hidden dark:block")}
+              height={24}
+              src={network.iconSrcDark}
+              width={24}
+            />
+          </>
+        ) : (
+          <Image
+            alt={network.name}
+            className={iconClassName}
+            height={24}
+            src={network.iconSrc}
+            width={24}
+          />
+        )
       ) : (
         <div className="size-6 rounded-full bg-default-300 dark:bg-white" />
       )}
@@ -52,6 +67,11 @@ export default function SelectNetworkMenuLand() {
   } = useLandingNetwork();
 
   const isBase = selectedNetwork?.name?.toLowerCase() === "base";
+  const [portalContainer, setPortalContainer] = useState<HTMLElement>();
+
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
 
   return (
     <Popover
@@ -59,9 +79,7 @@ export default function SelectNetworkMenuLand() {
       isOpen={isOpen}
       offset={12}
       onOpenChange={(v) => setIsOpen(!!v)}
-      portalContainer={
-        typeof window !== "undefined" ? document.body : undefined
-      }
+      portalContainer={portalContainer}
       classNames={{ content: "z-[1000]" }}
     >
       <PopoverTrigger>
@@ -76,8 +94,9 @@ export default function SelectNetworkMenuLand() {
         >
           {selectedNetwork ? (
             <div
+              suppressHydrationWarning
               className={clsx(
-                "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
+                "flex items-center justify-center h-6 w-6 p-0 border-1 border-default-300 dark:border-default-200",
                 isBase ? "rounded-none" : "rounded-full"
               )}
             >

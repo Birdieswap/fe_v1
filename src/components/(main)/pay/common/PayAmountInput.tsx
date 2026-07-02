@@ -28,6 +28,7 @@ import { usePayContext } from "@/components/(main)/pay/PayProvider";
 import SwapFormSelectTokenModal from "@/components/(main)/swap/SwapFormSelectTokenModal";
 import { getAdaptiveAmountFontVars } from "@/utils/ui/getAdaptiveAmountFontVars";
 import suffixNumbers from "@/utils/suffixNumbers";
+import { normalizeCoingeckoAddress } from "@/utils/prices/coingeckoUsd";
 
 export type PayMode = "PAY" | "ENTER";
 type LpVault = (typeof lpVaults)[keyof typeof lpVaults];
@@ -65,6 +66,66 @@ function getByLowerKey<T>(map: Map<string, T> | undefined, keyLower: string) {
     (k) => String(k).toLowerCase() === keyLower,
   );
   return matchedKey ? map.get(matchedKey) : undefined;
+}
+
+function getUsdPriceForTokenFromAssets(
+  assets: unknown,
+  token: ICurrency,
+  chainId: number,
+): BigDecimal | null {
+  const assetValues = (assets as any)?.assetValues;
+  const symbol = token.symbol.toUpperCase();
+
+  const clMap = assetValues?.chainLinkPriceMap as Map<string, any> | undefined;
+  if (clMap) {
+    const keys = [`LINK:${symbol}_USD`];
+    if (symbol === "ETH") keys.push("LINK:WETH_USD");
+    if (symbol === "WETH") keys.push("LINK:ETH_USD");
+
+    for (const key of keys) {
+      const entry = clMap.get(key);
+      const price = entry?.price as BigDecimal | undefined;
+      if (price && !price.isZero()) return price;
+    }
+  }
+
+  const cgMap = assetValues?.coingeckoPriceMap as
+    | Map<string, BigDecimal | null>
+    | undefined;
+  const normalized = normalizeCoingeckoAddress(
+    (token.addresses?.[chainId] as `0x${string}` | undefined) ?? null,
+    chainId,
+  );
+  if (cgMap && normalized) {
+    const price = getByLowerKey(cgMap, normalized.toLowerCase()) ?? null;
+    if (price && !price.isZero()) return price;
+  }
+
+  const cgSymbolMap = assetValues?.coingeckoSymbolPriceMap as
+    | Map<string, BigDecimal | null>
+    | undefined;
+  if (cgSymbolMap) {
+    const primary = token.symbol.toLowerCase();
+    const fallback =
+      primary === "eth" ? "weth" : primary === "weth" ? "eth" : "";
+    const price =
+      getByLowerKey(cgSymbolMap, primary) ??
+      (fallback ? getByLowerKey(cgSymbolMap, fallback) : null) ??
+      null;
+    if (price && !price.isZero()) return price;
+  }
+
+  return null;
+}
+
+function getCoingeckoSymbolKeys(symbol?: string) {
+  const primary = String(symbol ?? "")
+    .trim()
+    .toLowerCase();
+  if (!primary) return [];
+  if (primary === "eth") return ["eth", "weth"];
+  if (primary === "weth") return ["weth", "eth"];
+  return [primary];
 }
 
 // ---- dedupe: address(1차) + symbol(2차) ----
@@ -134,6 +195,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       ? pay.payToken
       : pay.nativeSymbol === "ETH"
         ? externalTokens.ETH
+        : pay.nativeSymbol === "WETH"
+          ? tokens.WETH
         : pay.nativeSymbol === "EURC"
           ? tokens.EURC
           : pay.nativeSymbol === "CBBTC"
@@ -172,23 +235,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
   const enterTokenPriceUsd = useMemo(() => {
     if (mode !== "ENTER") return null;
-
-    const clMap = (assets as any)?.assetValues?.chainLinkPriceMap as
-      | Map<string, any>
-      | undefined;
-
-    if (!clMap) return null;
-
-    const wantedKey = `LINK:${token.symbol}_USD`.toUpperCase();
-    const matchedKey = [...clMap.keys()].find(
-      (k) => String(k).toUpperCase() === wantedKey,
-    );
-    if (!matchedKey) return null;
-
-    const v = clMap.get(matchedKey);
-    const priceBd = v?.price as BigDecimal | undefined;
-    return priceBd ?? null;
-  }, [assets, mode, token.symbol]);
+    return getUsdPriceForTokenFromAssets(assets, token, chainId);
+  }, [assets, chainId, mode, token]);
 
   const enterAmountUsd = useMemo(() => {
     if (mode !== "ENTER") return null;
@@ -201,22 +249,8 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
 
   const payTokenPriceUsd = useMemo(() => {
     if (mode !== "PAY") return null;
-
-    const clMap = (assets as any)?.assetValues?.chainLinkPriceMap as
-      | Map<string, any>
-      | undefined;
-    if (!clMap) return null;
-
-    const wantedKey = `LINK:${token.symbol}_USD`.toUpperCase();
-    const matchedKey = [...clMap.keys()].find(
-      (k) => String(k).toUpperCase() === wantedKey,
-    );
-    if (!matchedKey) return null;
-
-    const v = clMap.get(matchedKey);
-    const priceBd = v?.price as BigDecimal | undefined;
-    return priceBd ?? null;
-  }, [assets, mode, token.symbol]);
+    return getUsdPriceForTokenFromAssets(assets, token, chainId);
+  }, [assets, chainId, mode, token]);
 
   const payAmountUsd = useMemo(() => {
     if (mode !== "PAY") return null;
@@ -226,6 +260,38 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
     const amtBd = new BigDecimal(amount, token.decimals ?? 6);
     return amtBd.multiply(payTokenPriceUsd);
   }, [mode, amount, token.decimals, payTokenPriceUsd]);
+
+  useEffect(() => {
+    const assetValues = (assets as any)?.assetValues;
+    if (!assetValues || !chainId || !token) return;
+    if (getUsdPriceForTokenFromAssets(assets, token, chainId)) return;
+
+    const cgSymbolMap = assetValues.coingeckoSymbolPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    const symbolKeys = getCoingeckoSymbolKeys(token.symbol);
+    const missingSymbols = symbolKeys.filter((key) => !cgSymbolMap?.has(key));
+    if (missingSymbols.length > 0) {
+      assetValues.refetchCoingeckoSymbolPrices?.(missingSymbols);
+    }
+
+    const cgMap = assetValues.coingeckoPriceMap as
+      | Map<string, BigDecimal | null>
+      | undefined;
+    const addr = token.addresses?.[chainId] as string | undefined;
+    const normalized = normalizeCoingeckoAddress(addr ?? null, chainId);
+    if (addr && normalized && !cgMap?.has(normalized)) {
+      assetValues.refetchCoingeckoPrices?.([addr]);
+    }
+  }, [
+    assets,
+    chainId,
+    token,
+    (assets as any)?.assetValues?.coingeckoPriceMap,
+    (assets as any)?.assetValues?.coingeckoSymbolPriceMap,
+    (assets as any)?.assetValues?.refetchCoingeckoPrices,
+    (assets as any)?.assetValues?.refetchCoingeckoSymbolPrices,
+  ]);
 
   // ===== pools =====
   const pools: PoolLike[] = useMemo(() => {
@@ -395,6 +461,7 @@ export default function PayAmountInput({ mode }: { mode: PayMode }) {
       if (mode === "ENTER") {
         setAmount("");
         if (nextToken.symbol === "ETH") pay.setNativeSymbol("ETH");
+        if (nextToken.symbol === "WETH") pay.setNativeSymbol("WETH");
         if (nextToken.symbol === "USDC") pay.setNativeSymbol("USDC");
         if (nextToken.symbol === "EURC") pay.setNativeSymbol("EURC");
         if (nextToken.symbol === "cbBTC") pay.setNativeSymbol("CBBTC");
