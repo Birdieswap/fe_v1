@@ -8,9 +8,6 @@ type TokenLike = {
   addresses?: Record<number, string> | string;
 };
 
-const CG_DEMO_KEY =
-  process.env.NEXT_PUBLIC_COINGECKO_DEMO_API_KEY ??
-  "CG-WFEWBPHnW6QKi3rk8zLrRSDs";
 const CG_CACHE_MS = 60_000;
 const cgCache = new Map<string, { ts: number; usd: number | null }>();
 
@@ -65,34 +62,13 @@ export default function useTokenUsdPrice(token?: TokenLike) {
     (async () => {
       try {
         const qs = new URLSearchParams({
-          vs_currencies: "usd",
           symbols: cgSymbolLower,
         });
-        const res = await fetch(
-          `/api/coingecko/simple-price?${qs.toString()}`,
-          { cache: "no-store" }
-        );
+        const res = await fetch(`/api/coingecko/usd?${qs.toString()}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
-        const dataKeys = Object.keys(data ?? {});
-        // console.log("[coingecko usd]", {
-        //   qs: qs.toString(),
-        //   symbol: cgSymbol,
-        //   symbolLower: cgSymbolLower,
-        //   dataKeys,
-        //   httpStatus: res.status,
-        //   data, // { usd, reason, ok, platform, ... }
-        // });
-        const direct =
-          data?.[cgSymbolLower] ??
-          data?.[cgSymbol ?? ""] ??
-          (dataKeys.find((k) => k.toLowerCase() === cgSymbolLower)
-            ? data?.[
-                dataKeys.find(
-                  (k) => k.toLowerCase() === cgSymbolLower
-                ) as string
-              ]
-            : null);
-        const usd = Number(direct?.usd);
+        const usd = Number(data?.usd);
         const finalUsd = Number.isFinite(usd) ? usd : null;
         cgCache.set(cacheKey, { ts: Date.now(), usd: finalUsd });
         if (!cancelled) setCgUsd(finalUsd);

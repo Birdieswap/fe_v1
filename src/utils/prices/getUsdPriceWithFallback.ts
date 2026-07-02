@@ -2,6 +2,7 @@ import { BigDecimal } from "@/types/BigDecimal";
 import type { useAssetValuesReturnType } from "@/hooks/assets/useAssets/useAssetValues";
 import {
   fetchCoingeckoUsdPrice,
+  fetchCoingeckoUsdPriceBySymbol,
   normalizeCoingeckoAddress,
 } from "@/utils/prices/coingeckoUsd";
 
@@ -41,6 +42,12 @@ export async function getUsdPriceWithFallback(params: {
     if (cached && !cached.isZero()) return cached;
     if (cached && cached.isZero()) return null;
   }
+
+  if (symbolKey) {
+    const symbolPrice = await fetchCoingeckoUsdPriceBySymbol(symbolKey);
+    if (symbolPrice && !symbolPrice.isZero()) return symbolPrice;
+  }
+
   if (!chainId) return null;
   const normalized = normalizeCoingeckoAddress(address ?? null, chainId);
   if (!normalized) return null;
