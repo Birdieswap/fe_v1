@@ -1,6 +1,6 @@
 import { useChainId } from "wagmi";
 
-export const SUPPORTED_CHAIN_IDS = [11155111, 8453] as const;
+export const SUPPORTED_CHAIN_IDS = [11155111, 91342, 8453] as const;
 export type SupportedChainId = (typeof SUPPORTED_CHAIN_IDS)[number];
 
 export function isSupportedChainId(chainId?: number) {

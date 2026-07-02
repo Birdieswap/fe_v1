@@ -57,6 +57,30 @@ export const sepolia = defineChain({
   testnet: true,
 })
 
+export const giwaSepolia = defineChain({
+  id: 91_342,
+  name: "GIWA Sepolia",
+  nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: [
+        "https://sepolia-rpc.giwa.io",
+        "https://sepolia-rpc-flashblocks.giwa.io",
+      ],
+    },
+    flashblocks: {
+      http: ["https://sepolia-rpc-flashblocks.giwa.io"],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: "GIWA Sepolia Explorer",
+      url: "https://sepolia-explorer.giwa.io",
+    },
+  },
+  testnet: true,
+});
+
 export const arbitrum = defineChain({
   id: 42_161,
   name: 'Arbitrum One',

@@ -68,6 +68,17 @@ const networks: NetworkInfo[] = [
     iconSrc: "/networks/sepolia.svg",
     blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
   },
+  {
+    id: 91342,
+    name: "GIWA Sepolia",
+    iconSrc: "/networks/giwa.svg",
+    iconSrcDark: "/networks/giwa_dark.svg",
+    rpcUrl: "https://sepolia-rpc.giwa.io",
+    blockExplorer: {
+      name: "GIWA Sepolia Explorer",
+      url: "https://sepolia-explorer.giwa.io/",
+    },
+  },
 
   // {
   //   id: 42161,

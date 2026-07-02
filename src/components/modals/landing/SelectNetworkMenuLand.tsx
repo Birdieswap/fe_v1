@@ -9,14 +9,21 @@ import {
   Image,
 } from "@heroui/react";
 import clsx from "clsx";
+import { useTheme } from "next-themes";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import { useLandingNetwork } from "@/app/(landing)/LandingNetworkProvider";
 
 export function NetworkIcon({ network }: { network: NetworkInfo }) {
+  const { resolvedTheme } = useTheme();
   const isBase = network?.name?.toLowerCase() === "base";
+  const iconSrc =
+    resolvedTheme === "dark" && network.iconSrcDark
+      ? network.iconSrcDark
+      : network.iconSrc;
+
   return (
     <div className="size-6 rounded-full">
-      {network.iconSrc ? (
+      {iconSrc ? (
         <Image
           alt={network.name}
           className={clsx(
@@ -24,7 +31,7 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
             isBase ? "rounded-none" : "rounded-full"
           )}
           height={24}
-          src={network.iconSrc}
+          src={iconSrc}
           width={24}
         />
       ) : (

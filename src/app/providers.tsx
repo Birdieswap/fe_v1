@@ -30,6 +30,7 @@ import {
   baseFork,
   bsc,
   sepolia,
+  giwaSepolia,
   base_custom,
   optimism_custom,
 } from "@/const/networks";
@@ -91,6 +92,11 @@ const baseUrls = [
   process.env.NEXT_PUBLIC_BASE_RPC_URL_ALCHEMY,
   process.env.NEXT_PUBLIC_BASE_RPC_URL_INFURA,
   "https://mainnet.base.org",
+].filter(Boolean) as string[];
+const giwaSepoliaUrls = [
+  process.env.NEXT_PUBLIC_GIWA_SEPOLIA_RPC_URL,
+  "https://sepolia-rpc-flashblocks.giwa.io",
+  "https://sepolia-rpc.giwa.io",
 ].filter(Boolean) as string[];
 const arbitrumUrls = [
   process.env.NEXT_PUBLIC_ARBITRUM_RPC_URL_ALCHEMY,
@@ -216,6 +222,7 @@ function makeRandomRpcTransport(
 
 const chains = [
   base_custom,
+  giwaSepolia,
   sepolia,
   arbitrum,
   optimism_custom,
@@ -237,6 +244,12 @@ if (sepoliaUrls.length) {
 
 if (baseUrls.length) {
   transports[base_custom.id] = makeRandomRpcTransport(baseUrls, {
+    timeout: 15_000,
+  });
+}
+
+if (giwaSepoliaUrls.length) {
+  transports[giwaSepolia.id] = makeRandomRpcTransport(giwaSepoliaUrls, {
     timeout: 15_000,
   });
 }

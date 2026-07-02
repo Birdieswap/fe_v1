@@ -23,6 +23,7 @@ export const toLower = (v?: string | null) =>
 export function chainIdToNetworkKey(cid: number): string {
   switch (cid) {
     case 11155111: return "sepolia";
+    case 91342:    return "giwa";
     case 8453:     return "base";
     case 42161:    return "arbitrum";
     default:       return String(cid);

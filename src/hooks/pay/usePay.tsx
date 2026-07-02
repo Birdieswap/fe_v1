@@ -46,6 +46,7 @@ import { derivePoolInfo } from "@/hooks/swap/useSwap/useSwapToken/derivePoolInfo
 import { getOtherAmount } from "@/hooks/swap/useSwap/useSwapToken/quoteService";
 import getTotalSupply from "@/utils/farm/getTotalSupply";
 import totalDualUnderlyingTokens from "@/utils/farm/totalDualUnderlyingTokens";
+import { isSupportedChainId } from "@/hooks/useIsWrongNetwork";
 
 import { birdieswap_staking_abi } from "@/const/contracts/abis/birdieswap_staking_abi";
 import type { PoolLike } from "@/components/(main)/pay/common/PayPoolSelector";
@@ -529,7 +530,7 @@ export default function usePay() {
 
   // -------- network --------
   const isWrongNetwork = useMemo(() => {
-    return chainId !== 11155111 && chainId !== 8453 && chainId !== 42161;
+    return !isSupportedChainId(chainId);
   }, [chainId]);
 
   // -------- addresses --------

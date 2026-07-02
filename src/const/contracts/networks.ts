@@ -1,12 +1,16 @@
 import * as chains from "viem/chains";
 
-import { baseFork, bsc, sepolia } from "@/const/networks";
+import { baseFork, bsc, giwaSepolia, sepolia } from "@/const/networks";
 
 import { IBaseNetwork, ViemChainToBaseNetwork } from "./types/tokenTypes";
 
 const Sepolia: IBaseNetwork = ViemChainToBaseNetwork(
   sepolia,
   "/networks/sepolia.svg"
+);
+const GiwaSepolia: IBaseNetwork = ViemChainToBaseNetwork(
+  giwaSepolia,
+  "/networks/giwa.svg"
 );
 const Arbitrum: IBaseNetwork = ViemChainToBaseNetwork(
   chains.arbitrum,
@@ -33,6 +37,7 @@ const BaseFork: IBaseNetwork = ViemChainToBaseNetwork(baseFork);
 
 const networks = {
   sepolia: Sepolia,
+  giwa: GiwaSepolia,
   arbitrum: Arbitrum,
   base: Base,
   optimism: Optimism,

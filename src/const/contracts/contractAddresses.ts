@@ -4,6 +4,7 @@ export type Address = `0x${string}`;
 
 export const CHAINS = {
   sepolia: "sepolia",
+  giwa: "giwa",
   base: "base",
   arbitrum: "arbitrum",
 } as const;
@@ -12,6 +13,8 @@ export type ChainKey = keyof typeof CHAINS;
 export const ADDRESS = {
   ROUTER: "ROUTER",
   WRAPPER: "WRAPPER",
+  POSITION_MANAGER: "POSITION_MANAGER",
+  QUOTER_V2: "QUOTER_V2",
 
   // tokens
   ETH: "ETH",
@@ -78,6 +81,9 @@ export const pool_tokenIds: Record<ChainKey, tokenIdMap> = {
     CBBTC_WETH_TOKEN_ID: 228270,
     EURC_WETH_TOKEN_ID: 228269,
   },
+  giwa: {
+    USDC_WETH_TOKEN_ID: 1,
+  },
   base: {
     USDC_WETH_TOKEN_ID: 4454157,
     FARM_WETH_TOKEN_ID: 4454298,
@@ -131,6 +137,21 @@ export const contractAddresses: Record<ChainKey, AddressMap> = {
 
     FARM_WETH_VAULT: "0xeACd4F8d8020C705bC829013eAa2B454b89801d6",
     FARM_WETH_POOL: "0xe66f5A450bFc5aB211E46A1A843010bcCfc7fa20",
+  },
+  giwa: {
+    ROUTER: "0x98B78ffb59E01E26D95463aF1337312DBcf46884",
+    WRAPPER: "0xAF25cDadA7C4Efd1a6bFA2c4E84EdB584B3D7fca",
+
+    ETH: "0x0000000000000000000000000000000000000000",
+    WETH: "0x4200000000000000000000000000000000000006",
+    USDC: "0xDC3996eAE234cce0d671f6FcFeCE188f2f34465e",
+
+    ETH_VAULT: "0xF5B1840504b8a172B6a551ca4067c0D582A94E9C",
+    WETH_VAULT: "0xF5B1840504b8a172B6a551ca4067c0D582A94E9C",
+    USDC_VAULT: "0x881158112f794C7a84D2B76F9f5eD5a0d43bC418",
+
+    USDC_WETH_VAULT: "0x894ebcdA2050297212B55b46499187288fb0ceE2",
+    USDC_WETH_POOL: "0x7d5e6a68BD8076413A4b2E9be4D7d9B2e3174d2a",
   },
   base: {
     ROUTER: "0xa6D1C4Bb3E0E5576c537FDD411a1228B6cd0dcc1",

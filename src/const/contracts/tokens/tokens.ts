@@ -42,6 +42,7 @@ const USDC = CurrencyGuard({
   fullName: "USD Coin",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.USDC as `0x${string}`,
+    [networks.giwa.id]: contractAddresses.giwa.USDC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC as `0x${string}`,
     // [networks.arbitrum.id]: contractAddresses.arbitrum.USDC as `0x${string}`,
   },

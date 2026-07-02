@@ -12,6 +12,7 @@ const ETH = CurrencyGuard({
   fullName: "Ethereum",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.ETH as `0x${string}`,
+    [networks.giwa.id]: contractAddresses.giwa.ETH as `0x${string}`,
     [networks.base.id]: contractAddresses.base.ETH as `0x${string}`,
     [networks.baseFork.id]: contractAddresses.arbitrum.ETH as `0x${string}`,
   },
@@ -27,6 +28,7 @@ const WETH = CurrencyGuard({
   fullName: "Wrapped ETH",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.WETH as `0x${string}`,
+    [networks.giwa.id]: contractAddresses.giwa.WETH as `0x${string}`,
     [networks.base.id]: contractAddresses.base.WETH as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum.WETH as `0x${string}`,
   },
@@ -42,6 +44,7 @@ const USDC = CurrencyGuard({
   fullName: "USD Coin",
   addresses: {
     [networks.sepolia.id]: contractAddresses.sepolia.USDC as `0x${string}`,
+    [networks.giwa.id]: contractAddresses.giwa.USDC as `0x${string}`,
     [networks.base.id]: contractAddresses.base.USDC as `0x${string}`,
     [networks.arbitrum.id]: contractAddresses.arbitrum.USDC as `0x${string}`,
   },

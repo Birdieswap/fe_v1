@@ -10,16 +10,23 @@ import {
 } from "@heroui/react";
 import { useContext, useRef } from "react";
 import { useChainId, useSwitchChain } from "wagmi";
+import { useTheme } from "next-themes";
 
 import { NetworkInfo } from "@/types/NetworkInfo";
 import { WalletContext } from "@/app/WalletContextProvider";
 import clsx from "clsx";
 
 export function NetworkIcon({ network }: { network: NetworkInfo }) {
+  const { resolvedTheme } = useTheme();
   const isBase = network?.name?.toLowerCase() === "base";
+  const iconSrc =
+    resolvedTheme === "dark" && network.iconSrcDark
+      ? network.iconSrcDark
+      : network.iconSrc;
+
   return (
     <div className="size-6 rounded-full">
-      {network.iconSrc ? (
+      {iconSrc ? (
         <Image
           alt={network.name}
           className={clsx(
@@ -27,7 +34,7 @@ export function NetworkIcon({ network }: { network: NetworkInfo }) {
             isBase ? "rounded-none" : "rounded-full"
           )}
           height={24}
-          src={network.iconSrc}
+          src={iconSrc}
           width={24}
         />
       ) : (

@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import type { NetworkInfo } from "@/types/NetworkInfo";
 import {
   sepolia,
+  giwaSepolia,
   arbitrum,
   base_custom,
   optimism_custom,
@@ -16,6 +17,12 @@ import {
 const LANDING_NETWORKS: NetworkInfo[] = [
   { id: base_custom.id, name: base_custom.name, iconSrc: "/networks/base.svg" },
   { id: sepolia.id, name: sepolia.name, iconSrc: "/networks/sepolia.svg" },
+  {
+    id: giwaSepolia.id,
+    name: giwaSepolia.name,
+    iconSrc: "/networks/giwa.svg",
+    iconSrcDark: "/networks/giwa_dark.svg",
+  },
   // { id: arbitrum.id, name: arbitrum.name, iconSrc: "/icons/arbitrum.svg" },
   // {
   //   id: optimism_custom.id,

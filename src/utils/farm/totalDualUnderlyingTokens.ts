@@ -68,10 +68,33 @@ export default async function totalDualUnderlyingTokens(
     args: [farmAddress],
   };
 
+<<<<<<< HEAD
   let lastError: unknown;
   let data:
     | [string, string, bigint, bigint]
     | null = null;
+=======
+  let data: [string, string, bigint, bigint] | null = null;
+
+  try {
+    data = (await readContract(client, args)) as [
+      string,
+      string,
+      bigint,
+      bigint,
+    ];
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[totalDualUnderlyingTokens] read failed", {
+        chainId,
+        farmAddress,
+        routerAddress,
+        error,
+      });
+    }
+    return null;
+  }
+>>>>>>> 6a812ac (add giwa network)
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
