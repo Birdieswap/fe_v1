@@ -50,6 +50,7 @@ import { fetchV3Position } from "@/utils/uniswap/positionManager";
 import { quoteV3AddLiquidity } from "@/hooks/farm/useV3AddLiquidityQuote";
 
 type NativeMode = "ETH" | "WETH" | null;
+const DEBUG_PAIR_ADD_QUOTE = process.env.NODE_ENV !== "production";
 
 export enum InvalidStatuses {
   AMOUNT = "AMOUNT",
@@ -482,18 +483,20 @@ export function usePairStartPanel(
           item?.name ||
           (item as any)?.wip_stakeToken?.name ||
           `${bToken0?.symbol ?? "token0"}/${bToken1?.symbol ?? "token1"}`;
-        console.log("[V3][AddQuote] read position start", {
-          chainId,
-          poolName,
-          poolAddress: uniswapPoolAddress,
-          tokenId: tokenId.toString(),
-          baseIndex: index,
-          baseUnderlying: baseUnderlying?.symbol,
-          otherUnderlying: otherUnderlyingToken?.symbol,
-          baseBToken: baseBToken?.symbol,
-          inputUnderlying: value?.toString?.(),
-          inputBToken: bBase?.toString?.(),
-        });
+        if (DEBUG_PAIR_ADD_QUOTE) {
+          console.log("[V3][AddQuote] read position start", {
+            chainId,
+            poolName,
+            poolAddress: uniswapPoolAddress,
+            tokenId: tokenId.toString(),
+            baseIndex: index,
+            baseUnderlying: baseUnderlying?.symbol,
+            otherUnderlying: otherUnderlyingToken?.symbol,
+            baseBToken: baseBToken?.symbol,
+            inputUnderlying: value?.toString?.(),
+            inputBToken: bBase?.toString?.(),
+          });
+        }
 
         const [position, poolState, imm] = await Promise.all([
           fetchV3Position(client as PublicClient, nfpmAddress, tokenId),
@@ -501,18 +504,20 @@ export function usePairStartPanel(
           getPoolImmutables(client as PublicClient, uniswapPoolAddress),
         ]);
 
-        console.log("[V3][AddQuote] position loaded", {
-          tokenId: tokenId.toString(),
-          token0: position.token0,
-          token1: position.token1,
-          fee: Number(position.fee),
-          tickLower: Number(position.tickLower),
-          tickUpper: Number(position.tickUpper),
-          liquidity: position.liquidity.toString(),
-          sqrtPriceX96: poolState.sqrtPriceX96.toString(),
-          tickCurrent: Number(poolState.tick),
-          poolLiquidity: poolState.liquidity.toString(),
-        });
+        if (DEBUG_PAIR_ADD_QUOTE) {
+          console.log("[V3][AddQuote] position loaded", {
+            tokenId: tokenId.toString(),
+            token0: position.token0,
+            token1: position.token1,
+            fee: Number(position.fee),
+            tickLower: Number(position.tickLower),
+            tickUpper: Number(position.tickUpper),
+            liquidity: position.liquidity.toString(),
+            sqrtPriceX96: poolState.sqrtPriceX96.toString(),
+            tickCurrent: Number(poolState.tick),
+            poolLiquidity: poolState.liquidity.toString(),
+          });
+        }
 
         const poolToken0Addr = (imm.token0 as string).toLowerCase();
         const poolToken1Addr = (imm.token1 as string).toLowerCase();
@@ -616,15 +621,17 @@ export function usePairStartPanel(
           return BigDecimal.ZERO();
         }
 
-        console.log("[V3][AddQuote] getOtherAmount result", {
-          tokenId: tokenId.toString(),
-          poolAddress: uniswapPoolAddress,
-          baseIsToken0,
-          bBase: bBase?.toString?.(),
-          quotePrice: quote.spotPrice,
-          otherBAmount: otherBAmountBD?.toString?.(),
-          otherUnderlying: otherUnderlyingBD?.toString?.(),
-        });
+        if (DEBUG_PAIR_ADD_QUOTE) {
+          console.log("[V3][AddQuote] getOtherAmount result", {
+            tokenId: tokenId.toString(),
+            poolAddress: uniswapPoolAddress,
+            baseIsToken0,
+            bBase: bBase?.toString?.(),
+            quotePrice: quote.spotPrice,
+            otherBAmount: otherBAmountBD?.toString?.(),
+            otherUnderlying: otherUnderlyingBD?.toString?.(),
+          });
+        }
 
         return otherUnderlyingBD.roundToDecimals(
           otherUnderlyingToken.decimals ?? 18,

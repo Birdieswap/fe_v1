@@ -3,13 +3,13 @@
 import "./SelectNetworkMenu.css";
 
 import { Button, ModalBody, ModalContent, ModalHeader } from "@heroui/react";
-import { Fragment, useContext, useRef, useEffect } from "react";
+import clsx from "clsx";
+import { Fragment, useContext, useEffect, useRef, useState } from "react";
 
 import ModalBase from "@/components/atoms/ModalBase";
 import { WalletContext } from "@/app/WalletContextProvider";
 
 import { NetworkIcon, SelectNetworkListBox } from "./SelectNetworkMenu";
-import clsx from "clsx";
 
 export default function SelectNetworkModal() {
   const {
@@ -20,6 +20,7 @@ export default function SelectNetworkModal() {
   } = useContext(WalletContext);
 
   const modalRef = useRef<HTMLButtonElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement>();
 
   // 핵심 추가: 화면 크기 변화 감지
   useEffect(() => {
@@ -35,6 +36,10 @@ export default function SelectNetworkModal() {
     return () => window.removeEventListener("resize", handleResize);
   }, [isNetworkModalOpen, setIsNetworkModalOpen]);
 
+  useEffect(() => {
+    setPortalContainer(document.body);
+  }, []);
+
   const isOpen = isNetworkModalOpen;
   const isBase = selectedNetwork?.name?.toLowerCase() === "base";
   // useMemo(() => {
@@ -46,13 +51,13 @@ export default function SelectNetworkModal() {
       <Button
         ref={modalRef}
         isIconOnly
+        className={clsx(
+          "h-8 w-8 min-w-8 p-0",
+          isBase ? "rounded-none" : "rounded-full",
+        )}
         // ✅ base면 radius none, 아니면 full
         radius={isBase ? "none" : "full"}
         // ✅ base면 rounded-full 제거 (또는 rounded-none으로 명시)
-        className={clsx(
-          "h-8 w-8 min-w-8 p-0",
-          isBase ? "rounded-none" : "rounded-full"
-        )}
         size="sm"
         variant="light"
         onPress={() => setIsNetworkModalOpen(true)}
@@ -62,7 +67,7 @@ export default function SelectNetworkModal() {
             className={clsx(
               "flex items-center justify-center h-6 w-6 p-0 border-1 bg-white border-default-300 dark:border-default-200",
               // 아이콘 컨테이너도 같이 각지게 하려면 이것도 조건 처리
-              isBase ? "rounded-none" : "rounded-full"
+              isBase ? "rounded-none" : "rounded-full",
             )}
           >
             <NetworkIcon network={selectedNetwork} />
@@ -73,18 +78,15 @@ export default function SelectNetworkModal() {
       </Button>
       <ModalBase
         hideCloseButton
-        portalContainer={
-          typeof window !== "undefined" ? document.body : undefined
-        }
         className="sm:hidden"
-        //  모바일 최적화 설정
-        // iOS 16: backdrop blur 제거 + 컨테이너 고정 높이 + 외부 스크롤 금지
         classNames={{
           backdrop: "bg-black/60 supports-[backdrop-filter]:backdrop-blur-none",
           wrapper: "items-end justify-center",
           base: "m-0 max-h-[65vh] overflow-hidden",
           body: "p-0 h-full flex flex-col",
         }}
+        //  모바일 최적화 설정
+        // iOS 16: backdrop blur 제거 + 컨테이너 고정 높이 + 외부 스크롤 금지
         isOpen={isOpen}
         motionProps={{
           variants: {
@@ -101,6 +103,7 @@ export default function SelectNetworkModal() {
           },
         }}
         placement="bottom"
+        portalContainer={portalContainer}
         scrollBehavior="inside"
         size="lg"
         onClose={() => {

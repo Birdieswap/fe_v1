@@ -32,7 +32,7 @@ export type DualQuoteResult = {
 // =========================
 // Debug
 // =========================
-const DEBUG_QUOTE = true;
+const DEBUG_QUOTE = process.env.NODE_ENV !== "production";
 
 // =========================
 // Constants
@@ -405,13 +405,15 @@ async function getOtherAmountInternal(
           bAmountIn.value,
           feeTier,
           0n,
-          {
-            tag: "internalExactInput",
-            tokenIn: inputMeta.bAddr,
-            tokenOut: outputMeta.bAddr,
-            fee: feeTier,
-            amountIn: bAmountIn.value,
-          }
+          DEBUG_QUOTE
+            ? {
+                tag: "internalExactInput",
+                tokenIn: inputMeta.bAddr,
+                tokenOut: outputMeta.bAddr,
+                fee: feeTier,
+                amountIn: bAmountIn.value,
+              }
+            : undefined
         );
       } catch (e) {
         if (DEBUG_QUOTE) {
@@ -471,13 +473,15 @@ async function getOtherAmountInternal(
             parsedUnderlyingIn.value,
             feeTier,
             0n,
-            {
-              tag: "benchmarkExactInput",
-              tokenIn: inputAddrUnderlying,
-              tokenOut: outputAddrUnderlying,
-              fee: feeTier,
-              amountIn: parsedUnderlyingIn.value,
-            }
+            DEBUG_QUOTE
+              ? {
+                  tag: "benchmarkExactInput",
+                  tokenIn: inputAddrUnderlying,
+                  tokenOut: outputAddrUnderlying,
+                  fee: feeTier,
+                  amountIn: parsedUnderlyingIn.value,
+                }
+              : undefined
           );
 
           if (bench?.amountOut && bench.amountOut > 0n) {
@@ -554,13 +558,15 @@ async function getOtherAmountInternal(
         desiredBOut.value,
         feeTier,
         0n,
-        {
-          tag: "internalExactOutput",
-          tokenIn: inputMeta.bAddr,
-          tokenOut: outputMeta.bAddr,
-          fee: feeTier,
-          amount: desiredBOut.value,
-        }
+        DEBUG_QUOTE
+          ? {
+              tag: "internalExactOutput",
+              tokenIn: inputMeta.bAddr,
+              tokenOut: outputMeta.bAddr,
+              fee: feeTier,
+              amount: desiredBOut.value,
+            }
+          : undefined
       );
     } catch (e) {
       if (DEBUG_QUOTE) console.warn("[internal exactOutput reverted]", e);
@@ -696,13 +702,15 @@ async function getOtherAmountExternal(
         parsedIn.value,
         feeTier,
         0n,
-        {
-          tag: "externalExactInput",
-          tokenIn: tokenInAddr,
-          tokenOut: tokenOutAddr,
-          fee: feeTier,
-          amountIn: parsedIn.value,
-        }
+        DEBUG_QUOTE
+          ? {
+              tag: "externalExactInput",
+              tokenIn: tokenInAddr,
+              tokenOut: tokenOutAddr,
+              fee: feeTier,
+              amountIn: parsedIn.value,
+            }
+          : undefined
       );
       if (!quote || quote.amountOut <= 0n)
         return {
@@ -752,13 +760,15 @@ async function getOtherAmountExternal(
       desiredOut.value,
       feeTier,
       0n,
-      {
-        tag: "externalExactOutput",
-        tokenIn: tokenInAddr,
-        tokenOut: tokenOutAddr,
-        fee: feeTier,
-        amount: desiredOut.value,
-      }
+      DEBUG_QUOTE
+        ? {
+            tag: "externalExactOutput",
+            tokenIn: tokenInAddr,
+            tokenOut: tokenOutAddr,
+            fee: feeTier,
+            amount: desiredOut.value,
+          }
+        : undefined
     );
     if (!quote)
       return {
