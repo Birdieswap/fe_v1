@@ -78,9 +78,16 @@ function getReceiverErrorMessage(input: string): string | null {
 // Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
 const QrScanner = dynamic<IScannerProps>(
   () =>
-    import("@yudiel/react-qr-scanner").then(
-      (mod) => mod.Scanner as React.ComponentType<IScannerProps>
-    ),
+    import("@yudiel/react-qr-scanner").then((mod) => {
+      mod.prepareZXingModule({
+        overrides: {
+          locateFile: (path, prefix) =>
+            path.endsWith(".wasm") ? "/zxing_reader.wasm" : prefix + path,
+        },
+      });
+
+      return mod.Scanner as React.ComponentType<IScannerProps>;
+    }),
   {
     ssr: false,
     loading: () => (

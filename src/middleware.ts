@@ -44,7 +44,9 @@ const CORS_ALLOW_ORIGINS = new Set(
     "http://127.0.0.1:3000",
   ]),
 );
-const PERMISSIONS_POLICY =
+const PERMISSIONS_POLICY_APP =
+  "camera=(self), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()";
+const PERMISSIONS_POLICY_LANDING =
   "camera=(), microphone=(), geolocation=(), accelerometer=(), gyroscope=(), magnetometer=(), payment=(), usb=(), serial=(), display-capture=(), midi=()";
 const CSP_IMG_APP = ["'self'", "data:", "blob:", "https://coin-images.coingecko.com"];
 const CSP_IMG_LANDING = ["'self'", "data:", "blob:"];
@@ -124,7 +126,7 @@ function isStaticAssetPath(pathname: string) {
   return (
     pathname.startsWith("/_next/static") ||
     pathname === "/manifest.json" ||
-    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map|woff|woff2|ttf|otf|eot)$/i.test(
+    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map|wasm|woff|woff2|ttf|otf|eot)$/i.test(
       pathname,
     )
   );
@@ -217,7 +219,7 @@ function applySecurityHeaders(
     "base-uri 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
-    `script-src 'self' 'nonce-${nonce}'`,
+    `script-src 'self' 'nonce-${nonce}' 'wasm-unsafe-eval'`,
     `script-src-elem 'self' 'nonce-${nonce}'`,
     "script-src-attr 'none'",
     `style-src 'self' 'nonce-${nonce}'`,
@@ -320,7 +322,10 @@ function applySecurityHeaders(
   } else {
     res.headers.delete("Origin-Agent-Cluster");
   }
-  res.headers.set("Permissions-Policy", PERMISSIONS_POLICY);
+  res.headers.set(
+    "Permissions-Policy",
+    isLandingHost ? PERMISSIONS_POLICY_LANDING : PERMISSIONS_POLICY_APP,
+  );
   if (isDocument) {
     res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
   } else if (pathname === "/manifest.json") {
@@ -406,7 +411,7 @@ export function middleware(req: NextRequest) {
     pathname === "/favicon.ico" ||
     pathname === "/robots.txt" ||
     pathname === "/sitemap.xml" ||
-    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map)$/.test(pathname);
+    /\.(svg|png|jpg|jpeg|webp|gif|ico|css|js|map|wasm)$/.test(pathname);
 
   // 민감 프록시 API는 cross-site 요청을 선제 차단한다.
   // same-origin/same-site/none(주소창 직접 접근) 또는 헤더 미존재만 허용.
