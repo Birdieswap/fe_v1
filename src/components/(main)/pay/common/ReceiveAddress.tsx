@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import type { IDetectedBarcode, IScannerProps } from "@yudiel/react-qr-scanner";
 import type React from "react";
-import dynamic from "next/dynamic";
+
 import {
   Button,
   Input,
@@ -11,50 +11,53 @@ import {
   ModalFooter,
   ModalHeader,
 } from "@heroui/react";
-import { MdOutlineQrCodeScanner } from "react-icons/md";
 import clsx from "clsx";
+import dynamic from "next/dynamic";
+import { useCallback, useMemo, useState } from "react";
+import { MdOutlineQrCodeScanner } from "react-icons/md";
 
 import ModalBase from "@/components/atoms/ModalBase";
 import ModalCloseButton from "@/components/atoms/ModalCloseButton";
 import ThemedButton from "@/components/atoms/ThemedButton";
 
-// ====== QR 타입 최소 정의 ======
-type IDetectedBarcode = {
-  rawValue: string;
-};
-
-interface QrScannerProps {
-  onScan: (codes: IDetectedBarcode[]) => void;
-  onError?: (error: unknown) => void;
-  constraints?: MediaTrackConstraints;
-  formats?: string[];
-  scanDelay?: number;
-  components?: {
-    finder?: boolean;
-    torch?: boolean;
-    zoom?: boolean;
-    onOff?: boolean;
-    audio?: boolean;
-    tracker?: (
-      detectedCodes: IDetectedBarcode[],
-      ctx: CanvasRenderingContext2D
-    ) => void;
-  };
-  styles?: {
-    container?: React.CSSProperties;
-    video?: React.CSSProperties;
-    finderBorder?: number;
-  };
-  classNames?: {
-    container?: string;
-    video?: string;
-  };
-  children?: React.ReactNode;
-}
-
 // ✅ "완성된" EVM 주소만 true
 const isValidEvmAddress = (value: string) =>
   /^0x[0-9a-fA-F]{40}$/.test(value.trim());
+
+const EVM_ADDRESS_IN_TEXT =
+  /(?:^|[^0-9a-fA-F])(0[xX][0-9a-fA-F]{40})(?![0-9a-fA-F])/;
+
+function normalizeEvmAddress(value: string) {
+  return value.replace(/^0X/, "0x");
+}
+
+function extractEvmAddressFromQr(raw: string): string | null {
+  const trimmed = raw.trim();
+
+  if (!trimmed) return null;
+
+  const candidates = [trimmed];
+
+  try {
+    const decoded = decodeURIComponent(trimmed);
+
+    if (decoded !== trimmed) candidates.push(decoded);
+  } catch {
+    // Some QR payloads can contain malformed URI escapes. Keep the raw value.
+  }
+
+  for (const candidate of candidates) {
+    const direct = normalizeEvmAddress(candidate.trim());
+
+    if (isValidEvmAddress(direct)) return direct;
+
+    const match = candidate.match(EVM_ADDRESS_IN_TEXT);
+
+    if (match?.[1]) return normalizeEvmAddress(match[1]);
+  }
+
+  return null;
+}
 
 const MAX_EVM_ADDRESS_LENGTH = 42;
 
@@ -73,10 +76,10 @@ function getReceiverErrorMessage(input: string): string | null {
 }
 
 // Next.js 에서 SSR 끄고 Scanner 컴포넌트를 동적 import
-const QrScanner = dynamic<QrScannerProps>(
+const QrScanner = dynamic<IScannerProps>(
   () =>
     import("@yudiel/react-qr-scanner").then(
-      (mod) => mod.Scanner as React.ComponentType<QrScannerProps>
+      (mod) => mod.Scanner as React.ComponentType<IScannerProps>
     ),
   {
     ssr: false,
@@ -135,15 +138,10 @@ export default function ReceiveAddress({
   };
 
   const handleDecoded = (raw: string) => {
-    if (!raw) return;
-    const trimmed = raw.trim();
-
-    // ethereum:0x... 형식이면 prefix 제거
-    const normalized = trimmed.replace(/^ethereum:/i, "").trim();
+    const normalized = extractEvmAddressFromQr(raw);
     // console.log("[QR] decoded:", normalized);
 
-    // ✅ QR은 "완성 주소"여야 하니까 바로 유효성 체크
-    if (!isValidEvmAddress(normalized)) {
+    if (!normalized) {
       setIsInvalidAddressModalOpen(true);
       setReceiverTouched(true);
       updateValue(""); // QR은 실패하면 깔끔히 비우는 게 보통 UX 좋음
@@ -365,7 +363,6 @@ export default function ReceiveAddress({
                       styles={{
                         container: { position: "relative", borderRadius: 16 },
                         video: { borderRadius: 16, objectFit: "cover" },
-                        finderBorder: 0,
                       }}
                       classNames={{ container: "birdieswap-qr-container" }}
                     >
