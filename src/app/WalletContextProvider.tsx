@@ -68,17 +68,17 @@ const networks: NetworkInfo[] = [
     iconSrc: "/networks/sepolia.svg",
     blockExplorer: { name: "Etherscan", url: "https://sepolia.etherscan.io/" },
   },
-  {
-    id: 91342,
-    name: "GIWA Sepolia",
-    iconSrc: "/networks/giwa.svg",
-    iconSrcDark: "/networks/giwa_dark.svg",
-    rpcUrl: "https://sepolia-rpc.giwa.io",
-    blockExplorer: {
-      name: "GIWA Sepolia Explorer",
-      url: "https://sepolia-explorer.giwa.io/",
-    },
-  },
+  // {
+  //   id: 91342,
+  //   name: "GIWA Sepolia",
+  //   iconSrc: "/networks/giwa.svg",
+  //   iconSrcDark: "/networks/giwa_dark.svg",
+  //   rpcUrl: "https://sepolia-rpc.giwa.io",
+  //   blockExplorer: {
+  //     name: "GIWA Sepolia Explorer",
+  //     url: "https://sepolia-explorer.giwa.io/",
+  //   },
+  // },
 
   // {
   //   id: 42161,
@@ -129,9 +129,9 @@ const networks: NetworkInfo[] = [
 
 const fallback: WalletContextType = {
   isConnectModalOpen: false,
-  setIsConnectModalOpen: () => {},
+  setIsConnectModalOpen: () => { },
   isNetworkModalOpen: false, // 단일 상태
-  setIsNetworkModalOpen: () => {},
+  setIsNetworkModalOpen: () => { },
   networks,
 };
 
@@ -290,7 +290,7 @@ export default function WalletContextProvider({
       localStorage.removeItem("wagmi.connected");
       localStorage.removeItem("wagmi.recentConnectorId");
       sessionStorage.removeItem("wagmi.connected");
-    } catch {}
+    } catch { }
   }
 
   // ===== 최소 자동 가드 =====
@@ -701,7 +701,7 @@ export default function WalletContextProvider({
               // ➋ 여전히 반영 안 되면, 한 번 더 자극 (특히 인앱에서 효과적)
               try {
                 await reconnect(config);
-              } catch {}
+              } catch { }
               seen = await waitUntilWagmiSees(nextLower, 1000);
             }
             // ➌ 그래도 안 되면, verify를 건너뛰고 changeGuard(useEffect)가 처리하도록 반환
@@ -795,10 +795,10 @@ export default function WalletContextProvider({
         // 중복 바인딩 방지: 기존 리스너 제거 후 재바인딩
         try {
           provider.removeListener?.("accountsChanged", onAccountsChanged);
-        } catch {}
+        } catch { }
         try {
           provider.removeListener?.("chainChanged", onChainChanged);
-        } catch {}
+        } catch { }
 
         provider.on?.("accountsChanged", onAccountsChanged);
         provider.on?.("chainChanged", onChainChanged);
@@ -812,10 +812,10 @@ export default function WalletContextProvider({
       unsubscribed = true;
       try {
         provider?.removeAllListeners?.("accountsChanged");
-      } catch {}
+      } catch { }
       try {
         provider?.removeAllListeners?.("chainChanged");
-      } catch {}
+      } catch { }
       dbg("wcp:provEvt:unbound"); // [DBG]
     };
   }, [account.connector, account.address, chainId, config]);
@@ -847,7 +847,7 @@ export default function WalletContextProvider({
     return () => {
       try {
         delete (window as any).__forceConsentGuard;
-      } catch {}
+      } catch { }
     };
     // 의존성: 주소/체인/컨피그 바뀌면 최신 값 반영
   }, [account?.address, chainId, config]);
@@ -884,15 +884,15 @@ export default function WalletContextProvider({
         // 2) wagmi state 강제 해제 (일부 환경에서 provider.disconnect가 noop인 경우를 대비)
         try {
           await disconnect(config);
-        } catch {}
+        } catch { }
         try {
           // 일부 커넥터는 자체 disconnect 메서드를 노출
           await account?.connector?.disconnect?.();
-        } catch {}
+        } catch { }
         try {
           // WalletConnect/부분 지갑들: provider에 직접 disconnect가 있는 경우
           await (provider as any)?.disconnect?.();
-        } catch {}
+        } catch { }
 
         // 3) 자동 재연결/재개입 방지
         clearRKRecent();
