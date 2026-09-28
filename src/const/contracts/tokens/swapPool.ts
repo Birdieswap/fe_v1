@@ -172,7 +172,7 @@ const blpUniswapHarvestAutopilotCBBTCETH = SwapPoolGuard({
 const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
   type: EContractType.SWAP,
   symbol: "bEURCUSDC",
-  fullName: "Birdieswap EURC 100 USDC",
+  fullName: "Birdieswap EURC 500 USDC",
   addresses: {
     // [networks.sepolia.id]: contractAddresses.sepolia
     //   .EURC_USDC_POOL as `0x${string}`,
@@ -181,7 +181,7 @@ const blpUniswapHarvestAutopilotEURCUSDC = SwapPoolGuard({
     //   .EURC_USDC_POOL as `0x${string}`,
   },
   decimals: 18,
-  fee_tier: 100,
+  fee_tier: 500,
   abi: erc20Abi,
   provider: stakingProviders.UNISWAP,
   protocol: "Uniswap V3",
